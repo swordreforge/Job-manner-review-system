@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"career-api/internal/logic/user"
+	"career-api/internal/middleware"
 	"career-api/internal/svc"
 	"career-api/internal/types"
 	"github.com/zeromicro/go-zero/rest/httpx"
@@ -14,10 +15,13 @@ import (
 
 // Update user info
 func UpdateUserInfoHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	validationMiddleware := middleware.NewValidationMiddleware()
+
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.UpdateUserReq
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
+
+		// 验证请求参数
+		if !validationMiddleware.ValidateAndErrorResponse(w, r, &req) {
 			return
 		}
 

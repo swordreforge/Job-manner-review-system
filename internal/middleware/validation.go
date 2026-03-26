@@ -147,3 +147,48 @@ func GetValidatedReq(r *http.Request, req interface{}) bool {
 	reflect.Copy(dstValue, srcValue)
 	return true
 }
+
+// ValidateAndErrorResponse 验证请求并返回错误响应（如果验证失败）
+// 返回值为true表示验证通过，false表示验证失败
+func (m *ValidationMiddleware) ValidateAndErrorResponse(w http.ResponseWriter, r *http.Request, req interface{}) bool {
+	// 解析请求体
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"code":   400,
+			"msg":    "invalid request body: " + err.Error(),
+		})
+		return false
+	}
+
+	// 验证请求参数
+	if err := m.Validate(req); err != nil {
+		// 获取验证错误信息
+		errors := m.formatValidationErrors(err)
+		w.WriteHeader(http.StatusBadRequest)
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"code":    400,
+			"msg":     "validation failed",
+			"errors":  errors,
+		})
+		return false
+	}
+
+	return true
+}
+
+// ValidateRequest 验证请求并返回错误（如果验证失败）
+// 这是一个简化的版本，返回错误而不是直接写入响应
+func (m *ValidationMiddleware) ValidateRequest(r *http.Request, req interface{}) error {
+	// 解析请求体
+	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
+		return err
+	}
+
+	// 验证请求参数
+	if err := m.Validate(req); err != nil {
+		return err
+	}
+
+	return nil
+}
