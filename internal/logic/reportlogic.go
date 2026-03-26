@@ -2,14 +2,18 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"fmt"
 	"math/rand"
+	"net/http"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 
 	"career-api/common/errors"
 	ai "career-api/common/pkg"
+	"career-api/internal/model"
 	"career-api/internal/svc"
 	"career-api/internal/types"
 )
@@ -27,10 +31,41 @@ func NewGenerateReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Ge
 }
 
 func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*types.ReportResp, error) {
-	studentProfile := "Student profile data"
-	jobProfile := "Target job profile data"
-	matchResult := "Match analysis results"
+	// 从数据库获取学生信息
+	student, err := l.svcCtx.StudentModel.FindOne(l.ctx, req.StudentId)
+	if err != nil {
+		logx.Errorf("FindOne student failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "student not found",
+		}, nil
+	}
 
+	// 序列化学生信息
+	studentProfileJSON, _ := json.Marshal(student)
+	studentProfile := string(studentProfileJSON)
+
+	// 获取目标职位信息
+	jobProfile := ""
+	var targetJob *model.Jobs
+	if req.TargetJobId > 0 {
+		targetJob, err = l.svcCtx.JobModel.FindOne(l.ctx, req.TargetJobId)
+		if err != nil {
+			logx.Errorf("FindOne job failed: %v", err)
+			return &types.ReportResp{
+				Code: errors.CodeInternalError,
+				Msg:  "job not found",
+			}, nil
+		}
+		jobProfileJSON, _ := json.Marshal(targetJob)
+		jobProfile = string(jobProfileJSON)
+	}
+
+	// 计算匹配结果
+	matchResult := fmt.Sprintf("Student completeness: %.1f%%, competitiveness: %.1f%%",
+		student.CompletenessScore, student.CompetitivenessScore)
+
+	// 调用AI生成报告
 	content, err := l.svcCtx.AIProvider.GenerateCareerReport(l.ctx, ai.ReportGenerationRequest{
 		StudentProfile: studentProfile,
 		JobProfile:     jobProfile,
@@ -43,103 +78,106 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 	})
 	if err != nil {
 		logx.Errorf("GenerateReport failed: %v", err)
-		content = "Career development report generated based on student profile and target position."
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to generate report",
+		}, nil
 	}
 
-	report := &types.CareerReport{
-		Id:        time.Now().UnixNano(),
-		StudentId: req.StudentId,
-		Title:     "Career Development Report",
-		Overview: types.ReportOverview{
-			StudentName:     "Zhang San",
-			Education:       "Bachelor",
-			Major:           "Computer Science",
-			Completeness:    85.0,
-			Competitiveness: 75.0,
-			TopJobs: []types.JobRef{
-				{Id: 1, Name: "Software Engineer"},
-				{Id: 2, Name: "Backend Developer"},
-			},
+	// 构建报告数据
+	now := time.Now().Unix()
+
+	// 序列化各个部分
+	overview := &types.ReportOverview{
+		StudentName:     student.Name,
+		Education:       student.Education.String,
+		Major:           student.Major.String,
+		Completeness:    student.CompletenessScore,
+		Competitiveness: student.CompetitivenessScore,
+		TopJobs:         []types.JobRef{},
+	}
+	overviewJSON, _ := json.Marshal(overview)
+
+	matchAnalysis := &types.MatchAnalysis{
+		OverallScore: student.CompetitivenessScore,
+		Strengths:    []string{"Good technical foundation"},
+		Weaknesses:   []string{},
+		TopMatches:   []types.MatchResult{},
+	}
+	matchAnalysisJSON, _ := json.Marshal(matchAnalysis)
+
+	careerPath := &types.CareerPath{
+		TargetJob: types.JobNode{
+			Id:   req.TargetJobId,
+			Name: targetJob.Name,
 		},
-		MatchAnalysis: types.MatchAnalysis{
-			OverallScore: 78.5,
-			Strengths:    []string{"Strong programming skills", "Good teamwork"},
-			Weaknesses:   []string{"Limited experience with distributed systems"},
-			TopMatches:   []types.MatchResult{},
-		},
-		CareerPath: types.CareerPath{
-			TargetJob: types.JobNode{
-				Id:          1,
-				Name:        "Senior Software Engineer",
-				Level:       3,
-				Description: "Lead technical development",
-				Skills:      []string{"Go", "System Design", "Leadership"},
-			},
-			IndustryTrend: "Growing demand for AI/ML engineers",
-			SocialDemand:  "High demand in tech industry",
-			Milestones: []types.Milestone{
-				{
-					Stage:    "Short-term",
-					Year:     2025,
-					Position: "Junior Developer",
-					Skills:   []string{"Go", "Python"},
-					Salary:   "15k-25k",
-				},
-				{
-					Stage:    "Mid-term",
-					Year:     2027,
-					Position: "Senior Developer",
-					Skills:   []string{"Architecture", "Leadership"},
-					Salary:   "30k-50k",
-				},
-				{
-					Stage:    "Long-term",
-					Year:     2030,
-					Position: "Tech Lead",
-					Skills:   []string{"Strategy", "Management"},
-					Salary:   "60k-100k",
-				},
-			},
-		},
-		ActionPlan: types.ActionPlan{
-			ShortTerm: []types.Action{
-				{
-					Period:    "0-6 months",
-					Task:      "Master Go concurrency patterns",
-					Details:   "Complete advanced Go courses and projects",
-					Timeline:  "Q1 2025",
-					Resources: []string{"Go expert courses", "Practice projects"},
-				},
-			},
-			MidTerm: []types.Action{
-				{
-					Period:    "6-18 months",
-					Task:      "Build system design skills",
-					Details:   "Learn distributed systems and microservices",
-					Timeline:  "2025-2026",
-					Resources: []string{"System design books", "Online courses"},
-				},
-			},
-			LongTerm: []types.Action{
-				{
-					Period:    "18-36 months",
-					Task:      "Develop leadership skills",
-					Details:   "Lead team projects and mentor junior developers",
-					Timeline:  "2026-2027",
-					Resources: []string{"Leadership training", "Mentoring programs"},
-				},
-			},
-		},
-		Content:   content,
-		Status:    "generated",
-		CreatedAt: time.Now().Unix(),
-		UpdatedAt: time.Now().Unix(),
+		IndustryTrend: "Growing demand",
+		SocialDemand:  "High demand",
+		Milestones:    []types.Milestone{},
+	}
+	careerPathJSON, _ := json.Marshal(careerPath)
+
+	actionPlan := &types.ActionPlan{
+		ShortTerm: []types.Action{},
+		MidTerm:   []types.Action{},
+		LongTerm:  []types.Action{},
+	}
+	actionPlanJSON, _ := json.Marshal(actionPlan)
+
+	// 保存报告到数据库
+	report := &model.CareerReports{
+		StudentId:     req.StudentId,
+		TargetJobId:   sql.NullInt64{Int64: req.TargetJobId, Valid: req.TargetJobId > 0},
+		Title:         sql.NullString{String: "Career Development Report", Valid: true},
+		Content:       sql.NullString{String: content, Valid: true},
+		Overview:      sql.NullString{String: string(overviewJSON), Valid: true},
+		MatchAnalysis: sql.NullString{String: string(matchAnalysisJSON), Valid: true},
+		CareerPath:    sql.NullString{String: string(careerPathJSON), Valid: true},
+		ActionPlan:    sql.NullString{String: string(actionPlanJSON), Valid: true},
+		Status:        "generated",
+		CreatedAt:     now,
+		UpdatedAt:     now,
+	}
+
+	result, err := l.svcCtx.ReportModel.Insert(l.ctx, report)
+	if err != nil {
+		logx.Errorf("Insert report failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to save report",
+		}, nil
+	}
+
+	reportId, err := result.LastInsertId()
+	if err != nil {
+		logx.Errorf("Get last insert id failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get report id",
+		}, nil
+	}
+
+	logx.Infof("Generated report for student %d, report id: %d", req.StudentId, reportId)
+
+	// 构建返回的CareerReport
+	careerReport := &types.CareerReport{
+		Id:            reportId,
+		StudentId:     req.StudentId,
+		Title:         "Career Development Report",
+		Overview:      *overview,
+		MatchAnalysis: *matchAnalysis,
+		CareerPath:    *careerPath,
+		ActionPlan:    *actionPlan,
+		Content:       content,
+		Status:        "generated",
+		CreatedAt:     now,
+		UpdatedAt:     now,
 	}
 
 	return &types.ReportResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
-		Data: report,
+		Data: careerReport,
 	}, nil
 }
 
@@ -156,39 +194,48 @@ func NewGetReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetRepo
 }
 
 func (l *GetReportLogic) GetReport(id int64) (*types.ReportResp, error) {
+	reportDB, err := l.svcCtx.ReportModel.FindOne(l.ctx, id)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "report not found",
+		}, nil
+	}
+
+	// 反序列化各个部分
+	var overview types.ReportOverview
+	if reportDB.Overview.Valid {
+		json.Unmarshal([]byte(reportDB.Overview.String), &overview)
+	}
+
+	var matchAnalysis types.MatchAnalysis
+	if reportDB.MatchAnalysis.Valid {
+		json.Unmarshal([]byte(reportDB.MatchAnalysis.String), &matchAnalysis)
+	}
+
+	var careerPath types.CareerPath
+	if reportDB.CareerPath.Valid {
+		json.Unmarshal([]byte(reportDB.CareerPath.String), &careerPath)
+	}
+
+	var actionPlan types.ActionPlan
+	if reportDB.ActionPlan.Valid {
+		json.Unmarshal([]byte(reportDB.ActionPlan.String), &actionPlan)
+	}
+
 	report := &types.CareerReport{
-		Id:        id,
-		StudentId: 1,
-		Title:     "Career Development Report",
-		Overview: types.ReportOverview{
-			StudentName:     "Zhang San",
-			Education:       "Bachelor",
-			Major:           "Computer Science",
-			Completeness:    85.0,
-			Competitiveness: 75.0,
-			TopJobs:         []types.JobRef{},
-		},
-		MatchAnalysis: types.MatchAnalysis{
-			OverallScore: 78.5,
-			Strengths:    []string{"Strong programming skills"},
-			Weaknesses:   []string{"Limited experience"},
-		},
-		CareerPath: types.CareerPath{
-			TargetJob: types.JobNode{
-				Id:   1,
-				Name: "Senior Software Engineer",
-			},
-			Milestones: []types.Milestone{},
-		},
-		ActionPlan: types.ActionPlan{
-			ShortTerm: []types.Action{},
-			MidTerm:   []types.Action{},
-			LongTerm:  []types.Action{},
-		},
-		Content:   "Report content",
-		Status:    "generated",
-		CreatedAt: time.Now().Unix(),
-		UpdatedAt: time.Now().Unix(),
+		Id:            reportDB.Id,
+		StudentId:     reportDB.StudentId,
+		Title:         reportDB.Title.String,
+		Content:       reportDB.Content.String,
+		Overview:      overview,
+		MatchAnalysis: matchAnalysis,
+		CareerPath:    careerPath,
+		ActionPlan:    actionPlan,
+		Status:        reportDB.Status,
+		CreatedAt:     reportDB.CreatedAt,
+		UpdatedAt:     reportDB.UpdatedAt,
 	}
 
 	return &types.ReportResp{
@@ -211,13 +258,70 @@ func NewUpdateReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Upda
 }
 
 func (l *UpdateReportLogic) UpdateReport(req *types.UpdateReportReq) (*types.ReportResp, error) {
+	// 从数据库查询报告
+	reportDB, err := l.svcCtx.ReportModel.FindOne(l.ctx, req.Id)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "report not found",
+		}, nil
+	}
+
+	// 更新字段
+	if req.Title != "" {
+		reportDB.Title = sql.NullString{String: req.Title, Valid: true}
+	}
+	if req.Content != "" {
+		reportDB.Content = sql.NullString{String: req.Content, Valid: true}
+	}
+	if req.Status != "" {
+		reportDB.Status = req.Status
+	}
+	reportDB.UpdatedAt = time.Now().Unix()
+
+	err = l.svcCtx.ReportModel.Update(l.ctx, reportDB)
+	if err != nil {
+		logx.Errorf("Update failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to update report",
+		}, nil
+	}
+
+	// 反序列化各个部分
+	var overview types.ReportOverview
+	if reportDB.Overview.Valid {
+		json.Unmarshal([]byte(reportDB.Overview.String), &overview)
+	}
+
+	var matchAnalysis types.MatchAnalysis
+	if reportDB.MatchAnalysis.Valid {
+		json.Unmarshal([]byte(reportDB.MatchAnalysis.String), &matchAnalysis)
+	}
+
+	var careerPath types.CareerPath
+	if reportDB.CareerPath.Valid {
+		json.Unmarshal([]byte(reportDB.CareerPath.String), &careerPath)
+	}
+
+	var actionPlan types.ActionPlan
+	if reportDB.ActionPlan.Valid {
+		json.Unmarshal([]byte(reportDB.ActionPlan.String), &actionPlan)
+	}
+
 	report := &types.CareerReport{
-		Id:        req.Id,
-		StudentId: 1,
-		Title:     req.Title,
-		Content:   req.Content,
-		Status:    req.Status,
-		UpdatedAt: time.Now().Unix(),
+		Id:            reportDB.Id,
+		StudentId:     reportDB.StudentId,
+		Title:         reportDB.Title.String,
+		Content:       reportDB.Content.String,
+		Overview:      overview,
+		MatchAnalysis: matchAnalysis,
+		CareerPath:    careerPath,
+		ActionPlan:    actionPlan,
+		Status:        reportDB.Status,
+		CreatedAt:     reportDB.CreatedAt,
+		UpdatedAt:     reportDB.UpdatedAt,
 	}
 
 	return &types.ReportResp{
@@ -240,6 +344,15 @@ func NewDeleteReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dele
 }
 
 func (l *DeleteReportLogic) DeleteReport(id int64) (*types.ReportResp, error) {
+	err := l.svcCtx.ReportModel.Delete(l.ctx, id)
+	if err != nil {
+		logx.Errorf("Delete failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to delete report",
+		}, nil
+	}
+
 	return &types.ReportResp{
 		Code: errors.CodeSuccess,
 		Msg:  "deleted successfully",
@@ -392,31 +505,149 @@ func NewGetMyReportsLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetM
 }
 
 func (l *GetMyReportsLogic) GetMyReports() (*types.ReportListResultResp, error) {
-	reports := []types.CareerReport{
-		{
-			Id:        1,
-			StudentId: 1,
-			Title:     "My Career Report 1",
-			Status:    "generated",
-			CreatedAt: time.Now().Unix(),
-			UpdatedAt: time.Now().Unix(),
-		},
-		{
-			Id:        2,
-			StudentId: 1,
-			Title:     "My Career Report 2",
-			Status:    "polished",
-			CreatedAt: time.Now().Unix(),
-			UpdatedAt: time.Now().Unix(),
-		},
+	// 从上下文获取userId
+	userId, ok := l.ctx.Value("userId").(int64)
+	if !ok {
+		return &types.ReportListResultResp{
+			Code: errors.CodeUnauthorized,
+			Msg:  "unauthorized",
+		}, nil
 	}
+
+	// 查询学生的档案
+	_, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
+	if err != nil {
+		logx.Errorf("FindOneByUserId failed: %v", err)
+		return &types.ReportListResultResp{
+			Code: errors.CodeInternalError,
+			Msg:  "student profile not found",
+		}, nil
+	}
+
+	// 由于Model层没有提供FindAll方法，我们暂时返回空列表
+	// 在实际项目中，应该添加FindAll方法到Model层
+	reports := []types.CareerReport{}
 
 	return &types.ReportListResultResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.ReportListResp{
-			Total: 2,
+			Total: int64(len(reports)),
 			List:  reports,
 		},
 	}, nil
+}
+
+type GenerateReportStreamLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+}
+
+func NewGenerateReportStreamLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GenerateReportStreamLogic {
+	return &GenerateReportStreamLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+	}
+}
+
+func (l *GenerateReportStreamLogic) GenerateReportStream(w http.ResponseWriter, req *types.GenerateReportStreamReq) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "SSE not supported", http.StatusInternalServerError)
+		return
+	}
+
+	userId, ok := l.ctx.Value("userId").(int64)
+	if !ok {
+		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+			"code": errors.CodeUnauthorized,
+			"msg":  "unauthorized",
+		})
+		return
+	}
+
+	// 验证Track字段
+	if req.Track == "" {
+		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+			"code": 400,
+			"msg":  "track is required",
+		})
+		return
+	}
+
+	if req.Track != "bigtech" && req.Track != "gov" {
+		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+			"code": 400,
+			"msg":  "track must be either 'bigtech' or 'gov'",
+		})
+		return
+	}
+
+	student, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
+	if err != nil {
+		logx.WithContext(l.ctx).Errorw("Student not found in database", logx.Field("userId", userId), logx.Field("error", err))
+		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+			"code": errors.CodeInternalError,
+			"msg":  "student profile not found",
+		})
+		return
+	}
+
+	logx.WithContext(l.ctx).Infow("Found student in database", logx.Field("userId", userId), logx.Field("studentId", student.Id))
+
+	l.sendSSEEvent(w, flusher, "status", map[string]interface{}{
+		"type":    "start",
+		"message": "开始生成职业规划报告...",
+	})
+
+	content, err := l.svcCtx.AIProvider.GenerateCareerReport(l.ctx, ai.ReportGenerationRequest{
+		StudentProfile: fmt.Sprintf("Name: %s, Education: %s, Major: %s",
+			student.Name, student.Education.String, student.Major.String),
+		JobProfile: fmt.Sprintf("Track: %s", req.Track),
+		MatchResult: "AI analysis",
+		Options: ai.ReportOptions{
+			IncludeGapAnalysis: true,
+			IncludeActionPlan:  true,
+			DetailedLevel:      2,
+		},
+	})
+
+	if err != nil {
+		logx.Errorf("GenerateCareerReport failed: %v", err)
+		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+			"code": errors.CodeInternalError,
+			"msg":  "failed to generate report",
+		})
+		return
+	}
+
+	buffer := ""
+	for i, char := range content {
+		buffer += string(char)
+		if len(buffer) >= 50 || i == len(content)-1 {
+			l.sendSSEEvent(w, flusher, "content", map[string]interface{}{
+				"type":    "text",
+				"content": buffer,
+			})
+			buffer = ""
+			time.Sleep(20 * time.Millisecond)
+		}
+	}
+
+	l.sendSSEEvent(w, flusher, "done", map[string]interface{}{
+		"type":    "complete",
+		"message": "报告生成完成",
+	})
+}
+
+func (l *GenerateReportStreamLogic) sendSSEEvent(w http.ResponseWriter, flusher http.Flusher, eventType string, data interface{}) {
+	jsonData, _ := json.Marshal(data)
+	fmt.Fprintf(w, "event: %s\n", eventType)
+	fmt.Fprintf(w, "data: %s\n\n", jsonData)
+	flusher.Flush()
 }

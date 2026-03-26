@@ -71,6 +71,12 @@ type (
         Options   ReportOptions `json:"options,optional"`
     }
 
+    GenerateReportStreamReq {
+        StudentId   int64  `json:"studentId"`
+        Track       string `json:"track"`
+        TargetJobId int64  `json:"targetJobId,optional"`
+    }
+
     ReportOptions {
         IncludeGapAnalysis bool `json:"includeGapAnalysis"`
         IncludeActionPlan  bool `json:"includeActionPlan"`
@@ -135,6 +141,10 @@ service career-api {
     @doc "Generate career development report"
     @handler GenerateReport
     post /reports/generate (GenerateReportReq) returns (ReportResp)
+
+    @doc "Generate career report via SSE stream"
+    @handler GenerateReportStream
+    post /reports/generate-stream (GenerateReportStreamReq)
 
     @doc "Get report by id"
     @handler GetReport

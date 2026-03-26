@@ -197,3 +197,16 @@ func getMyReportsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		json.NewEncoder(w).Encode(resp)
 	}
 }
+
+func generateReportStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.GenerateReportStreamReq
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		l := logic.NewGenerateReportStreamLogic(r.Context(), svcCtx)
+		l.GenerateReportStream(w, &req)
+	}
+}

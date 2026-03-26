@@ -5,6 +5,7 @@ import (
 
 	"github.com/zeromicro/go-zero/rest"
 
+	"career-api/internal/middleware"
 	"career-api/internal/svc"
 )
 
@@ -13,6 +14,8 @@ const (
 )
 
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.Use(middleware.NewAuthMiddleware(serverCtx.Config.Auth.AccessSecret).Handle)
+
 	RegisterHealthHandler(server)
 	RegisterJobHandlers(server, serverCtx)
 	RegisterGraphHandlers(server, serverCtx)
@@ -20,6 +23,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	RegisterMatchHandlers(server, serverCtx)
 	RegisterReportHandlers(server, serverCtx)
 	RegisterUserHandlers(server, serverCtx)
+	RegisterInterviewHandlers(server, serverCtx)
 }
 
 func RegisterHealthHandler(server *rest.Server) {
@@ -178,6 +182,11 @@ func RegisterReportHandlers(server *rest.Server, serverCtx *svc.ServiceContext) 
 				Handler: generateReportHandler(serverCtx),
 			},
 			{
+				Method:  http.MethodPost,
+				Path:    "/api/v1/reports/generate-stream",
+				Handler: generateReportStreamHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodGet,
 				Path:    "/api/v1/reports/:id",
 				Handler: getReportHandler(serverCtx),
@@ -243,6 +252,28 @@ func RegisterUserHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodPut,
 				Path:    "/api/v1/user/info",
 				Handler: updateUserInfoHandler(serverCtx),
+			},
+		},
+	)
+}
+
+func RegisterInterviewHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/v1/interview/start",
+				Handler: startInterviewHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/api/v1/interview/chat-stream",
+				Handler: interviewChatStreamHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/api/v1/interview/history",
+				Handler: getInterviewHistoryHandler(serverCtx),
 			},
 		},
 	)

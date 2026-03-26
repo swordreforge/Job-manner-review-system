@@ -50,4 +50,10 @@ type Config struct {
 		SleepWindow           int
 		ErrorPercentThreshold int
 	}
+
+	CORS struct {
+		Origins []string
+		Methods []string
+		Headers []string
+	}
 }

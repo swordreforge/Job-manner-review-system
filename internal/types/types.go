@@ -378,6 +378,12 @@ type (
 		Options     ReportOptions `json:"options,optional"`
 	}
 
+	GenerateReportStreamReq struct {
+		StudentId   int64  `json:"studentId"`
+		Track       string `json:"track,optional"`
+		TargetJobId int64  `json:"targetJobId,optional"`
+	}
+
 	ReportOptions struct {
 		IncludeGapAnalysis bool `json:"includeGapAnalysis"`
 		IncludeActionPlan  bool `json:"includeActionPlan"`
@@ -468,5 +474,45 @@ type (
 		Code int       `json:"code"`
 		Msg  string    `json:"msg"`
 		Data *UserInfo `json:"data,optional"`
+	}
+
+	StartInterviewReq struct {
+		Mode string `json:"mode,optional"`
+	}
+
+	InterviewResp struct {
+		Code  int                `json:"code"`
+		Msg   string             `json:"msg"`
+		Data  *InterviewSession  `json:"data,optional"`
+	}
+
+	InterviewSession struct {
+		Id        int64  `json:"id"`
+		Mode      string `json:"mode"`
+		Status    string `json:"status"`
+		CreatedAt int64  `json:"createdAt"`
+	}
+
+	InterviewChatStreamReq struct {
+		Message string `json:"message"`
+	}
+
+	InterviewHistoryResp struct {
+		Id        int64   `json:"id"`
+		Mode      string  `json:"mode"`
+		Score     float64 `json:"score"`
+		Status    string  `json:"status"`
+		CreatedAt int64   `json:"createdAt"`
+	}
+
+	InterviewHistoryListResp struct {
+		Code int                     `json:"code"`
+		Msg  string                  `json:"msg"`
+		Data *InterviewHistoryResult `json:"data,optional"`
+	}
+
+	InterviewHistoryResult struct {
+		Total int64                   `json:"total"`
+		List  []InterviewHistoryResp  `json:"list"`
 	}
 )

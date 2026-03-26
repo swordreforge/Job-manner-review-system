@@ -2,6 +2,8 @@ package logic
 
 import (
 	"context"
+	"database/sql"
+	"encoding/json"
 	"math/rand"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 	"github.com/zeromicro/go-zero/core/stringx"
 
 	"career-api/common/errors"
+	"career-api/internal/model"
 	"career-api/internal/svc"
 	"career-api/internal/types"
 )
@@ -33,28 +36,67 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 		}, nil
 	}
 
-	job := &types.JobProfile{
-		Id:           time.Now().UnixNano(),
-		Name:         req.Name,
-		Description:  req.Description,
-		Company:      req.Company,
-		Industry:     req.Industry,
-		Location:     req.Location,
-		SalaryRange:  req.SalaryRange,
-		Skills:       req.Skills,
-		Certificates: req.Certificates,
-		SoftSkills:   req.SoftSkills,
-		Requirements: req.Requirements,
-		CreatedAt:    time.Now().Unix(),
-		UpdatedAt:    time.Now().Unix(),
+	// 序列化JSON字段
+	skillsJSON, _ := json.Marshal(req.Skills)
+	certificatesJSON, _ := json.Marshal(req.Certificates)
+	softSkillsJSON, _ := json.Marshal(req.SoftSkills)
+	requirementsJSON, _ := json.Marshal(req.Requirements)
+
+	now := time.Now().Unix()
+	job := &model.Jobs{
+		Name:            req.Name,
+		Description:     sql.NullString{String: req.Description, Valid: req.Description != ""},
+		Company:         sql.NullString{String: req.Company, Valid: req.Company != ""},
+		Industry:        sql.NullString{String: req.Industry, Valid: req.Industry != ""},
+		Location:        sql.NullString{String: req.Location, Valid: req.Location != ""},
+		SalaryRange:     sql.NullString{String: req.SalaryRange, Valid: req.SalaryRange != ""},
+		Skills:          sql.NullString{String: string(skillsJSON), Valid: len(req.Skills) > 0},
+		Certificates:    sql.NullString{String: string(certificatesJSON), Valid: len(req.Certificates) > 0},
+		SoftSkills:      sql.NullString{String: string(softSkillsJSON), Valid: true},
+		Requirements:    sql.NullString{String: string(requirementsJSON), Valid: true},
+		GrowthPotential: sql.NullString{String: "", Valid: false},
+		CreatedAt:       now,
+		UpdatedAt:       now,
 	}
 
-	logx.Infof("Created job: %s", job.Name)
+	result, err := l.svcCtx.JobModel.Insert(l.ctx, job)
+	if err != nil {
+		logx.Errorf("Insert job failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to create job",
+		}, nil
+	}
+
+	jobId, err := result.LastInsertId()
+	if err != nil {
+		logx.Errorf("Get last insert id failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get job id",
+		}, nil
+	}
+
+	logx.Infof("Created job: %s (id: %d)", req.Name, jobId)
 
 	return &types.JobResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
-		Data: job,
+		Data: &types.JobProfile{
+			Id:           jobId,
+			Name:         req.Name,
+			Description:  req.Description,
+			Company:      req.Company,
+			Industry:     req.Industry,
+			Location:     req.Location,
+			SalaryRange:  req.SalaryRange,
+			Skills:       req.Skills,
+			Certificates: req.Certificates,
+			SoftSkills:   req.SoftSkills,
+			Requirements: req.Requirements,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		},
 	}, nil
 }
 
@@ -78,25 +120,100 @@ func (l *UpdateJobLogic) UpdateJob(req *types.UpdateJobReq) (*types.JobResp, err
 		}, nil
 	}
 
-	job := &types.JobProfile{
-		Id:           req.Id,
-		Name:         req.Name,
-		Description:  req.Description,
-		Company:      req.Company,
-		Industry:     req.Industry,
-		Location:     req.Location,
-		SalaryRange:  req.SalaryRange,
-		Skills:       req.Skills,
-		Certificates: req.Certificates,
-		SoftSkills:   req.SoftSkills,
-		Requirements: req.Requirements,
-		UpdatedAt:    time.Now().Unix(),
+	// 从数据库查询职位信息
+	job, err := l.svcCtx.JobModel.FindOne(l.ctx, req.Id)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "job not found",
+		}, nil
+	}
+
+	// 更新字段
+	if req.Name != "" {
+		job.Name = req.Name
+	}
+	if req.Description != "" {
+		job.Description = sql.NullString{String: req.Description, Valid: true}
+	}
+	if req.Company != "" {
+		job.Company = sql.NullString{String: req.Company, Valid: true}
+	}
+	if req.Industry != "" {
+		job.Industry = sql.NullString{String: req.Industry, Valid: true}
+	}
+	if req.Location != "" {
+		job.Location = sql.NullString{String: req.Location, Valid: true}
+	}
+	if req.SalaryRange != "" {
+		job.SalaryRange = sql.NullString{String: req.SalaryRange, Valid: true}
+	}
+	if len(req.Skills) > 0 {
+		skillsJSON, _ := json.Marshal(req.Skills)
+		job.Skills = sql.NullString{String: string(skillsJSON), Valid: true}
+	}
+	if len(req.Certificates) > 0 {
+		certificatesJSON, _ := json.Marshal(req.Certificates)
+		job.Certificates = sql.NullString{String: string(certificatesJSON), Valid: true}
+	}
+	if req.SoftSkills.Innovation > 0 {
+		softSkillsJSON, _ := json.Marshal(req.SoftSkills)
+		job.SoftSkills = sql.NullString{String: string(softSkillsJSON), Valid: true}
+	}
+	if req.Requirements.Education != "" || req.Requirements.Experience != "" {
+		requirementsJSON, _ := json.Marshal(req.Requirements)
+		job.Requirements = sql.NullString{String: string(requirementsJSON), Valid: true}
+	}
+	job.UpdatedAt = time.Now().Unix()
+
+	err = l.svcCtx.JobModel.Update(l.ctx, job)
+	if err != nil {
+		logx.Errorf("Update failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to update job",
+		}, nil
+	}
+
+	// 反序列化返回数据
+	var skills []types.Skill
+	var certificates []string
+	var softSkills types.SoftSkills
+	var requirements types.Requirements
+
+	if job.Skills.Valid {
+		json.Unmarshal([]byte(job.Skills.String), &skills)
+	}
+	if job.Certificates.Valid {
+		json.Unmarshal([]byte(job.Certificates.String), &certificates)
+	}
+	if job.SoftSkills.Valid {
+		json.Unmarshal([]byte(job.SoftSkills.String), &softSkills)
+	}
+	if job.Requirements.Valid {
+		json.Unmarshal([]byte(job.Requirements.String), &requirements)
 	}
 
 	return &types.JobResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
-		Data: job,
+		Data: &types.JobProfile{
+			Id:              job.Id,
+			Name:            job.Name,
+			Description:     job.Description.String,
+			Company:         job.Company.String,
+			Industry:        job.Industry.String,
+			Location:        job.Location.String,
+			SalaryRange:     job.SalaryRange.String,
+			Skills:          skills,
+			Certificates:    certificates,
+			SoftSkills:      softSkills,
+			Requirements:    requirements,
+			GrowthPotential: job.GrowthPotential.String,
+			CreatedAt:       job.CreatedAt,
+			UpdatedAt:       job.UpdatedAt,
+		},
 	}, nil
 }
 
@@ -113,39 +230,53 @@ func NewGetJobLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetJobLogi
 }
 
 func (l *GetJobLogic) GetJob(id int64) (*types.JobResp, error) {
-	job := &types.JobProfile{
-		Id:          id,
-		Name:        "Senior Software Engineer",
-		Description: "Develop and maintain software systems",
-		Company:     "Tech Corp",
-		Industry:    "Technology",
-		Location:    "Beijing",
-		SalaryRange: "30k-50k",
-		Skills: []types.Skill{
-			{Name: "Go", Level: 4, Required: true},
-			{Name: "Python", Level: 3, Required: false},
-		},
-		Certificates: []string{"AWS Certified"},
-		SoftSkills: types.SoftSkills{
-			Innovation:    4,
-			Learning:      5,
-			Pressure:      4,
-			Communication: 4,
-			Teamwork:      5,
-		},
-		Requirements: types.Requirements{
-			Education:  "Bachelor",
-			Experience: "3+ years",
-			Internship: "Preferred",
-		},
-		CreatedAt: time.Now().Unix(),
-		UpdatedAt: time.Now().Unix(),
+	job, err := l.svcCtx.JobModel.FindOne(l.ctx, id)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "job not found",
+		}, nil
+	}
+
+	// 反序列化JSON字段
+	var skills []types.Skill
+	var certificates []string
+	var softSkills types.SoftSkills
+	var requirements types.Requirements
+
+	if job.Skills.Valid {
+		json.Unmarshal([]byte(job.Skills.String), &skills)
+	}
+	if job.Certificates.Valid {
+		json.Unmarshal([]byte(job.Certificates.String), &certificates)
+	}
+	if job.SoftSkills.Valid {
+		json.Unmarshal([]byte(job.SoftSkills.String), &softSkills)
+	}
+	if job.Requirements.Valid {
+		json.Unmarshal([]byte(job.Requirements.String), &requirements)
 	}
 
 	return &types.JobResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
-		Data: job,
+		Data: &types.JobProfile{
+			Id:              job.Id,
+			Name:            job.Name,
+			Description:     job.Description.String,
+			Company:         job.Company.String,
+			Industry:        job.Industry.String,
+			Location:        job.Location.String,
+			SalaryRange:     job.SalaryRange.String,
+			Skills:          skills,
+			Certificates:    certificates,
+			SoftSkills:      softSkills,
+			Requirements:    requirements,
+			GrowthPotential: job.GrowthPotential.String,
+			CreatedAt:       job.CreatedAt,
+			UpdatedAt:       job.UpdatedAt,
+		},
 	}, nil
 }
 
@@ -162,6 +293,15 @@ func NewDeleteJobLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DeleteJ
 }
 
 func (l *DeleteJobLogic) DeleteJob(id int64) (*types.JobResp, error) {
+	err := l.svcCtx.JobModel.Delete(l.ctx, id)
+	if err != nil {
+		logx.Errorf("Delete failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to delete job",
+		}, nil
+	}
+
 	return &types.JobResp{
 		Code: errors.CodeSuccess,
 		Msg:  "deleted successfully",

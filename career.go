@@ -29,7 +29,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	server := rest.MustNewServer(c.RestConf)
+	server := rest.MustNewServer(c.RestConf, rest.WithCors())
 	defer server.Stop()
 
 	ctx := svc.NewServiceContext(&c)
