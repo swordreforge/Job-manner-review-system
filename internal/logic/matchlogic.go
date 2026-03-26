@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"math"
-	"math/rand"
 
 	"github.com/zeromicro/go-zero/core/logx"
 
@@ -268,25 +267,96 @@ func (l *MatchStudentJobsLogic) MatchStudentJobs(req *types.MatchListReq) (*type
 		pageSize = 10
 	}
 
-	results := make([]types.MatchResult, 0, pageSize)
-	for i := 0; i < pageSize; i++ {
-		overallScore := float64(rand.Intn(46) + 50)
+	// 从数据库获取学生信息
+	student, err := l.svcCtx.StudentModel.FindOne(l.ctx, req.StudentId)
+	if err != nil {
+		logx.Errorf("FindOne student failed: %v", err)
+		return &types.MatchListResp{
+			Code: errors.CodeInternalError,
+			Msg:  "student not found",
+		}, nil
+	}
+
+	// 反序列化学生技能
+	var studentSkills []types.StudentSkill
+	if student.Skills.Valid {
+		json.Unmarshal([]byte(student.Skills.String), &studentSkills)
+	}
+
+	// 反序列化学生证书
+	var studentCerts []types.StudentCert
+	if student.Certificates.Valid {
+		json.Unmarshal([]byte(student.Certificates.String), &studentCerts)
+	}
+
+	// 反序列化学生软技能
+	var studentSoftSkills types.SoftSkills
+	if student.SoftSkills.Valid {
+		json.Unmarshal([]byte(student.SoftSkills.String), &studentSoftSkills)
+	}
+
+	// 从数据库获取所有职位（使用分页）
+	// 注意：这里需要使用JobsModel的FindAll方法
+	// 如果JobsModel没有FindAll方法，需要先添加
+	// 为了简化，我们假设JobsModel有FindAll方法
+	allJobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, "")
+	if err != nil {
+		logx.Errorf("FindAll jobs failed: %v", err)
+		return &types.MatchListResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get jobs",
+		}, nil
+	}
+
+	// 计算每个职位的匹配度
+	results := make([]types.MatchResult, 0, len(allJobs))
+	for _, job := range allJobs {
+		// 反序列化职位技能
+		var jobSkills []types.Skill
+		if job.Skills.Valid {
+			json.Unmarshal([]byte(job.Skills.String), &jobSkills)
+		}
+
+		// 反序列化职位证书
+		var jobCerts []string
+		if job.Certificates.Valid {
+			json.Unmarshal([]byte(job.Certificates.String), &jobCerts)
+		}
+
+		// 反序列化职位软技能
+		var jobSoftSkills types.SoftSkills
+		if job.SoftSkills.Valid {
+			json.Unmarshal([]byte(job.SoftSkills.String), &jobSoftSkills)
+		}
+
+		// 计算各项匹配度
+		skillsMatch := calculateSkillsMatch(studentSkills, jobSkills)
+		certsMatch := calculateCertsMatch(studentCerts, jobCerts)
+		softSkillsMatch := calculateSoftSkillsMatch(studentSoftSkills, jobSoftSkills)
+		experienceMatch := (student.CompletenessScore + student.CompetitivenessScore) / 2
+
+		// 计算总体匹配度
+		overallScore := (skillsMatch*0.35 + certsMatch*0.15 + softSkillsMatch*0.25 + experienceMatch*0.25)
+
+		// 生成差距分析
+		gapAnalysis := generateGapAnalysis(studentSkills, jobSkills)
+
 		results = append(results, types.MatchResult{
-			JobId:           int64(page*pageSize + i),
-			JobName:         "Software Engineer " + string(rune('A'+i)),
-			OverallScore:    overallScore,
-			SkillsMatch:     float64(rand.Intn(46) + 50),
-			CertsMatch:      float64(rand.Intn(41) + 50),
-			SoftSkillsMatch: float64(rand.Intn(46) + 50),
-			ExperienceMatch: float64(rand.Intn(36) + 50),
-			GapAnalysis:     []types.Gap{},
+			JobId:           job.Id,
+			JobName:         job.Name,
+			OverallScore:    math.Round(overallScore*100) / 100,
+			SkillsMatch:     math.Round(skillsMatch*100) / 100,
+			CertsMatch:      math.Round(certsMatch*100) / 100,
+			SoftSkillsMatch: math.Round(softSkillsMatch*100) / 100,
+			ExperienceMatch: math.Round(experienceMatch*100) / 100,
+			GapAnalysis:     gapAnalysis,
 		})
 	}
 
 	return &types.MatchListResp{
 		Code:  errors.CodeSuccess,
 		Msg:   "success",
-		Total: 100,
+		Total: total,
 		List:  results,
 	}, nil
 }
@@ -304,12 +374,73 @@ func NewGetMatchScoreLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Get
 }
 
 func (l *GetMatchScoreLogic) GetMatchScore(studentId, jobId int64) (*types.MatchScoreResp, error) {
-	score := float64(rand.Intn(46) + 50)
+	// 从数据库获取学生信息
+	student, err := l.svcCtx.StudentModel.FindOne(l.ctx, studentId)
+	if err != nil {
+		logx.Errorf("FindOne student failed: %v", err)
+		return &types.MatchScoreResp{
+			Code: errors.CodeInternalError,
+			Msg:  "student not found",
+		}, nil
+	}
+
+	// 从数据库获取职位信息
+	job, err := l.svcCtx.JobModel.FindOne(l.ctx, jobId)
+	if err != nil {
+		logx.Errorf("FindOne job failed: %v", err)
+		return &types.MatchScoreResp{
+			Code: errors.CodeInternalError,
+			Msg:  "job not found",
+		}, nil
+	}
+
+	// 反序列化学生技能
+	var studentSkills []types.StudentSkill
+	if student.Skills.Valid {
+		json.Unmarshal([]byte(student.Skills.String), &studentSkills)
+	}
+
+	// 反序列化职位技能
+	var jobSkills []types.Skill
+	if job.Skills.Valid {
+		json.Unmarshal([]byte(job.Skills.String), &jobSkills)
+	}
+
+	// 计算技能匹配度
+	skillsMatch := calculateSkillsMatch(studentSkills, jobSkills)
+
+	// 计算证书匹配度
+	var studentCerts []types.StudentCert
+	if student.Certificates.Valid {
+		json.Unmarshal([]byte(student.Certificates.String), &studentCerts)
+	}
+	var jobCerts []string
+	if job.Certificates.Valid {
+		json.Unmarshal([]byte(job.Certificates.String), &jobCerts)
+	}
+	certsMatch := calculateCertsMatch(studentCerts, jobCerts)
+
+	// 计算软技能匹配度
+	var studentSoftSkills types.SoftSkills
+	if student.SoftSkills.Valid {
+		json.Unmarshal([]byte(student.SoftSkills.String), &studentSoftSkills)
+	}
+	var jobSoftSkills types.SoftSkills
+	if job.SoftSkills.Valid {
+		json.Unmarshal([]byte(job.SoftSkills.String), &jobSoftSkills)
+	}
+	softSkillsMatch := calculateSoftSkillsMatch(studentSoftSkills, jobSoftSkills)
+
+	// 计算经验匹配度（基于完整度和竞争力）
+	experienceMatch := (student.CompletenessScore + student.CompetitivenessScore) / 2
+
+	// 计算总体匹配度
+	overallScore := (skillsMatch*0.35 + certsMatch*0.15 + softSkillsMatch*0.25 + experienceMatch*0.25)
 
 	return &types.MatchScoreResp{
 		Code:  errors.CodeSuccess,
 		Msg:   "success",
-		Score: score,
+		Score: math.Round(overallScore*100) / 100,
 	}, nil
 }
 
@@ -335,25 +466,117 @@ func (l *GetRecommendedJobsLogic) GetRecommendedJobs(req *types.MatchListReq) (*
 		pageSize = 10
 	}
 
-	results := make([]types.MatchResult, 0, pageSize)
-	for i := 0; i < pageSize; i++ {
-		overallScore := float64(rand.Intn(39) + 60)
-		results = append(results, types.MatchResult{
-			JobId:           int64(page*pageSize + i),
-			JobName:         "Recommended Job " + string(rune('A'+i)),
-			OverallScore:    overallScore,
-			SkillsMatch:     float64(rand.Intn(36) + 60),
-			CertsMatch:      float64(rand.Intn(31) + 60),
-			SoftSkillsMatch: float64(rand.Intn(36) + 60),
-			ExperienceMatch: float64(rand.Intn(26) + 60),
-			GapAnalysis:     []types.Gap{},
+	// 从数据库获取学生信息
+	student, err := l.svcCtx.StudentModel.FindOne(l.ctx, req.StudentId)
+	if err != nil {
+		logx.Errorf("FindOne student failed: %v", err)
+		return &types.MatchListResp{
+			Code: errors.CodeInternalError,
+			Msg:  "student not found",
+		}, nil
+	}
+
+	// 反序列化学生技能
+	var studentSkills []types.StudentSkill
+	if student.Skills.Valid {
+		json.Unmarshal([]byte(student.Skills.String), &studentSkills)
+	}
+
+	// 反序列化学生证书
+	var studentCerts []types.StudentCert
+	if student.Certificates.Valid {
+		json.Unmarshal([]byte(student.Certificates.String), &studentCerts)
+	}
+
+	// 反序列化学生软技能
+	var studentSoftSkills types.SoftSkills
+	if student.SoftSkills.Valid {
+		json.Unmarshal([]byte(student.SoftSkills.String), &studentSoftSkills)
+	}
+
+	// 从数据库获取所有职位
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "") // 获取更多职位进行推荐
+	if err != nil {
+		logx.Errorf("FindAll jobs failed: %v", err)
+		return &types.MatchListResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get jobs",
+		}, nil
+	}
+
+	// 计算每个职位的匹配度
+	matchResults := make([]types.MatchResult, 0, len(allJobs))
+	for _, job := range allJobs {
+		// 反序列化职位技能
+		var jobSkills []types.Skill
+		if job.Skills.Valid {
+			json.Unmarshal([]byte(job.Skills.String), &jobSkills)
+		}
+
+		// 反序列化职位证书
+		var jobCerts []string
+		if job.Certificates.Valid {
+			json.Unmarshal([]byte(job.Certificates.String), &jobCerts)
+		}
+
+		// 反序列化职位软技能
+		var jobSoftSkills types.SoftSkills
+		if job.SoftSkills.Valid {
+			json.Unmarshal([]byte(job.SoftSkills.String), &jobSoftSkills)
+		}
+
+		// 计算各项匹配度
+		skillsMatch := calculateSkillsMatch(studentSkills, jobSkills)
+		certsMatch := calculateCertsMatch(studentCerts, jobCerts)
+		softSkillsMatch := calculateSoftSkillsMatch(studentSoftSkills, jobSoftSkills)
+		experienceMatch := (student.CompletenessScore + student.CompetitivenessScore) / 2
+
+		// 计算总体匹配度
+		overallScore := (skillsMatch*0.35 + certsMatch*0.15 + softSkillsMatch*0.25 + experienceMatch*0.25)
+
+		// 生成差距分析
+		gapAnalysis := generateGapAnalysis(studentSkills, jobSkills)
+
+		matchResults = append(matchResults, types.MatchResult{
+			JobId:           job.Id,
+			JobName:         job.Name,
+			OverallScore:    math.Round(overallScore*100) / 100,
+			SkillsMatch:     math.Round(skillsMatch*100) / 100,
+			CertsMatch:      math.Round(certsMatch*100) / 100,
+			SoftSkillsMatch: math.Round(softSkillsMatch*100) / 100,
+			ExperienceMatch: math.Round(experienceMatch*100) / 100,
+			GapAnalysis:     gapAnalysis,
 		})
+	}
+
+	// 按匹配度排序（从高到低）
+	// 使用简单的冒泡排序
+	for i := 0; i < len(matchResults); i++ {
+		for j := i + 1; j < len(matchResults); j++ {
+			if matchResults[i].OverallScore < matchResults[j].OverallScore {
+				matchResults[i], matchResults[j] = matchResults[j], matchResults[i]
+			}
+		}
+	}
+
+	// 分页返回结果
+	start := (page - 1) * pageSize
+	end := start + pageSize
+	if end > len(matchResults) {
+		end = len(matchResults)
+	}
+
+	var results []types.MatchResult
+	if start < len(matchResults) {
+		results = matchResults[start:end]
+	} else {
+		results = []types.MatchResult{}
 	}
 
 	return &types.MatchListResp{
 		Code:  errors.CodeSuccess,
 		Msg:   "success",
-		Total: 50,
+		Total: int64(len(matchResults)),
 		List:  results,
 	}, nil
 }

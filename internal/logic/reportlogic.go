@@ -387,15 +387,52 @@ func (l *ListReportsLogic) ListReports(req *types.ReportListReq) (*types.ReportL
 		pageSize = 10
 	}
 
-	reports := make([]types.CareerReport, 0, pageSize)
-	for i := 0; i < pageSize; i++ {
-		reports = append(reports, types.CareerReport{
-			Id:        int64(page*pageSize + i),
-			StudentId: req.StudentId,
-			Title:     fmt.Sprintf("Career Report %d", i+1),
-			Status:    req.Status,
-			CreatedAt: time.Now().Unix(),
-			UpdatedAt: time.Now().Unix(),
+	// 从数据库查询报告列表
+	reports, total, err := l.svcCtx.ReportModel.FindAll(l.ctx, page, pageSize, req.StudentId, req.Status)
+	if err != nil {
+		logx.Errorf("FindAll failed: %v", err)
+		return &types.ReportListResultResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to list reports",
+		}, nil
+	}
+
+	// 转换为响应格式
+	careerReports := make([]types.CareerReport, 0, len(reports))
+	for _, report := range reports {
+		// 反序列化各个部分
+		var overview types.ReportOverview
+		if report.Overview.Valid {
+			json.Unmarshal([]byte(report.Overview.String), &overview)
+		}
+
+		var matchAnalysis types.MatchAnalysis
+		if report.MatchAnalysis.Valid {
+			json.Unmarshal([]byte(report.MatchAnalysis.String), &matchAnalysis)
+		}
+
+		var careerPath types.CareerPath
+		if report.CareerPath.Valid {
+			json.Unmarshal([]byte(report.CareerPath.String), &careerPath)
+		}
+
+actionPlan := types.ActionPlan{}
+		if report.ActionPlan.Valid {
+			json.Unmarshal([]byte(report.ActionPlan.String), &actionPlan)
+		}
+
+		careerReports = append(careerReports, types.CareerReport{
+			Id:            report.Id,
+			StudentId:     report.StudentId,
+			Title:         report.Title.String,
+			Content:       report.Content.String,
+			Overview:      overview,
+			MatchAnalysis: matchAnalysis,
+			CareerPath:    careerPath,
+			ActionPlan:    actionPlan,
+			Status:        report.Status,
+			CreatedAt:     report.CreatedAt,
+			UpdatedAt:     report.UpdatedAt,
 		})
 	}
 
@@ -403,8 +440,8 @@ func (l *ListReportsLogic) ListReports(req *types.ReportListReq) (*types.ReportL
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.ReportListResp{
-			Total: 50,
-			List:  reports,
+			Total: total,
+			List:  careerReports,
 		},
 	}, nil
 }

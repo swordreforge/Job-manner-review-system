@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
@@ -17,6 +18,7 @@ type (
 	CareerReportsModel interface {
 		careerReportsModel
 		withSession(session sqlx.Session) CareerReportsModel
+		FindAll(ctx context.Context, page, pageSize int, studentId int64, status string) ([]*CareerReports, int64, error)
 	}
 
 	customCareerReportsModel struct {
@@ -33,6 +35,49 @@ func NewCareerReportsModel(conn sqlx.SqlConn) CareerReportsModel {
 
 func (m *customCareerReportsModel) withSession(session sqlx.Session) CareerReportsModel {
 	return NewCareerReportsModel(sqlx.NewSqlConnFromSession(session))
+}
+
+// FindAll 分页查询报告列表，支持按studentId和status过滤
+func (m *customCareerReportsModel) FindAll(ctx context.Context, page, pageSize int, studentId int64, status string) ([]*CareerReports, int64, error) {
+	// 构建查询条件
+	conditions := []string{}
+	args := []interface{}{}
+
+	if studentId > 0 {
+		conditions = append(conditions, "`student_id` = ?")
+		args = append(args, studentId)
+	}
+
+	if status != "" {
+		conditions = append(conditions, "`status` = ?")
+		args = append(args, status)
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询总数
+	countQuery := fmt.Sprintf("select count(*) from %s %s", m.table, whereClause)
+	var total int64
+	err := m.conn.QueryRowCtx(ctx, &total, countQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 查询数据
+	offset := (page - 1) * pageSize
+	query := fmt.Sprintf("select %s from %s %s order by `created_at` desc limit ? offset ?", careerReportsRows, m.table, whereClause)
+	args = append(args, pageSize, offset)
+
+	var resp []*CareerReports
+	err = m.conn.QueryRowsCtx(ctx, &resp, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return resp, total, nil
 }
 
 // Insert 插入职业报告记录，自动设置时间戳

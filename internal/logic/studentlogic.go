@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"math/rand"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stringx"
 
 	"career-api/common/errors"
 	"career-api/internal/model"
@@ -460,19 +458,63 @@ func (l *ListStudentsLogic) ListStudents(req *types.StudentListReq) (*types.Stud
 		pageSize = 10
 	}
 
-	profiles := make([]types.StudentProfile, 0, pageSize)
-	for i := 0; i < pageSize; i++ {
+	// 从数据库查询学生列表
+	students, total, err := l.svcCtx.StudentModel.FindAll(l.ctx, page, pageSize, req.Education, req.Major)
+	if err != nil {
+		logx.Errorf("FindAll failed: %v", err)
+		return &types.StudentListResultResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to list students",
+		}, nil
+	}
+
+	// 转换为响应格式
+	profiles := make([]types.StudentProfile, 0, len(students))
+	for _, student := range students {
+		// 反序列化JSON字段
+		var skills []types.StudentSkill
+		var certificates []types.StudentCert
+		var softSkills types.SoftSkills
+		var internship []types.Internship
+		var projects []types.Project
+
+		if student.Skills.Valid {
+			json.Unmarshal([]byte(student.Skills.String), &skills)
+		}
+		if student.Certificates.Valid {
+			json.Unmarshal([]byte(student.Certificates.String), &certificates)
+		}
+		if student.SoftSkills.Valid {
+			json.Unmarshal([]byte(student.SoftSkills.String), &softSkills)
+		}
+		if student.Internship.Valid {
+			json.Unmarshal([]byte(student.Internship.String), &internship)
+		}
+		if student.Projects.Valid {
+			json.Unmarshal([]byte(student.Projects.String), &projects)
+		}
+
+		graduationYear := 0
+		if student.GraduationYear.Valid {
+			graduationYear = int(student.GraduationYear.Int64)
+		}
+
 		profiles = append(profiles, types.StudentProfile{
-			Id:              int64(page*pageSize + i),
-			UserId:          1,
-			Name:            "Student " + stringx.RandId(),
-			Education:       req.Education,
-			Major:           req.Major,
-			GraduationYear:  2025,
-			Completeness:    float64(rand.Intn(41) + 60),
-			Competitiveness: float64(rand.Intn(51) + 50),
-			CreatedAt:       time.Now().Unix(),
-			UpdatedAt:       time.Now().Unix(),
+			Id:              student.Id,
+			UserId:          student.UserId,
+			Name:            student.Name,
+			Education:       student.Education.String,
+			Major:           student.Major.String,
+			GraduationYear:  graduationYear,
+			Skills:          skills,
+			Certificates:    certificates,
+			SoftSkills:      softSkills,
+			Internship:      internship,
+			Projects:        projects,
+			Completeness:    student.CompletenessScore,
+			Competitiveness: student.CompetitivenessScore,
+			CreatedAt:       student.CreatedAt,
+			UpdatedAt:       student.UpdatedAt,
 		})
 	}
 
@@ -480,7 +522,7 @@ func (l *ListStudentsLogic) ListStudents(req *types.StudentListReq) (*types.Stud
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.StudentListResp{
-			Total: 100,
+			Total: total,
 			List:  profiles,
 		},
 	}, nil

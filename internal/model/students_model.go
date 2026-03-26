@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
@@ -18,6 +19,7 @@ type (
 		studentsModel
 		withSession(session sqlx.Session) StudentsModel
 		FindOneByUserId(ctx context.Context, userId int64) (*Students, error)
+		FindAll(ctx context.Context, page, pageSize int, education, major string) ([]*Students, int64, error)
 	}
 
 	customStudentsModel struct {
@@ -48,6 +50,49 @@ func (m *customStudentsModel) FindOneByUserId(ctx context.Context, userId int64)
 	default:
 		return nil, err
 	}
+}
+
+// FindAll 分页查询学生列表，支持按education和major过滤
+func (m *customStudentsModel) FindAll(ctx context.Context, page, pageSize int, education, major string) ([]*Students, int64, error) {
+	// 构建查询条件
+	conditions := []string{}
+	args := []interface{}{}
+
+	if education != "" {
+		conditions = append(conditions, "`education` = ?")
+		args = append(args, education)
+	}
+
+	if major != "" {
+		conditions = append(conditions, "`major` = ?")
+		args = append(args, major)
+	}
+
+	whereClause := ""
+	if len(conditions) > 0 {
+		whereClause = "where " + strings.Join(conditions, " and ")
+	}
+
+	// 查询总数
+	countQuery := fmt.Sprintf("select count(*) from %s %s", m.table, whereClause)
+	var total int64
+	err := m.conn.QueryRowCtx(ctx, &total, countQuery, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// 查询数据
+	offset := (page - 1) * pageSize
+	query := fmt.Sprintf("select %s from %s %s order by `created_at` desc limit ? offset ?", studentsRows, m.table, whereClause)
+	args = append(args, pageSize, offset)
+
+	var resp []*Students
+	err = m.conn.QueryRowsCtx(ctx, &resp, query, args...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return resp, total, nil
 }
 
 // Insert 插入学生记录，自动设置时间戳

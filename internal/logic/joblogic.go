@@ -4,11 +4,9 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"math/rand"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
-	"github.com/zeromicro/go-zero/core/stringx"
 
 	"career-api/common/errors"
 	"career-api/internal/model"
@@ -338,22 +336,53 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (*types.JobListResultRes
 		pageSize = 10
 	}
 
-	jobs := make([]types.JobProfile, 0, pageSize)
-	for i := 0; i < pageSize; i++ {
-		jobs = append(jobs, types.JobProfile{
-			Id:          int64(page*pageSize + i),
-			Name:        "Software Engineer " + stringx.RandId(),
-			Industry:    req.Industry,
-			SalaryRange: "20k-40k",
-			SoftSkills: types.SoftSkills{
-				Innovation:    rand.Intn(3) + 3,
-				Learning:      rand.Intn(3) + 3,
-				Pressure:      rand.Intn(3) + 3,
-				Communication: rand.Intn(3) + 3,
-				Teamwork:      rand.Intn(3) + 3,
-			},
-			CreatedAt: time.Now().Unix(),
-			UpdatedAt: time.Now().Unix(),
+	// 从数据库查询职位列表
+	jobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, req.Industry)
+	if err != nil {
+		logx.Errorf("FindAll failed: %v", err)
+		return &types.JobListResultResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to list jobs",
+		}, nil
+	}
+
+	// 转换为响应格式
+	jobProfiles := make([]types.JobProfile, 0, len(jobs))
+	for _, job := range jobs {
+		// 反序列化JSON字段
+		var skills []types.Skill
+		var certificates []string
+		var softSkills types.SoftSkills
+		var requirements types.Requirements
+
+		if job.Skills.Valid {
+			json.Unmarshal([]byte(job.Skills.String), &skills)
+		}
+		if job.Certificates.Valid {
+			json.Unmarshal([]byte(job.Certificates.String), &certificates)
+		}
+		if job.SoftSkills.Valid {
+			json.Unmarshal([]byte(job.SoftSkills.String), &softSkills)
+		}
+		if job.Requirements.Valid {
+			json.Unmarshal([]byte(job.Requirements.String), &requirements)
+		}
+
+		jobProfiles = append(jobProfiles, types.JobProfile{
+			Id:              job.Id,
+			Name:            job.Name,
+			Description:     job.Description.String,
+			Company:         job.Company.String,
+			Industry:        job.Industry.String,
+			Location:        job.Location.String,
+			SalaryRange:     job.SalaryRange.String,
+			Skills:          skills,
+			Certificates:    certificates,
+			SoftSkills:      softSkills,
+			Requirements:    requirements,
+			GrowthPotential: job.GrowthPotential.String,
+			CreatedAt:       job.CreatedAt,
+			UpdatedAt:       job.UpdatedAt,
 		})
 	}
 
@@ -361,8 +390,8 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (*types.JobListResultRes
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.JobListResp{
-			Total: 100,
-			List:  jobs,
+			Total: total,
+			List:  jobProfiles,
 		},
 	}, nil
 }
