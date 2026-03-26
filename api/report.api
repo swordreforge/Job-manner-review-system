@@ -73,7 +73,7 @@ type (
 
     GenerateReportStreamReq {
         StudentId   int64  `json:"studentId,validate:"required,gt=0"`
-        Track       string `json:"track,validate:"required,oneof=full|quick|gap"`
+        Track       string `json:"track,validate:"required,oneof=full quick gap"`
         TargetJobId int64  `json:"targetJobId,optional,validate:"omitempty,gt=0"`
     }
 
@@ -87,14 +87,14 @@ type (
         Id      int64  `json:"id,validate:"required,gt=0"`
         Title   string `json:"title,optional,validate:"omitempty,max=200"`
         Content string `json:"content,optional,validate:"omitempty,max=10000"`
-        Status  string `json:"status,optional,validate:"omitempty,oneof=draft|completed|failed"`
+        Status  string `json:"status,optional,validate:"omitempty,oneof=draft completed failed"`
     }
 
     ReportListReq {
         Page      int    `form:"page,default=1,validate:"omitempty,min=1"`
         PageSize  int    `form:"pageSize,default=10,validate:"omitempty,min=1,max=100"`
         StudentId int64  `form:"studentId,optional,validate:"omitempty,gt=0"`
-        Status    string `form:"status,optional,validate:"omitempty,oneof=draft|completed|failed"`
+        Status    string `form:"status,optional,validate:"omitempty,oneof=draft completed failed"`
     }
 
     ReportListResp {
@@ -116,7 +116,7 @@ type (
 
     ExportReq {
         ReportId int64  `json:"reportId,validate:"required,gt=0"`
-        Format   string `json:"format,validate:"required,oneof=pdf|docx|json"`
+        Format   string `json:"format,validate:"required,oneof=pdf docx json"`
     }
 
     ExportResp {
@@ -128,7 +128,7 @@ type (
 
     PolishReq {
         ReportId int64  `json:"reportId,validate:"required,gt=0"`
-        Level    string `json:"level,validate:"required,oneof=light|normal|thorough"`
+        Level    string `json:"level,validate:"required,oneof=light normal thorough"`
     }
 )
 

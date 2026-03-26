@@ -31,7 +31,7 @@ type (
 
     RelatedJobsReq {
         JobId   int64  `path:"id"`
-        Type    string `path:"type,options=[promotion|transfer|related]"`
+        Type    string `path:"type,options=promotion transfer related"`
     }
 
     TransferPathsResp {

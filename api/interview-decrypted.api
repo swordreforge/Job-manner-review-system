@@ -2,7 +2,7 @@ syntax = "v1"
 
 type (
     StartInterviewReq {
-        Mode string `json:"mode,optional,validate:"omitempty,oneof=practice|assessment"`
+        Mode string `json:"mode,optional,validate:"omitempty,oneof=practice assessment"`
     }
 
     InterviewResp {
