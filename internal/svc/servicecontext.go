@@ -22,6 +22,7 @@ type ServiceContext struct {
 	Redis      *redis.Redis
 	DB         sqlx.SqlConn
 	AIProvider ai.AIProvider
+	AITimeout  time.Duration
 }
 
 func NewServiceContext(c *config.Config) *ServiceContext {
@@ -41,6 +42,7 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		Redis:      redisClient,
 		DB:         mysqlConn,
 		AIProvider: aiProvider,
+		AITimeout:  time.Duration(c.AI.Timeout) * time.Second,
 	}
 }
 

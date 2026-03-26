@@ -39,52 +39,52 @@ func RegisterJobHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/jobs",
+				Path:    "/api/v1/jobs",
 				Handler: createJobHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
-				Path:    "/jobs",
+				Path:    "/api/v1/jobs",
 				Handler: updateJobHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs/:id",
+				Path:    "/api/v1/jobs/:id",
 				Handler: getJobHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodDelete,
-				Path:    "/jobs/:id",
+				Path:    "/api/v1/jobs/:id",
 				Handler: deleteJobHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs",
+				Path:    "/api/v1/jobs",
 				Handler: listJobsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/jobs/generate",
+				Path:    "/api/v1/jobs/generate",
 				Handler: generateJobProfileHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs/:id/promotion-path",
+				Path:    "/api/v1/jobs/:id/promotion-path",
 				Handler: getPromotionPathHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs/:id/transfer-paths",
+				Path:    "/api/v1/jobs/:id/transfer-paths",
 				Handler: getTransferPathsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs/:id/all-paths",
+				Path:    "/api/v1/jobs/:id/all-paths",
 				Handler: getAllPathsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/jobs/:id/related",
+				Path:    "/api/v1/jobs/:id/related",
 				Handler: getRelatedJobsHandler(serverCtx),
 			},
 		},
@@ -100,42 +100,42 @@ func RegisterStudentHandlers(server *rest.Server, serverCtx *svc.ServiceContext)
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/students",
+				Path:    "/api/v1/students",
 				Handler: createStudentHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
-				Path:    "/students",
+				Path:    "/api/v1/students",
 				Handler: updateStudentHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/students/:id",
+				Path:    "/api/v1/students/:id",
 				Handler: getStudentHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodDelete,
-				Path:    "/students/:id",
+				Path:    "/api/v1/students/:id",
 				Handler: deleteStudentHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/students",
+				Path:    "/api/v1/students",
 				Handler: listStudentsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/students/resume",
+				Path:    "/api/v1/students/resume",
 				Handler: uploadResumeHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/students/generate",
+				Path:    "/api/v1/students/generate",
 				Handler: generateProfileHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/students/me",
+				Path:    "/api/v1/students/me",
 				Handler: getMyProfileHandler(serverCtx),
 			},
 		},
@@ -147,22 +147,22 @@ func RegisterMatchHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/match",
+				Path:    "/api/v1/match",
 				Handler: matchStudentJobHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/match/jobs",
+				Path:    "/api/v1/match/jobs",
 				Handler: matchStudentJobsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/match/:studentId/:jobId/score",
+				Path:    "/api/v1/match/:studentId/:jobId/score",
 				Handler: getMatchScoreHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/match/:studentId/recommend",
+				Path:    "/api/v1/match/:studentId/recommend",
 				Handler: getRecommendedJobsHandler(serverCtx),
 			},
 		},
@@ -174,47 +174,47 @@ func RegisterReportHandlers(server *rest.Server, serverCtx *svc.ServiceContext) 
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/reports/generate",
+				Path:    "/api/v1/reports/generate",
 				Handler: generateReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/reports/:id",
+				Path:    "/api/v1/reports/:id",
 				Handler: getReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
-				Path:    "/reports",
+				Path:    "/api/v1/reports",
 				Handler: updateReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodDelete,
-				Path:    "/reports/:id",
+				Path:    "/api/v1/reports/:id",
 				Handler: deleteReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/reports",
+				Path:    "/api/v1/reports",
 				Handler: listReportsHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/reports/export",
+				Path:    "/api/v1/reports/export",
 				Handler: exportReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/reports/polish",
+				Path:    "/api/v1/reports/polish",
 				Handler: polishReportHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/reports/:id/completeness",
+				Path:    "/api/v1/reports/:id/completeness",
 				Handler: checkReportCompletenessHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/reports/me",
+				Path:    "/api/v1/reports/me",
 				Handler: getMyReportsHandler(serverCtx),
 			},
 		},
@@ -226,22 +226,22 @@ func RegisterUserHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		[]rest.Route{
 			{
 				Method:  http.MethodPost,
-				Path:    "/user/register",
+				Path:    "/api/v1/user/register",
 				Handler: registerHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPost,
-				Path:    "/user/login",
+				Path:    "/api/v1/user/login",
 				Handler: loginHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodGet,
-				Path:    "/user/info",
+				Path:    "/api/v1/user/info",
 				Handler: getUserInfoHandler(serverCtx),
 			},
 			{
 				Method:  http.MethodPut,
-				Path:    "/user/info",
+				Path:    "/api/v1/user/info",
 				Handler: updateUserInfoHandler(serverCtx),
 			},
 		},

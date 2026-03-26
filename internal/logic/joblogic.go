@@ -240,12 +240,15 @@ func (l *GenerateJobProfileLogic) GenerateJobProfile(req *types.JobGenerateReq) 
 		prompt += "\n\nAdditional information:\n" + req.RawData
 	}
 
-	content, err := l.svcCtx.AIProvider.GenerateJobProfile(l.ctx, prompt)
+	aiCtx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	content, err := l.svcCtx.AIProvider.GenerateJobProfile(aiCtx, prompt)
 	if err != nil {
 		logx.Errorf("GenerateJobProfile failed: %v", err)
 		return &types.JobResp{
 			Code: errors.CodeInternalError,
-			Msg:  "failed to generate job profile",
+			Msg:  "failed to generate job profile: " + err.Error(),
 		}, nil
 	}
 

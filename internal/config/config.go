@@ -40,17 +40,6 @@ type Config struct {
 		Timeout  int
 	}
 
-	Prometheus struct {
-		Host string
-		Port int
-	}
-
-	CORS struct {
-		Origins []string
-		Methods []string
-		Headers []string
-	}
-
 	RateLimit struct {
 		TokensPerSecond int
 		Burst           int

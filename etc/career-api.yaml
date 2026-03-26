@@ -2,6 +2,7 @@ Name: career-api
 Host: 0.0.0.0
 Port: 8888
 Mode: dev
+Timeout: 120000
 
 Log:
   ServiceName: career-api
@@ -33,11 +34,11 @@ Auth:
   AccessExpire: 86400
 
 AI:
-  Provider: openai
-  ApiKey: ${AI_API_KEY}
-  Model: gpt-4
-  BaseURL: https://api.openai.com/v1
-  Timeout: 30
+  Provider: deepseek
+  ApiKey: sk-a611088669a44d41a0403d5345daa586
+  Model: deepseek-chat
+  BaseURL: https://api.deepseek.com/v1
+  Timeout: 60
 
 Prometheus:
   Host: 0.0.0.0
