@@ -1,0 +1,127 @@
+syntax = "v1"
+
+type (
+    JobProfile {
+        Id              int64   `json:"id"`
+        Name            string  `json:"name"`
+        Description     string  `json:"description"`
+        Company         string  `json:"company"`
+        Industry        string  `json:"industry"`
+        Location        string  `json:"location"`
+        SalaryRange     string  `json:"salaryRange"`
+        Skills          []Skill `json:"skills"`
+        Certificates    []string `json:"certificates"`
+        SoftSkills      SoftSkills `json:"softSkills"`
+        GrowthPotential string  `json:"growthPotential"`
+        Requirements    Requirements `json:"requirements"`
+        CreatedAt       int64   `json:"createdAt"`
+        UpdatedAt       int64   `json:"updatedAt"`
+    }
+
+    Skill {
+        Name     string  `json:"name"`
+        Level    int     `json:"level"`
+        Required bool    `json:"required"`
+    }
+
+    SoftSkills {
+        Innovation     int `json:"innovation"`
+        Learning       int `json:"learning"`
+        Pressure       int `json:"pressure"`
+        Communication  int `json:"communication"`
+        Teamwork       int `json:"teamwork"`
+    }
+
+    Requirements {
+        Education   string `json:"education"`
+        Experience  string `json:"experience"`
+        Internship  string `json:"internship"`
+    }
+
+    CreateJobReq {
+        Name        string  `json:"name,optional" validate:"omitempty,min=2,max=100"`
+        Description string  `json:"description,optional" validate:"omitempty,max=2000"`
+        Company     string  `json:"company,optional" validate:"omitempty,max=200"`
+        Industry    string  `json:"industry,optional" validate:"omitempty,max=100"`
+        Location    string  `json:"location,optional" validate:"omitempty,max=200"`
+        SalaryRange string  `json:"salaryRange,optional" validate:"omitempty,max=100"`
+        Skills      []Skill `json:"skills,optional"`
+        Certificates []string `json:"certificates,optional"`
+        SoftSkills  SoftSkills `json:"softSkills,optional"`
+        Requirements Requirements `json:"requirements,optional"`
+    }
+
+    UpdateJobReq {
+        Id          int64   `json:"id" validate:"required,gt=0"`
+        Name        string  `json:"name,optional" validate:"omitempty,min=2,max=100"`
+        Description string  `json:"description,optional" validate:"omitempty,max=2000"`
+        Company     string  `json:"company,optional" validate:"omitempty,max=200"`
+        Industry    string  `json:"industry,optional" validate:"omitempty,max=100"`
+        Location    string  `json:"location,optional" validate:"omitempty,max=200"`
+        SalaryRange string  `json:"salaryRange,optional" validate:"omitempty,max=100"`
+        Skills      []Skill `json:"skills,optional"`
+        Certificates []string `json:"certificates,optional"`
+        SoftSkills  SoftSkills `json:"softSkills,optional"`
+        Requirements Requirements `json:"requirements,optional"`
+    }
+
+    JobListReq {
+        Page       int    `form:"page" default:"1" validate:"omitempty,min=1"`
+        PageSize   int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
+        Industry   string `form:"industry,optional"`
+        Name       string `form:"name,optional"`
+    }
+
+    JobListResp {
+        Total int64        `json:"total"`
+        List  []JobProfile `json:"list"`
+    }
+
+    JobGenerateReq {
+        PositionName string `json:"positionName" validate:"required,min=2,max=50"`
+        Industry     string `json:"industry,optional" validate:"omitempty,max=100"`
+        RawData      string `json:"rawData,optional" validate:"omitempty,max=5000"`
+    }
+
+    JobResp {
+        Code int         `json:"code"`
+        Msg  string      `json:"msg"`
+        Data *JobProfile `json:"data,optional"`
+    }
+
+    JobListResultResp {
+        Code int          `json:"code"`
+        Msg  string       `json:"msg"`
+        Data *JobListResp `json:"data,optional"`
+    }
+)
+
+@server(
+    prefix: /api/v1
+    group: job
+)
+service career-api {
+    @doc "Create job profile"
+    @handler CreateJob
+    post /jobs (CreateJobReq) returns (JobResp)
+
+    @doc "Update job profile"
+    @handler UpdateJob
+    put /jobs (UpdateJobReq) returns (JobResp)
+
+    @doc "Get job profile by id"
+    @handler GetJob
+    get /jobs/:id returns (JobResp)
+
+    @doc "Delete job profile"
+    @handler DeleteJob
+    delete /jobs/:id returns (JobResp)
+
+    @doc "List job profiles"
+    @handler ListJobs
+    get /jobs (JobListReq) returns (JobListResultResp)
+
+    @doc "Generate job profile via AI"
+    @handler GenerateJobProfile
+    post /jobs/generate (JobGenerateReq) returns (JobResp)
+}

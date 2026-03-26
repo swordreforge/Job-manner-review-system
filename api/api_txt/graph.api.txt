@@ -1,0 +1,77 @@
+syntax = "v1"
+
+import "job.api"
+
+type (
+    JobNode {
+        Id           int64       `json:"id"`
+        Name         string      `json:"name"`
+        Level        int         `json:"level"`
+        Description  string      `json:"description"`
+        Skills       []string    `json:"skills"`
+    }
+
+    PromotionPath {
+        JobId       int64      `json:"jobId"`
+        JobName     string     `json:"jobName"`
+        NextJobs    []JobNode  `json:"nextJobs"`
+    }
+
+    TransferPath {
+        FromJob     JobNode    `json:"fromJob"`
+        ToJob       JobNode    `json:"toJob"`
+        MatchScore  float64   `json:"matchScore"`
+        TransferSkills []string `json:"transferSkills"`
+        LearningPath []string  `json:"learningPath"`
+    }
+
+    JobGraphReq {
+        JobId int64 `path:"id"`
+    }
+
+    RelatedJobsReq {
+        JobId   int64  `path:"id"`
+        Type    string `path:"type,options=promotion transfer related"`
+    }
+
+    TransferPathsResp {
+        Code int            `json:"code"`
+        Msg  string         `json:"msg"`
+        Data []TransferPath `json:"data,optional"`
+    }
+
+    PromotionPathResp {
+        Code int            `json:"code"`
+        Msg  string         `json:"msg"`
+        Data *PromotionPath `json:"data,optional"`
+    }
+
+    AllPathsResp {
+        Code             int            `json:"code"`
+        Msg              string         `json:"msg"`
+        PromotionPaths   []PromotionPath `json:"promotionPaths"`
+        TransferPaths    []TransferPath  `json:"transferPaths"`
+    }
+)
+
+@server(
+    prefix: /api/v1
+    group: graph
+)
+service career-api {
+    @doc "Get promotion path for a job"
+    @handler GetPromotionPath
+    get /jobs/:id/promotion-path (JobGraphReq) returns (PromotionPathResp)
+
+    @doc "Get transfer paths for a job"
+    @handler GetTransferPaths
+    get /jobs/:id/transfer-paths (JobGraphReq) returns (TransferPathsResp)
+
+    @doc "Get all job paths (promotion + transfer)"
+    @handler GetAllPaths
+    get /jobs/:id/all-paths (JobGraphReq) returns (AllPathsResp)
+
+    @doc "Get related jobs"
+    @handler GetRelatedJobs
+    get /jobs/:id/related (RelatedJobsReq) returns (JobListResultResp)
+}

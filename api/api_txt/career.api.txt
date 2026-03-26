@@ -1,0 +1,87 @@
+syntax = "v1"
+
+import (
+	"job.api"
+	"graph.api"
+	"student.api"
+	"match.api"
+	"report.api"
+)
+
+type (
+	HealthResp {
+		Status  string `json:"status"`
+		Version string `json:"version"`
+	}
+	ErrorResp {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+	}
+)
+
+@server (
+	prefix: /api/v1
+)
+service career-api {
+	@doc "Health check"
+	@handler Health
+	get /health returns (HealthResp)
+}
+
+@server (
+	prefix: /api/v1
+	group:  user
+)
+service career-api {
+	@doc "User registration"
+	@handler Register
+	post /user/register (RegisterReq) returns (UserResp)
+
+	@doc "User login"
+	@handler Login
+	post /user/login (LoginReq) returns (LoginResp)
+
+	@doc "Get user info"
+	@handler GetUserInfo
+	get /user/info returns (UserResp)
+
+	@doc "Update user info"
+	@handler UpdateUserInfo
+	put /user/info (UpdateUserReq) returns (UserResp)
+}
+
+type (
+	RegisterReq {
+		Username string `json:"username" validate:"required,min=3,max=20"`
+		Password string `json:"password" validate:"required,min=6,max=20"`
+		Email    string `json:"email" validate:"required,email"`
+		Phone    string `json:"phone,optional" validate:"omitempty,len=11"`
+	}
+	LoginReq {
+		Username string `json:"username" validate:"required"`
+		Password string `json:"password" validate:"required"`
+	}
+	LoginResp {
+		Token   string `json:"token"`
+		Expires int64  `json:"expires"`
+		UserId  int64  `json:"userId"`
+	}
+	UserInfo {
+		Id        int64  `json:"id"`
+		Username  string `json:"username"`
+		Email     string `json:"email"`
+		Phone     string `json:"phone"`
+		Role      string `json:"role"`
+		CreatedAt int64  `json:"createdAt"`
+	}
+	UpdateUserReq {
+		Email string `json:"email,optional" validate:"omitempty,email"`
+		Phone string `json:"phone,optional" validate:"omitempty,len=11"`
+	}
+	UserResp {
+		Code int       `json:"code"`
+		Msg  string    `json:"msg"`
+		Data *UserInfo `json:"data,optional"`
+	}
+)
+
