@@ -46,10 +46,10 @@ type (
     }
 
     CreateStudentReq {
-        Name            string          `json:"name,optional"`
-        Education       string          `json:"education,optional"`
-        Major           string          `json:"major,optional"`
-        GraduationYear  int             `json:"graduationYear,optional"`
+        Name            string          `json:"name,optional,validate:"omitempty,min=2,max=50"`
+        Education       string          `json:"education,optional,validate:"omitempty,oneof=high_school bachelor master phd"`
+        Major           string          `json:"major,optional,validate:"omitempty,min=2,max=100"`
+        GraduationYear  int             `json:"graduationYear,optional,validate:"omitempty,min=2020,max=2030"`
         Skills          []StudentSkill  `json:"skills,optional"`
         Certificates    []StudentCert   `json:"certificates,optional"`
         SoftSkills      SoftSkills      `json:"softSkills,optional"`
@@ -58,11 +58,11 @@ type (
     }
 
     UpdateStudentReq {
-        Id              int64           `json:"id"`
-        Name            string          `json:"name,optional"`
-        Education       string          `json:"education,optional"`
-        Major           string          `json:"major,optional"`
-        GraduationYear  int             `json:"graduationYear,optional"`
+        Id              int64           `json:"id,validate:"required,gt=0"`
+        Name            string          `json:"name,optional,validate:"omitempty,min=2,max=50"`
+        Education       string          `json:"education,optional,validate:"omitempty,oneof=high_school bachelor master phd"`
+        Major           string          `json:"major,optional,validate:"omitempty,min=2,max=100"`
+        GraduationYear  int             `json:"graduationYear,optional,validate:"omitempty,min=2020,max=2030"`
         Skills          []StudentSkill  `json:"skills,optional"`
         Certificates    []StudentCert   `json:"certificates,optional"`
         SoftSkills      SoftSkills      `json:"softSkills,optional"`
@@ -83,8 +83,8 @@ type (
     }
 
     ResumeUploadReq {
-        FileContent string `json:"fileContent"`
-        FileName   string `json:"fileName"`
+        FileContent string `json:"fileContent,validate:"required"`
+        FileName   string `json:"fileName,validate:"required,min=1,max=255"`
     }
 
     StudentResp {
@@ -100,7 +100,7 @@ type (
     }
 
     GenerateProfileReq {
-        ResumeContent string `json:"resumeContent"`
+        ResumeContent string `json:"resumeContent,validate:"required,min=10"`
     }
 )
 

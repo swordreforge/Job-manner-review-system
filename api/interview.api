@@ -2,7 +2,7 @@ syntax = "v1"
 
 type (
     StartInterviewReq {
-        Mode string `json:"mode,optional"`
+        Mode string `json:"mode,optional,validate:"omitempty,oneof=practice|assessment"`
     }
 
     InterviewResp {
@@ -19,7 +19,7 @@ type (
     }
 
     InterviewChatStreamReq {
-        Message string `json:"message"`
+        Message string `json:"message,validate:"required,min=1,max=500"`
     }
 
     InterviewHistoryResp {

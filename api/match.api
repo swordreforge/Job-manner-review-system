@@ -21,16 +21,16 @@ type (
     }
 
     MatchReq {
-        StudentId int64  `json:"studentId"`
-        JobId     int64  `json:"jobId"`
+        StudentId int64  `json:"studentId,validate:"required,gt=0"`
+        JobId     int64  `json:"jobId,validate:"required,gt=0"`
     }
 
     MatchListReq {
-        StudentId   int64   `json:"studentId"`
-        Page        int     `form:"page,default=1"`
-        PageSize    int     `form:"pageSize,default=10"`
-        MinScore    float64 `form:"minScore,optional"`
-        Industry    string  `form:"industry,optional"`
+        StudentId   int64   `json:"studentId,validate:"required,gt=0"`
+        Page        int     `form:"page,default=1,validate:"omitempty,min=1"`
+        PageSize    int     `form:"pageSize,default=10,validate:"omitempty,min=1,max=100"`
+        MinScore    float64 `form:"minScore,optional,validate:"omitempty,min=0,max=100"`
+        Industry    string  `form:"industry,optional,validate:"omitempty,max=100"`
     }
 
     MatchResultResp {
