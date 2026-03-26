@@ -59,7 +59,7 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 		UpdatedAt:       now,
 	}
 
-	result, err := l.svcCtx.JobModel.Insert(l.ctx, job)
+	result, err := l.svcCtx.JobModel.InsertWithTimestamp(l.ctx, job)
 	if err != nil {
 		logx.Errorf("Insert job failed: %v", err)
 		return &types.JobResp{

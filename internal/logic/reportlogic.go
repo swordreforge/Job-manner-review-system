@@ -139,7 +139,7 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 		UpdatedAt:     now,
 	}
 
-	result, err := l.svcCtx.ReportModel.Insert(l.ctx, report)
+	result, err := l.svcCtx.ReportModel.InsertWithTimestamp(l.ctx, report)
 	if err != nil {
 		logx.Errorf("Insert report failed: %v", err)
 		return &types.ReportResp{

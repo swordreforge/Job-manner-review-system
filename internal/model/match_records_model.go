@@ -1,6 +1,13 @@
 package model
 
-import "github.com/zeromicro/go-zero/core/stores/sqlx"
+import (
+	"context"
+	"database/sql"
+	"fmt"
+	"time"
+
+	"github.com/zeromicro/go-zero/core/stores/sqlx"
+)
 
 var _ MatchRecordsModel = (*customMatchRecordsModel)(nil)
 
@@ -10,6 +17,7 @@ type (
 	MatchRecordsModel interface {
 		matchRecordsModel
 		withSession(session sqlx.Session) MatchRecordsModel
+		InsertWithTimestamp(ctx context.Context, data *MatchRecords) (sql.Result, error)
 	}
 
 	customMatchRecordsModel struct {
@@ -26,4 +34,16 @@ func NewMatchRecordsModel(conn sqlx.SqlConn) MatchRecordsModel {
 
 func (m *customMatchRecordsModel) withSession(session sqlx.Session) MatchRecordsModel {
 	return NewMatchRecordsModel(sqlx.NewSqlConnFromSession(session))
+}
+
+// InsertWithTimestamp 插入匹配记录，包含时间戳
+func (m *customMatchRecordsModel) InsertWithTimestamp(ctx context.Context, data *MatchRecords) (sql.Result, error) {
+	now := time.Now().Unix()
+	if data.CreatedAt == 0 {
+		data.CreatedAt = now
+	}
+
+	query := fmt.Sprintf("insert into %s (`student_id`, `job_id`, `overall_score`, `skills_match`, `certs_match`, `soft_skills_match`, `experience_match`, `gap_analysis`, `created_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
+	ret, err := m.conn.ExecCtx(ctx, query, data.StudentId, data.JobId, data.OverallScore, data.SkillsMatch, data.CertsMatch, data.SoftSkillsMatch, data.ExperienceMatch, data.GapAnalysis, data.CreatedAt)
+	return ret, err
 }
