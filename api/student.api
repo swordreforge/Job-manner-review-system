@@ -1,0 +1,143 @@
+syntax = "v1"
+
+type (
+    StudentProfile {
+        Id              int64          `json:"id"`
+        UserId          int64          `json:"userId"`
+        Name            string         `json:"name"`
+        Education       string         `json:"education"`
+        Major           string         `json:"major"`
+        GraduationYear  int            `json:"graduationYear"`
+        Skills          []StudentSkill `json:"skills"`
+        Certificates    []StudentCert  `json:"certificates"`
+        SoftSkills      SoftSkills     `json:"softSkills"`
+        Internship      []Internship   `json:"internship"`
+        Projects        []Project      `json:"projects"`
+        Completeness    float64        `json:"completeness"`
+        Competitiveness float64        `json:"competitiveness"`
+        CreatedAt       int64          `json:"createdAt"`
+        UpdatedAt       int64          `json:"updatedAt"`
+    }
+
+    StudentSkill {
+        Name     string `json:"name"`
+        Level    int    `json:"level"`
+        Years    int    `json:"years"`
+    }
+
+    StudentCert {
+        Name     string `json:"name"`
+        Level    string `json:"level"`
+        Year     int    `json:"year"`
+    }
+
+    Internship {
+        Company string `json:"company"`
+        Position string `json:"position"`
+        Duration int    `json:"duration"`
+        Description string `json:"description"`
+    }
+
+    Project {
+        Name        string `json:"name"`
+        Role        string `json:"role"`
+        Description string `json:"description"`
+        Technologies []string `json:"technologies"`
+    }
+
+    CreateStudentReq {
+        Name            string          `json:"name,optional"`
+        Education       string          `json:"education,optional"`
+        Major           string          `json:"major,optional"`
+        GraduationYear  int             `json:"graduationYear,optional"`
+        Skills          []StudentSkill  `json:"skills,optional"`
+        Certificates    []StudentCert   `json:"certificates,optional"`
+        SoftSkills      SoftSkills      `json:"softSkills,optional"`
+        Internship      []Internship    `json:"internship,optional"`
+        Projects        []Project       `json:"projects,optional"`
+    }
+
+    UpdateStudentReq {
+        Id              int64           `json:"id"`
+        Name            string          `json:"name,optional"`
+        Education       string          `json:"education,optional"`
+        Major           string          `json:"major,optional"`
+        GraduationYear  int             `json:"graduationYear,optional"`
+        Skills          []StudentSkill  `json:"skills,optional"`
+        Certificates    []StudentCert   `json:"certificates,optional"`
+        SoftSkills      SoftSkills      `json:"softSkills,optional"`
+        Internship      []Internship    `json:"internship,optional"`
+        Projects        []Project       `json:"projects,optional"`
+    }
+
+    StudentListReq {
+        Page       int    `form:"page,default=1"`
+        PageSize   int    `form:"pageSize,default=10"`
+        Major      string `form:"major,optional"`
+        Education  string `form:"education,optional"`
+    }
+
+    StudentListResp {
+        Total int64           `json:"total"`
+        List  []StudentProfile `json:"list"`
+    }
+
+    ResumeUploadReq {
+        FileContent string `json:"fileContent"`
+        FileName   string `json:"fileName"`
+    }
+
+    StudentResp {
+        Code int            `json:"code"`
+        Msg  string         `json:"msg"`
+        Data *StudentProfile `json:"data,optional"`
+    }
+
+    StudentListResultResp {
+        Code int             `json:"code"`
+        Msg  string          `json:"msg"`
+        Data *StudentListResp `json:"data,optional"`
+    }
+
+    GenerateProfileReq {
+        ResumeContent string `json:"resumeContent"`
+    }
+)
+
+@server(
+    prefix: /api/v1
+    group: student
+)
+service career-api {
+    @doc "Create student profile"
+    @handler CreateStudent
+    post /students (CreateStudentReq) returns (StudentResp)
+
+    @doc "Update student profile"
+    @handler UpdateStudent
+    put /students (UpdateStudentReq) returns (StudentResp)
+
+    @doc "Get student profile by id"
+    @handler GetStudent
+    get /students/:id returns (StudentResp)
+
+    @doc "Delete student profile"
+    @handler DeleteStudent
+    delete /students/:id returns (StudentResp)
+
+    @doc "List student profiles"
+    @handler ListStudents
+    get /students (StudentListReq) returns (StudentListResultResp)
+
+    @doc "Upload resume and generate profile via AI"
+    @handler UploadResume
+    post /students/resume (ResumeUploadReq) returns (StudentResp)
+
+    @doc "Generate student capability profile via AI"
+    @handler GenerateProfile
+    post /students/generate (GenerateProfileReq) returns (StudentResp)
+
+    @doc "Get current student profile"
+    @handler GetMyProfile
+    get /students/me returns (StudentResp)
+}

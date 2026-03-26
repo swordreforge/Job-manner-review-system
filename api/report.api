@@ -1,0 +1,170 @@
+syntax = "v1"
+
+type (
+    CareerReport {
+        Id              int64           `json:"id"`
+        StudentId       int64           `json:"studentId"`
+        Title           string          `json:"title"`
+        Overview        ReportOverview  `json:"overview"`
+        MatchAnalysis   MatchAnalysis   `json:"matchAnalysis"`
+        CareerPath      CareerPath      `json:"careerPath"`
+        ActionPlan      ActionPlan      `json:"actionPlan"`
+        Content         string          `json:"content"`
+        Status          string          `json:"status"`
+        CreatedAt       int64           `json:"createdAt"`
+        UpdatedAt       int64           `json:"updatedAt"`
+    }
+
+    ReportOverview {
+        StudentName    string  `json:"studentName"`
+        Education      string  `json:"education"`
+        Major          string  `json:"major"`
+        Completeness   float64 `json:"completeness"`
+        Competitiveness float64 `json:"competitiveness"`
+        TopJobs        []JobRef `json:"topJobs"`
+    }
+
+    JobRef {
+        Id   int64  `json:"id"`
+        Name string `json:"name"`
+    }
+
+    MatchAnalysis {
+        OverallScore  float64 `json:"overallScore"`
+        Strengths     []string `json:"strengths"`
+        Weaknesses    []string `json:"weaknesses"`
+        TopMatches    []MatchResult `json:"topMatches"`
+    }
+
+    CareerPath {
+        TargetJob     JobNode   `json:"targetJob"`
+        IndustryTrend string    `json:"industryTrend"`
+        SocialDemand  string    `json:"socialDemand"`
+        Milestones    []Milestone `json:"milestones"`
+    }
+
+    Milestone {
+        Stage      string `json:"stage"`
+        Year       int    `json:"year"`
+        Position   string `json:"position"`
+        Skills     []string `json:"skills"`
+        Salary     string `json:"salary"`
+    }
+
+    ActionPlan {
+        ShortTerm  []Action `json:"shortTerm"`
+        MidTerm    []Action `json:"midTerm"`
+        LongTerm   []Action `json:"longTerm"`
+    }
+
+    Action {
+        Period     string   `json:"period"`
+        Task       string   `json:"task"`
+        Details    string   `json:"details"`
+        Timeline   string   `json:"timeline"`
+        Resources  []string `json:"resources"`
+    }
+
+    GenerateReportReq {
+        StudentId int64   `json:"studentId"`
+        TargetJobId int64 `json:"targetJobId,optional"`
+        Options   ReportOptions `json:"options,optional"`
+    }
+
+    ReportOptions {
+        IncludeGapAnalysis bool `json:"includeGapAnalysis"`
+        IncludeActionPlan  bool `json:"includeActionPlan"`
+        DetailedLevel      int  `json:"detailedLevel"`
+    }
+
+    UpdateReportReq {
+        Id      int64  `json:"id"`
+        Title   string `json:"title,optional"`
+        Content string `json:"content,optional"`
+        Status  string `json:"status,optional"`
+    }
+
+    ReportListReq {
+        Page      int    `form:"page,default=1"`
+        PageSize  int    `form:"pageSize,default=10"`
+        StudentId int64  `form:"studentId,optional"`
+        Status    string `form:"status,optional"`
+    }
+
+    ReportListResp {
+        Total int64         `json:"total"`
+        List  []CareerReport `json:"list"`
+    }
+
+    ReportResp {
+        Code int          `json:"code"`
+        Msg  string       `json:"msg"`
+        Data *CareerReport `json:"data,optional"`
+    }
+
+    ReportListResultResp {
+        Code int            `json:"code"`
+        Msg  string         `json:"msg"`
+        Data *ReportListResp `json:"data,optional"`
+    }
+
+    ExportReq {
+        ReportId int64  `json:"reportId"`
+        Format   string `json:"format,options=[pdf|docx|json]"`
+    }
+
+    ExportResp {
+        Code    int    `json:"code"`
+        Msg     string `json:"msg"`
+        Url     string `json:"url"`
+        Content string `json:"content,optional"`
+    }
+
+    PolishReq {
+        ReportId int64  `json:"reportId"`
+        Level    string `json:"level,options=[light|normal|thorough]"`
+    }
+)
+
+@server(
+    prefix: /api/v1
+    group: report
+    timeout: 60s
+)
+service career-api {
+    @doc "Generate career development report"
+    @handler GenerateReport
+    post /reports/generate (GenerateReportReq) returns (ReportResp)
+
+    @doc "Get report by id"
+    @handler GetReport
+    get /reports/:id returns (ReportResp)
+
+    @doc "Update report"
+    @handler UpdateReport
+    put /reports (UpdateReportReq) returns (ReportResp)
+
+    @doc "Delete report"
+    @handler DeleteReport
+    delete /reports/:id returns (ReportResp)
+
+    @doc "List reports"
+    @handler ListReports
+    get /reports (ReportListReq) returns (ReportListResultResp)
+
+    @doc "Export report"
+    @handler ExportReport
+    post /reports/export (ExportReq) returns (ExportResp)
+
+    @doc "Polish and optimize report"
+    @handler PolishReport
+    post /reports/polish (PolishReq) returns (ReportResp)
+
+    @doc "Check report completeness"
+    @handler CheckReportCompleteness
+    get /reports/:id/completeness returns (ReportResp)
+
+    @doc "Get my reports"
+    @handler GetMyReports
+    get /reports/me returns (ReportListResultResp)
+}

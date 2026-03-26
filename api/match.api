@@ -1,0 +1,77 @@
+syntax = "v1"
+
+type (
+    MatchResult {
+        JobId           int64   `json:"jobId"`
+        JobName         string  `json:"jobName"`
+        OverallScore    float64 `json:"overallScore"`
+        SkillsMatch     float64 `json:"skillsMatch"`
+        CertsMatch      float64 `json:"certsMatch"`
+        SoftSkillsMatch float64 `json:"softSkillsMatch"`
+        ExperienceMatch float64 `json:"experienceMatch"`
+        GapAnalysis     []Gap   `json:"gapAnalysis"`
+    }
+
+    Gap {
+        Attribute  string `json:"attribute"`
+        Required   int    `json:"required"`
+        Current    int    `json:"current"`
+        GapPercent float64 `json:"gapPercent"`
+        Suggestion string `json:"suggestion"`
+    }
+
+    MatchReq {
+        StudentId int64  `json:"studentId"`
+        JobId     int64  `json:"jobId"`
+    }
+
+    MatchListReq {
+        StudentId   int64   `json:"studentId"`
+        Page        int     `form:"page,default=1"`
+        PageSize    int     `form:"pageSize,default=10"`
+        MinScore    float64 `form:"minScore,optional"`
+        Industry    string  `form:"industry,optional"`
+    }
+
+    MatchResultResp {
+        Code int         `json:"code"`
+        Msg  string      `json:"msg"`
+        Data *MatchResult `json:"data,optional"`
+    }
+
+    MatchListResp {
+        Code int          `json:"code"`
+        Msg  string       `json:"msg"`
+        Total int64       `json:"total"`
+        List  []MatchResult `json:"list"`
+    }
+
+    MatchScoreResp {
+        Code int     `json:"code"`
+        Msg  string  `json:"msg"`
+        Score float64 `json:"score"`
+    }
+)
+
+@server(
+    prefix: /api/v1
+    group: match
+    timeout: 30s
+)
+service career-api {
+    @doc "Match student to single job"
+    @handler MatchStudentJob
+    post /match (MatchReq) returns (MatchResultResp)
+
+    @doc "Match student to multiple jobs"
+    @handler MatchStudentJobs
+    post /match/jobs (MatchListReq) returns (MatchListResp)
+
+    @doc "Get match score for a job"
+    @handler GetMatchScore
+    get /match/:studentId/:jobId/score returns (MatchScoreResp)
+
+    @doc "Get recommended jobs for student"
+    @handler GetRecommendedJobs
+    get /match/:studentId/recommend (MatchListReq) returns (MatchListResp)
+}
