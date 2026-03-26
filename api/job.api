@@ -39,12 +39,12 @@ type (
     }
 
     CreateJobReq {
-        Name        string  `json:"name,optional,validate:"omitempty,min=2,max=100"`
-        Description string  `json:"description,optional,validate:"omitempty,max=2000"`
-        Company     string  `json:"company,optional,validate:"omitempty,max=200"`
-        Industry    string  `json:"industry,optional,validate:"omitempty,max=100"`
-        Location    string  `json:"location,optional,validate:"omitempty,max=200"`
-        SalaryRange string  `json:"salaryRange,optional,validate:"omitempty,max=100"`
+        Name        string  `json:"name,optional" validate:"omitempty,min=2,max=100"`
+        Description string  `json:"description,optional" validate:"omitempty,max=2000"`
+        Company     string  `json:"company,optional" validate:"omitempty,max=200"`
+        Industry    string  `json:"industry,optional" validate:"omitempty,max=100"`
+        Location    string  `json:"location,optional" validate:"omitempty,max=200"`
+        SalaryRange string  `json:"salaryRange,optional" validate:"omitempty,max=100"`
         Skills      []Skill `json:"skills,optional"`
         Certificates []string `json:"certificates,optional"`
         SoftSkills  SoftSkills `json:"softSkills,optional"`
@@ -52,13 +52,13 @@ type (
     }
 
     UpdateJobReq {
-        Id          int64   `json:"id,validate:"required,gt=0"`
-        Name        string  `json:"name,optional,validate:"omitempty,min=2,max=100"`
-        Description string  `json:"description,optional,validate:"omitempty,max=2000"`
-        Company     string  `json:"company,optional,validate:"omitempty,max=200"`
-        Industry    string  `json:"industry,optional,validate:"omitempty,max=100"`
-        Location    string  `json:"location,optional,validate:"omitempty,max=200"`
-        SalaryRange string  `json:"salaryRange,optional,validate:"omitempty,max=100"`
+        Id          int64   `json:"id" validate:"required,gt=0"`
+        Name        string  `json:"name,optional" validate:"omitempty,min=2,max=100"`
+        Description string  `json:"description,optional" validate:"omitempty,max=2000"`
+        Company     string  `json:"company,optional" validate:"omitempty,max=200"`
+        Industry    string  `json:"industry,optional" validate:"omitempty,max=100"`
+        Location    string  `json:"location,optional" validate:"omitempty,max=200"`
+        SalaryRange string  `json:"salaryRange,optional" validate:"omitempty,max=100"`
         Skills      []Skill `json:"skills,optional"`
         Certificates []string `json:"certificates,optional"`
         SoftSkills  SoftSkills `json:"softSkills,optional"`
@@ -66,8 +66,8 @@ type (
     }
 
     JobListReq {
-        Page       int    `form:"page,default=1,validate:"omitempty,min=1"`
-        PageSize   int    `form:"pageSize,default=10,validate:"omitempty,min=1,max=100"`
+        Page       int    `form:"page" default:"1" validate:"omitempty,min=1"`
+        PageSize   int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
         Industry   string `form:"industry,optional"`
         Name       string `form:"name,optional"`
     }
@@ -78,9 +78,9 @@ type (
     }
 
     JobGenerateReq {
-        PositionName string `json:"positionName,validate:"required,min=2,max=50"`
-        Industry     string `json:"industry,optional,validate:"omitempty,max=100"`
-        RawData      string `json:"rawData,optional,validate:"omitempty,max=5000"`
+        PositionName string `json:"positionName" validate:"required,min=2,max=50"`
+        Industry     string `json:"industry,optional" validate:"omitempty,max=100"`
+        RawData      string `json:"rawData,optional" validate:"omitempty,max=5000"`
     }
 
     JobResp {

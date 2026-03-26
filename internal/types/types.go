@@ -134,8 +134,8 @@ type JobGraphReq struct {
 }
 
 type JobListReq struct {
-	Page     int    `form:"page,default=1 validate:"omitempty,min=1"`
-	PageSize int    `form:"pageSize,default=10 validate:"omitempty,min=1,max=100"`
+	Page     int    `form:"page" default:"1" validate:"omitempty,min=1"`
+	PageSize int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
 	Industry string `form:"industry,optional"`
 	Name     string `form:"name,optional"`
 }
@@ -207,10 +207,10 @@ type MatchAnalysis struct {
 
 type MatchListReq struct {
 	StudentId int64   `json:"studentId" validate:"required,gt=0"`
-	Page      int     `form:"page,default=1 validate:"omitempty,min=1"`
-	PageSize  int     `form:"pageSize,default=10 validate:"omitempty,min=1,max=100"`
-	MinScore  float64 `form:"minScore,optional validate:"omitempty,min=0,max=100"`
-	Industry  string  `form:"industry,optional validate:"omitempty,max=100"`
+	Page      int     `form:"page" default:"1" validate:"omitempty,min=1"`
+	PageSize  int     `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
+	MinScore  float64 `form:"minScore,optional" validate:"omitempty,min=0,max=100"`
+	Industry  string  `form:"industry,optional" validate:"omitempty,max=100"`
 }
 
 type MatchListResp struct {
