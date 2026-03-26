@@ -15,14 +15,21 @@ import (
 	"career-api/common/errors"
 	ai "career-api/common/pkg"
 	"career-api/internal/config"
+	"career-api/internal/model"
 )
 
 type ServiceContext struct {
-	Config     *config.Config
-	Redis      *redis.Redis
-	DB         sqlx.SqlConn
-	AIProvider ai.AIProvider
-	AITimeout  time.Duration
+	Config             *config.Config
+	Redis              *redis.Redis
+	DB                 sqlx.SqlConn
+	AIProvider         ai.AIProvider
+	AITimeout          time.Duration
+	UserModel          model.UsersModel
+	JobModel           model.JobsModel
+	StudentModel       model.StudentsModel
+	ReportModel        model.CareerReportsModel
+	MatchModel         model.MatchRecordsModel
+	PromotionPathModel model.JobPromotionPathsModel
 }
 
 func NewServiceContext(c *config.Config) *ServiceContext {
@@ -38,11 +45,17 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 	)
 
 	return &ServiceContext{
-		Config:     c,
-		Redis:      redisClient,
-		DB:         mysqlConn,
-		AIProvider: aiProvider,
-		AITimeout:  time.Duration(c.AI.Timeout) * time.Second,
+		Config:             c,
+		Redis:              redisClient,
+		DB:                 mysqlConn,
+		AIProvider:         aiProvider,
+		AITimeout:          time.Duration(c.AI.Timeout) * time.Second,
+		UserModel:          model.NewUsersModel(mysqlConn),
+		JobModel:           model.NewJobsModel(mysqlConn),
+		StudentModel:       model.NewStudentsModel(mysqlConn),
+		ReportModel:        model.NewCareerReportsModel(mysqlConn),
+		MatchModel:         model.NewMatchRecordsModel(mysqlConn),
+		PromotionPathModel: model.NewJobPromotionPathsModel(mysqlConn),
 	}
 }
 
