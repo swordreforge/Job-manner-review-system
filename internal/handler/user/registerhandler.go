@@ -26,6 +26,12 @@ func RegisterHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
+			if resp == nil {
+				resp = &types.UserResp{
+					Code: 500,
+					Msg:  "internal error: resp is nil",
+				}
+			}
 			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}

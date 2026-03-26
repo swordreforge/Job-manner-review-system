@@ -28,6 +28,8 @@ func NewRegisterLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Register
 }
 
 func (l *RegisterLogic) Register(req *types.RegisterReq) (*types.UserResp, error) {
+	logx.Infof("Register called with username: %s", req.Username)
+
 	if req.Username == "" || req.Password == "" {
 		return &types.UserResp{
 			Code: errors.CodeInvalidParams,

@@ -5,11 +5,14 @@ package user
 
 import (
 	"context"
-
-	"career-api/internal/svc"
-	"career-api/internal/types"
+	stderrors "errors"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
+
+	"career-api/internal/pkg"
+	"career-api/internal/svc"
+	"career-api/internal/types"
 )
 
 type LoginLogic struct {
@@ -28,7 +31,42 @@ func NewLoginLogic(ctx context.Context, svcCtx *svc.ServiceContext) *LoginLogic 
 }
 
 func (l *LoginLogic) Login(req *types.LoginReq) (resp *types.LoginResp, err error) {
-	// todo: add your logic here and delete this line
+	if req.Username == "" || req.Password == "" {
+		return nil, stderrors.New("username and password are required")
+	}
 
-	return
+	// 从数据库查找用户
+	user, err := l.svcCtx.UserModel.FindOneByUsername(l.ctx, req.Username)
+	if err != nil {
+		logx.Errorf("FindOneByUsername failed: %v", err)
+		return nil, stderrors.New("invalid username or password")
+	}
+
+	// 验证密码
+	if !pkg.CheckPassword(req.Password, user.Password) {
+		return nil, stderrors.New("invalid username or password")
+	}
+
+	// 生成JWT token
+	tokenString, err := pkg.GenerateToken(
+		user.Id,
+		user.Username,
+		user.Role,
+		l.svcCtx.Config.Auth.AccessSecret,
+		l.svcCtx.Config.Auth.AccessExpire,
+	)
+	if err != nil {
+		logx.Errorf("GenerateToken failed: %v", err)
+		return nil, err
+	}
+
+	expires := time.Now().Unix() + l.svcCtx.Config.Auth.AccessExpire
+
+	logx.Infof("User logged in: %s (id: %d)", user.Username, user.Id)
+
+	return &types.LoginResp{
+		Token:   tokenString,
+		Expires: expires,
+		UserId:  user.Id,
+	}, nil
 }

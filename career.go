@@ -13,6 +13,7 @@ import (
 
 	"career-api/internal/config"
 	"career-api/internal/handler"
+	"career-api/internal/middleware"
 	"career-api/internal/svc"
 )
 
@@ -34,6 +35,9 @@ func main() {
 
 	ctx := svc.NewServiceContext(&c)
 	handler.RegisterHandlers(server, ctx)
+
+	// 应用认证中间件
+	server.Use(middleware.NewAuthMiddleware(ctx.Config.Auth.AccessSecret).Handle)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()
