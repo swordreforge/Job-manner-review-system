@@ -1,6 +1,6 @@
 Name: career-api
 Host: 0.0.0.0
-Port: 8888
+Port: 8088
 Mode: dev
 Timeout: 120000
 
@@ -47,6 +47,7 @@ Prometheus:
 CORS:
   Origins:
     - http://localhost:3000
+    - http://localhost:5173
     - http://localhost:8080
   Methods:
     - GET
