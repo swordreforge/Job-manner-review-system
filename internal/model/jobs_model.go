@@ -17,7 +17,6 @@ type (
 	JobsModel interface {
 		jobsModel
 		withSession(session sqlx.Session) JobsModel
-		InsertWithTimestamp(ctx context.Context, data *Jobs) (sql.Result, error)
 	}
 
 	customJobsModel struct {
@@ -36,8 +35,9 @@ func (m *customJobsModel) withSession(session sqlx.Session) JobsModel {
 	return NewJobsModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// InsertWithTimestamp 插入职位记录，包含时间戳
-func (m *customJobsModel) InsertWithTimestamp(ctx context.Context, data *Jobs) (sql.Result, error) {
+// Insert 插入职位记录，自动设置时间戳
+// 重写生成的Insert方法，自动设置created_at和updated_at
+func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
 		data.CreatedAt = now

@@ -42,7 +42,7 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 	softSkillsJSON, _ := json.Marshal(req.SoftSkills)
 	requirementsJSON, _ := json.Marshal(req.Requirements)
 
-	now := time.Now().Unix()
+	// 创建职位（时间戳由Model的Insert方法自动设置）
 	job := &model.Jobs{
 		Name:            req.Name,
 		Description:     sql.NullString{String: req.Description, Valid: req.Description != ""},
@@ -55,11 +55,9 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 		SoftSkills:      sql.NullString{String: string(softSkillsJSON), Valid: true},
 		Requirements:    sql.NullString{String: string(requirementsJSON), Valid: true},
 		GrowthPotential: sql.NullString{String: "", Valid: false},
-		CreatedAt:       now,
-		UpdatedAt:       now,
 	}
 
-	result, err := l.svcCtx.JobModel.InsertWithTimestamp(l.ctx, job)
+	result, err := l.svcCtx.JobModel.Insert(l.ctx, job)
 	if err != nil {
 		logx.Errorf("Insert job failed: %v", err)
 		return &types.JobResp{
@@ -74,6 +72,16 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 		return &types.JobResp{
 			Code: errors.CodeInternalError,
 			Msg:  "failed to get job id",
+		}, nil
+	}
+
+	// 查询职位以获取完整数据（包括created_at和updated_at）
+	jobInfo, err := l.svcCtx.JobModel.FindOne(l.ctx, jobId)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.JobResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get job info",
 		}, nil
 	}
 
@@ -94,8 +102,8 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (*types.JobResp, err
 			Certificates: req.Certificates,
 			SoftSkills:   req.SoftSkills,
 			Requirements: req.Requirements,
-			CreatedAt:    now,
-			UpdatedAt:    now,
+			CreatedAt:    jobInfo.CreatedAt,
+			UpdatedAt:    jobInfo.UpdatedAt,
 		},
 	}, nil
 }

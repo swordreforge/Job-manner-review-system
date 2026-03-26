@@ -85,8 +85,6 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 	}
 
 	// 构建报告数据
-	now := time.Now().Unix()
-
 	// 序列化各个部分
 	overview := &types.ReportOverview{
 		StudentName:     student.Name,
@@ -124,7 +122,7 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 	}
 	actionPlanJSON, _ := json.Marshal(actionPlan)
 
-	// 保存报告到数据库
+	// 保存报告到数据库（时间戳由Model的Insert方法自动设置）
 	report := &model.CareerReports{
 		StudentId:     req.StudentId,
 		TargetJobId:   sql.NullInt64{Int64: req.TargetJobId, Valid: req.TargetJobId > 0},
@@ -135,11 +133,9 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 		CareerPath:    sql.NullString{String: string(careerPathJSON), Valid: true},
 		ActionPlan:    sql.NullString{String: string(actionPlanJSON), Valid: true},
 		Status:        "generated",
-		CreatedAt:     now,
-		UpdatedAt:     now,
 	}
 
-	result, err := l.svcCtx.ReportModel.InsertWithTimestamp(l.ctx, report)
+	result, err := l.svcCtx.ReportModel.Insert(l.ctx, report)
 	if err != nil {
 		logx.Errorf("Insert report failed: %v", err)
 		return &types.ReportResp{
@@ -157,6 +153,16 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 		}, nil
 	}
 
+	// 查询报告以获取完整数据（包括created_at和updated_at）
+	reportInfo, err := l.svcCtx.ReportModel.FindOne(l.ctx, reportId)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.ReportResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get report info",
+		}, nil
+	}
+
 	logx.Infof("Generated report for student %d, report id: %d", req.StudentId, reportId)
 
 	// 构建返回的CareerReport
@@ -170,8 +176,8 @@ func (l *GenerateReportLogic) GenerateReport(req *types.GenerateReportReq) (*typ
 		ActionPlan:    *actionPlan,
 		Content:       content,
 		Status:        "generated",
-		CreatedAt:     now,
-		UpdatedAt:     now,
+		CreatedAt:     reportInfo.CreatedAt,
+		UpdatedAt:     reportInfo.UpdatedAt,
 	}
 
 	return &types.ReportResp{

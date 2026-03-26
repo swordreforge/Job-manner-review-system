@@ -17,7 +17,6 @@ type (
 	CareerReportsModel interface {
 		careerReportsModel
 		withSession(session sqlx.Session) CareerReportsModel
-		InsertWithTimestamp(ctx context.Context, data *CareerReports) (sql.Result, error)
 	}
 
 	customCareerReportsModel struct {
@@ -36,8 +35,9 @@ func (m *customCareerReportsModel) withSession(session sqlx.Session) CareerRepor
 	return NewCareerReportsModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// InsertWithTimestamp 插入职业报告记录，包含时间戳
-func (m *customCareerReportsModel) InsertWithTimestamp(ctx context.Context, data *CareerReports) (sql.Result, error) {
+// Insert 插入职业报告记录，自动设置时间戳
+// 重写生成的Insert方法，自动设置created_at和updated_at
+func (m *customCareerReportsModel) Insert(ctx context.Context, data *CareerReports) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
 		data.CreatedAt = now

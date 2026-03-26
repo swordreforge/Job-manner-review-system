@@ -17,7 +17,6 @@ type (
 	MatchRecordsModel interface {
 		matchRecordsModel
 		withSession(session sqlx.Session) MatchRecordsModel
-		InsertWithTimestamp(ctx context.Context, data *MatchRecords) (sql.Result, error)
 	}
 
 	customMatchRecordsModel struct {
@@ -36,8 +35,9 @@ func (m *customMatchRecordsModel) withSession(session sqlx.Session) MatchRecords
 	return NewMatchRecordsModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// InsertWithTimestamp 插入匹配记录，包含时间戳
-func (m *customMatchRecordsModel) InsertWithTimestamp(ctx context.Context, data *MatchRecords) (sql.Result, error) {
+// Insert 插入匹配记录，自动设置时间戳
+// 重写生成的Insert方法，自动设置created_at
+func (m *customMatchRecordsModel) Insert(ctx context.Context, data *MatchRecords) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
 		data.CreatedAt = now

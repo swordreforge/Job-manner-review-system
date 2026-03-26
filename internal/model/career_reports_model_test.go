@@ -20,7 +20,7 @@ func TestCareerReportsModel_Insert(t *testing.T) {
 	model := NewCareerReportsModel(conn)
 
 	mock.ExpectExec("insert into `career_reports`").
-		WithArgs(int64(1), sql.NullInt64{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, "draft").
+		WithArgs(int64(1), sql.NullInt64{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, sql.NullString{}, "draft", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	ctx := context.Background()

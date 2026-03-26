@@ -20,7 +20,7 @@ func TestMatchRecordsModel_Insert(t *testing.T) {
 	model := NewMatchRecordsModel(conn)
 
 	mock.ExpectExec("insert into `match_records`").
-		WithArgs(int64(1), int64(1), sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullString{}).
+		WithArgs(int64(1), int64(1), sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullFloat64{}, sql.NullString{}, sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	ctx := context.Background()

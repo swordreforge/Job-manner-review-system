@@ -55,7 +55,7 @@ func (l *CreateStudentLogic) CreateStudent(req *types.CreateStudentReq) (*types.
 	internshipJSON, _ := json.Marshal(req.Internship)
 	projectsJSON, _ := json.Marshal(req.Projects)
 
-	now := time.Now().Unix()
+	// 创建学生档案（时间戳由Model的Insert方法自动设置）
 	student := &model.Students{
 		UserId:               userId,
 		Name:                 req.Name,
@@ -69,11 +69,9 @@ func (l *CreateStudentLogic) CreateStudent(req *types.CreateStudentReq) (*types.
 		Projects:             sql.NullString{String: string(projectsJSON), Valid: len(req.Projects) > 0},
 		CompletenessScore:    completeness,
 		CompetitivenessScore: competitiveness,
-		CreatedAt:            now,
-		UpdatedAt:            now,
 	}
 
-	result, err := l.svcCtx.StudentModel.InsertWithTimestamp(l.ctx, student)
+	result, err := l.svcCtx.StudentModel.Insert(l.ctx, student)
 	if err != nil {
 		logx.Errorf("Insert student failed: %v", err)
 		return &types.StudentResp{
@@ -88,6 +86,16 @@ func (l *CreateStudentLogic) CreateStudent(req *types.CreateStudentReq) (*types.
 		return &types.StudentResp{
 			Code: errors.CodeInternalError,
 			Msg:  "failed to get student id",
+		}, nil
+	}
+
+	// 查询学生档案以获取完整数据（包括created_at和updated_at）
+	studentInfo, err := l.svcCtx.StudentModel.FindOne(l.ctx, studentId)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.StudentResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get student info",
 		}, nil
 	}
 
@@ -110,8 +118,8 @@ func (l *CreateStudentLogic) CreateStudent(req *types.CreateStudentReq) (*types.
 			Projects:        req.Projects,
 			Completeness:    completeness,
 			Competitiveness: competitiveness,
-			CreatedAt:       now,
-			UpdatedAt:       now,
+			CreatedAt:       studentInfo.CreatedAt,
+			UpdatedAt:       studentInfo.UpdatedAt,
 		},
 	}, nil
 }

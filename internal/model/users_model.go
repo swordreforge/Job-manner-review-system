@@ -17,7 +17,6 @@ type (
 	UsersModel interface {
 		usersModel
 		withSession(session sqlx.Session) UsersModel
-		InsertWithTimestamp(ctx context.Context, data *Users) (sql.Result, error)
 	}
 
 	customUsersModel struct {
@@ -36,8 +35,9 @@ func (m *customUsersModel) withSession(session sqlx.Session) UsersModel {
 	return NewUsersModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// InsertWithTimestamp 插入用户记录，包含时间戳
-func (m *customUsersModel) InsertWithTimestamp(ctx context.Context, data *Users) (sql.Result, error) {
+// Insert 插入用户记录，自动设置时间戳
+// 重写生成的Insert方法，自动设置created_at和updated_at
+func (m *customUsersModel) Insert(ctx context.Context, data *Users) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
 		data.CreatedAt = now

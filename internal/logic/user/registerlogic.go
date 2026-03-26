@@ -6,7 +6,6 @@ package user
 import (
 	"context"
 	"database/sql"
-	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 
@@ -77,19 +76,16 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.UserResp, 
 		}, nil
 	}
 
-	// 创建用户
-	now := time.Now().Unix()
+	// 创建用户（时间戳由Model的Insert方法自动设置）
 	user := &model.Users{
-		Username:  req.Username,
-		Password:  hashedPassword,
-		Email:     req.Email,
-		Phone:     sql.NullString{String: req.Phone, Valid: req.Phone != ""},
-		Role:      "user",
-		CreatedAt: now,
-		UpdatedAt: now,
+		Username: req.Username,
+		Password: hashedPassword,
+		Email:    req.Email,
+		Phone:    sql.NullString{String: req.Phone, Valid: req.Phone != ""},
+		Role:     "user",
 	}
 
-	result, err := l.svcCtx.UserModel.InsertWithTimestamp(l.ctx, user)
+	result, err := l.svcCtx.UserModel.Insert(l.ctx, user)
 	if err != nil {
 		logx.Errorf("Insert user failed: %v", err)
 		return &types.UserResp{
@@ -107,6 +103,21 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.UserResp, 
 		}, nil
 	}
 
+	// 查询用户信息以获取完整数据（包括created_at）
+	userInfo, err := l.svcCtx.UserModel.FindOne(l.ctx, userId)
+	if err != nil {
+		logx.Errorf("FindOne failed: %v", err)
+		return &types.UserResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to get user info",
+		}, nil
+	}
+
+	phone := ""
+	if userInfo.Phone.Valid {
+		phone = userInfo.Phone.String
+	}
+
 	logx.Infof("User registered: %s (id: %d)", req.Username, userId)
 
 	return &types.UserResp{
@@ -116,9 +127,9 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.UserResp, 
 			Id:        userId,
 			Username:  req.Username,
 			Email:     req.Email,
-			Phone:     req.Phone,
-			Role:      "user",
-			CreatedAt: now,
+			Phone:     phone,
+			Role:      userInfo.Role,
+			CreatedAt: userInfo.CreatedAt,
 		},
 	}, nil
 }

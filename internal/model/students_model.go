@@ -18,7 +18,6 @@ type (
 		studentsModel
 		withSession(session sqlx.Session) StudentsModel
 		FindOneByUserId(ctx context.Context, userId int64) (*Students, error)
-		InsertWithTimestamp(ctx context.Context, data *Students) (sql.Result, error)
 	}
 
 	customStudentsModel struct {
@@ -51,8 +50,9 @@ func (m *customStudentsModel) FindOneByUserId(ctx context.Context, userId int64)
 	}
 }
 
-// InsertWithTimestamp 插入学生记录，包含时间戳
-func (m *customStudentsModel) InsertWithTimestamp(ctx context.Context, data *Students) (sql.Result, error) {
+// Insert 插入学生记录，自动设置时间戳
+// 重写生成的Insert方法，自动设置created_at和updated_at
+func (m *customStudentsModel) Insert(ctx context.Context, data *Students) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
 		data.CreatedAt = now

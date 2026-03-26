@@ -20,7 +20,7 @@ func TestUsersModel_Insert(t *testing.T) {
 	model := NewUsersModel(conn)
 
 	mock.ExpectExec("insert into `users`").
-		WithArgs("testuser", "password123", "test@example.com", sql.NullString{}, "user").
+		WithArgs("testuser", "password123", "test@example.com", sql.NullString{}, "user", sqlmock.AnyArg(), sqlmock.AnyArg()).
 		WillReturnResult(sqlmock.NewResult(1, 1))
 
 	ctx := context.Background()
