@@ -1,9 +1,10 @@
-import { Card, Avatar, Button, message } from 'antd';
-import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, BookOutlined, TrophyOutlined } from '@ant-design/icons';
+import { Card, Avatar, Button, message, Badge, Tag } from 'antd';
+import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, BookOutlined, TrophyOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
-import { userApi } from '../../api';
+import { userApi, studentApi } from '../../api';
+import type { Student } from '../../types';
 
 const menuItems = [
   { icon: <HistoryOutlined />, title: '历史记录', desc: '查看所有操作记录' },
@@ -13,6 +14,8 @@ const menuItems = [
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, setUser } = useAuthStore();
+  const [studentData, setStudentData] = useState<Student | null>(null);
+  const [loadingStudent, setLoadingStudent] = useState(false);
 
   useEffect(() => {
     // 如果用户信息为空，重新获取
@@ -31,19 +34,57 @@ export default function ProfilePage() {
     }
   }, [user, setUser]);
 
+  useEffect(() => {
+    // 获取学生资料
+    fetchStudentData();
+  }, []);
+
+  const fetchStudentData = async () => {
+    setLoadingStudent(true);
+    try {
+      const response = await studentApi.getMe();
+      if (response.code === 0 && response.data) {
+        setStudentData(response.data);
+      }
+    } catch (error: any) {
+      if (error.response?.status === 404) {
+        setStudentData(null);
+      } else {
+        console.error('Failed to fetch student data:', error);
+      }
+    } finally {
+      setLoadingStudent(false);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     message.success('已退出登录');
     navigate('/auth');
   };
 
-  const handleEditProfile = () => {
-    // TODO: 实现编辑个人资料功能
-    message.info('编辑功能开发中');
+  const handleEditStudent = () => {
+    navigate('/student');
   };
 
   const formatDate = (timestamp: number) => {
     return new Date(timestamp * 1000).toLocaleDateString('zh-CN');
+  };
+
+  const calculateCompleteness = (student: Student | null): number => {
+    if (!student) return 0;
+    let score = 0;
+    const totalFields = 7;
+    
+    if (student.name) score++;
+    if (student.education) score++;
+    if (student.major) score++;
+    if (student.graduationYear) score++;
+    if (student.skills && student.skills.length > 0) score++;
+    if (student.certificates && student.certificates.length > 0) score++;
+    if (student.internship && student.internship.length > 0) score++;
+    
+    return Math.round((score / totalFields) * 100);
   };
 
   return (
@@ -62,46 +103,116 @@ export default function ProfilePage() {
           <Button 
             type="text" 
             icon={<EditOutlined />} 
-            onClick={handleEditProfile}
+            onClick={handleEditStudent}
           >
-            编辑
+            编辑学生资料
           </Button>
+        </div>
+        {/* 学生资料状态 */}
+        <div className="mt-4 pt-4 border-t border-gray-100">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {studentData ? (
+                <Tag icon={<CheckCircleOutlined />} color="success">
+                  已创建学生资料
+                </Tag>
+              ) : (
+                <Tag icon={<ExclamationCircleOutlined />} color="warning">
+                  未创建学生资料
+                </Tag>
+              )}
+              {studentData && (
+                <span className="text-sm text-gray-500">
+                  完成度: {calculateCompleteness(studentData)}%
+                </span>
+              )}
+            </div>
+          </div>
         </div>
       </Card>
 
       {/* 学生资料信息 */}
       <Card 
-        title="个人资料"
+        title="学生资料"
         className="mb-4"
-        extra={<BookOutlined />}
+        extra={
+          <Button 
+            type="link" 
+            icon={<EditOutlined />} 
+            onClick={handleEditStudent}
+          >
+            {studentData ? '编辑' : '创建'}
+          </Button>
+        }
       >
-        <div className="space-y-3">
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">用户名</span>
-            <span className="font-medium">{user?.username || '-'}</span>
+        {loadingStudent ? (
+          <div className="text-center py-8 text-gray-500">加载中...</div>
+        ) : studentData ? (
+          <div className="space-y-3">
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">姓名</span>
+              <span className="font-medium">{studentData.name || '-'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">学历</span>
+              <span className="font-medium">
+                {studentData.education === 'bachelor' ? '本科' :
+                 studentData.education === 'master' ? '硕士' :
+                 studentData.education === 'phd' ? '博士' :
+                 studentData.education === 'high_school' ? '高中' :
+                 studentData.education || '-'}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">专业</span>
+              <span className="font-medium">{studentData.major || '-'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">毕业年份</span>
+              <span className="font-medium">{studentData.graduationYear || '-'}</span>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">技能</span>
+              <div className="flex flex-wrap gap-1">
+                {studentData.skills && studentData.skills.length > 0 ? (
+                  studentData.skills.map((skill, index) => (
+                    <Tag key={index} color="blue">{skill}</Tag>
+                  ))
+                ) : (
+                  <span className="text-gray-400">暂无</span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">证书</span>
+              <div className="flex flex-wrap gap-1">
+                {studentData.certificates && studentData.certificates.length > 0 ? (
+                  studentData.certificates.map((cert, index) => (
+                    <Tag key={index} color="green">{cert}</Tag>
+                  ))
+                ) : (
+                  <span className="text-gray-400">暂无</span>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-2 border-b border-gray-100">
+              <span className="text-gray-600">实习经历</span>
+              <span className="font-medium">{studentData.internship?.length || 0} 条</span>
+            </div>
+            <div className="flex justify-between items-center py-2">
+              <span className="text-gray-600">项目经验</span>
+              <span className="font-medium">{studentData.projects?.length || 0} 条</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">邮箱</span>
-            <span className="font-medium">{user?.email || '-'}</span>
+        ) : (
+          <div className="text-center py-8">
+            <ExclamationCircleOutlined className="text-4xl text-yellow-500 mb-2" />
+            <div className="text-gray-500 mb-4">您还没有创建学生资料</div>
+            <Button type="primary" onClick={handleEditStudent}>
+              立即创建
+            </Button>
           </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">手机号</span>
-            <span className="font-medium">{user?.phone || '未设置'}</span>
-          </div>
-          <div className="flex justify-between items-center py-2 border-b border-gray-100">
-            <span className="text-gray-600">注册时间</span>
-            <span className="font-medium">
-              {user?.createdAt ? formatDate(user.createdAt) : '-'}
-            </span>
-          </div>
-          <div className="flex justify-between items-center py-2">
-            <span className="text-gray-600">账户状态</span>
-            <span className="font-medium text-green-600">
-              <TrophyOutlined className="mr-1" />
-              正常
-            </span>
-          </div>
-        </div>
+        )}
       </Card>
 
       {/* 功能菜单 */}
