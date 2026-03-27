@@ -4,6 +4,7 @@
 package report
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -39,12 +40,14 @@ func GenerateReportStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			req.TargetJobId = targetJobId
 		}
 
-		l := report.NewGenerateReportStreamLogic(r.Context(), svcCtx)
+		// 将 response writer 传递给 context，用于 SSE 响应
+		ctx := context.WithValue(r.Context(), "responseWriter", w)
+
+		l := report.NewGenerateReportStreamLogic(ctx, svcCtx)
 		err = l.GenerateReportStream(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.Ok(w)
 		}
+		// SSE 响应不需要调用 httpx.Ok
 	}
 }
