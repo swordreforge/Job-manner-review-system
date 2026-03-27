@@ -144,9 +144,12 @@ func (l *GenerateReportStreamLogic) GenerateReportStream(req *types.GenerateRepo
 	sendEvent("progress", map[string]string{"message": "正在解析报告内容..."})
 	time.Sleep(300 * time.Millisecond)
 
+	// 清理 markdown 代码块标记
+	cleanedContent := cleanMarkdownCodeBlocks(fullContent.String())
+
 	// 解析 AI 返回的 JSON
 	var reportContent ReportContent
-	if err := json.Unmarshal([]byte(fullContent.String()), &reportContent); err != nil {
+	if err := json.Unmarshal([]byte(cleanedContent), &reportContent); err != nil {
 		logx.Errorf("解析 AI 响应失败: %v, 原始内容: %s", err, fullContent.String())
 		// 如果解析失败，使用默认数据
 		reportContent = l.generateFullReport(student)
@@ -252,6 +255,27 @@ func getStatus(level int) string {
 		return "学习中"
 	}
 	return "待学习"
+}
+
+// cleanMarkdownCodeBlocks removes markdown code block markers from AI response
+func cleanMarkdownCodeBlocks(content string) string {
+	// Remove ```json or ``` at the beginning
+	content = strings.TrimSpace(content)
+	
+	// Check for code block opening markers
+	if strings.HasPrefix(content, "```json") {
+		content = strings.TrimPrefix(content, "```json")
+	} else if strings.HasPrefix(content, "```") {
+		content = strings.TrimPrefix(content, "```")
+	}
+	
+	// Remove closing code block marker
+	if strings.HasSuffix(content, "```") {
+		content = strings.TrimSuffix(content, "```")
+	}
+	
+	// Trim whitespace again
+	return strings.TrimSpace(content)
 }
 
 func (l *GenerateReportStreamLogic) saveReportToDatabase(student *model.Students, content ReportContent, track string) {
