@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Segmented, Card, Progress, Timeline, Button, Spin, Empty, message } from 'antd';
-import { ReloadOutlined, SyncOutlined } from '@ant-design/icons';
+import { Segmented, Card, Progress, Timeline, Button, Spin, Empty, message, Dropdown, Select, Space } from 'antd';
+import { ReloadOutlined, SyncOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons';
 import { useUIStore } from '../../stores';
 import { studentApi, reportApi } from '../../api';
 import type { Student } from '../../types';
@@ -39,6 +39,8 @@ export default function PlanPage() {
   const [reports, setReports] = useState<ReportItem[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [loadingReports, setLoadingReports] = useState(false);
+  const [sortBy, setSortBy] = useState<'desc' | 'asc'>('desc');
+  const [filterStatus, setFilterStatus] = useState<string>('all');
 
   useEffect(() => {
     fetchStudentData();
@@ -126,6 +128,32 @@ export default function PlanPage() {
 
   const handleSelectReport = (reportId: number) => {
     setSelectedReportId(reportId);
+  };
+
+  const getFilteredAndSortedReports = () => {
+    let filtered = [...reports];
+
+    // 按状态筛选
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(report => report.status === filterStatus);
+    }
+
+    // 按时间排序
+    filtered.sort((a, b) => {
+      return sortBy === 'desc'
+        ? b.createdAt - a.createdAt
+        : a.createdAt - b.createdAt;
+    });
+
+    return filtered;
+  };
+
+  const handleSortChange = (order: 'asc' | 'desc') => {
+    setSortBy(order);
+  };
+
+  const handleFilterChange = (status: string) => {
+    setFilterStatus(status);
   };
 
   const handleGenerateReport = async () => {
@@ -235,7 +263,7 @@ export default function PlanPage() {
             className="w-80"
             title={
               <div className="flex items-center justify-between">
-                <span>历史记录</span>
+                <span className="font-medium">历史记录 ({getFilteredAndSortedReports().length})</span>
                 <Button
                   type="text"
                   size="small"
@@ -245,10 +273,54 @@ export default function PlanPage() {
                 />
               </div>
             }
+            extra={
+              <Space size="small">
+                {/* 排序下拉菜单 */}
+                <Dropdown
+                  menu={{
+                    items: [
+                      {
+                        key: 'desc',
+                        label: '时间降序',
+                        icon: <SortDescendingOutlined />,
+                        onClick: () => handleSortChange('desc'),
+                      },
+                      {
+                        key: 'asc',
+                        label: '时间升序',
+                        icon: <SortAscendingOutlined />,
+                        onClick: () => handleSortChange('asc'),
+                      },
+                    ],
+                  }}
+                  trigger={['click']}
+                >
+                  <Button
+                    type="text"
+                    size="small"
+                    icon={sortBy === 'desc' ? <SortDescendingOutlined /> : <SortAscendingOutlined />}
+                  />
+                </Dropdown>
+
+                {/* 筛选下拉菜单 */}
+                <Select
+                  value={filterStatus}
+                  onChange={handleFilterChange}
+                  size="small"
+                  style={{ width: 90 }}
+                  options={[
+                    { label: '全部', value: 'all' },
+                    { label: '已完成', value: 'completed' },
+                    { label: '草稿', value: 'draft' },
+                    { label: '失败', value: 'failed' },
+                  ]}
+                />
+              </Space>
+            }
           >
             <div className="space-y-2">
-              {reports.length > 0 ? (
-                reports.map((report) => {
+              {getFilteredAndSortedReports().length > 0 ? (
+                getFilteredAndSortedReports().map((report) => {
                   // 解析content获取预览信息
                   let previewCompleteness = 0;
                   let previewCompetitiveness = 0;
@@ -294,7 +366,14 @@ export default function PlanPage() {
                   );
                 })
               ) : (
-                <Empty description="暂无历史记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                <Empty
+                  description={
+                    filterStatus === 'all'
+                      ? '暂无历史记录'
+                      : `暂无${filterStatus === 'completed' ? '已完成' : filterStatus === 'draft' ? '草稿' : '失败'}的报告`
+                  }
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                />
               )}
             </div>
           </Card>
