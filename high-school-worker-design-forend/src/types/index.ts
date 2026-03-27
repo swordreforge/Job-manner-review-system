@@ -24,14 +24,26 @@ export interface LoginResponse {
   userId: number;
 }
 
+export interface StudentSkill {
+  name: string;
+  level: number;
+  years: number;
+}
+
+export interface StudentCert {
+  name: string;
+  level: string;
+  year: number;
+}
+
 export interface Student {
   id: number;
   name?: string;
   education?: string;
   major?: string;
   graduationYear?: number;
-  skills?: string[];
-  certificates?: string[];
+  skills?: StudentSkill[];
+  certificates?: StudentCert[];
   softSkills?: Record<string, unknown>;
   internship?: Internship[];
   projects?: Project[];
@@ -43,7 +55,7 @@ export interface Student {
 export interface Internship {
   company: string;
   position: string;
-  duration: string;
+  duration: number;
   description?: string;
 }
 
@@ -146,4 +158,15 @@ export interface ExportReportRequest {
 export interface PolishReportRequest {
   reportId: number;
   level: 'light' | 'normal' | 'thorough';
+}
+
+export interface SSEMessage {
+  type: 'text' | 'json' | 'error';
+  content?: string;
+  data?: unknown;
+}
+
+export interface HealthResponse {
+  status: string;
+  version: string;
 }

@@ -643,12 +643,12 @@ func (l *GenerateReportStreamLogic) GenerateReportStream(w http.ResponseWriter, 
 
 	logx.WithContext(l.ctx).Infow("Found student in database", logx.Field("userId", userId), logx.Field("studentId", student.Id))
 
-	l.sendSSEEvent(w, flusher, "status", map[string]interface{}{
-		"type":    "start",
-		"message": "开始生成职业规划报告...",
+	l.sendSSEEvent(w, flusher, "progress", map[string]interface{}{
+		"message": "正在连接 AI 服务...",
 	})
 
-	content, err := l.svcCtx.AIProvider.GenerateCareerReport(l.ctx, ai.ReportGenerationRequest{
+	// 使用流式方法
+	contentChan, errChan := l.svcCtx.AIProvider.GenerateCareerReportStream(l.ctx, ai.ReportGenerationRequest{
 		StudentProfile: fmt.Sprintf("Name: %s, Education: %s, Major: %s",
 			student.Name, student.Education.String, student.Major.String),
 		JobProfile: fmt.Sprintf("Track: %s", req.Track),
@@ -660,25 +660,51 @@ func (l *GenerateReportStreamLogic) GenerateReportStream(w http.ResponseWriter, 
 		},
 	})
 
-	if err != nil {
-		logx.Errorf("GenerateCareerReport failed: %v", err)
-		l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
-			"code": errors.CodeInternalError,
-			"msg":  "failed to generate report",
-		})
-		return
-	}
+	l.sendSSEEvent(w, flusher, "progress", map[string]interface{}{
+		"message": "AI 正在生成报告...",
+	})
 
+	// 实时接收并转发 AI 生成的流式内容
 	buffer := ""
-	for i, char := range content {
-		buffer += string(char)
-		if len(buffer) >= 50 || i == len(content)-1 {
-			l.sendSSEEvent(w, flusher, "content", map[string]interface{}{
-				"type":    "text",
-				"content": buffer,
-			})
-			buffer = ""
-			time.Sleep(20 * time.Millisecond)
+	for {
+		select {
+		case content, ok := <-contentChan:
+			if !ok {
+				// channel 已关闭，发送完成事件
+				if buffer != "" {
+					l.sendSSEEvent(w, flusher, "content", map[string]interface{}{
+						"type":    "text",
+						"content": buffer,
+					})
+				}
+				l.sendSSEEvent(w, flusher, "done", map[string]interface{}{
+					"type":    "complete",
+					"message": "报告生成完成",
+				})
+				return
+			}
+			// 积累内容到缓冲区
+			buffer += content
+			// 当缓冲区达到一定长度时发送给客户端
+			if len(buffer) >= 20 {
+				l.sendSSEEvent(w, flusher, "content", map[string]interface{}{
+					"type":    "text",
+					"content": buffer,
+				})
+				buffer = ""
+			}
+		case err := <-errChan:
+			if err != nil {
+				logx.Errorf("GenerateCareerReportStream failed: %v", err)
+				l.sendSSEEvent(w, flusher, "error", map[string]interface{}{
+					"message": fmt.Sprintf("AI 生成失败: %v", err),
+				})
+				return
+			}
+		case <-l.ctx.Done():
+			// 客户端断开连接
+			logx.Info("Client disconnected, stopping stream generation")
+			return
 		}
 	}
 

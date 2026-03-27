@@ -26,21 +26,29 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			return
 		}
 
+		// 首先尝试从 Authorization header 获取 token
 		auth := r.Header.Get("Authorization")
-		if auth == "" {
+		token := ""
+
+		if auth != "" {
+			parts := strings.SplitN(auth, " ", 2)
+			if len(parts) == 2 && parts[0] == "Bearer" {
+				token = parts[1]
+			}
+		}
+
+		// 如果 header 中没有 token，尝试从 URL 参数获取（用于 SSE 连接）
+		if token == "" {
+			token = r.URL.Query().Get("token")
+		}
+
+		if token == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"code":401,"msg":"missing authorization header"}`))
+			w.Write([]byte(`{"code":401,"msg":"missing authorization token"}`))
 			return
 		}
 
-		parts := strings.SplitN(auth, " ", 2)
-		if len(parts) != 2 || parts[0] != "Bearer" {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"code":401,"msg":"invalid authorization format"}`))
-			return
-		}
-
-		claims, err := pkg.ParseToken(parts[1], m.accessSecret)
+		claims, err := pkg.ParseToken(token, m.accessSecret)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Write([]byte(`{"code":401,"msg":"invalid token"}`))

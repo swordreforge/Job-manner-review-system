@@ -5,35 +5,49 @@ interface AuthState {
   token: string | null;
   user: User | null;
   isAuthenticated: boolean;
+  isAuthChecked: boolean;
   setToken: (token: string) => void;
   setUser: (user: User) => void;
   logout: () => void;
+  clearAuth: () => void;
   initialize: () => void;
+  setAuthChecked: (checked: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
   isAuthenticated: false,
-  
+  isAuthChecked: false,
+
   setToken: (token) => {
     localStorage.setItem('token', token);
-    set({ token, isAuthenticated: true });
+    set({ token, isAuthenticated: true, isAuthChecked: true });
   },
-  
+
   setUser: (user) => set({ user }),
-  
+
   logout: () => {
     localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false });
+    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true });
   },
-  
+
+  clearAuth: () => {
+    localStorage.removeItem('token');
+    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true });
+  },
+
   initialize: () => {
     const token = localStorage.getItem('token');
     if (token) {
       set({ token, isAuthenticated: true });
+    } else {
+      set({ isAuthenticated: false });
     }
+    set({ isAuthChecked: true });
   },
+
+  setAuthChecked: (checked) => set({ isAuthChecked: checked }),
 }));
 
 interface StudentState {

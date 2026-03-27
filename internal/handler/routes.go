@@ -180,7 +180,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 			{
 				// Generate career report via SSE stream
-				Method:  http.MethodPost,
+				Method:  http.MethodGet,
 				Path:    "/reports/generate-stream",
 				Handler: report.GenerateReportStreamHandler(serverCtx),
 			},

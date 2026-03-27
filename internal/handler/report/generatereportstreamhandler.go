@@ -4,7 +4,9 @@
 package report
 
 import (
+	"context"
 	"net/http"
+	"strconv"
 
 	"career-api/internal/logic/report"
 	"career-api/internal/svc"
@@ -16,17 +18,36 @@ import (
 func GenerateReportStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.GenerateReportStreamReq
-		if err := httpx.Parse(r, &req); err != nil {
+
+		// 从 URL 查询参数解析
+		studentIdStr := r.URL.Query().Get("studentId")
+		studentId, err := strconv.ParseInt(studentIdStr, 10, 64)
+		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
+		req.StudentId = studentId
 
-		l := report.NewGenerateReportStreamLogic(r.Context(), svcCtx)
-		err := l.GenerateReportStream(&req)
+		req.Track = r.URL.Query().Get("track")
+
+		targetJobIdStr := r.URL.Query().Get("targetJobId")
+		if targetJobIdStr != "" {
+			targetJobId, err := strconv.ParseInt(targetJobIdStr, 10, 64)
+			if err != nil {
+				httpx.ErrorCtx(r.Context(), w, err)
+				return
+			}
+			req.TargetJobId = targetJobId
+		}
+
+		// 将 response writer 传递给 context，用于 SSE 响应
+		ctx := context.WithValue(r.Context(), "responseWriter", w)
+
+		l := report.NewGenerateReportStreamLogic(ctx, svcCtx)
+		err = l.GenerateReportStream(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
-		} else {
-			httpx.Ok(w)
 		}
+		// SSE 响应不需要调用 httpx.Ok
 	}
 }

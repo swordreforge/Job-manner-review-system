@@ -1,11 +1,14 @@
 package pkg
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
@@ -16,6 +19,7 @@ type AIProvider interface {
 	GenerateStudentProfile(ctx context.Context, resumeContent string) (string, error)
 	MatchAnalysis(ctx context.Context, studentProfile, jobProfile string) (string, error)
 	GenerateCareerReport(ctx context.Context, req ReportGenerationRequest) (string, error)
+	GenerateCareerReportStream(ctx context.Context, req ReportGenerationRequest) (<-chan string, <-chan error)
 }
 
 type ReportGenerationRequest struct {
@@ -57,6 +61,15 @@ type OpenAIRequest struct {
 	Messages    []ChatMessage `json:"messages"`
 	MaxTokens   int           `json:"max_tokens"`
 	Temperature float64       `json:"temperature"`
+	Stream      bool          `json:"stream"`
+}
+
+type StreamChoice struct {
+	Index int `json:"index"`
+	Delta struct {
+		Content string `json:"content"`
+	} `json:"delta"`
+	FinishReason *string `json:"finish_reason"`
 }
 
 type OpenAIResponse struct {
@@ -189,4 +202,131 @@ func (p *OpenAIProvider) GenerateCareerReport(ctx context.Context, req ReportGen
 	}
 
 	return content, nil
+}
+
+// GenerateCareerReportStream 流式生成职业规划报告
+func (p *OpenAIProvider) GenerateCareerReportStream(ctx context.Context, req ReportGenerationRequest) (<-chan string, <-chan error) {
+	contentChan := make(chan string, 100)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(contentChan)
+		defer close(errChan)
+
+		prompt := fmt.Sprintf(`You are a professional career planning expert. Generate a comprehensive career development report in JSON format based on:
+
+Student Profile:
+%s
+
+Please analyze and generate a report with the following JSON structure:
+{
+  "skills": [
+    {"name": "技能名称", "level": 0-100, "status": "已掌握/学习中/待学习"}
+  ],
+  "timeline": [
+    {"date": "时间", "title": "标题", "desc": "描述"}
+  ],
+  "completeness": 0-100,
+  "competitiveness": 0-100
+}
+
+Requirements:
+1. Provide 5-8 key skills with realistic levels
+2. Create a career development timeline with 5-7 milestones
+3. Calculate realistic completeness and competitiveness scores
+4. Return ONLY valid JSON, no other text
+`, req.StudentProfile)
+
+		apiReq := OpenAIRequest{
+			Model: p.model,
+			Messages: []ChatMessage{
+				{Role: "system", Content: "You are a career planning expert who responds in valid JSON format."},
+				{Role: "user", Content: prompt},
+			},
+			MaxTokens:   4000,
+			Temperature: 0.7,
+			Stream:      true, // 启用流式输出
+		}
+
+		body, err := json.Marshal(apiReq)
+		if err != nil {
+			errChan <- fmt.Errorf("marshal request failed: %v", err)
+			return
+		}
+
+		// 添加调试日志
+		logx.Infof("Calling AI API: URL=%s, Model=%s, APIKey=%s", p.baseURL+"/chat/completions", p.model, p.apiKey[:10]+"...")
+
+		c := &http.Client{Timeout: p.timeout}
+		httpReq, _ := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/chat/completions", bytes.NewReader(body))
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Authorization", "Bearer "+p.apiKey)
+		httpReq.Header.Set("Accept", "text/event-stream") // 添加 Accept 头
+
+		resp, err := c.Do(httpReq)
+		if err != nil {
+			errChan <- fmt.Errorf("http request failed: %v", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			// 读取响应体获取详细错误信息
+			body, _ := io.ReadAll(resp.Body)
+			logx.Errorf("AI API error: status=%d, body=%s", resp.StatusCode, string(body))
+			errChan <- fmt.Errorf("AI API error: status=%d, body=%s", resp.StatusCode, string(body))
+			return
+		}
+
+		// 读取流式响应
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					errChan <- fmt.Errorf("read stream failed: %v", err)
+				}
+				break
+			}
+
+			line = strings.TrimSpace(line)
+			if line == "" || line == "data: [DONE]" {
+				continue
+			}
+
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+
+			data := strings.TrimPrefix(line, "data: ")
+			var streamResp struct {
+				Choices []StreamChoice `json:"choices"`
+				Error   *AIError       `json:"error,omitempty"`
+			}
+
+			if err := json.Unmarshal([]byte(data), &streamResp); err != nil {
+				logx.Errorf("unmarshal stream data failed: %v", err)
+				continue
+			}
+
+			if streamResp.Error != nil {
+				errChan <- fmt.Errorf("api error: %s", streamResp.Error.Message)
+				return
+			}
+
+			if len(streamResp.Choices) > 0 {
+				content := streamResp.Choices[0].Delta.Content
+				if content != "" {
+					contentChan <- content
+				}
+				if streamResp.Choices[0].FinishReason != nil {
+					break
+				}
+			}
+		}
+
+		logx.Infof("Stream generation completed")
+	}()
+
+	return contentChan, errChan
 }
