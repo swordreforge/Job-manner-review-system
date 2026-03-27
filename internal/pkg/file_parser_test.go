@@ -34,6 +34,12 @@ func TestExtractTextFromPDF(t *testing.T) {
 			wantEmpty: true,
 			wantErr:   true,
 		},
+		{
+			name:      "broken PDF file",
+			filePath:  filepath.Join(testDir, "broken.pdf"),
+			wantEmpty: true,
+			wantErr:   true,
+		},
 	}
 
 	for _, tt := range tests {
@@ -90,6 +96,12 @@ func TestExtractTextFromDOCX(t *testing.T) {
 		{
 			name:      "non-existent DOCX file",
 			filePath:  filepath.Join(testDir, "nonexistent.docx"),
+			wantEmpty: true,
+			wantErr:   true,
+		},
+		{
+			name:      "broken DOCX file",
+			filePath:  filepath.Join(testDir, "broken.docx"),
 			wantEmpty: true,
 			wantErr:   true,
 		},
