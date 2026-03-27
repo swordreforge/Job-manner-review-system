@@ -357,27 +357,55 @@ export default function ResumePage() {
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-gray-600">完整度</span>
-                        <span className="font-medium text-lg">{profile.resumeContent ? '已提取' : '未提取'}</span>
+                        <span className="font-medium text-lg">{profile.completeness || 0}分</span>
                       </div>
-                      {profile.resumeContent && (
-                        <Progress
-                          percent={profile.resumeContent ? 100 : 0}
-                          showInfo={false}
-                          strokeColor="#52c41a"
-                        />
-                      )}
+                      <Progress
+                        percent={profile.completeness || 0}
+                        showInfo={false}
+                        strokeColor={profile.completeness >= 80 ? '#52c41a' : profile.completeness >= 60 ? '#faad14' : '#ff4d4f'}
+                      />
                     </div>
                     <div>
+                      <div className="flex justify-between mb-2">
+                        <span className="text-gray-600">竞争力</span>
+                        <span className="font-medium text-lg">{profile.competitiveness || 0}分</span>
+                      </div>
+                      <Progress
+                        percent={profile.competitiveness || 0}
+                        showInfo={false}
+                        strokeColor={profile.competitiveness >= 80 ? '#52c41a' : profile.competitiveness >= 60 ? '#faad14' : '#ff4d4f'}
+                      />
+                    </div>
+                  </div>
+                  {profile.resumeContent && (
+                    <div className="mt-4 pt-4 border-t">
                       <div className="text-center">
-                        <p className="text-gray-600 mb-2">简历内容长度</p>
-                        <p className="text-3xl font-bold text-blue-600">
-                          {profile.resumeContent?.length || 0}
+                        <p className="text-gray-600 mb-1">简历内容长度</p>
+                        <p className="text-2xl font-bold text-blue-600">
+                          {profile.resumeContent.length.toLocaleString()}
                         </p>
                         <p className="text-sm text-gray-500">字符</p>
                       </div>
                     </div>
-                  </div>
+                  )}
                 </Card>
+
+                {/* 优化建议 */}
+                {profile.suggestions && profile.suggestions.length > 0 && (
+                  <Card title="优化建议" size="small">
+                    <List
+                      dataSource={profile.suggestions}
+                      renderItem={(suggestion, index) => (
+                        <List.Item>
+                          <div className="flex items-start gap-3">
+                            <Tag color="orange">{index + 1}</Tag>
+                            <span className="text-sm">{suggestion}</span>
+                          </div>
+                        </List.Item>
+                      )}
+                    />
+                  </Card>
+                )}
               </>
             ) : (
               <Empty description="解析结果为空" />

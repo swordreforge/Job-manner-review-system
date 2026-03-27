@@ -277,6 +277,7 @@ func (l *UpdateStudentLogic) UpdateStudent(req *types.UpdateStudentReq) (*types.
 	var softSkills types.SoftSkills
 	var internship []types.Internship
 	var projects []types.Project
+	var suggestions []string
 
 	if student.Skills.Valid {
 		json.Unmarshal([]byte(student.Skills.String), &skills)
@@ -292,6 +293,9 @@ func (l *UpdateStudentLogic) UpdateStudent(req *types.UpdateStudentReq) (*types.
 	}
 	if student.Projects.Valid {
 		json.Unmarshal([]byte(student.Projects.String), &projects)
+	}
+	if student.Suggestions.Valid {
+		json.Unmarshal([]byte(student.Suggestions.String), &suggestions)
 	}
 
 	graduationYear := 0
@@ -316,6 +320,7 @@ func (l *UpdateStudentLogic) UpdateStudent(req *types.UpdateStudentReq) (*types.
 			Projects:        projects,
 			Completeness:    completeness,
 			Competitiveness: student.CompetitivenessScore,
+			Suggestions:     suggestions,
 			CreatedAt:       student.CreatedAt,
 			UpdatedAt:       student.UpdatedAt,
 		},
@@ -350,6 +355,7 @@ func (l *GetStudentLogic) GetStudent(id int64) (*types.StudentResp, error) {
 	var softSkills types.SoftSkills
 	var internship []types.Internship
 	var projects []types.Project
+	var suggestions []string
 
 	if student.Skills.Valid {
 		json.Unmarshal([]byte(student.Skills.String), &skills)
@@ -365,6 +371,9 @@ func (l *GetStudentLogic) GetStudent(id int64) (*types.StudentResp, error) {
 	}
 	if student.Projects.Valid {
 		json.Unmarshal([]byte(student.Projects.String), &projects)
+	}
+	if student.Suggestions.Valid {
+		json.Unmarshal([]byte(student.Suggestions.String), &suggestions)
 	}
 
 	graduationYear := 0
@@ -389,6 +398,7 @@ func (l *GetStudentLogic) GetStudent(id int64) (*types.StudentResp, error) {
 			Projects:        projects,
 			Completeness:    student.CompletenessScore,
 			Competitiveness: student.CompetitivenessScore,
+			Suggestions:     suggestions,
 			CreatedAt:       student.CreatedAt,
 			UpdatedAt:       student.UpdatedAt,
 		},
@@ -483,6 +493,7 @@ func (l *ListStudentsLogic) ListStudents(req *types.StudentListReq) (*types.Stud
 		var softSkills types.SoftSkills
 		var internship []types.Internship
 		var projects []types.Project
+		var suggestions []string
 
 		if student.Skills.Valid {
 			json.Unmarshal([]byte(student.Skills.String), &skills)
@@ -498,6 +509,9 @@ func (l *ListStudentsLogic) ListStudents(req *types.StudentListReq) (*types.Stud
 		}
 		if student.Projects.Valid {
 			json.Unmarshal([]byte(student.Projects.String), &projects)
+		}
+		if student.Suggestions.Valid {
+			json.Unmarshal([]byte(student.Suggestions.String), &suggestions)
 		}
 
 		graduationYear := 0
@@ -519,6 +533,7 @@ func (l *ListStudentsLogic) ListStudents(req *types.StudentListReq) (*types.Stud
 			Projects:        projects,
 			Completeness:    student.CompletenessScore,
 			Competitiveness: student.CompetitivenessScore,
+			Suggestions:     suggestions,
 			CreatedAt:       student.CreatedAt,
 			UpdatedAt:       student.UpdatedAt,
 		})
@@ -902,6 +917,7 @@ func (l *GetMyProfileLogic) GetMyProfile() (*types.StudentResp, error) {
 	var softSkills types.SoftSkills
 	var internship []types.Internship
 	var projects []types.Project
+	var suggestions []string
 
 	if student.Skills.Valid {
 		json.Unmarshal([]byte(student.Skills.String), &skills)
@@ -917,6 +933,9 @@ func (l *GetMyProfileLogic) GetMyProfile() (*types.StudentResp, error) {
 	}
 	if student.Projects.Valid {
 		json.Unmarshal([]byte(student.Projects.String), &projects)
+	}
+	if student.Suggestions.Valid {
+		json.Unmarshal([]byte(student.Suggestions.String), &suggestions)
 	}
 
 	graduationYear := 0
@@ -941,6 +960,7 @@ func (l *GetMyProfileLogic) GetMyProfile() (*types.StudentResp, error) {
 			Projects:        projects,
 			Completeness:    student.CompletenessScore,
 			Competitiveness: student.CompetitivenessScore,
+			Suggestions:     suggestions,
 			CreatedAt:       student.CreatedAt,
 			UpdatedAt:       student.UpdatedAt,
 		},

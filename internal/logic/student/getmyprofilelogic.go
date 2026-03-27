@@ -51,6 +51,7 @@ func (l *GetMyProfileLogic) GetMyProfile() (resp *types.StudentResp, err error) 
 	var softSkills types.SoftSkills
 	var internship []types.Internship
 	var projects []types.Project
+	var suggestions []string
 
 	if student.Skills.Valid {
 		json.Unmarshal([]byte(student.Skills.String), &skills)
@@ -66,6 +67,9 @@ func (l *GetMyProfileLogic) GetMyProfile() (resp *types.StudentResp, err error) 
 	}
 	if student.Projects.Valid {
 		json.Unmarshal([]byte(student.Projects.String), &projects)
+	}
+	if student.Suggestions.Valid {
+		json.Unmarshal([]byte(student.Suggestions.String), &suggestions)
 	}
 
 	graduationYear := 0
@@ -90,6 +94,7 @@ func (l *GetMyProfileLogic) GetMyProfile() (resp *types.StudentResp, err error) 
 			Projects:        projects,
 			Completeness:    student.CompletenessScore,
 			Competitiveness: student.CompetitivenessScore,
+			Suggestions:     suggestions,
 			CreatedAt:       student.CreatedAt,
 			UpdatedAt:       student.UpdatedAt,
 		},

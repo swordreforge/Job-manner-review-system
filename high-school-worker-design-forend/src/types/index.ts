@@ -47,6 +47,9 @@ export interface Student {
   softSkills?: Record<string, unknown>;
   internship?: Internship[];
   projects?: Project[];
+  completeness?: number;
+  competitiveness?: number;
+  suggestions?: string[];
   resumeContent?: string;
   createdAt?: number;
   updatedAt?: number;
