@@ -175,8 +175,8 @@ export default function ProfilePage() {
               <span className="text-gray-600">技能</span>
               <div className="flex flex-wrap gap-1">
                 {studentData.skills && studentData.skills.length > 0 ? (
-                  studentData.skills.map((skill, index) => (
-                    <Tag key={index} color="blue">{skill}</Tag>
+                  studentData.skills.map((skill: any, index: number) => (
+                    <Tag key={index} color="blue">{skill.name}</Tag>
                   ))
                 ) : (
                   <span className="text-gray-400">暂无</span>
@@ -187,8 +187,8 @@ export default function ProfilePage() {
               <span className="text-gray-600">证书</span>
               <div className="flex flex-wrap gap-1">
                 {studentData.certificates && studentData.certificates.length > 0 ? (
-                  studentData.certificates.map((cert, index) => (
-                    <Tag key={index} color="green">{cert}</Tag>
+                  studentData.certificates.map((cert: any, index: number) => (
+                    <Tag key={index} color="green">{cert.name}</Tag>
                   ))
                 ) : (
                   <span className="text-gray-400">暂无</span>
