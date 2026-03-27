@@ -106,7 +106,7 @@ func (m *customStudentsModel) Insert(ctx context.Context, data *Students) (sql.R
 		data.UpdatedAt = now
 	}
 
-	query := fmt.Sprintf("insert into %s (`user_id`, `name`, `education`, `major`, `graduation_year`, `skills`, `certificates`, `soft_skills`, `internship`, `projects`, `completeness_score`, `competitiveness_score`, `resume_url`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
-	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl, data.CreatedAt, data.UpdatedAt)
+	query := fmt.Sprintf("insert into %s (`user_id`, `name`, `education`, `major`, `graduation_year`, `skills`, `certificates`, `soft_skills`, `internship`, `projects`, `completeness_score`, `competitiveness_score`, `resume_url`, `suggestions`, `resume_content`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl, data.Suggestions, data.ResumeContent, data.CreatedAt, data.UpdatedAt)
 	return ret, err
 }

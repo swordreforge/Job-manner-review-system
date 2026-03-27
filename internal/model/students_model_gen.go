@@ -50,6 +50,8 @@ type (
 		CompletenessScore    float64        `db:"completeness_score"`
 		CompetitivenessScore float64        `db:"competitiveness_score"`
 		ResumeUrl            sql.NullString `db:"resume_url"`
+		Suggestions          sql.NullString `db:"suggestions"`
+		ResumeContent        sql.NullString `db:"resume_content"`
 		CreatedAt            int64          `db:"created_at"`
 		UpdatedAt            int64          `db:"updated_at"`
 	}
@@ -83,14 +85,14 @@ func (m *defaultStudentsModel) FindOne(ctx context.Context, id int64) (*Students
 }
 
 func (m *defaultStudentsModel) Insert(ctx context.Context, data *Students) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, studentsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl)
+	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, studentsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl, data.Suggestions, data.ResumeContent)
 	return ret, err
 }
 
 func (m *defaultStudentsModel) Update(ctx context.Context, data *Students) error {
 	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, studentsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl, data.Id)
+	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Name, data.Education, data.Major, data.GraduationYear, data.Skills, data.Certificates, data.SoftSkills, data.Internship, data.Projects, data.CompletenessScore, data.CompetitivenessScore, data.ResumeUrl, data.Suggestions, data.ResumeContent, data.Id)
 	return err
 }
 

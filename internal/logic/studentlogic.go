@@ -652,12 +652,111 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.Stu
 		userId = 1 // 默认用户ID，实际应该从认证中获取
 	}
 
-	profile.Id = time.Now().UnixNano()
 	profile.UserId = userId
 	profile.CreatedAt = time.Now().Unix()
 	profile.UpdatedAt = time.Now().Unix()
 
-	logx.Infof("Successfully processed resume for user %d, extracted profile: %s", userId, profile.Name)
+	// 11. 序列化数据用于数据库存储
+	skillsJSON, _ := json.Marshal(profile.Skills)
+	certificatesJSON, _ := json.Marshal(profile.Certificates)
+	softSkillsJSON, _ := json.Marshal(profile.SoftSkills)
+	internshipJSON, _ := json.Marshal(profile.Internship)
+	projectsJSON, _ := json.Marshal(profile.Projects)
+	suggestionsJSON, _ := json.Marshal(profile.Suggestions)
+
+	// 12. 创建或更新学生档案
+	student, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
+	var studentId int64
+	if err == nil {
+		// 更新现有记录
+		student.Name = profile.Name
+		student.Education = sql.NullString{String: profile.Education, Valid: profile.Education != ""}
+		student.Major = sql.NullString{String: profile.Major, Valid: profile.Major != ""}
+		student.GraduationYear = sql.NullInt64{Int64: int64(profile.GraduationYear), Valid: profile.GraduationYear > 0}
+		student.Skills = sql.NullString{String: string(skillsJSON), Valid: len(profile.Skills) > 0}
+		student.Certificates = sql.NullString{String: string(certificatesJSON), Valid: len(profile.Certificates) > 0}
+		student.SoftSkills = sql.NullString{String: string(softSkillsJSON), Valid: true}
+		student.Internship = sql.NullString{String: string(internshipJSON), Valid: len(profile.Internship) > 0}
+		student.Projects = sql.NullString{String: string(projectsJSON), Valid: len(profile.Projects) > 0}
+		student.CompletenessScore = profile.Completeness
+		student.CompetitivenessScore = profile.Competitiveness
+		student.Suggestions = sql.NullString{String: string(suggestionsJSON), Valid: len(profile.Suggestions) > 0}
+		student.ResumeContent = sql.NullString{String: resumeText, Valid: resumeText != ""}
+		student.UpdatedAt = time.Now().Unix()
+
+		err = l.svcCtx.StudentModel.Update(l.ctx, student)
+		if err != nil {
+			logx.Errorf("Failed to update student profile: %v", err)
+			return &types.StudentResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to update student profile",
+			}, nil
+		}
+		studentId = student.Id
+	} else {
+		// 创建新记录
+		newStudent := &model.Students{
+			UserId:               userId,
+			Name:                 profile.Name,
+			Education:            sql.NullString{String: profile.Education, Valid: profile.Education != ""},
+			Major:                sql.NullString{String: profile.Major, Valid: profile.Major != ""},
+			GraduationYear:       sql.NullInt64{Int64: int64(profile.GraduationYear), Valid: profile.GraduationYear > 0},
+			Skills:               sql.NullString{String: string(skillsJSON), Valid: len(profile.Skills) > 0},
+			Certificates:         sql.NullString{String: string(certificatesJSON), Valid: len(profile.Certificates) > 0},
+			SoftSkills:           sql.NullString{String: string(softSkillsJSON), Valid: true},
+			Internship:           sql.NullString{String: string(internshipJSON), Valid: len(profile.Internship) > 0},
+			Projects:             sql.NullString{String: string(projectsJSON), Valid: len(profile.Projects) > 0},
+			CompletenessScore:    profile.Completeness,
+			CompetitivenessScore: profile.Competitiveness,
+			Suggestions:          sql.NullString{String: string(suggestionsJSON), Valid: len(profile.Suggestions) > 0},
+			ResumeContent:        sql.NullString{String: resumeText, Valid: resumeText != ""},
+			CreatedAt:            profile.CreatedAt,
+			UpdatedAt:            profile.UpdatedAt,
+		}
+
+		result, err := l.svcCtx.StudentModel.Insert(l.ctx, newStudent)
+		if err != nil {
+			logx.Errorf("Failed to insert student profile: %v", err)
+			return &types.StudentResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to create student profile",
+			}, nil
+		}
+
+		studentId, err = result.LastInsertId()
+		if err != nil {
+			logx.Errorf("Failed to get student id: %v", err)
+			return &types.StudentResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to get student id",
+			}, nil
+		}
+	}
+
+	// 13. 保存历史记录
+	parsedProfileJSON, _ := json.Marshal(profile)
+	history := &model.ResumeParseHistory{
+		UserId:               userId,
+		StudentId:            sql.NullInt64{Int64: studentId, Valid: true},
+		ResumeFileName:       sql.NullString{String: req.FileName, Valid: true},
+		ResumeContent:        sql.NullString{String: resumeText, Valid: true},
+		ParsedProfile:        sql.NullString{String: string(parsedProfileJSON), Valid: true},
+		Suggestions:          sql.NullString{String: string(suggestionsJSON), Valid: len(profile.Suggestions) > 0},
+		CompletenessScore:    profile.Completeness,
+		CompetitivenessScore: profile.Competitiveness,
+		CreatedAt:            time.Now().Unix(),
+	}
+
+	_, err = l.svcCtx.ResumeParseHistoryModel.Insert(l.ctx, history)
+	if err != nil {
+		logx.Errorf("Failed to insert resume parse history: %v", err)
+		// 不影响主流程，仅记录错误
+	}
+
+	// 14. 设置返回的profile的Id
+	profile.Id = studentId
+
+	logx.Infof("Successfully processed resume for user %d, extracted profile: %s, student_id: %d", userId, profile.Name, studentId)
 
 	return &types.StudentResp{
 		Code: errors.CodeSuccess,
@@ -710,6 +809,9 @@ func parseAIResult(aiResult string) (*types.StudentProfile, error) {
 	}
 	if profile.Projects == nil {
 		profile.Projects = []types.Project{}
+	}
+	if profile.Suggestions == nil {
+		profile.Suggestions = []string{}
 	}
 
 	return &profile, nil

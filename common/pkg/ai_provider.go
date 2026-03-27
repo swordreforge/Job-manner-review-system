@@ -140,7 +140,7 @@ func (p *OpenAIProvider) GenerateJobProfile(ctx context.Context, prompt string) 
 }
 
 func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeContent string) (string, error) {
-	prompt := `你是一名专业的职业规划顾问。请分析以下简历内容，提取学生的能力、技能和个人信息。
+	prompt := `你是一名专业的职业规划顾问。请分析以下简历内容，提取学生的能力、技能和个人信息，并提供简历优化建议。
 
 请严格按照以下 JSON 格式返回，不要包含任何其他文字，不要使用 Markdown 代码块标记：
 
@@ -155,7 +155,8 @@ func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeConte
   "internship": [{"company": "公司名称", "position": "职位", "duration": 实习时长, "description": "工作描述"}],
   "projects": [{"name": "项目名称", "role": "角色", "description": "项目描述", "technologies": ["技术栈"]}],
   "completeness": 完整度,
-  "competitiveness": 竞争力
+  "competitiveness": 竞争力,
+  "suggestions": ["优化建议1", "优化建议2", "优化建议3"]
 }
 
 字段说明：
@@ -168,8 +169,13 @@ func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeConte
 - softSkills: 软技能，包含 innovation、learning、pressure、communication、teamwork（均为0-100整数）
 - internship: 实习经历，包含 company、position、duration（月）、description（均为字符串，duration为整数）
 - projects: 项目经历，包含 name、role、description（字符串）和 technologies（字符串数组）
-- completeness: 完整度评估（0-100整数）
-- competitiveness: 竞争力评估（0-100整数）
+- completeness: 完整度评估（0-100整数），基于简历信息的完整性
+- competitiveness: 竞争力评估（0-100整数），基于简历质量和竞争力
+- suggestions: 简历优化建议数组（3-5条字符串），每条建议应具体、可操作，包括但不限于：
+  * 内容方面：补充缺失的重要信息（如实习经历、项目经验等）
+  * 格式方面：优化简历结构和排版
+  * 技能方面：建议学习或强调的技能
+  * 表达方面：改善描述的清晰度和专业性
 
 注意事项：
 1. 只返回有效的 JSON，不要包含任何其他文字
@@ -178,6 +184,7 @@ func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeConte
 4. education 字段必须使用枚举值：high_school, bachelor, master, phd
 5. 所有数值字段必须是有效的 JSON 数字
 6. 所有字符串字段必须是有效的 JSON 字符串
+7. suggestions 字段必须提供3-5条具体的优化建议，不能为空数组
 
 现在分析以下简历内容：
 
@@ -189,7 +196,7 @@ func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeConte
 			{Role: "system", Content: "你是一名专业的职业规划顾问，擅长分析简历并提取结构化信息。请严格按照指定的 JSON 格式返回结果，不要包含任何其他文字，不要使用 Markdown 代码块标记。"},
 			{Role: "user", Content: fmt.Sprintf(prompt, resumeContent)},
 		},
-		MaxTokens:   3000,
+		MaxTokens:   3500,
 		Temperature: 0.5,
 	}
 
