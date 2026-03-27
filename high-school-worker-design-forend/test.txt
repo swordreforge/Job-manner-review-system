@@ -1,0 +1,978 @@
+
+> career-front@0.0.0 test
+> playwright test
+
+
+Running 45 tests using 11 workers
+
+[1A[2K[1/45] [chromium] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面
+[1A[2K[2/45] [chromium] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面
+[1A[2K[3/45] [chromium] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误
+[1A[2K[4/45] [chromium] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页
+[1A[2K[5/45] [chromium] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面
+[1A[2K[6/45] [chromium] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面
+[1A[2K[7/45] [chromium] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误
+[1A[2K[8/45] [chromium] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户
+[1A[2K[9/45] [chromium] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面
+[1A[2K[10/45] [chromium] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息
+[1A[2K[11/45] [chromium] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误
+[1A[2K  1) [chromium] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ────────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      14 |
+      15 |   test('应该能切换到注册页面', async ({ page }) => {
+    > 16 |     await page.getByText('注册').click();
+         |                                ^
+      17 |     await expect(page.getByText('用户名')).toBeVisible();
+      18 |     await expect(page.getByText('邮箱')).toBeVisible();
+      19 |     await expect(page.getByText('确认密码')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:16:32
+
+    Error Context: test-results/auth-登录注册页面-应该能切换到注册页面-chromium/error-context.md
+
+
+[1A[2K  2) [chromium] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ───────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      112 |   test('从注册页面可以切换回登录页面', async ({ page }) => {
+      113 |     // 切换到注册页面
+    > 114 |     await page.getByText('注册').click();
+          |                                ^
+      115 |     await expect(page.getByText('确认密码')).toBeVisible();
+      116 |
+      117 |     // 点击"立即登录"链接
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:114:32
+
+    Error Context: test-results/auth-登录注册页面-从注册页面可以切换回登录页面-chromium/error-context.md
+
+
+[1A[2K  3) [chromium] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ─────────────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      27 |
+      28 |     // 切换到注册页面
+    > 29 |     await page.getByText('注册').click();
+         |                                ^
+      30 |
+      31 |     // 填写注册表单
+      32 |     await page.getByPlaceholder('用户名').fill(username);
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:29:32
+
+    Error Context: test-results/auth-登录注册页面-注册新用户-chromium/error-context.md
+
+
+[1A[2K  4) [chromium] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      51 |
+      52 |     // 切换到注册页面
+    > 53 |     await page.getByText('注册').click();
+         |                                ^
+      54 |
+      55 |     // 填写注册表单，密码不一致
+      56 |     await page.getByPlaceholder('用户名').fill(username);
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:53:32
+
+    Error Context: test-results/auth-登录注册页面-注册时密码不一致应该显示错误-chromium/error-context.md
+
+
+[1A[2K[12/45] [chromium] › tests/auth.spec.ts:171:3 › UI/UX 测试 › 登录表单应该有正确的占位符
+[1A[2K[13/45] [chromium] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面
+[1A[2K[14/45] [chromium] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符
+[1A[2K[15/45] [chromium] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用
+[1A[2K  5) [chromium] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ──────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      181 |   test('注册表单应该有正确的占位符', async ({ page }) => {
+      182 |     await page.goto('/auth');
+    > 183 |     await page.getByText('注册').click();
+          |                                ^
+      184 |     
+      185 |     await expect(page.getByPlaceholder('用户名')).toBeVisible();
+      186 |     await expect(page.getByPlaceholder('邮箱')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:183:32
+
+    Error Context: test-results/auth-UI-UX-测试-注册表单应该有正确的占位符-chromium/error-context.md
+
+
+[1A[2K[16/45] [firefox] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面
+[1A[2K[17/45] [firefox] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面
+[1A[2K  6) [chromium] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ───────────────────────────────────────
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveTitle[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/职业规划助手/[39m
+    Received string:  [31m"career-front"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveTitle" with timeout 5000ms[22m
+    [2m    8 × unexpected value "career-front"[22m
+
+
+       7 |
+       8 |   test('应该显示登录页面', async ({ page }) => {
+    >  9 |     await expect(page).toHaveTitle(/职业规划助手/);
+         |                        ^
+      10 |     await expect(page.getByText('欢迎使用职业规划助手')).toBeVisible();
+      11 |     await expect(page.getByText('登录')).toBeVisible();
+      12 |     await expect(page.getByText('注册')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:9:24
+
+    Error Context: test-results/auth-登录注册页面-应该显示登录页面-chromium/error-context.md
+
+
+[1A[2K[18/45] [firefox] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户
+[1A[2K  7) [firefox] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ─────────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      14 |
+      15 |   test('应该能切换到注册页面', async ({ page }) => {
+    > 16 |     await page.getByText('注册').click();
+         |                                ^
+      17 |     await expect(page.getByText('用户名')).toBeVisible();
+      18 |     await expect(page.getByText('邮箱')).toBeVisible();
+      19 |     await expect(page.getByText('确认密码')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:16:32
+
+    Error Context: test-results/auth-登录注册页面-应该能切换到注册页面-firefox/error-context.md
+
+
+[1A[2K[19/45] [firefox] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误
+[1A[2K  8) [firefox] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ──────────────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      27 |
+      28 |     // 切换到注册页面
+    > 29 |     await page.getByText('注册').click();
+         |                                ^
+      30 |
+      31 |     // 填写注册表单
+      32 |     await page.getByPlaceholder('用户名').fill(username);
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:29:32
+
+    Error Context: test-results/auth-登录注册页面-注册新用户-firefox/error-context.md
+
+
+[1A[2K[20/45] [firefox] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页
+[1A[2K  9) [firefox] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mpage[39m[2m).[22mtoHaveTitle[2m([22m[32mexpected[39m[2m)[22m failed
+
+    Expected pattern: [32m/职业规划助手/[39m
+    Received string:  [31m"career-front"[39m
+    Timeout: 5000ms
+
+    Call log:
+    [2m  - Expect "toHaveTitle" with timeout 5000ms[22m
+    [2m    9 × unexpected value "career-front"[22m
+
+
+       7 |
+       8 |   test('应该显示登录页面', async ({ page }) => {
+    >  9 |     await expect(page).toHaveTitle(/职业规划助手/);
+         |                        ^
+      10 |     await expect(page.getByText('欢迎使用职业规划助手')).toBeVisible();
+      11 |     await expect(page.getByText('登录')).toBeVisible();
+      12 |     await expect(page.getByText('注册')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:9:24
+
+    Error Context: test-results/auth-登录注册页面-应该显示登录页面-firefox/error-context.md
+
+
+[1A[2K  10) [firefox] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ────────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      51 |
+      52 |     // 切换到注册页面
+    > 53 |     await page.getByText('注册').click();
+         |                                ^
+      54 |
+      55 |     // 填写注册表单，密码不一致
+      56 |     await page.getByPlaceholder('用户名').fill(username);
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:53:32
+
+    Error Context: test-results/auth-登录注册页面-注册时密码不一致应该显示错误-firefox/error-context.md
+
+
+[1A[2K[21/45] [firefox] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息
+[1A[2K[22/45] [firefox] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误
+[1A[2K  11) [chromium] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      72 |
+      73 |     // 提交登录
+    > 74 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      75 |
+      76 |     // 等待跳转到首页
+      77 |     await expect(page).toHaveURL('/');
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:74:52
+
+    Error Context: test-results/auth-登录注册页面-登录成功后应该跳转到首页-chromium/error-context.md
+
+
+[1A[2K  12) [chromium] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ─────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      94 |
+      95 |     // 提交登录
+    > 96 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      97 |
+      98 |     // 应该显示验证错误
+      99 |     await expect(page.getByText('请输入用户名')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:96:52
+
+    Error Context: test-results/auth-登录注册页面-表单验证：用户名为空应该显示错误-chromium/error-context.md
+
+
+[1A[2K  13) [chromium] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ───────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded while running "beforeEach" hook.[39m
+
+      125 |
+      126 | test.describe('登录后的功能', () => {
+    > 127 |   test.beforeEach(async ({ page }) => {
+          |        ^
+      128 |     // 先登录
+      129 |     await page.goto('/auth');
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:127:8
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+    Error Context: test-results/auth-登录后的功能-退出登录应该跳转到登录页面-chromium/error-context.md
+
+
+[1A[2K  14) [chromium] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ─────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      104 |
+      105 |     // 提交登录
+    > 106 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      107 |
+      108 |     // 应该显示验证错误
+      109 |     await expect(page.getByText('请输入密码')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:106:52
+
+    Error Context: test-results/auth-登录注册页面-表单验证：密码为空应该显示错误-chromium/error-context.md
+
+
+[1A[2K  15) [chromium] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ──────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded while running "beforeEach" hook.[39m
+
+      125 |
+      126 | test.describe('登录后的功能', () => {
+    > 127 |   test.beforeEach(async ({ page }) => {
+          |        ^
+      128 |     // 先登录
+      129 |     await page.goto('/auth');
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:127:8
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+    Error Context: test-results/auth-登录后的功能-登录后应该能访问个人中心页面-chromium/error-context.md
+
+
+[1A[2K  16) [chromium] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ─────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      84 |
+      85 |     // 提交登录
+    > 86 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      87 |
+      88 |     // 应该显示错误消息
+      89 |     await expect(page.getByText('invalid username or password')).toBeVisible({ timeout: 5000 });
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:86:52
+
+    Error Context: test-results/auth-登录注册页面-登录失败应该显示错误消息-chromium/error-context.md
+
+
+[1A[2K[23/45] [firefox] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误
+[1A[2K[24/45] [firefox] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面
+[1A[2K[25/45] [firefox] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面
+[1A[2K[26/45] [firefox] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面
+[1A[2K[27/45] [firefox] › tests/auth.spec.ts:171:3 › UI/UX 测试 › 登录表单应该有正确的占位符
+[1A[2K[28/45] [firefox] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面
+[1A[2K  17) [chromium] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ─────────────────────────
+
+    [31mTest timeout of 30000ms exceeded while running "beforeEach" hook.[39m
+
+      125 |
+      126 | test.describe('登录后的功能', () => {
+    > 127 |   test.beforeEach(async ({ page }) => {
+          |        ^
+      128 |     // 先登录
+      129 |     await page.goto('/auth');
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:127:8
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+    Error Context: test-results/auth-登录后的功能-未登录访问受保护页面应该跳转到登录页面-chromium/error-context.md
+
+
+[1A[2K  18) [chromium] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ───────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      199 |     // 点击登录按钮
+      200 |     const loginButton = page.getByRole('button', { name: '登录' });
+    > 201 |     await loginButton.click();
+          |                       ^
+      202 |     
+      203 |     // 按钮应该在加载状态
+      204 |     await expect(loginButton).toBeDisabled();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:201:23
+
+    Error Context: test-results/auth-UI-UX-测试-按钮在加载状态应该禁用-chromium/error-context.md
+
+
+[1A[2K[29/45] [firefox] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符
+[1A[2K[30/45] [firefox] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用
+[1A[2K  19) [firefox] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ───────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      112 |   test('从注册页面可以切换回登录页面', async ({ page }) => {
+      113 |     // 切换到注册页面
+    > 114 |     await page.getByText('注册').click();
+          |                                ^
+      115 |     await expect(page.getByText('确认密码')).toBeVisible();
+      116 |
+      117 |     // 点击"立即登录"链接
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:114:32
+
+    Error Context: test-results/auth-登录注册页面-从注册页面可以切换回登录页面-firefox/error-context.md
+
+
+[1A[2K[31/45] [webkit] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面
+[1A[2K  20) [webkit] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ─────────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[32/45] [webkit] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面
+[1A[2K  21) [webkit] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ────────────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K  22) [firefox] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ──────────────────────────────
+
+    Error: locator.click: Error: strict mode violation: getByText('注册') resolved to 2 elements:
+        1) <div role="tab" tabindex="-1" aria-selected="false" class="ant-tabs-tab-btn" id="rc-tabs-1-tab-register" aria-controls="rc-tabs-1-panel-register">注册</div> aka getByRole('tab', { name: '注册' })
+        2) <a>立即注册</a> aka getByText('立即注册')
+
+    Call log:
+    [2m  - waiting for getByText('注册')[22m
+
+
+      181 |   test('注册表单应该有正确的占位符', async ({ page }) => {
+      182 |     await page.goto('/auth');
+    > 183 |     await page.getByText('注册').click();
+          |                                ^
+      184 |     
+      185 |     await expect(page.getByPlaceholder('用户名')).toBeVisible();
+      186 |     await expect(page.getByPlaceholder('邮箱')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:183:32
+
+    Error Context: test-results/auth-UI-UX-测试-注册表单应该有正确的占位符-firefox/error-context.md
+
+
+[1A[2K[33/45] [webkit] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户
+[1A[2K  23) [webkit] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ──────────────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[34/45] [webkit] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误
+[1A[2K  24) [webkit] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ─────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[35/45] [webkit] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页
+[1A[2K  25) [webkit] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ───────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[36/45] [webkit] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息
+[1A[2K  26) [webkit] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ───────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[37/45] [webkit] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误
+[1A[2K  27) [webkit] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ───────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[38/45] [webkit] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误
+[1A[2K  28) [webkit] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ───────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[39/45] [webkit] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面
+[1A[2K  29) [webkit] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[40/45] [webkit] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面
+[1A[2K  30) [webkit] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[41/45] [webkit] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面
+[1A[2K  31) [webkit] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ─────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[42/45] [webkit] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面
+[1A[2K[43/45] [webkit] › tests/auth.spec.ts:171:3 › UI/UX 测试 › 登录表单应该有正确的占位符
+[1A[2K  32) [webkit] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ───────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K  33) [webkit] › tests/auth.spec.ts:171:3 › UI/UX 测试 › 登录表单应该有正确的占位符 ───────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K  34) [firefox] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ──────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      72 |
+      73 |     // 提交登录
+    > 74 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      75 |
+      76 |     // 等待跳转到首页
+      77 |     await expect(page).toHaveURL('/');
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:74:52
+
+    Error Context: test-results/auth-登录注册页面-登录成功后应该跳转到首页-firefox/error-context.md
+
+
+[1A[2K[44/45] [webkit] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符
+[1A[2K  35) [webkit] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ───────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K[45/45] [webkit] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用
+[1A[2K  36) [webkit] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ─────────────────────────────────
+
+    Error: browserType.launch: 
+    ╔══════════════════════════════════════════════════════╗
+    ║ Host system is missing dependencies to run browsers. ║
+    ║ Please install them with the following command:      ║
+    ║                                                      ║
+    ║     sudo npx playwright install-deps                 ║
+    ║                                                      ║
+    ║ Alternatively, use apt:                              ║
+    ║     sudo apt-get install libicu74\                   ║
+    ║         libflite1                                    ║
+    ║                                                      ║
+    ║ <3 Playwright Team                                   ║
+    ╚══════════════════════════════════════════════════════╝
+
+
+[1A[2K  37) [firefox] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ──────────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      84 |
+      85 |     // 提交登录
+    > 86 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      87 |
+      88 |     // 应该显示错误消息
+      89 |     await expect(page.getByText('invalid username or password')).toBeVisible({ timeout: 5000 });
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:86:52
+
+    Error Context: test-results/auth-登录注册页面-登录失败应该显示错误消息-firefox/error-context.md
+
+
+[1A[2K  38) [firefox] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ──────────────────────────────
+
+    [31mTest timeout of 30000ms exceeded.[39m
+
+    Error: locator.click: Test timeout of 30000ms exceeded.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      94 |
+      95 |     // 提交登录
+    > 96 |     await page.getByRole('button', { name: '登录' }).click();
+         |                                                    ^
+      97 |
+      98 |     // 应该显示验证错误
+      99 |     await expect(page.getByText('请输入用户名')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:96:52
+
+    Error Context: test-results/auth-登录注册页面-表单验证：用户名为空应该显示错误-firefox/error-context.md
+
+
+[1A[2K  39) [firefox] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ───────────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+
+[1A[2K  40) [firefox] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ────────────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+
+[1A[2K  41) [firefox] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ──────────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      104 |
+      105 |     // 提交登录
+    > 106 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      107 |
+      108 |     // 应该显示验证错误
+      109 |     await expect(page.getByText('请输入密码')).toBeVisible();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:106:52
+
+
+[1A[2K  42) [firefox] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ────────────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      199 |     // 点击登录按钮
+      200 |     const loginButton = page.getByRole('button', { name: '登录' });
+    > 201 |     await loginButton.click();
+          |                       ^
+      202 |     
+      203 |     // 按钮应该在加载状态
+      204 |     await expect(loginButton).toBeDisabled();
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:201:23
+
+
+[1A[2K  43) [firefox] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ──────────────────────────
+
+    Test was interrupted.
+
+    Error: locator.click: Test ended.
+    Call log:
+    [2m  - waiting for getByRole('button', { name: '登录' })[22m
+
+
+      130 |     await page.getByPlaceholder('用户名').fill('newuser');
+      131 |     await page.getByPlaceholder('密码').fill('test123');
+    > 132 |     await page.getByRole('button', { name: '登录' }).click();
+          |                                                    ^
+      133 |     await page.waitForURL('/');
+      134 |   });
+      135 |
+        at /home/swordreforge/projects/high-school-worker-design/high-school-worker-design-forend/tests/auth.spec.ts:132:52
+
+
+[1A[2K  38 failed
+    [chromium] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ────────────────────────────────────────
+    [chromium] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ─────────────────────────────────────
+    [chromium] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ──────────────────────────────────────────
+    [chromium] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ─────────────────────────────────
+    [chromium] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ───────────────────────────────────
+    [chromium] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ───────────────────────────────────
+    [chromium] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ───────────────────────────────
+    [chromium] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ───────────────────────────────
+    [chromium] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ────────────────────────────────
+    [chromium] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ────────────────────────────────
+    [chromium] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ─────────────────────────────────
+    [chromium] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ───────────────────────────
+    [chromium] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ───────────────────────────────
+    [chromium] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ─────────────────────────────────
+    [firefox] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ─────────────────────────────────────────
+    [firefox] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ──────────────────────────────────────
+    [firefox] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ───────────────────────────────────────────
+    [firefox] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ──────────────────────────────────
+    [firefox] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ────────────────────────────────────
+    [firefox] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ────────────────────────────────────
+    [firefox] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ────────────────────────────────
+    [firefox] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ─────────────────────────────────
+    [firefox] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ────────────────────────────────
+    [webkit] › tests/auth.spec.ts:8:3 › 登录注册页面 › 应该显示登录页面 ──────────────────────────────────────────
+    [webkit] › tests/auth.spec.ts:15:3 › 登录注册页面 › 应该能切换到注册页面 ───────────────────────────────────────
+    [webkit] › tests/auth.spec.ts:22:3 › 登录注册页面 › 注册新用户 ────────────────────────────────────────────
+    [webkit] › tests/auth.spec.ts:47:3 › 登录注册页面 › 注册时密码不一致应该显示错误 ───────────────────────────────────
+    [webkit] › tests/auth.spec.ts:68:3 › 登录注册页面 › 登录成功后应该跳转到首页 ─────────────────────────────────────
+    [webkit] › tests/auth.spec.ts:81:3 › 登录注册页面 › 登录失败应该显示错误消息 ─────────────────────────────────────
+    [webkit] › tests/auth.spec.ts:92:3 › 登录注册页面 › 表单验证：用户名为空应该显示错误 ─────────────────────────────────
+    [webkit] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ─────────────────────────────────
+    [webkit] › tests/auth.spec.ts:112:3 › 登录注册页面 › 从注册页面可以切换回登录页面 ──────────────────────────────────
+    [webkit] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ──────────────────────────────────
+    [webkit] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ───────────────────────────────────
+    [webkit] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ─────────────────────────────
+    [webkit] › tests/auth.spec.ts:171:3 › UI/UX 测试 › 登录表单应该有正确的占位符 ─────────────────────────────────
+    [webkit] › tests/auth.spec.ts:181:3 › UI/UX 测试 › 注册表单应该有正确的占位符 ─────────────────────────────────
+    [webkit] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ───────────────────────────────────
+  5 interrupted
+    [firefox] › tests/auth.spec.ts:102:3 › 登录注册页面 › 表单验证：密码为空应该显示错误 ────────────────────────────────
+    [firefox] › tests/auth.spec.ts:136:3 › 登录后的功能 › 登录后应该能访问个人中心页面 ─────────────────────────────────
+    [firefox] › tests/auth.spec.ts:145:3 › 登录后的功能 › 退出登录应该跳转到登录页面 ──────────────────────────────────
+    [firefox] › tests/auth.spec.ts:157:3 › 登录后的功能 › 未登录访问受保护页面应该跳转到登录页面 ────────────────────────────
+    [firefox] › tests/auth.spec.ts:192:3 › UI/UX 测试 › 按钮在加载状态应该禁用 ──────────────────────────────────
+  2 passed (1.0m)
+
+[36m  Serving HTML report at http://localhost:9323. Press Ctrl+C to quit.[39m
