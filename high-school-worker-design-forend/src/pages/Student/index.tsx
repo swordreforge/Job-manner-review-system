@@ -26,26 +26,50 @@ export default function StudentPage() {
       if (response.code === 0 && response.data) {
         const data = response.data;
         setStudentData(data);
-        
+
         // 转换数据格式以适应表单
+        // 处理skills：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
+        const skillsData = data.skills && Array.isArray(data.skills)
+          ? (typeof data.skills[0] === 'string'
+              ? (data.skills as string[]).map((skill: string, index: number) => ({
+                  key: index,
+                  name: skill,
+                  level: 3,
+                  years: 1,
+                }))
+              : (data.skills as any[]).map((skill: any, index: number) => ({
+                  key: index,
+                  name: skill.name || '',
+                  level: skill.level || 3,
+                  years: skill.years || 1,
+                })))
+          : [];
+
+        // 处理certificates：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
+        const certificatesData = data.certificates && Array.isArray(data.certificates)
+          ? (typeof data.certificates[0] === 'string'
+              ? (data.certificates as string[]).map((cert: string, index: number) => ({
+                  key: index,
+                  name: cert,
+                  level: '初级',
+                  year: new Date().getFullYear(),
+                }))
+              : (data.certificates as any[]).map((cert: any, index: number) => ({
+                  key: index,
+                  name: cert.name || '',
+                  level: cert.level || '初级',
+                  year: cert.year || new Date().getFullYear(),
+                })))
+          : [];
+
         form.setFieldsValue({
           name: data.name,
           education: data.education,
           major: data.major,
           graduationYear: data.graduationYear,
           softSkills: data.softSkills || {},
-          skills: (data.skills || []).map((skill: string, index: number) => ({
-            key: index,
-            name: skill,
-            level: 3,
-            years: 1,
-          })),
-          certificates: (data.certificates || []).map((cert: string, index: number) => ({
-            key: index,
-            name: cert,
-            level: 3,
-            year: new Date().getFullYear(),
-          })),
+          skills: skillsData,
+          certificates: certificatesData,
           internship: data.internship || [],
           projects: data.projects || [],
         });
@@ -64,15 +88,31 @@ export default function StudentPage() {
   const handleSubmit = async (values: any) => {
     setSubmitting(true);
     try {
+      // 处理实习经历的duration，转换为数字（月数）
+      const processedInternship = (values.internship || []).map((item: any) => ({
+        ...item,
+        duration: parseInt(String(item.duration)) || 0,  // 确保是数字类型
+      }));
+
       const submitData: Partial<Student> = {
         name: values.name,
         education: values.education,
         major: values.major,
         graduationYear: values.graduationYear,
         softSkills: values.softSkills,
-        skills: values.skills?.map((s: any) => s.name) || [],
-        certificates: values.certificates?.map((c: any) => c.name) || [],
-        internship: values.internship || [],
+        // 发送完整的skill对象 {name, level, years}
+        skills: (values.skills || []).map((s: any) => ({
+          name: s.name,
+          level: s.level || 3,
+          years: s.years || 1,
+        })) || [],
+        // 发送完整的certificate对象 {name, level, year}
+        certificates: (values.certificates || []).map((c: any) => ({
+          name: c.name,
+          level: c.level || '初级',
+          year: c.year || new Date().getFullYear(),
+        })) || [],
+        internship: processedInternship,
         projects: values.projects || [],
       };
 
@@ -348,10 +388,10 @@ export default function StudentPage() {
                           <Form.Item
                             {...restField}
                             name={[name, 'duration']}
-                            label="时长"
+                            label="时长（月）"
                             rules={[{ required: true, message: '请输入时长' }]}
                           >
-                            <Input placeholder="例如：3个月" />
+                            <Input type="number" placeholder="例如：3" min={1} />
                           </Form.Item>
                         </Col>
                         <Col xs={24} sm={12}>
