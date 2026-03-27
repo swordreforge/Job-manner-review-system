@@ -529,6 +529,7 @@ export default function ResumePage() {
         onCancel={() => setHistoryVisible(false)}
         footer={null}
         width={800}
+        style={{ maxWidth: '90vw' }}
       >
         <List
           loading={historyLoading}
@@ -572,7 +573,7 @@ export default function ResumePage() {
                   </Space>
                 }
                 description={
-                  <Space direction="vertical" size="small">
+                  <Space orientation="vertical" size="small">
                     <div>
                       <span className="text-gray-500">时间：</span>
                       {formatTime(item.createdAt)}
@@ -611,7 +612,7 @@ export default function ResumePage() {
         }
         open={detailVisible}
         onClose={() => setDetailVisible(false)}
-        width={720}
+        size="large"
       >
         {detailRecord && (
           <div className="space-y-4">
