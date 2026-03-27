@@ -8,7 +8,7 @@ class ApiClient {
   constructor() {
     this.client = axios.create({
       baseURL: BASE_URL,
-      timeout: 30000,
+      timeout: 120000, // 增加到 2 分钟，支持简历上传等长时间操作
       headers: {
         'Content-Type': 'application/json',
       },
@@ -91,9 +91,9 @@ export const studentApi = {
   getMe: () =>
     api.get<{ code: number; msg: string; data: import('../types').Student }>('/students/me'),
   uploadResume: (data: { fileContent: string; fileName: string }) =>
-    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/resume', data),
+    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/resume', data, { timeout: 120000 }),
   generate: (data: { resumeContent: string }) =>
-    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/generate', data),
+    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/generate', data, { timeout: 120000 }),
 };
 
 export const jobApi = {
@@ -107,7 +107,7 @@ export const jobApi = {
   list: (params?: { page?: number; pageSize?: number; industry?: string; name?: string }) =>
     api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Job> }>('/jobs', { params }),
   generate: (data: { positionName: string; industry?: string; rawData?: string }) =>
-    api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs/generate', data),
+    api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs/generate', data, { timeout: 120000 }),
 };
 
 export const matchApi = {
@@ -123,7 +123,7 @@ export const matchApi = {
 
 export const reportApi = {
   generate: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) =>
-    api.post<{ code: number; msg: string; data: import('../types').Report }>('/reports/generate', data),
+    api.post<{ code: number; msg: string; data: import('../types').Report }>('/reports/generate', data, { timeout: 120000 }),
   generateStream: (data: { studentId: number; track?: string; targetJobId?: number }) => {
     const params = new URLSearchParams({
       studentId: String(data.studentId),
