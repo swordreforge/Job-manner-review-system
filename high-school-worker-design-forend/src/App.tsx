@@ -4,10 +4,12 @@ import HomePage from './pages/Home';
 import PlanPage from './pages/Plan';
 import ResumePage from './pages/Resume';
 import ProfilePage from './pages/Profile';
+import AuthPage from './pages/Auth';
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/auth" element={<AuthPage />} />
       <Route path="/" element={<MainLayout />}>
         <Route index element={<HomePage />} />
         <Route path="plan" element={<PlanPage />} />
