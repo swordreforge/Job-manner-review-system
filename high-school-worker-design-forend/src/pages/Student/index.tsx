@@ -100,17 +100,17 @@ export default function StudentPage() {
         major: values.major,
         graduationYear: values.graduationYear,
         softSkills: values.softSkills,
-        // 发送完整的skill对象 {name, level, years}
+        // 发送完整的skill对象 {name, level, years}，确保 years 是数字
         skills: (values.skills || []).map((s: any) => ({
           name: s.name,
           level: s.level || 3,
-          years: s.years || 1,
+          years: parseInt(String(s.years)) || 1,  // 转换为数字
         })) || [],
-        // 发送完整的certificate对象 {name, level, year}
+        // 发送完整的certificate对象 {name, level, year}，确保 year 是数字
         certificates: (values.certificates || []).map((c: any) => ({
           name: c.name,
           level: c.level || '初级',
-          year: c.year || new Date().getFullYear(),
+          year: parseInt(String(c.year)) || new Date().getFullYear(),  // 转换为数字
         })) || [],
         internship: processedInternship,
         projects: values.projects || [],
