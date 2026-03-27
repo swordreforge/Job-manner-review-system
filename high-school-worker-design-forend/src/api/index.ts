@@ -94,6 +94,12 @@ export const studentApi = {
     api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/resume', data, { timeout: 120000 }),
   generate: (data: { resumeContent: string }) =>
     api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/generate', data, { timeout: 120000 }),
+  getResumeHistory: (params?: { page?: number; pageSize?: number }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').ResumeHistoryRecord> }>('/students/resume/history', { params }),
+  getResumeHistoryDetail: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').ResumeHistoryRecord }>(`/students/resume/history/${id}`),
+  deleteResumeHistory: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/students/resume/history/${id}`),
 };
 
 export const jobApi = {

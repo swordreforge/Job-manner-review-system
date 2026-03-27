@@ -173,3 +173,15 @@ export interface HealthResponse {
   status: string;
   version: string;
 }
+
+export interface ResumeHistoryRecord {
+  id: number;
+  studentId?: number;
+  resumeFileName: string;
+  resumeContent: string;
+  parsedProfile?: Student;
+  suggestions?: string[];
+  completenessScore: number;
+  competitivenessScore: number;
+  createdAt: number;
+}

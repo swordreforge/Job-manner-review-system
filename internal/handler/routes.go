@@ -251,6 +251,24 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/resume",
 				Handler: student.UploadResumeHandler(serverCtx),
 			},
+			{
+				// Get resume parse history
+				Method:  http.MethodGet,
+				Path:    "/students/resume/history",
+				Handler: student.GetResumeHistoryHandler(serverCtx),
+			},
+			{
+				// Get resume parse history detail
+				Method:  http.MethodGet,
+				Path:    "/students/resume/history/:id",
+				Handler: student.GetResumeHistoryDetailHandler(serverCtx),
+			},
+			{
+				// Delete resume parse history record
+				Method:  http.MethodDelete,
+				Path:    "/students/resume/history/:id",
+				Handler: student.DeleteResumeHistoryHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)

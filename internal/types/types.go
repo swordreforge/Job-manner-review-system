@@ -478,3 +478,45 @@ type UserResp struct {
 	Msg  string    `json:"msg"`
 	Data *UserInfo `json:"data,optional"`
 }
+
+type ResumeHistoryListReq struct {
+	Page     int `form:"page" default:"1"`
+	PageSize int `form:"pageSize" default:"10"`
+}
+
+type ResumeHistoryDetailReq struct {
+	Id int64 `path:"id"`
+}
+
+type DeleteResumeHistoryReq struct {
+	Id int64 `path:"id"`
+}
+
+type ResumeHistoryRecord struct {
+	Id                   int64           `json:"id"`
+	StudentId            *int64          `json:"studentId"`
+	ResumeFileName       string          `json:"resumeFileName"`
+	ResumeContent        string          `json:"resumeContent"`
+	ParsedProfile        *StudentProfile `json:"parsedProfile"`
+	Suggestions          []string        `json:"suggestions"`
+	CompletenessScore    float64         `json:"completenessScore"`
+	CompetitivenessScore float64         `json:"competitivenessScore"`
+	CreatedAt            int64           `json:"createdAt"`
+}
+
+type ResumeHistoryListResp struct {
+	Total int64                 `json:"total"`
+	List  []ResumeHistoryRecord `json:"list"`
+}
+
+type ResumeHistoryDetailResp struct {
+	Code int                   `json:"code"`
+	Msg  string                `json:"msg"`
+	Data *ResumeHistoryRecord  `json:"data,optional"`
+}
+
+type ResumeHistoryListResultResp struct {
+	Code int                    `json:"code"`
+	Msg  string                 `json:"msg"`
+	Data *ResumeHistoryListResp `json:"data,optional"`
+}

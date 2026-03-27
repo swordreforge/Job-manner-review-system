@@ -92,6 +92,43 @@ type (
 	GenerateProfileReq {
 		ResumeContent string `json:"resumeContent,validate:"required,min=10"`
 	}
+
+	// 简历解析历史记录相关类型
+	ResumeHistoryListReq {
+		Page     int `form:"page,default=1"`
+		PageSize int `form:"pageSize,default=10"`
+	}
+	ResumeHistoryDetailReq {
+		Id int64 `path:"id"`
+	}
+	DeleteResumeHistoryReq {
+		Id int64 `path:"id"`
+	}
+	ResumeHistoryRecord {
+		Id                   int64          `json:"id"`
+		StudentId            *int64         `json:"studentId"`
+		ResumeFileName       string         `json:"resumeFileName"`
+		ResumeContent        string         `json:"resumeContent"`
+		ParsedProfile        *StudentProfile `json:"parsedProfile"`
+		Suggestions          []string       `json:"suggestions"`
+		CompletenessScore    float64        `json:"completenessScore"`
+		CompetitivenessScore float64        `json:"competitivenessScore"`
+		CreatedAt            int64          `json:"createdAt"`
+	}
+	ResumeHistoryListResp {
+		Total int64                   `json:"total"`
+		List  []ResumeHistoryRecord   `json:"list"`
+	}
+	ResumeHistoryDetailResp {
+		Code int                      `json:"code"`
+		Msg  string                   `json:"msg"`
+		Data *ResumeHistoryRecord     `json:"data,optional"`
+	}
+	ResumeHistoryListResultResp {
+		Code int                      `json:"code"`
+		Msg  string                   `json:"msg"`
+		Data *ResumeHistoryListResp   `json:"data,optional"`
+	}
 )
 
 @server (
@@ -130,5 +167,17 @@ service career-api {
 	@doc "Get current student profile"
 	@handler GetMyProfile
 	get /students/me returns (StudentResp)
+
+	@doc "Get resume parse history"
+	@handler GetResumeHistory
+	get /students/resume/history (ResumeHistoryListReq) returns (ResumeHistoryListResultResp)
+
+	@doc "Get resume parse history detail"
+	@handler GetResumeHistoryDetail
+	get /students/resume/history/:id returns (ResumeHistoryDetailResp)
+
+	@doc "Delete resume parse history record"
+	@handler DeleteResumeHistory
+	delete /students/resume/history/:id returns (StudentResp)
 }
 

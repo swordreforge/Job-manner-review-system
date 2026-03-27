@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty } from 'antd';
-import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined } from '@ant-design/icons';
+import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
+import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { studentApi } from '../../api';
-import type { Student } from '../../types';
+import type { Student, ResumeHistoryRecord } from '../../types';
 
 export default function ResumePage() {
   const [fileList, setFileList] = useState<UploadFile[]>([]);
@@ -13,6 +13,91 @@ export default function ResumePage() {
   const [progress, setProgress] = useState(0);
   const [profile, setProfile] = useState<Student | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 历史记录相关状态
+  const [historyVisible, setHistoryVisible] = useState(false);
+  const [historyList, setHistoryList] = useState<ResumeHistoryRecord[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyTotal, setHistoryTotal] = useState(0);
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyPageSize] = useState(10);
+
+  // 详情抽屉状态
+  const [detailVisible, setDetailVisible] = useState(false);
+  const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(null);
+
+  // 加载历史记录
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await studentApi.getResumeHistory({ page: historyPage, pageSize: historyPageSize });
+      if (response.code === 0) {
+        setHistoryList(response.data.list);
+        setHistoryTotal(response.data.total);
+      } else {
+        message.error(response.msg || '加载历史记录失败');
+      }
+    } catch (err: any) {
+      console.error('Load history error:', err);
+      if (err.response?.status === 401) {
+        message.error('请先登录');
+        return;
+      }
+      message.error('加载历史记录失败');
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
+  // 打开历史记录
+  const handleOpenHistory = () => {
+    setHistoryVisible(true);
+    loadHistory();
+  };
+
+  // 查看详情
+  const handleViewDetail = async (id: number) => {
+    try {
+      const response = await studentApi.getResumeHistoryDetail(id);
+      if (response.code === 0) {
+        setDetailRecord(response.data);
+        setDetailVisible(true);
+      } else {
+        message.error(response.msg || '加载详情失败');
+      }
+    } catch (err: any) {
+      console.error('Load detail error:', err);
+      message.error('加载详情失败');
+    }
+  };
+
+  // 删除历史记录
+  const handleDeleteHistory = async (id: number) => {
+    try {
+      const response = await studentApi.deleteResumeHistory(id);
+      if (response.code === 0) {
+        message.success('删除成功');
+        loadHistory();
+      } else {
+        message.error(response.msg || '删除失败');
+      }
+    } catch (err: any) {
+      console.error('Delete history error:', err);
+      message.error('删除失败');
+    }
+  };
+
+  // 格式化时间
+  const formatTime = (timestamp: number) => {
+    const date = new Date(timestamp * 1000);
+    return date.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
 
   // 文件转 base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -139,6 +224,16 @@ export default function ResumePage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
+      <div className="flex justify-between items-center mb-4">
+        <h1 className="text-2xl font-bold">简历解析</h1>
+        <Button
+          icon={<HistoryOutlined />}
+          onClick={handleOpenHistory}
+        >
+          查看历史
+        </Button>
+      </div>
+
       <Steps
         current={parsed ? 2 : parsing ? 1 : 0}
         className="mb-6"
@@ -193,31 +288,30 @@ export default function ResumePage() {
         </Card>
       ) : (
         <Result
-          status="success"
-          title="简历解析完成"
-          subTitle="AI 已完成简历分析，以下是详细信息"
-          extra={[
-            <Button 
-              type="primary" 
-              key="optimize" 
-              onClick={() => {
-                const element = document.getElementById('suggestions-section');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }}
-            >
-              查看优化建议
-            </Button>,
-            <Button key="compare" onClick={() => message.info('双版本对比功能开发中')}>
-              双版本对比
-            </Button>,
-            <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
-              重新上传
-            </Button>,
-          ]}
-        >
-          <div className="text-left space-y-4 max-w-3xl mx-auto">
+                    status="success"
+                    title="简历解析完成"
+                    subTitle="AI 已完成简历分析，以下是详细信息"
+                    extra={[
+                      <Button
+                        type="primary"
+                        key="optimize"
+                        onClick={() => {
+                          const element = document.getElementById('suggestions-section');
+                          if (element) {
+                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                          }
+                        }}
+                      >
+                        查看优化建议
+                      </Button>,
+                      <Button key="compare" onClick={() => message.info('双版本对比功能开发中')}>
+                        双版本对比
+                      </Button>,
+                      <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
+                        重新上传
+                      </Button>,
+                    ]}
+                  >          <div className="text-left space-y-4 max-w-3xl mx-auto">
             {profile ? (
               <>
                 {/* 基础信息 */}
@@ -369,20 +463,20 @@ export default function ResumePage() {
                         <span className="font-medium text-lg">{profile.completeness || 0}分</span>
                       </div>
                       <Progress
-                        percent={profile.completeness || 0}
+                        percent={profile.completeness ?? 0}
                         showInfo={false}
-                        strokeColor={profile.completeness >= 80 ? '#52c41a' : profile.completeness >= 60 ? '#faad14' : '#ff4d4f'}
+                        strokeColor={(profile.completeness ?? 0) >= 80 ? '#52c41a' : (profile.completeness ?? 0) >= 60 ? '#faad14' : '#ff4d4f'}
                       />
                     </div>
                     <div>
                       <div className="flex justify-between mb-2">
                         <span className="text-gray-600">竞争力</span>
-                        <span className="font-medium text-lg">{profile.competitiveness || 0}分</span>
+                        <span className="font-medium text-lg">{profile.competitiveness ?? 0}分</span>
                       </div>
                       <Progress
-                        percent={profile.competitiveness || 0}
+                        percent={profile.competitiveness ?? 0}
                         showInfo={false}
-                        strokeColor={profile.competitiveness >= 80 ? '#52c41a' : profile.competitiveness >= 60 ? '#faad14' : '#ff4d4f'}
+                        strokeColor={(profile.competitiveness ?? 0) >= 80 ? '#52c41a' : (profile.competitiveness ?? 0) >= 60 ? '#faad14' : '#ff4d4f'}
                       />
                     </div>
                   </div>
@@ -422,6 +516,198 @@ export default function ResumePage() {
           </div>
         </Result>
       )}
+
+      {/* 历史记录弹窗 */}
+      <Modal
+        title={
+          <Space>
+            <HistoryOutlined />
+            简历解析历史
+          </Space>
+        }
+        open={historyVisible}
+        onCancel={() => setHistoryVisible(false)}
+        footer={null}
+        width={800}
+      >
+        <List
+          loading={historyLoading}
+          dataSource={historyList}
+          pagination={{
+            current: historyPage,
+            pageSize: historyPageSize,
+            total: historyTotal,
+            onChange: (page) => {
+              setHistoryPage(page);
+              loadHistory();
+            },
+          }}
+          renderItem={(item) => (
+            <List.Item
+              actions={[
+                <Button
+                  type="link"
+                  icon={<EyeOutlined />}
+                  onClick={() => handleViewDetail(item.id)}
+                >
+                  查看
+                </Button>,
+                <Popconfirm
+                  title="确定删除这条历史记录吗？"
+                  onConfirm={() => handleDeleteHistory(item.id)}
+                  okText="确定"
+                  cancelText="取消"
+                >
+                  <Button type="link" danger icon={<DeleteOutlined />}>
+                    删除
+                  </Button>
+                </Popconfirm>,
+              ]}
+            >
+              <List.Item.Meta
+                title={
+                  <Space>
+                    <FileTextOutlined />
+                    {item.resumeFileName}
+                  </Space>
+                }
+                description={
+                  <Space direction="vertical" size="small">
+                    <div>
+                      <span className="text-gray-500">时间：</span>
+                      {formatTime(item.createdAt)}
+                    </div>
+                    <div>
+                      <span className="text-gray-500">完整度：</span>
+                      <Progress
+                        percent={item.completenessScore}
+                        size="small"
+                        format={(percent) => `${percent}分`}
+                        style={{ width: 120, display: 'inline-block' }}
+                      />
+                      <span className="ml-2 text-gray-500">竞争力：</span>
+                      <Progress
+                        percent={item.competitivenessScore}
+                        size="small"
+                        format={(percent) => `${percent}分`}
+                        style={{ width: 120, display: 'inline-block' }}
+                      />
+                    </div>
+                  </Space>
+                }
+              />
+            </List.Item>
+          )}
+        />
+      </Modal>
+
+      {/* 历史详情抽屉 */}
+      <Drawer
+        title={
+          <Space>
+            <FileTextOutlined />
+            历史记录详情
+          </Space>
+        }
+        open={detailVisible}
+        onClose={() => setDetailVisible(false)}
+        width={720}
+      >
+        {detailRecord && (
+          <div className="space-y-4">
+            <Card title="基本信息" size="small">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-gray-500">文件名：</span>
+                  <span className="font-medium">{detailRecord.resumeFileName}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">解析时间：</span>
+                  <span className="font-medium">{formatTime(detailRecord.createdAt)}</span>
+                </div>
+              </div>
+            </Card>
+
+            <Card title="评估结果" size="small">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">完整度</span>
+                    <span className="font-medium text-lg">{detailRecord.completenessScore}分</span>
+                  </div>
+                  <Progress
+                    percent={detailRecord.completenessScore}
+                    showInfo={false}
+                    strokeColor={detailRecord.completenessScore >= 80 ? '#52c41a' : detailRecord.completenessScore >= 60 ? '#faad14' : '#ff4d4f'}
+                  />
+                </div>
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <span className="text-gray-600">竞争力</span>
+                    <span className="font-medium text-lg">{detailRecord.competitivenessScore}分</span>
+                  </div>
+                  <Progress
+                    percent={detailRecord.competitivenessScore}
+                    showInfo={false}
+                    strokeColor={detailRecord.competitivenessScore >= 80 ? '#52c41a' : detailRecord.competitivenessScore >= 60 ? '#faad14' : '#ff4d4f'}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {detailRecord.suggestions && detailRecord.suggestions.length > 0 && (
+              <Card title="优化建议" size="small">
+                <List
+                  dataSource={detailRecord.suggestions}
+                  renderItem={(suggestion, index) => (
+                    <List.Item>
+                      <div className="flex items-start gap-3">
+                        <Tag color="orange">{index + 1}</Tag>
+                        <span className="text-sm">{suggestion}</span>
+                      </div>
+                    </List.Item>
+                  )}
+                />
+              </Card>
+            )}
+
+            {detailRecord.parsedProfile && (
+              <Card title="解析后的档案" size="small">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <span className="text-gray-500">姓名：</span>
+                    <span className="font-medium">{detailRecord.parsedProfile.name || '未提取'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">学历：</span>
+                    <span className="font-medium">{getEducationText(detailRecord.parsedProfile.education)}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">专业：</span>
+                    <span className="font-medium">{detailRecord.parsedProfile.major || '未提取'}</span>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">毕业年份：</span>
+                    <span className="font-medium">{detailRecord.parsedProfile.graduationYear || '未提取'}</span>
+                  </div>
+                </div>
+                {detailRecord.parsedProfile.skills && detailRecord.parsedProfile.skills.length > 0 && (
+                  <div className="mt-4">
+                    <div className="text-gray-500 mb-2">技能：</div>
+                    <Space wrap>
+                      {detailRecord.parsedProfile.skills.map((skill, index) => (
+                        <Tag key={index} color="blue">
+                          {skill.name}
+                        </Tag>
+                      ))}
+                    </Space>
+                  </div>
+                )}
+              </Card>
+            )}
+          </div>
+        )}
+      </Drawer>
     </div>
   );
 }
