@@ -17,6 +17,14 @@ interface TimelineItem {
   desc: string;
 }
 
+interface ReportItem {
+  id: number;
+  title: string;
+  status: string;
+  createdAt: number;
+  content?: string;
+}
+
 export default function PlanPage() {
   const { track } = useUIStore();
   const [activeTrack, setActiveTrack] = useState<'bigtech' | 'gov'>(track);
@@ -28,6 +36,9 @@ export default function PlanPage() {
   const [completeness, setCompleteness] = useState(0);
   const [competitiveness, setCompetitiveness] = useState(0);
   const [hasReport, setHasReport] = useState(false);
+  const [reports, setReports] = useState<ReportItem[]>([]);
+  const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
+  const [loadingReports, setLoadingReports] = useState(false);
 
   useEffect(() => {
     fetchStudentData();
@@ -35,9 +46,18 @@ export default function PlanPage() {
 
   useEffect(() => {
     if (student) {
-      loadReport();
+      loadReports();
     }
-  }, [activeTrack, student]);
+  }, [student]);
+
+  useEffect(() => {
+    if (selectedReportId && reports.length > 0) {
+      const selectedReport = reports.find(r => r.id === selectedReportId);
+      if (selectedReport?.content) {
+        loadReportContent(selectedReport);
+      }
+    }
+  }, [selectedReportId]);
 
   const fetchStudentData = async () => {
     try {
@@ -62,30 +82,50 @@ export default function PlanPage() {
     }
   };
 
-  const loadReport = async () => {
+  const loadReports = async () => {
     try {
-      const reports = await reportApi.getMe();
-      if (reports && reports.data && reports.data.list && reports.data.list.length > 0) {
-        const latestReport = reports.data.list[0];
-        if (latestReport.content) {
-          try {
-            const content = JSON.parse(latestReport.content);
-            setSkills(content.skills || []);
-            setTimeline(content.timeline || []);
-            setCompleteness(content.completeness || 0);
-            setCompetitiveness(content.competitiveness || 0);
-            setHasReport(true);
-          } catch (e) {
-            console.error('解析报告内容失败:', e);
-          }
+      setLoadingReports(true);
+      const reportsData = await reportApi.getMe();
+      if (reportsData && reportsData.data && reportsData.data.list) {
+        const reportList = reportsData.data.list.map((r: any) => ({
+          id: r.id,
+          title: r.title || `职业规划报告 #${r.id}`,
+          status: r.status,
+          createdAt: r.createdAt,
+          content: r.content,
+        }));
+        setReports(reportList);
+        // 自动选择最新的报告
+        if (reportList.length > 0 && !selectedReportId) {
+          setSelectedReportId(reportList[0].id);
         }
-      } else {
-        setHasReport(false);
       }
     } catch (error) {
-      console.error('获取报告失败:', error);
+      console.error('获取报告列表失败:', error);
+      message.error('获取报告列表失败');
+    } finally {
+      setLoadingReports(false);
+    }
+  };
+
+  const loadReportContent = (report: ReportItem) => {
+    try {
+      if (report.content) {
+        const content = JSON.parse(report.content);
+        setSkills(content.skills || []);
+        setTimeline(content.timeline || []);
+        setCompleteness(content.completeness || 0);
+        setCompetitiveness(content.competitiveness || 0);
+        setHasReport(true);
+      }
+    } catch (e) {
+      console.error('解析报告内容失败:', e);
       setHasReport(false);
     }
+  };
+
+  const handleSelectReport = (reportId: number) => {
+    setSelectedReportId(reportId);
   };
 
   const handleGenerateReport = async () => {
@@ -123,6 +163,8 @@ export default function PlanPage() {
         eventSource.close();
         setGenerating(false);
         message.success('职业规划生成完成');
+        // 生成完成后重新加载报告列表
+        loadReports();
       };
 
       eventSource.onopen = () => {
@@ -186,71 +228,154 @@ export default function PlanPage() {
         </Card>
       )}
 
-      {student && hasReport && (
-        <>
-          <Card title="整体评估" className="mb-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <div className="text-gray-600 text-sm mb-1">资料完整度</div>
-                <Progress percent={Math.round(completeness)} strokeColor="#52c41a" />
+      {student && (
+        <div className="flex gap-4">
+          {/* 左侧历史记录列表面板 */}
+          <Card
+            className="w-80"
+            title={
+              <div className="flex items-center justify-between">
+                <span>历史记录</span>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<ReloadOutlined />}
+                  onClick={loadReports}
+                  loading={loadingReports}
+                />
               </div>
-              <div>
-                <div className="text-gray-600 text-sm mb-1">竞争力指数</div>
-                <Progress percent={Math.round(competitiveness)} strokeColor="#1890ff" />
-              </div>
-            </div>
-          </Card>
+            }
+          >
+            <div className="space-y-2">
+              {reports.length > 0 ? (
+                reports.map((report) => {
+                  // 解析content获取预览信息
+                  let previewCompleteness = 0;
+                  let previewCompetitiveness = 0;
+                  try {
+                    if (report.content) {
+                      const content = JSON.parse(report.content);
+                      previewCompleteness = content.completeness || 0;
+                      previewCompetitiveness = content.competitiveness || 0;
+                    }
+                  } catch (e) {
+                    console.error('解析报告预览失败:', e);
+                  }
 
-          <Card title="技能掌握进度" className="mb-4">
-            <div className="space-y-4">
-              {skills.length > 0 ? (
-                skills.map((skill, index) => (
-                  <div key={index}>
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium">{skill.name}</span>
-                      <span style={{ color: getStatusColor(skill.status) }}>{skill.status}</span>
+                  return (
+                    <div
+                      key={report.id}
+                      className={`p-3 cursor-pointer rounded hover:bg-gray-100 transition-colors ${
+                        selectedReportId === report.id
+                          ? 'bg-blue-50 border-2 border-blue-200'
+                          : 'border border-gray-200'
+                      }`}
+                      onClick={() => handleSelectReport(report.id)}
+                    >
+                      <div className="flex justify-between items-start">
+                        <div className="font-medium flex-1 text-sm">{report.title}</div>
+                        <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">
+                          {report.status}
+                        </span>
+                      </div>
+                      <div className="text-gray-500 text-xs mt-1">
+                        {new Date(report.createdAt * 1000).toLocaleString('zh-CN')}
+                      </div>
+                      {/* 关键指标预览 */}
+                      <div className="flex gap-2 mt-2 text-xs">
+                        <span className="text-green-600">
+                          完整度: {Math.round(previewCompleteness)}%
+                        </span>
+                        <span className="text-blue-600">
+                          竞争力: {Math.round(previewCompetitiveness)}%
+                        </span>
+                      </div>
                     </div>
-                    <Progress percent={skill.level} strokeColor={getStatusColor(skill.status)} />
-                  </div>
-                ))
+                  );
+                })
               ) : (
-                <Empty description="暂无技能数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                <Empty description="暂无历史记录" image={Empty.PRESENTED_IMAGE_SIMPLE} />
               )}
             </div>
           </Card>
 
-          <Card title="学习时间轴">
-            {timeline.length > 0 ? (
-              <Timeline
-                items={timeline.map(item => ({
-                  color: 'blue',
-                  content: (
+          {/* 右侧详情展示 */}
+          <Card className="flex-1" title={reports.find(r => r.id === selectedReportId)?.title || '职业规划详情'}>
+            {generating && (
+              <div className="py-8 flex flex-col items-center">
+                <Spin size="large" tip="生成中..." />
+                <p className="mt-4 text-gray-500">正在根据您的资料生成职业规划...</p>
+              </div>
+            )}
+
+            {!generating && hasReport && (
+              <>
+                <Card title="整体评估" className="mb-4">
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <div className="font-medium">{item.title}</div>
-                      <div className="text-gray-500 text-sm">{item.desc}</div>
-                      <div className="text-gray-400 text-xs">{item.date}</div>
+                      <div className="text-gray-600 text-sm mb-1">资料完整度</div>
+                      <Progress percent={Math.round(completeness)} strokeColor="#52c41a" />
                     </div>
-                  ),
-                }))}
-              />
-            ) : (
-              <Empty description="暂无时间轴数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    <div>
+                      <div className="text-gray-600 text-sm mb-1">竞争力指数</div>
+                      <Progress percent={Math.round(competitiveness)} strokeColor="#1890ff" />
+                    </div>
+                  </div>
+                </Card>
+
+                <Card title="技能掌握进度" className="mb-4">
+                  <div className="space-y-4">
+                    {skills.length > 0 ? (
+                      skills.map((skill, index) => (
+                        <div key={index}>
+                          <div className="flex justify-between mb-1">
+                            <span className="font-medium">{skill.name}</span>
+                            <span style={{ color: getStatusColor(skill.status) }}>{skill.status}</span>
+                          </div>
+                          <Progress percent={skill.level} strokeColor={getStatusColor(skill.status)} />
+                        </div>
+                      ))
+                    ) : (
+                      <Empty description="暂无技能数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    )}
+                  </div>
+                </Card>
+
+                <Card title="学习时间轴">
+                  {timeline.length > 0 ? (
+                    <Timeline
+                      items={timeline.map(item => ({
+                        color: 'blue',
+                        content: (
+                          <div>
+                            <div className="font-medium">{item.title}</div>
+                            <div className="text-gray-500 text-sm">{item.desc}</div>
+                            <div className="text-gray-400 text-xs">{item.date}</div>
+                          </div>
+                        ),
+                      }))}
+                    />
+                  ) : (
+                    <Empty description="暂无时间轴数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                  )}
+                </Card>
+              </>
+            )}
+
+            {!generating && !hasReport && (
+              <Card>
+                <Empty
+                  description="暂无职业规划数据"
+                  image={Empty.PRESENTED_IMAGE_SIMPLE}
+                >
+                  <Button type="primary" onClick={handleGenerateReport}>
+                    生成职业规划
+                  </Button>
+                </Empty>
+              </Card>
             )}
           </Card>
-        </>
-      )}
-
-      {!hasReport && !generating && student && (
-        <Card>
-          <Empty
-            description="暂无职业规划数据"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            <Button type="primary" onClick={handleGenerateReport}>
-              生成职业规划
-            </Button>
-          </Empty>
-        </Card>
+        </div>
       )}
     </div>
   );
