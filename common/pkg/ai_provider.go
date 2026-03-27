@@ -140,14 +140,57 @@ func (p *OpenAIProvider) GenerateJobProfile(ctx context.Context, prompt string) 
 }
 
 func (p *OpenAIProvider) GenerateStudentProfile(ctx context.Context, resumeContent string) (string, error) {
+	prompt := `你是一名专业的职业规划顾问。请分析以下简历内容，提取学生的能力、技能和个人信息。
+
+请严格按照以下 JSON 格式返回，不要包含任何其他文字，不要使用 Markdown 代码块标记：
+
+{
+  "name": "姓名",
+  "education": "学历枚举值",
+  "major": "专业名称",
+  "graduationYear": 毕业年份,
+  "skills": [{"name": "技能名称", "level": 掌握程度, "years": 掌握年限}],
+  "certificates": [{"name": "证书名称", "level": "等级", "year": 获得年份}],
+  "softSkills": {"innovation": 创新能力, "learning": 学习能力, "pressure": 抗压能力, "communication": 沟通能力, "teamwork": 团队合作},
+  "internship": [{"company": "公司名称", "position": "职位", "duration": 实习时长, "description": "工作描述"}],
+  "projects": [{"name": "项目名称", "role": "角色", "description": "项目描述", "technologies": ["技术栈"]}],
+  "completeness": 完整度,
+  "competitiveness": 竞争力
+}
+
+字段说明：
+- name: 学生姓名（字符串）
+- education: 学历，必须是以下枚举值之一：high_school, bachelor, master, phd
+- major: 专业名称（字符串）
+- graduationYear: 毕业年份（整数，如 2025）
+- skills: 技能列表，每个技能包含 name（字符串）、level（0-100整数）、years（整数）
+- certificates: 证书列表，每个证书包含 name（字符串）、level（字符串）、year（整数）
+- softSkills: 软技能，包含 innovation、learning、pressure、communication、teamwork（均为0-100整数）
+- internship: 实习经历，包含 company、position、duration（月）、description（均为字符串，duration为整数）
+- projects: 项目经历，包含 name、role、description（字符串）和 technologies（字符串数组）
+- completeness: 完整度评估（0-100整数）
+- competitiveness: 竞争力评估（0-100整数）
+
+注意事项：
+1. 只返回有效的 JSON，不要包含任何其他文字
+2. 不要使用 Markdown 代码块标记，直接返回纯 JSON 文本
+3. 如果某些字段无法提取，使用 null 或空数组
+4. education 字段必须使用枚举值：high_school, bachelor, master, phd
+5. 所有数值字段必须是有效的 JSON 数字
+6. 所有字符串字段必须是有效的 JSON 字符串
+
+现在分析以下简历内容：
+
+%s`
+
 	req := OpenAIRequest{
 		Model: p.model,
 		Messages: []ChatMessage{
-			{Role: "system", Content: "You are a career advisor. Analyze the resume and extract student capabilities, skills, and profile information."},
-			{Role: "user", Content: resumeContent},
+			{Role: "system", Content: "你是一名专业的职业规划顾问，擅长分析简历并提取结构化信息。请严格按照指定的 JSON 格式返回结果，不要包含任何其他文字，不要使用 Markdown 代码块标记。"},
+			{Role: "user", Content: fmt.Sprintf(prompt, resumeContent)},
 		},
-		MaxTokens:   2000,
-		Temperature: 0.7,
+		MaxTokens:   3000,
+		Temperature: 0.5,
 	}
 
 	content, err := p.callAPI(ctx, req)
