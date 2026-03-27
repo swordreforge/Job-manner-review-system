@@ -74,6 +74,12 @@ export default function ResumePage() {
       setProgress(100);
 
       // 3. 处理响应
+      if (!response) {
+        setError('服务器未返回响应，请重试');
+        message.error('服务器未返回响应，请重试');
+        return;
+      }
+
       if (response.code === 0) {
         setProfile(response.data);
         setParsed(true);
@@ -84,7 +90,25 @@ export default function ResumePage() {
       }
     } catch (err: any) {
       console.error('Upload error:', err);
-      const errorMsg = err.response?.data?.msg || err.message || '上传失败，请检查网络连接';
+      let errorMsg = '上传失败，请检查网络连接';
+
+      if (err.response?.data) {
+        errorMsg = err.response.data.msg || err.response.data.message || errorMsg;
+      } else if (err.message) {
+        errorMsg = err.message;
+      }
+
+      // 特殊处理 401 错误
+      if (err.response?.status === 401) {
+        errorMsg = '请先登录后再上传简历';
+        message.error(errorMsg);
+        setTimeout(() => {
+          window.location.href = '/auth';
+        }, 1500);
+        setError(errorMsg);
+        return;
+      }
+
       setError(errorMsg);
       message.error(errorMsg);
     } finally {
