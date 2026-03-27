@@ -5,6 +5,7 @@ package report
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -124,20 +125,22 @@ func (l *GenerateReportStreamLogic) GenerateReportStream(req *types.GenerateRepo
 func (l *GenerateReportStreamLogic) generateFullReport(student *model.Students) ReportContent {
 	// 解析学生数据
 	skills := make([]SkillItem, 0)
-	if student.Skills != nil {
-		skillsData := student.Skills.([]interface{})
-		for _, s := range skillsData {
-			if skillMap, ok := s.(map[string]interface{}); ok {
-				name := fmt.Sprintf("%v", skillMap["name"])
-				level := 0
-				if l, ok := skillMap["level"].(float64); ok {
-					level = int(l)
+	if student.Skills.Valid {
+		var skillsData []interface{}
+		if err := json.Unmarshal([]byte(student.Skills.String), &skillsData); err == nil {
+			for _, s := range skillsData {
+				if skillMap, ok := s.(map[string]interface{}); ok {
+					name := fmt.Sprintf("%v", skillMap["name"])
+					level := 0
+					if l, ok := skillMap["level"].(float64); ok {
+						level = int(l)
+					}
+					skills = append(skills, SkillItem{
+						Name:   name,
+						Level:  level * 20, // 转换为百分比
+						Status: getStatus(level),
+					})
 				}
-				skills = append(skills, SkillItem{
-					Name:   name,
-					Level:  level * 20, // 转换为百分比
-					Status: getStatus(level),
-				})
 			}
 		}
 	}
@@ -214,14 +217,14 @@ func getStatus(level int) string {
 
 func (l *GenerateReportStreamLogic) saveReportToDatabase(student *model.Students, content ReportContent, track string) {
 	contentJson, _ := json.Marshal(content)
-	
+
 	_, err := l.svcCtx.ReportModel.Insert(l.ctx, &model.CareerReports{
 		StudentId: student.UserId,
-		Title:     fmt.Sprintf("职业规划报告 - %s", track),
-		Content:   string(contentJson),
+		Title:     sql.NullString{String: fmt.Sprintf("职业规划报告 - %s", track), Valid: true},
+		Content:   sql.NullString{String: string(contentJson), Valid: true},
 		Status:    "completed",
 	})
-	
+
 	if err != nil {
 		logx.Errorf("保存报告失败: %v", err)
 	}
