@@ -5,6 +5,7 @@ package report
 
 import (
 	"net/http"
+	"strconv"
 
 	"career-api/internal/logic/report"
 	"career-api/internal/svc"
@@ -16,13 +17,30 @@ import (
 func GenerateReportStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.GenerateReportStreamReq
-		if err := httpx.Parse(r, &req); err != nil {
+
+		// 从 URL 查询参数解析
+		studentIdStr := r.URL.Query().Get("studentId")
+		studentId, err := strconv.ParseInt(studentIdStr, 10, 64)
+		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
+		req.StudentId = studentId
+
+		req.Track = r.URL.Query().Get("track")
+
+		targetJobIdStr := r.URL.Query().Get("targetJobId")
+		if targetJobIdStr != "" {
+			targetJobId, err := strconv.ParseInt(targetJobIdStr, 10, 64)
+			if err != nil {
+				httpx.ErrorCtx(r.Context(), w, err)
+				return
+			}
+			req.TargetJobId = targetJobId
+		}
 
 		l := report.NewGenerateReportStreamLogic(r.Context(), svcCtx)
-		err := l.GenerateReportStream(&req)
+		err = l.GenerateReportStream(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

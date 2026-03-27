@@ -144,7 +144,7 @@ service career-api {
 
     @doc "Generate career report via SSE stream"
     @handler GenerateReportStream
-    post /reports/generate-stream (GenerateReportStreamReq)
+    get /reports/generate-stream (GenerateReportStreamReq)
 
     @doc "Get report by id"
     @handler GetReport
