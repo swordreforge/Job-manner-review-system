@@ -124,40 +124,18 @@ func cleanText(text string) string {
 	text = strings.ReplaceAll(text, "&#62;", ">")
 	text = strings.ReplaceAll(text, "&#39;", "'")
 
+	// 将所有换行符替换为空格
+	text = strings.ReplaceAll(text, "\n", " ")
+	text = strings.ReplaceAll(text, "\r", " ")
+	text = strings.ReplaceAll(text, "\t", " ")
+
 	// 将多个连续空格替换为单个空格
-	spaceRegex := strings.Builder{}
-	for i := 0; i < 10; i++ {
-		spaceRegex.WriteString(" ")
-	}
-	for len(spaceRegex.String()) > 1 {
-		text = strings.ReplaceAll(text, spaceRegex.String(), " ")
-		spaceRegex.Reset()
-		for i := 0; i < len(spaceRegex.String())-1; i++ {
-			spaceRegex.WriteString(" ")
-		}
+	for strings.Contains(text, "  ") {
+		text = strings.ReplaceAll(text, "  ", " ")
 	}
 
-	// 清理每行的前后空格
-	lines := strings.Split(text, "\n")
-	cleanedLines := make([]string, 0, len(lines))
-
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line != "" {
-			cleanedLines = append(cleanedLines, line)
-		}
-	}
-
-	// 重新组合，保留段落分隔（单个空行）
-	var result strings.Builder
-	for i, line := range cleanedLines {
-		if i > 0 {
-			result.WriteString("\n")
-		}
-		result.WriteString(line)
-	}
-
-	return strings.TrimSpace(result.String())
+	// 去除首尾空格
+	return strings.TrimSpace(text)
 }
 
 // ExtractText 根据文件扩展名提取文本
