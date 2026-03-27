@@ -48,12 +48,12 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const result = await userApi.register(values);
-      // 后端直接返回数据，不包装在 code/msg/data 中
-      if (result.id) {
+      // 后端返回包装格式 { code, msg, data }
+      if (result.code === 0 && result.data) {
         message.success('注册成功，请登录');
         setActiveTab('login');
       } else {
-        message.error('注册失败');
+        message.error(result.msg || '注册失败');
       }
     } catch (error: any) {
       console.error('Register error:', error);

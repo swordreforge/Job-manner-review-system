@@ -3,7 +3,7 @@ import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOut
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useAuthStore } from '../../stores';
-import { studentApi, userApi } from '../../api';
+import { userApi } from '../../api';
 
 const menuItems = [
   { icon: <HistoryOutlined />, title: '历史记录', desc: '查看所有操作记录' },

@@ -29,6 +29,11 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
+          // 动态导入store避免循环依赖
+          import('../stores').then(({ useAuthStore }) => {
+            useAuthStore.getState().clearAuth();
+            useAuthStore.getState().setAuthChecked(true);
+          });
           localStorage.removeItem('token');
           window.location.href = '/auth';
         }
@@ -62,7 +67,7 @@ export const api = new ApiClient();
 
 export const userApi = {
   register: (data: { username: string; password: string; email: string; phone?: string }) =>
-    api.post<{ id: number; username: string; email: string; phone: string; role: string; createdAt: number }>('/user/register', data),
+    api.post<{ code: number; msg: string; data: import('../types').User }>('/user/register', data),
 
   login: (data: { username: string; password: string }) =>
     api.post<{ token: string; expires: number; userId: number }>('/user/login', data),
@@ -74,58 +79,76 @@ export const userApi = {
 };
 
 export const studentApi = {
-  create: (data: Partial<import('../types').Student>) => api.post<import('../types').Student>('/students', data),
-  update: (data: import('../types').Student) => api.put<import('../types').Student>('/students', data),
-  get: (id: number) => api.get<import('../types').Student>(`/students/${id}`),
+  create: (data: Partial<import('../types').Student>) =>
+    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students', data),
+  update: (data: import('../types').Student) =>
+    api.put<{ code: number; msg: string; data: import('../types').Student }>('/students', data),
+  get: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').Student }>(`/students/${id}`),
   delete: (id: number) => api.delete<void>(`/students/${id}`),
-  list: (params?: { page?: number; pageSize?: number; major?: string; education?: string }) => 
-    api.get<import('../types').PageResponse<import('../types').Student>>('/students', { params }),
-  getMe: () => api.get<import('../types').Student>('/students/me'),
-  uploadResume: (data: { fileContent: string; fileName: string }) => 
-    api.post<import('../types').Student>('/students/resume', data),
-  generate: (data: { resumeContent: string }) => 
-    api.post<import('../types').Student>('/students/generate', data),
+  list: (params?: { page?: number; pageSize?: number; major?: string; education?: string }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Student> }>('/students', { params }),
+  getMe: () =>
+    api.get<{ code: number; msg: string; data: import('../types').Student }>('/students/me'),
+  uploadResume: (data: { fileContent: string; fileName: string }) =>
+    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/resume', data),
+  generate: (data: { resumeContent: string }) =>
+    api.post<{ code: number; msg: string; data: import('../types').Student }>('/students/generate', data),
 };
 
 export const jobApi = {
-  create: (data: Partial<import('../types').Job>) => api.post<import('../types').Job>('/jobs', data),
-  update: (data: import('../types').Job) => api.put<import('../types').Job>('/jobs', data),
-  get: (id: number) => api.get<import('../types').Job>(`/jobs/${id}`),
+  create: (data: Partial<import('../types').Job>) =>
+    api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs', data),
+  update: (data: import('../types').Job) =>
+    api.put<{ code: number; msg: string; data: import('../types').Job }>('/jobs', data),
+  get: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').Job }>(`/jobs/${id}`),
   delete: (id: number) => api.delete<void>(`/jobs/${id}`),
-  list: (params?: { page?: number; pageSize?: number; industry?: string; name?: string }) => 
-    api.get<import('../types').PageResponse<import('../types').Job>>('/jobs', { params }),
-  generate: (data: { positionName: string; industry?: string; rawData?: string }) => 
-    api.post<import('../types').Job>('/jobs/generate', data),
+  list: (params?: { page?: number; pageSize?: number; industry?: string; name?: string }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Job> }>('/jobs', { params }),
+  generate: (data: { positionName: string; industry?: string; rawData?: string }) =>
+    api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs/generate', data),
 };
 
 export const matchApi = {
-  matchSingle: (data: { studentId: number; jobId: number }) => 
-    api.post<import('../types').MatchResult>('/match', data),
-  matchJobs: (data: { studentId: number; page?: number; pageSize?: number; minScore?: number; industry?: string }) => 
-    api.post<import('../types').PageResponse<import('../types').MatchResult>>('/match/jobs', data),
-  getScore: (studentId: number, jobId: number) => 
-    api.get<import('../types').MatchResult>(`/match/${studentId}/${jobId}/score`),
-  recommend: (studentId: number, params?: { page?: number; pageSize?: number; industry?: string }) => 
-    api.get<import('../types').PageResponse<import('../types').Job>>(`/match/${studentId}/recommend`, { params }),
+  matchSingle: (data: { studentId: number; jobId: number }) =>
+    api.post<{ code: number; msg: string; data: import('../types').MatchResult }>('/match', data),
+  matchJobs: (data: { studentId: number; page?: number; pageSize?: number; minScore?: number; industry?: string }) =>
+    api.post<{ code: number; msg: string; total: number; list: import('../types').MatchResult[] }>('/match/jobs', data),
+  getScore: (studentId: number, jobId: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').MatchResult }>(`/match/${studentId}/${jobId}/score`),
+  recommend: (studentId: number, params?: { page?: number; pageSize?: number; industry?: string }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Job> }>(`/match/${studentId}/recommend`, { params }),
 };
 
 export const reportApi = {
-  generate: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) => 
-    api.post<import('../types').Report>('/reports/generate', data),
-  generateStream: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) => 
-    `/reports/generate-stream`,
-  get: (id: number) => api.get<import('../types').Report>(`/reports/${id}`),
-  update: (data: { id: number; title?: string; content?: string; status?: string }) => 
-    api.put<import('../types').Report>('/reports', data),
+  generate: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) =>
+    api.post<{ code: number; msg: string; data: import('../types').Report }>('/reports/generate', data),
+  generateStream: (data: { studentId: number; track?: string; targetJobId?: number }) => {
+    const params = new URLSearchParams({
+      studentId: String(data.studentId),
+    });
+    if (data.track) params.append('track', data.track);
+    if (data.targetJobId) params.append('targetJobId', String(data.targetJobId));
+    const token = localStorage.getItem('token');
+    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
+    return `${BASE_URL}/reports/generate-stream?${params.toString()}${authParam}`;
+  },
+  get: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').Report }>(`/reports/${id}`),
+  update: (data: { id: number; title?: string; content?: string; status?: string }) =>
+    api.put<{ code: number; msg: string; data: import('../types').Report }>('/reports', data),
   delete: (id: number) => api.delete<void>(`/reports/${id}`),
-  list: (params?: { page?: number; pageSize?: number; studentId?: number; status?: string }) => 
-    api.get<import('../types').PageResponse<import('../types').Report>>('/reports', { params }),
-  export: (data: { reportId: number; format: 'pdf' | 'docx' | 'json' }) => 
-    api.post<{ url: string }>('/reports/export', data),
-  polish: (data: { reportId: number; level: 'light' | 'normal' | 'thorough' }) => 
-    api.post<import('../types').Report>('/reports/polish', data),
-  getCompleteness: (id: number) => api.get<{ score: number; missingFields: string[] }>(`/reports/${id}/completeness`),
-  getMe: () => api.get<import('../types').PageResponse<import('../types').Report>>('/reports/me'),
+  list: (params?: { page?: number; pageSize?: number; studentId?: number; status?: string }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Report> }>('/reports', { params }),
+  export: (data: { reportId: number; format: 'pdf' | 'docx' | 'json' }) =>
+    api.post<{ code: number; msg: string; url: string }>('/reports/export', data),
+  polish: (data: { reportId: number; level: 'light' | 'normal' | 'thorough' }) =>
+    api.post<{ code: number; msg: string; data: import('../types').Report }>('/reports/polish', data),
+  getCompleteness: (id: number) =>
+    api.get<{ code: number; msg: string; data: { score: number; missingFields: string[] } }>(`/reports/${id}/completeness`),
+  getMe: () =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Report> }>('/reports/me'),
 };
 
 export const healthApi = {
