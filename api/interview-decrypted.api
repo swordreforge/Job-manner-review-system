@@ -1,61 +1,56 @@
 syntax = "v1"
 
 type (
-    StartInterviewReq {
-        Mode string `json:"mode,optional,validate:"omitempty,oneof=practice assessment"`
-    }
-
-    InterviewResp {
-        Code int              `json:"code"`
-        Msg  string           `json:"msg"`
-        Data *InterviewSession `json:"data,optional"`
-    }
-
-    InterviewSession {
-        Id        int64  `json:"id"`
-        Mode      string `json:"mode"`
-        Status    string `json:"status"`
-        CreatedAt int64  `json:"createdAt"`
-    }
-
-    InterviewChatStreamReq {
-        Message string `json:"message,validate:"required,min=1,max=500"`
-    }
-
-    InterviewHistoryResp {
-        Id          int64   `json:"id"`
-        Mode        string  `json:"mode"`
-        Score       float64 `json:"score"`
-        Status      string  `json:"status"`
-        CreatedAt   int64   `json:"createdAt"`
-    }
-
-    InterviewHistoryListResp {
-        Code int                     `json:"code"`
-        Msg  string                  `json:"msg"`
-        Data *InterviewHistoryResult `json:"data,optional"`
-    }
-
-    InterviewHistoryResult {
-        Total int64                   `json:"total"`
-        List  []InterviewHistoryResp  `json:"list"`
-    }
+	StartInterviewReq {
+		Mode string `json:"mode,optional,validate:"omitempty,oneof=practice assessment"`
+	}
+	InterviewResp {
+		Code int               `json:"code"`
+		Msg  string            `json:"msg"`
+		Data *InterviewSession `json:"data,optional"`
+	}
+	InterviewSession {
+		Id        int64  `json:"id"`
+		Mode      string `json:"mode"`
+		Status    string `json:"status"`
+		CreatedAt int64  `json:"createdAt"`
+	}
+	InterviewChatStreamReq {
+		Message string `json:"message,validate:"required,min=1,max=500"`
+	}
+	InterviewHistoryResp {
+		Id        int64   `json:"id"`
+		Mode      string  `json:"mode"`
+		Score     float64 `json:"score"`
+		Status    string  `json:"status"`
+		CreatedAt int64   `json:"createdAt"`
+	}
+	InterviewHistoryListResp {
+		Code int                     `json:"code"`
+		Msg  string                  `json:"msg"`
+		Data *InterviewHistoryResult `json:"data,optional"`
+	}
+	InterviewHistoryResult {
+		Total int64                  `json:"total"`
+		List  []InterviewHistoryResp `json:"list"`
+	}
 )
 
-@server(
-    prefix: /api/v1
-    group: interview
+@server (
+	prefix: /api/v1
+	group:  interview
 )
 service career-api {
-    @doc "Start interview session"
-    @handler StartInterview
-    post /interview/start (StartInterviewReq) returns (InterviewResp)
+	@doc "Start interview session"
+	@handler StartInterview
+	post /interview/start (StartInterviewReq) returns (InterviewResp)
 
-    @doc "Interview chat via SSE stream"
-    @handler InterviewChatStream
-    post /interview/chat-stream (InterviewChatStreamReq)
+	@doc "Interview chat via SSE stream"
+	@handler InterviewChatStream
+	post /interview/chat-stream (InterviewChatStreamReq)
 
-    @doc "Get interview history"
-    @handler GetInterviewHistory
-    get /interview/history returns (InterviewHistoryListResp)
+	@doc "Get interview history"
+	@handler GetInterviewHistory
+	get /interview/history returns (InterviewHistoryListResp)
 }
+

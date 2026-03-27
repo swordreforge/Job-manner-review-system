@@ -36,19 +36,13 @@ type (
 		Description string `json:"description"`
 	}
 	Project {
-		Name         string   `json:"name"`
-		Role         string   `json:"role"`
-		Description  string   `json:"description"`
-		Technologies []string `json:"technologies"`
-	}
-	SoftSkills {
-		Innovation    int `json:"innovation"`
-		Learning      int `json:"learning"`
-		Pressure      int `json:"pressure"`
-		Communication int `json:"communication"`
-		Teamwork      int `json:"teamwork"`
-	}
-	CreateStudentReq {
+	        Name        string `json:"name"`
+	        Role        string `json:"role"`
+	        Description string `json:"description"`
+	        Technologies []string `json:"technologies"`
+	    }
+	
+	    CreateStudentReq {
 		Name           string         `json:"name,optional,validate:"omitempty,min=2,max=50"`
 		Education      string         `json:"education,optional,validate:"omitempty,oneof=high_school bachelor master phd"`
 		Major          string         `json:"major,optional,validate:"omitempty,min=2,max=100"`
