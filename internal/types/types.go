@@ -59,10 +59,10 @@ type CreateJobReq struct {
 }
 
 type CreateStudentReq struct {
-	Name           string         `json:"name,optional" validate:"omitempty,min=2,max=50"`
-	Education      string         `json:"education,optional" validate:"omitempty,oneof=high_school bachelor master phd"`
-	Major          string         `json:"major,optional" validate:"omitempty,min=2,max=100"`
-	GraduationYear int            `json:"graduationYear,optional" validate:"omitempty,min=2020,max=2030"`
+	Name           string         `json:"name,optional,validate:"omitempty,min=2,max=50"`
+	Education      string         `json:"education,optional,validate:"omitempty,oneof=high_school bachelor master phd"`
+	Major          string         `json:"major,optional,validate:"omitempty,min=2,max=100"`
+	GraduationYear int            `json:"graduationYear,optional,validate:"omitempty,min=2020,max=2030"`
 	Skills         []StudentSkill `json:"skills,optional"`
 	Certificates   []StudentCert  `json:"certificates,optional"`
 	SoftSkills     SoftSkills     `json:"softSkills,optional"`
@@ -76,8 +76,8 @@ type ErrorResp struct {
 }
 
 type ExportReq struct {
-	ReportId int64  `json:"reportId" validate:"required,gt=0"`
-	Format   string `json:"format" validate:"required,oneof=pdf docx json"`
+	ReportId int64  `json:"reportId,validate:"required,gt=0"`
+	Format   string `json:"format,validate:"required,oneof=pdf docx json"`
 }
 
 type ExportResp struct {
@@ -96,19 +96,19 @@ type Gap struct {
 }
 
 type GenerateProfileReq struct {
-	ResumeContent string `json:"resumeContent" validate:"required,min=10"`
+	ResumeContent string `json:"resumeContent,validate:"required,min=10"`
 }
 
 type GenerateReportReq struct {
-	StudentId   int64         `json:"studentId" validate:"required,gt=0"`
-	TargetJobId int64         `json:"targetJobId,optional" validate:"omitempty,gt=0"`
+	StudentId   int64         `json:"studentId,validate:"required,gt=0"`
+	TargetJobId int64         `json:"targetJobId,optional,validate:"omitempty,gt=0"`
 	Options     ReportOptions `json:"options,optional"`
 }
 
 type GenerateReportStreamReq struct {
-	StudentId   int64  `json:"studentId" validate:"required,gt=0"`
-	Track       string `json:"track" validate:"required,oneof=full quick gap"`
-	TargetJobId int64  `json:"targetJobId,optional" validate:"omitempty,gt=0"`
+	StudentId   int64  `json:"studentId,validate:"required,gt=0"`
+	Track       string `json:"track,validate:"required,oneof=full quick gap"`
+	TargetJobId int64  `json:"targetJobId,optional,validate:"omitempty,gt=0"`
 }
 
 type HealthResp struct {
@@ -257,8 +257,8 @@ type Milestone struct {
 }
 
 type PolishReq struct {
-	ReportId int64  `json:"reportId" validate:"required,gt=0"`
-	Level    string `json:"level" validate:"required,oneof=light normal thorough"`
+	ReportId int64  `json:"reportId,validate:"required,gt=0"`
+	Level    string `json:"level,validate:"required,oneof=light normal thorough"`
 }
 
 type Project struct {
@@ -289,14 +289,14 @@ type RegisterReq struct {
 
 type RelatedJobsReq struct {
 	JobId int64  `path:"id"`
-	Type  string `path:"type,options=[promotion transfer related]"`
+	Type  string `path:"type,options=promotion transfer related"`
 }
 
 type ReportListReq struct {
-	Page      int    `form:"page,default=1 validate:"omitempty,min=1"`
-	PageSize  int    `form:"pageSize,default=10 validate:"omitempty,min=1,max=100"`
-	StudentId int64  `form:"studentId,optional validate:"omitempty,gt=0"`
-	Status    string `form:"status,optional validate:"omitempty,oneof=draft completed failed"`
+	Page      int    `form:"page,default=1,validate:"omitempty,min=1"`
+	PageSize  int    `form:"pageSize,default=10,validate:"omitempty,min=1,max=100"`
+	StudentId int64  `form:"studentId,optional,validate:"omitempty,gt=0"`
+	Status    string `form:"status,optional,validate:"omitempty,oneof=draft completed failed"`
 }
 
 type ReportListResp struct {
@@ -313,7 +313,7 @@ type ReportListResultResp struct {
 type ReportOptions struct {
 	IncludeGapAnalysis bool `json:"includeGapAnalysis"`
 	IncludeActionPlan  bool `json:"includeActionPlan"`
-	DetailedLevel      int  `json:"detailedLevel" validate:"omitempty,min=1,max=3"`
+	DetailedLevel      int  `json:"detailedLevel,validate:"omitempty,min=1,max=3"`
 }
 
 type ReportOverview struct {
@@ -338,8 +338,8 @@ type Requirements struct {
 }
 
 type ResumeUploadReq struct {
-	FileContent string `json:"fileContent" validate:"required"`
-	FileName    string `json:"fileName" validate:"required,min=1,max=255"`
+	FileContent string `json:"fileContent,validate:"required"`
+	FileName    string `json:"fileName,validate:"required,min=1,max=255"`
 }
 
 type Skill struct {
@@ -440,18 +440,18 @@ type UpdateJobReq struct {
 }
 
 type UpdateReportReq struct {
-	Id      int64  `json:"id" validate:"required,gt=0"`
-	Title   string `json:"title,optional" validate:"omitempty,max=200"`
-	Content string `json:"content,optional" validate:"omitempty,max=10000"`
-	Status  string `json:"status,optional" validate:"omitempty,oneof=draft completed failed"`
+	Id      int64  `json:"id,validate:"required,gt=0"`
+	Title   string `json:"title,optional,validate:"omitempty,max=200"`
+	Content string `json:"content,optional,validate:"omitempty,max=10000"`
+	Status  string `json:"status,optional,validate:"omitempty,oneof=draft completed failed"`
 }
 
 type UpdateStudentReq struct {
-	Id             int64          `json:"id" validate:"required,gt=0"`
-	Name           string         `json:"name,optional" validate:"omitempty,min=2,max=50"`
-	Education      string         `json:"education,optional" validate:"omitempty,oneof=high_school bachelor master phd"`
-	Major          string         `json:"major,optional" validate:"omitempty,min=2,max=100"`
-	GraduationYear int            `json:"graduationYear,optional" validate:"omitempty,min=2020,max=2030"`
+	Id             int64          `json:"id,validate:"required,gt=0"`
+	Name           string         `json:"name,optional,validate:"omitempty,min=2,max=50"`
+	Education      string         `json:"education,optional,validate:"omitempty,oneof=high_school bachelor master phd"`
+	Major          string         `json:"major,optional,validate:"omitempty,min=2,max=100"`
+	GraduationYear int            `json:"graduationYear,optional,validate:"omitempty,min=2020,max=2030"`
 	Skills         []StudentSkill `json:"skills,optional"`
 	Certificates   []StudentCert  `json:"certificates,optional"`
 	SoftSkills     SoftSkills     `json:"softSkills,optional"`
@@ -460,119 +460,21 @@ type UpdateStudentReq struct {
 }
 
 type UpdateUserReq struct {
-
 	Email string `json:"email,optional" validate:"omitempty,email"`
-
 	Phone string `json:"phone,optional" validate:"omitempty,len=11"`
-
 }
-
-
 
 type UserInfo struct {
-
 	Id        int64  `json:"id"`
-
 	Username  string `json:"username"`
-
 	Email     string `json:"email"`
-
 	Phone     string `json:"phone"`
-
 	Role      string `json:"role"`
-
-	CreatedAt int64 `json:"createdAt"`
-
+	CreatedAt int64  `json:"createdAt"`
 }
-
-
 
 type UserResp struct {
-
 	Code int       `json:"code"`
-
 	Msg  string    `json:"msg"`
-
 	Data *UserInfo `json:"data,optional"`
-
-}
-
-
-
-type StartInterviewReq struct {
-
-	Mode string `json:"mode,optional" validate:"omitempty,oneof=practice assessment"`
-
-}
-
-
-
-type InterviewResp struct {
-
-	Code int              `json:"code"`
-
-	Msg  string           `json:"msg"`
-
-	Data *InterviewSession `json:"data,optional"`
-
-}
-
-
-
-type InterviewSession struct {
-
-	Id        int64  `json:"id"`
-
-	Mode      string `json:"mode"`
-
-	Status    string `json:"status"`
-
-	CreatedAt int64  `json:"createdAt"`
-
-}
-
-
-
-type InterviewChatStreamReq struct {
-
-	Message string `json:"message" validate:"required,min=1,max=500"`
-
-}
-
-
-
-type InterviewHistoryResp struct {
-
-	Id        int64   `json:"id"`
-
-	Mode      string  `json:"mode"`
-
-	Score     float64 `json:"score"`
-
-	Status    string  `json:"status"`
-
-	CreatedAt int64   `json:"createdAt"`
-
-}
-
-
-
-type InterviewHistoryListResp struct {
-
-	Code int                     `json:"code"`
-
-	Msg  string                  `json:"msg"`
-
-	Data *InterviewHistoryResult `json:"data,optional"`
-
-}
-
-
-
-type InterviewHistoryResult struct {
-
-	Total int64                   `json:"total"`
-
-	List  []InterviewHistoryResp  `json:"list"`
-
 }
