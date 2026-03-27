@@ -147,3 +147,14 @@ export interface PolishReportRequest {
   reportId: number;
   level: 'light' | 'normal' | 'thorough';
 }
+
+export interface SSEMessage {
+  type: 'text' | 'json' | 'error';
+  content?: string;
+  data?: unknown;
+}
+
+export interface HealthResponse {
+  status: string;
+  version: string;
+}

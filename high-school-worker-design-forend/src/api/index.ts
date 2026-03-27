@@ -112,6 +112,8 @@ export const matchApi = {
 export const reportApi = {
   generate: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) => 
     api.post<import('../types').Report>('/reports/generate', data),
+  generateStream: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) => 
+    `/reports/generate-stream`,
   get: (id: number) => api.get<import('../types').Report>(`/reports/${id}`),
   update: (data: { id: number; title?: string; content?: string; status?: string }) => 
     api.put<import('../types').Report>('/reports', data),
@@ -124,6 +126,10 @@ export const reportApi = {
     api.post<import('../types').Report>('/reports/polish', data),
   getCompleteness: (id: number) => api.get<{ score: number; missingFields: string[] }>(`/reports/${id}/completeness`),
   getMe: () => api.get<import('../types').PageResponse<import('../types').Report>>('/reports/me'),
+};
+
+export const healthApi = {
+  check: () => api.get<{ status: string; version: string }>('/health'),
 };
 
 export const jobPathApi = {
