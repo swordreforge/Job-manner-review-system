@@ -63,14 +63,14 @@ export const api = new ApiClient();
 export const userApi = {
   register: (data: { username: string; password: string; email: string; phone?: string }) =>
     api.post<{ id: number; username: string; email: string; phone: string; role: string; createdAt: number }>('/user/register', data),
-  
+
   login: (data: { username: string; password: string }) =>
     api.post<{ token: string; expires: number; userId: number }>('/user/login', data),
-  
-  getInfo: () => api.get<import('../types').User>('/user/info'),
-  
+
+  getInfo: () => api.get<{ code: number; msg: string; data: import('../types').User }>('/user/info'),
+
   updateInfo: (data: { email?: string; phone?: string }) =>
-    api.put<import('../types').User>('/user/info', data),
+    api.put<{ code: number; msg: string; data: import('../types').User }>('/user/info', data),
 };
 
 export const studentApi = {

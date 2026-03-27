@@ -24,8 +24,8 @@ export default function AuthPage() {
         // 获取用户信息
         try {
           const userInfo = await userApi.getInfo();
-          if (userInfo) {
-            setUser(userInfo);
+          if (userInfo && userInfo.data) {
+            setUser(userInfo.data);
           }
         } catch (error) {
           console.error('Failed to get user info:', error);
