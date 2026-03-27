@@ -254,10 +254,14 @@ Requirements:
 			return
 		}
 
+		// 添加调试日志
+		logx.Infof("Calling AI API: URL=%s, Model=%s, APIKey=%s", p.baseURL+"/chat/completions", p.model, p.apiKey[:10]+"...")
+
 		c := &http.Client{Timeout: p.timeout}
 		httpReq, _ := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/chat/completions", bytes.NewReader(body))
 		httpReq.Header.Set("Content-Type", "application/json")
 		httpReq.Header.Set("Authorization", "Bearer "+p.apiKey)
+		httpReq.Header.Set("Accept", "text/event-stream") // 添加 Accept 头
 
 		resp, err := c.Do(httpReq)
 		if err != nil {
@@ -267,7 +271,10 @@ Requirements:
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			errChan <- fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+			// 读取响应体获取详细错误信息
+			body, _ := io.ReadAll(resp.Body)
+			logx.Errorf("AI API error: status=%d, body=%s", resp.StatusCode, string(body))
+			errChan <- fmt.Errorf("AI API error: status=%d, body=%s", resp.StatusCode, string(body))
 			return
 		}
 
