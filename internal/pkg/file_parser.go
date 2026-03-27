@@ -24,7 +24,8 @@ func ExtractTextFromPDF(filePath string) (string, error) {
 	}
 	buf.ReadFrom(b)
 
-	return buf.String(), nil
+	// 清理提取的文本
+	return cleanText(buf.String()), nil
 }
 
 // ExtractTextFromDOCX 从 DOCX 文件提取文本
@@ -41,7 +42,8 @@ func ExtractTextFromDOCX(filePath string) (string, error) {
 	// 从 XML 中提取纯文本
 	text := extractTextFromXML(xmlContent)
 
-	return text, nil
+	// 清理提取的文本
+	return cleanText(text), nil
 }
 
 // extractTextFromXML 从 DOCX XML 内容中提取纯文本
@@ -106,6 +108,56 @@ func removeXMLTags(s string) string {
 	}
 
 	return result.String()
+}
+
+// cleanText 清理文本，去除多余空行、空格和转义字符
+func cleanText(text string) string {
+	// 替换转义字符
+	text = strings.ReplaceAll(text, "&quot;", `"`)
+	text = strings.ReplaceAll(text, "&amp;", "&")
+	text = strings.ReplaceAll(text, "&lt;", "<")
+	text = strings.ReplaceAll(text, "&gt;", ">")
+	text = strings.ReplaceAll(text, "&apos;", "'")
+	text = strings.ReplaceAll(text, "&#34;", `"`)
+	text = strings.ReplaceAll(text, "&#38;", "&")
+	text = strings.ReplaceAll(text, "&#60;", "<")
+	text = strings.ReplaceAll(text, "&#62;", ">")
+	text = strings.ReplaceAll(text, "&#39;", "'")
+
+	// 将多个连续空格替换为单个空格
+	spaceRegex := strings.Builder{}
+	for i := 0; i < 10; i++ {
+		spaceRegex.WriteString(" ")
+	}
+	for len(spaceRegex.String()) > 1 {
+		text = strings.ReplaceAll(text, spaceRegex.String(), " ")
+		spaceRegex.Reset()
+		for i := 0; i < len(spaceRegex.String())-1; i++ {
+			spaceRegex.WriteString(" ")
+		}
+	}
+
+	// 清理每行的前后空格
+	lines := strings.Split(text, "\n")
+	cleanedLines := make([]string, 0, len(lines))
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line != "" {
+			cleanedLines = append(cleanedLines, line)
+		}
+	}
+
+	// 重新组合，保留段落分隔（单个空行）
+	var result strings.Builder
+	for i, line := range cleanedLines {
+		if i > 0 {
+			result.WriteString("\n")
+		}
+		result.WriteString(line)
+	}
+
+	return strings.TrimSpace(result.String())
 }
 
 // ExtractText 根据文件扩展名提取文本
