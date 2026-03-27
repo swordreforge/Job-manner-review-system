@@ -16,23 +16,24 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const result = await userApi.login(values);
-      if (result.code === 0) {
-        setToken(result.data.token);
+      // 后端直接返回数据，不包装在 code/msg/data 中
+      if (result.token) {
+        setToken(result.token);
         message.success('登录成功');
-        
+
         // 获取用户信息
         try {
           const userInfo = await userApi.getInfo();
-          if (userInfo.code === 0) {
-            setUser(userInfo.data);
+          if (userInfo) {
+            setUser(userInfo);
           }
         } catch (error) {
           console.error('Failed to get user info:', error);
         }
-        
+
         navigate('/');
       } else {
-        message.error(result.msg || '登录失败');
+        message.error('登录失败');
       }
     } catch (error: any) {
       console.error('Login error:', error);
@@ -47,11 +48,12 @@ export default function AuthPage() {
     setLoading(true);
     try {
       const result = await userApi.register(values);
-      if (result.code === 0) {
+      // 后端直接返回数据，不包装在 code/msg/data 中
+      if (result.id) {
         message.success('注册成功，请登录');
         setActiveTab('login');
       } else {
-        message.error(result.msg || '注册失败');
+        message.error('注册失败');
       }
     } catch (error: any) {
       console.error('Register error:', error);

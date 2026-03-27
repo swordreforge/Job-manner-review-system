@@ -5,12 +5,17 @@ import PlanPage from './pages/Plan';
 import ResumePage from './pages/Resume';
 import ProfilePage from './pages/Profile';
 import AuthPage from './pages/Auth';
+import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
   return (
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/" element={
+        <ProtectedRoute>
+          <MainLayout />
+        </ProtectedRoute>
+      }>
         <Route index element={<HomePage />} />
         <Route path="plan" element={<PlanPage />} />
         <Route path="resume" element={<ResumePage />} />

@@ -30,7 +30,7 @@ class ApiClient {
       (error) => {
         if (error.response?.status === 401) {
           localStorage.removeItem('token');
-          window.location.href = '/login';
+          window.location.href = '/auth';
         }
         return Promise.reject(error);
       }
@@ -38,22 +38,22 @@ class ApiClient {
   }
 
   async get<T>(url: string, config?: AxiosRequestConfig) {
-    const response = await this.client.get<{ code: number; msg: string; data: T }>(url, config);
+    const response = await this.client.get<T>(url, config);
     return response.data;
   }
 
   async post<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
-    const response = await this.client.post<{ code: number; msg: string; data: T }>(url, data, config);
+    const response = await this.client.post<T>(url, data, config);
     return response.data;
   }
 
   async put<T>(url: string, data?: unknown, config?: AxiosRequestConfig) {
-    const response = await this.client.put<{ code: number; msg: string; data: T }>(url, data, config);
+    const response = await this.client.put<T>(url, data, config);
     return response.data;
   }
 
   async delete<T>(url: string, config?: AxiosRequestConfig) {
-    const response = await this.client.delete<{ code: number; msg: string; data: T }>(url, config);
+    const response = await this.client.delete<T>(url, config);
     return response.data;
   }
 }
