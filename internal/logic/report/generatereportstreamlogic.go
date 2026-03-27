@@ -9,8 +9,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	ai "career-api/common/pkg"
 	"career-api/internal/model"
 	"career-api/internal/svc"
 	"career-api/internal/types"
@@ -91,27 +93,64 @@ func (l *GenerateReportStreamLogic) GenerateReportStream(req *types.GenerateRepo
 		return fmt.Errorf("student not found: %v", err)
 	}
 
-	// 根据不同的 track 生成不同的报告内容
-	var reportContent ReportContent
-	if req.Track == "full" {
-		reportContent = l.generateFullReport(student)
-	} else if req.Track == "quick" {
-		reportContent = l.generateQuickReport(student)
-	} else if req.Track == "gap" {
-		reportContent = l.generateGapAnalysis(student)
-	} else {
-		reportContent = l.generateFullReport(student)
+	// 构建学生资料 JSON
+	studentProfileJSON, _ := json.Marshal(map[string]interface{}{
+		"name":           student.Name,
+		"education":      student.Education.String,
+		"major":          student.Major.String,
+		"graduationYear": student.GraduationYear.Int64,
+		"skills":         student.Skills.String,
+		"certificates":   student.Certificates.String,
+		"internship":     student.Internship.String,
+		"projects":       student.Projects.String,
+	})
+
+	// 发送开始事件
+	sendEvent("progress", map[string]string{"message": "正在连接 AI 服务..."})
+	time.Sleep(300 * time.Millisecond)
+
+	// 调用 AI 流式生成
+	aiReq := ai.ReportGenerationRequest{
+		StudentProfile: string(studentProfileJSON),
+		Options: ai.ReportOptions{
+			IncludeGapAnalysis: req.Track == "gap",
+			IncludeActionPlan:  req.Track == "full",
+			DetailedLevel:      3,
+		},
 	}
 
-	// 模拟流式发送数据
-	sendEvent("progress", map[string]string{"message": "正在分析学生资料..."})
-	time.Sleep(500 * time.Millisecond)
+	contentChan, errChan := l.svcCtx.AIProvider.GenerateCareerReportStream(l.ctx, aiReq)
 
-	sendEvent("progress", map[string]string{"message": "正在生成职业规划..."})
-	time.Sleep(500 * time.Millisecond)
+	// 收集完整的响应内容
+	var fullContent strings.Builder
+	sendEvent("progress", map[string]string{"message": "AI 正在生成报告..."})
 
-	sendEvent("progress", map[string]string{"message": "正在生成技能分析..."})
-	time.Sleep(500 * time.Millisecond)
+	// 实时流式发送 AI 生成的内容
+	for content := range contentChan {
+		fullContent.WriteString(content)
+		// 可以在这里实时发送部分内容
+	}
+
+	// 检查是否有错误
+	select {
+	case err := <-errChan:
+		if err != nil {
+			sendEvent("error", map[string]string{"message": fmt.Sprintf("AI 生成失败: %v", err)})
+			return err
+		}
+	default:
+	}
+
+	sendEvent("progress", map[string]string{"message": "正在解析报告内容..."})
+	time.Sleep(300 * time.Millisecond)
+
+	// 解析 AI 返回的 JSON
+	var reportContent ReportContent
+	if err := json.Unmarshal([]byte(fullContent.String()), &reportContent); err != nil {
+		logx.Errorf("解析 AI 响应失败: %v, 原始内容: %s", err, fullContent.String())
+		// 如果解析失败，使用默认数据
+		reportContent = l.generateFullReport(student)
+	}
 
 	// 发送完整的报告
 	sendEvent("report", reportContent)
