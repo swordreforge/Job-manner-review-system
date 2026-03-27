@@ -197,7 +197,16 @@ export default function ResumePage() {
           title="简历解析完成"
           subTitle="AI 已完成简历分析，以下是详细信息"
           extra={[
-            <Button type="primary" key="optimize" onClick={() => message.info('优化建议功能开发中')}>
+            <Button 
+              type="primary" 
+              key="optimize" 
+              onClick={() => {
+                const element = document.getElementById('suggestions-section');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }}
+            >
               查看优化建议
             </Button>,
             <Button key="compare" onClick={() => message.info('双版本对比功能开发中')}>
@@ -392,7 +401,7 @@ export default function ResumePage() {
 
                 {/* 优化建议 */}
                 {profile.suggestions && profile.suggestions.length > 0 && (
-                  <Card title="优化建议" size="small">
+                  <Card id="suggestions-section" title="优化建议" size="small">
                     <List
                       dataSource={profile.suggestions}
                       renderItem={(suggestion, index) => (
