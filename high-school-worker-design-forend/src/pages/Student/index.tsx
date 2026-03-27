@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Divider, Spin } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { studentApi } from '../../api';
-import type { Student, Internship, Project } from '../../types';
+import type { Student } from '../../types';
 
 const { TextArea } = Input;
 const { Option } = Select;
@@ -31,13 +31,13 @@ export default function StudentPage() {
         // 处理skills：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
         const skillsData = data.skills && Array.isArray(data.skills)
           ? (typeof data.skills[0] === 'string'
-              ? (data.skills as string[]).map((skill: string, index: number) => ({
+              ? (data.skills as unknown as string[]).map((skill: string, index: number) => ({
                   key: index,
                   name: skill,
                   level: 3,
                   years: 1,
                 }))
-              : (data.skills as any[]).map((skill: any, index: number) => ({
+              : (data.skills as unknown as any[]).map((skill: any, index: number) => ({
                   key: index,
                   name: skill.name || '',
                   level: skill.level || 3,
@@ -48,13 +48,13 @@ export default function StudentPage() {
         // 处理certificates：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
         const certificatesData = data.certificates && Array.isArray(data.certificates)
           ? (typeof data.certificates[0] === 'string'
-              ? (data.certificates as string[]).map((cert: string, index: number) => ({
+              ? (data.certificates as unknown as string[]).map((cert: string, index: number) => ({
                   key: index,
                   name: cert,
                   level: '初级',
                   year: new Date().getFullYear(),
                 }))
-              : (data.certificates as any[]).map((cert: any, index: number) => ({
+              : (data.certificates as unknown as any[]).map((cert: any, index: number) => ({
                   key: index,
                   name: cert.name || '',
                   level: cert.level || '初级',
@@ -167,7 +167,7 @@ export default function StudentPage() {
             autoComplete="off"
           >
             {/* 基础信息 */}
-            <Divider orientation="left">基础信息</Divider>
+            <Divider>基础信息</Divider>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <Form.Item
@@ -217,7 +217,7 @@ export default function StudentPage() {
             </Row>
 
             {/* 技能信息 */}
-            <Divider orientation="left">技能信息</Divider>
+            <Divider>技能信息</Divider>
             <Form.List name="skills">
               {(fields, { add, remove }) => (
                 <>
@@ -260,7 +260,7 @@ export default function StudentPage() {
             </Form.List>
 
             {/* 证书信息 */}
-            <Divider orientation="left">证书信息</Divider>
+            <Divider>证书信息</Divider>
             <Form.List name="certificates">
               {(fields, { add, remove }) => (
                 <>
@@ -307,7 +307,7 @@ export default function StudentPage() {
             </Form.List>
 
             {/* 软技能 */}
-            <Divider orientation="left">软技能评估</Divider>
+            <Divider>软技能评估</Divider>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <Form.Item
@@ -357,7 +357,7 @@ export default function StudentPage() {
             </Row>
 
             {/* 实习经历 */}
-            <Divider orientation="left">实习经历</Divider>
+            <Divider>实习经历</Divider>
             <Form.List name="internship">
               {(fields, { add, remove }) => (
                 <>
@@ -419,7 +419,7 @@ export default function StudentPage() {
             </Form.List>
 
             {/* 项目经验 */}
-            <Divider orientation="left">项目经验</Divider>
+            <Divider>项目经验</Divider>
             <Form.List name="projects">
               {(fields, { add, remove }) => (
                 <>

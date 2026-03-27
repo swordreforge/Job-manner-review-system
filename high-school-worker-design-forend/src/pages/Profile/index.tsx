@@ -1,5 +1,5 @@
-import { Card, Avatar, Button, message, Badge, Tag } from 'antd';
-import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, BookOutlined, TrophyOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Avatar, Button, message, Tag } from 'antd';
+import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
@@ -65,10 +65,6 @@ export default function ProfilePage() {
 
   const handleEditStudent = () => {
     navigate('/student');
-  };
-
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp * 1000).toLocaleDateString('zh-CN');
   };
 
   const calculateCompleteness = (student: Student | null): number => {
