@@ -172,4 +172,15 @@ export const jobPathApi = {
     api.get<import('../types').Job[]>(`/jobs/${jobId}/related`, { params }),
 };
 
+export const hollandApi = {
+  getQuestions: () =>
+    api.get<{ code: number; msg: string; data: import('../types').HollandTestInfo }>('/holland/questions'),
+  submitTest: (answers: import('../types').HollandAnswer[]) =>
+    api.post<{ code: number; msg: string; data: import('../types').HollandResult }>('/holland/submit', { answers }),
+  getResult: (testId: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').HollandResult }>(`/holland/result/${testId}`),
+  getHistory: (params?: { page?: number; pageSize?: number }) =>
+    api.get<{ code: number; msg: string; data: import('../types').HollandHistoryData }>('/holland/history', { params }),
+};
+
 export default api;

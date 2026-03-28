@@ -19,18 +19,19 @@ import (
 )
 
 type ServiceContext struct {
-	Config                  *config.Config
-	Redis                   *redis.Redis
-	DB                      sqlx.SqlConn
-	AIProvider              ai.AIProvider
-	AITimeout               time.Duration
-	UserModel               model.UsersModel
-	JobModel                model.JobsModel
-	StudentModel            model.StudentsModel
-	ReportModel             model.CareerReportsModel
-	MatchModel              model.MatchRecordsModel
-	PromotionPathModel      model.JobPromotionPathsModel
-	ResumeParseHistoryModel model.ResumeParseHistoryModel
+	Config                   *config.Config
+	Redis                    *redis.Redis
+	DB                       sqlx.SqlConn
+	AIProvider               ai.AIProvider
+	AITimeout                time.Duration
+	UserModel                model.UsersModel
+	JobModel                 model.JobsModel
+	StudentModel             model.StudentsModel
+	ReportModel              model.CareerReportsModel
+	MatchModel               model.MatchRecordsModel
+	PromotionPathModel       model.JobPromotionPathsModel
+	ResumeParseHistoryModel  model.ResumeParseHistoryModel
+	HollandTestResultsModel  model.HollandTestResultsModel
 }
 
 func NewServiceContext(c *config.Config) *ServiceContext {
@@ -46,18 +47,19 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 	)
 
 	return &ServiceContext{
-		Config:                  c,
-		Redis:                   redisClient,
-		DB:                      mysqlConn,
-		AIProvider:              aiProvider,
-		AITimeout:               time.Duration(c.AI.Timeout) * time.Second,
-		UserModel:               model.NewUsersModel(mysqlConn),
-		JobModel:                model.NewJobsModel(mysqlConn),
-		StudentModel:            model.NewStudentsModel(mysqlConn),
-		ReportModel:             model.NewCareerReportsModel(mysqlConn),
-		MatchModel:              model.NewMatchRecordsModel(mysqlConn),
-		PromotionPathModel:      model.NewJobPromotionPathsModel(mysqlConn),
-		ResumeParseHistoryModel: model.NewResumeParseHistoryModel(mysqlConn),
+		Config:                   c,
+		Redis:                    redisClient,
+		DB:                       mysqlConn,
+		AIProvider:               aiProvider,
+		AITimeout:                time.Duration(c.AI.Timeout) * time.Second,
+		UserModel:                model.NewUsersModel(mysqlConn),
+		JobModel:                 model.NewJobsModel(mysqlConn),
+		StudentModel:             model.NewStudentsModel(mysqlConn),
+		ReportModel:              model.NewCareerReportsModel(mysqlConn),
+		MatchModel:               model.NewMatchRecordsModel(mysqlConn),
+		PromotionPathModel:       model.NewJobPromotionPathsModel(mysqlConn),
+		ResumeParseHistoryModel:  model.NewResumeParseHistoryModel(mysqlConn),
+		HollandTestResultsModel:  model.NewHollandTestResultsModel(mysqlConn),
 	}
 }
 

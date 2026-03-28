@@ -520,3 +520,105 @@ type ResumeHistoryListResultResp struct {
 	Msg  string                 `json:"msg"`
 	Data *ResumeHistoryListResp `json:"data,optional"`
 }
+
+// 霍兰德职业倾向测试相关类型
+type HollandQuestion struct {
+	Id       int             `json:"id"`
+	Question string          `json:"question"`
+	Options  []HollandOption `json:"options"`
+}
+
+type HollandOption struct {
+	Text string `json:"text"`
+	Type string `json:"type"`
+}
+
+type HollandAnswer struct {
+	QuestionId   int    `json:"questionId"`
+	SelectedType string `json:"selectedType"`
+}
+
+type HollandResult struct {
+	TestId       int64                `json:"testId"`
+	StudentId    int64                `json:"studentId"`
+	CareerCode   string               `json:"careerCode"`
+	Scores       map[string]int       `json:"scores"`
+	TopTypes     []HollandTypeInfo    `json:"topTypes"`
+	SuitableJobs []string             `json:"suitableJobs"`
+	Description  string               `json:"description"`
+	CreatedAt    int64                `json:"createdAt"`
+}
+
+type HollandTypeInfo struct {
+	Type        string `json:"type"`
+	Name        string `json:"name"`
+	Score       int    `json:"score"`
+	Description string `json:"description"`
+	Color       string `json:"color"`
+}
+
+type GetHollandQuestionsReq struct{}
+
+type GetHollandQuestionsResp struct {
+	Code int              `json:"code"`
+	Msg  string           `json:"msg"`
+	Data *HollandTestInfo `json:"data,optional"`
+}
+
+type HollandTestInfo struct {
+	TestInfo    HollandTestMeta      `json:"testInfo"`
+	Questions   []HollandQuestion    `json:"questions"`
+	CareerTypes map[string]HollandCareerType `json:"careerTypes"`
+}
+
+type HollandTestMeta struct {
+	Name           string `json:"name"`
+	Description    string `json:"description"`
+	Version        string `json:"version"`
+	TotalQuestions int    `json:"totalQuestions"`
+	EstimatedTime  string `json:"estimatedTime"`
+}
+
+type HollandCareerType struct {
+	Name         string   `json:"name"`
+	Description  string   `json:"description"`
+	Traits       []string `json:"traits"`
+	SuitableJobs []string `json:"suitableJobs"`
+	Color        string   `json:"color"`
+}
+
+type SubmitHollandTestReq struct {
+	Answers []HollandAnswer `json:"answers,validate:"required,dive,required"`
+}
+
+type SubmitHollandTestResp struct {
+	Code int            `json:"code"`
+	Msg  string         `json:"msg"`
+	Data *HollandResult `json:"data,optional"`
+}
+
+type GetHollandResultReq struct {
+	TestId int64 `path:"id"`
+}
+
+type GetHollandResultResp struct {
+	Code int            `json:"code"`
+	Msg  string         `json:"msg"`
+	Data *HollandResult `json:"data,optional"`
+}
+
+type GetHollandHistoryReq struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"pageSize,default=10"`
+}
+
+type GetHollandHistoryResp struct {
+	Code int                `json:"code"`
+	Msg  string             `json:"msg"`
+	Data *HollandHistoryData `json:"data,optional"`
+}
+
+type HollandHistoryData struct {
+	Total int64          `json:"total"`
+	List  []HollandResult `json:"list"`
+}

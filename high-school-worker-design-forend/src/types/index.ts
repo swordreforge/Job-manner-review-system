@@ -185,3 +185,66 @@ export interface ResumeHistoryRecord {
   competitivenessScore: number;
   createdAt: number;
 }
+
+// 霍兰德职业倾向测试相关类型
+export interface HollandQuestion {
+  id: number;
+  question: string;
+  options: HollandOption[];
+}
+
+export interface HollandOption {
+  text: string;
+  type: 'R' | 'I' | 'A' | 'S' | 'E' | 'C';
+}
+
+export interface HollandAnswer {
+  questionId: number;
+  selectedType: 'R' | 'I' | 'A' | 'S' | 'E' | 'C';
+}
+
+export interface HollandTestInfo {
+  testInfo: HollandTestMeta;
+  questions: HollandQuestion[];
+  careerTypes: Record<string, HollandCareerType>;
+}
+
+export interface HollandTestMeta {
+  name: string;
+  description: string;
+  version: string;
+  totalQuestions: number;
+  estimatedTime: string;
+}
+
+export interface HollandCareerType {
+  name: string;
+  description: string;
+  traits: string[];
+  suitableJobs: string[];
+  color: string;
+}
+
+export interface HollandResult {
+  testId: number;
+  studentId: number;
+  careerCode: string;
+  scores: Record<string, number>;
+  topTypes: HollandTypeInfo[];
+  suitableJobs: string[];
+  description: string;
+  createdAt: number;
+}
+
+export interface HollandTypeInfo {
+  type: string;
+  name: string;
+  score: number;
+  description: string;
+  color: string;
+}
+
+export interface HollandHistoryData {
+  total: number;
+  list: HollandResult[];
+}

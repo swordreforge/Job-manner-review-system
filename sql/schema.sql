@@ -98,3 +98,16 @@ CREATE TABLE IF NOT EXISTS match_records (
     KEY idx_job (job_id),
     KEY idx_score (overall_score)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS holland_test_results (
+    id BIGINT NOT NULL AUTO_INCREMENT,
+    student_id BIGINT NOT NULL,
+    career_code VARCHAR(10) NOT NULL COMMENT '职业代码，如RIA、SEC',
+    scores JSON NOT NULL COMMENT '各类型得分，如{"R":4,"I":3,"A":2,"S":1,"E":1,"C":0}',
+    suitable_jobs JSON NOT NULL COMMENT '推荐职业列表',
+    description TEXT COMMENT '测试结果描述',
+    created_at BIGINT NOT NULL,
+    PRIMARY KEY (id),
+    KEY idx_student_id (student_id),
+    KEY idx_career_code (career_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

@@ -302,4 +302,34 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		rest.WithPrefix("/api/v1"),
 	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// Get holland test questions
+				Method:  http.MethodGet,
+				Path:    "/holland/questions",
+				Handler: GetHollandQuestionsHandler(serverCtx),
+			},
+			{
+				// Submit holland test answers
+				Method:  http.MethodPost,
+				Path:    "/holland/submit",
+				Handler: SubmitHollandTestHandler(serverCtx),
+			},
+			{
+				// Get holland test result
+				Method:  http.MethodGet,
+				Path:    "/holland/result/:id",
+				Handler: GetHollandResultHandler(serverCtx),
+			},
+			{
+				// Get holland test history
+				Method:  http.MethodGet,
+				Path:    "/holland/history",
+				Handler: GetHollandHistoryHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+	)
 }

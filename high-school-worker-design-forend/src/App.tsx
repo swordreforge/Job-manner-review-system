@@ -6,6 +6,9 @@ import ResumePage from './pages/Resume';
 import ProfilePage from './pages/Profile';
 import StudentPage from './pages/Student';
 import AuthPage from './pages/Auth';
+import HollandTestPage from './pages/Holland';
+import HollandResultPage from './pages/Holland/Result';
+import HollandHistoryPage from './pages/Holland/History';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -23,6 +26,21 @@ export default function App() {
         <Route path="profile" element={<ProfilePage />} />
         <Route path="student" element={<StudentPage />} />
       </Route>
+      <Route path="/holland" element={
+        <ProtectedRoute>
+          <HollandTestPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/holland/result/:id" element={
+        <ProtectedRoute>
+          <HollandResultPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/holland/history" element={
+        <ProtectedRoute>
+          <HollandHistoryPage />
+        </ProtectedRoute>
+      } />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

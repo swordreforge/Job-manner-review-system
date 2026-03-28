@@ -1,4 +1,8 @@
+import { useNavigate } from 'react-router-dom';
+
 export default function HomePage() {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
       <div className="p-6">
@@ -8,6 +12,13 @@ export default function HomePage() {
         <div className="bg-white rounded-xl p-4 shadow-sm mb-4">
           <h2 className="font-semibold text-gray-700 mb-3">快速开始</h2>
           <div className="space-y-3">
+            <div 
+              className="p-3 bg-orange-50 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors"
+              onClick={() => navigate('/holland')}
+            >
+              <span className="text-orange-600 font-medium">职业倾向测试</span>
+              <p className="text-sm text-gray-500 mt-1">5分钟了解适合的职业方向</p>
+            </div>
             <div className="p-3 bg-blue-50 rounded-lg">
               <span className="text-blue-600 font-medium">生成职业规划</span>
               <p className="text-sm text-gray-500 mt-1">基于您的背景定制学习路径</p>
