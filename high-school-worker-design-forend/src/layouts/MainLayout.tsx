@@ -1,35 +1,43 @@
-import { Outlet } from 'react-router-dom';
+import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
 import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined } from '@ant-design/icons';
-import { useUIStore } from '../stores';
 import { useNavigate } from 'react-router-dom';
 
 export default function MainLayout() {
-  const { activeTab, setActiveTab } = useUIStore();
+  const location = useLocation();
   const navigate = useNavigate();
 
   const tabs = [
-    { key: 'home', title: '首页', icon: <HomeOutlined /> },
-    { key: 'plan', title: '规划', icon: <BulbOutlined /> },
-    { key: 'resume', title: '简历', icon: <FileTextOutlined /> },
-    { key: 'profile', title: '我的', icon: <UserOutlined /> },
+    { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
+    { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
+    { key: 'resume', title: '简历', icon: <FileTextOutlined />, path: '/resume' },
+    { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
 
+  // 根据当前路由计算应该高亮的标签
+  const getActiveTab = () => {
+    const pathname = location.pathname;
+    
+    // 精确匹配
+    const exactMatch = tabs.find(tab => tab.path === pathname);
+    if (exactMatch) return exactMatch.key;
+    
+    // 特殊路由匹配
+    if (pathname.startsWith('/holland')) return 'home';
+    if (pathname.startsWith('/plan')) return 'plan';
+    if (pathname.startsWith('/resume')) return 'resume';
+    if (pathname.startsWith('/profile')) return 'profile';
+    
+    // 默认返回首页
+    return 'home';
+  };
+
+  const activeTab = getActiveTab();
+
   const handleTabChange = (key: string) => {
-    setActiveTab(key);
-    switch (key) {
-      case 'home':
-        navigate('/');
-        break;
-      case 'plan':
-        navigate('/plan');
-        break;
-      case 'resume':
-        navigate('/resume');
-        break;
-      case 'profile':
-        navigate('/profile');
-        break;
+    const tab = tabs.find(t => t.key === key);
+    if (tab) {
+      navigate(tab.path);
     }
   };
 
