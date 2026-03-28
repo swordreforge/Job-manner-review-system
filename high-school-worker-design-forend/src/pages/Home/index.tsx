@@ -39,18 +39,6 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h2 className="font-semibold text-gray-700 mb-3">选择目标赛道</h2>
-          <div className="flex gap-4">
-            <button className="flex-1 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors">
-              大厂技术岗
-            </button>
-            <button className="flex-1 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
-              国企研发岗
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   );
