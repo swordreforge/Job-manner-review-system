@@ -50,15 +50,14 @@ func SubmitHollandTestHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func GetHollandResultHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		idStr := r.PathValue("id")
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			http.Error(w, "invalid id", http.StatusBadRequest)
+		var req types.GetHollandResultReq
+		if err := httpx.Parse(r, &req); err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
 		l := logic.NewGetHollandResultLogic(r.Context(), svcCtx)
-		resp, err := l.GetHollandResult(id)
+		resp, err := l.GetHollandResult(req.TestId)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
