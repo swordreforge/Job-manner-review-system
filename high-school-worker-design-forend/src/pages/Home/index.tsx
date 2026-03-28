@@ -19,11 +19,17 @@ export default function HomePage() {
               <span className="text-orange-600 font-medium">职业倾向测试</span>
               <p className="text-sm text-gray-500 mt-1">5分钟了解适合的职业方向</p>
             </div>
-            <div className="p-3 bg-blue-50 rounded-lg">
+            <div 
+              className="p-3 bg-blue-50 rounded-lg cursor-pointer hover:bg-blue-100 transition-colors"
+              onClick={() => navigate('/plan')}
+            >
               <span className="text-blue-600 font-medium">生成职业规划</span>
               <p className="text-sm text-gray-500 mt-1">基于您的背景定制学习路径</p>
             </div>
-            <div className="p-3 bg-green-50 rounded-lg">
+            <div 
+              className="p-3 bg-green-50 rounded-lg cursor-pointer hover:bg-green-100 transition-colors"
+              onClick={() => navigate('/resume')}
+            >
               <span className="text-green-600 font-medium">上传简历优化</span>
               <p className="text-sm text-gray-500 mt-1">AI 智能分析和优化建议</p>
             </div>
