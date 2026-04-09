@@ -499,52 +499,69 @@ export default function InterviewPage() {
         <Spin spinning={historyLoading}>
           <List
             dataSource={historyList}
-            renderItem={(item) => (
-              <List.Item
-                actions={[
-                  <Button 
-                    key="report" 
-                    type="link" 
-                    icon={<FileTextOutlined />}
-                    onClick={() => {
-                      setHistoryVisible(false);
-                      handleShowReport(item.id);
-                    }}
-                  >
-                    查看报告
-                  </Button>
-                ]}
-              >
-                <List.Item.Meta
-                  title={
-                    <div className="flex items-center gap-2">
-                      <Tag color={item.mode === 'practice' ? 'blue' : 'green'}>
-                        {getModeLabel(item.mode)}
-                      </Tag>
-                      <span>{getModeDescription(item.mode)}</span>
-                    </div>
-                  }
-                  description={
-                    <div className="space-y-1">
-                      <div>
-                        <Tag color={item.status === 'completed' ? 'success' : 'processing'}>
-                          {item.status === 'completed' ? '已完成' : '进行中'}
+            renderItem={(item) => {
+              const isCancelled = item.averageScore === 0;
+              return (
+                <List.Item
+                  actions={[
+                    <Button 
+                      key="report" 
+                      type="link" 
+                      icon={<FileTextOutlined />}
+                      disabled={isCancelled}
+                      onClick={() => {
+                        if (isCancelled) {
+                          message.warning('已取消的面试无法查看报告');
+                          return;
+                        }
+                        setHistoryVisible(false);
+                        handleShowReport(item.id);
+                      }}
+                    >
+                      查看报告
+                    </Button>
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={
+                      <div className="flex items-center gap-2">
+                        <Tag color={item.mode === 'practice' ? 'blue' : 'green'}>
+                          {getModeLabel(item.mode)}
                         </Tag>
-                        <span className="ml-2 text-sm">
-                          平均分: <span style={{ color: getScoreColor(item.averageScore), fontWeight: 'bold' }}>
-                            {item.averageScore.toFixed(1)}
+                        <span>{getModeDescription(item.mode)}</span>
+                        {isCancelled && (
+                          <Tag color="default">已取消</Tag>
+                        )}
+                      </div>
+                    }
+                    description={
+                      <div className="space-y-1">
+                        <div>
+                          {isCancelled ? (
+                            <Tag color="default">
+                              已取消
+                            </Tag>
+                          ) : (
+                            <Tag color={item.status === 'completed' ? 'success' : 'processing'}>
+                              {item.status === 'completed' ? '已完成' : '进行中'}
+                            </Tag>
+                          )}
+                          <span className="ml-2 text-sm">
+                            平均分: <span style={{ color: isCancelled ? '#999' : getScoreColor(item.averageScore), fontWeight: 'bold' }}>
+                              {isCancelled ? '-' : item.averageScore.toFixed(1)}
+                            </span>
                           </span>
-                        </span>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          问题数: {item.currentQuestion}/{item.totalQuestions} | 
+                          时长: {Math.floor(item.durationSeconds / 60)}分钟
+                        </div>
                       </div>
-                      <div className="text-xs text-gray-500">
-                        问题数: {item.currentQuestion}/{item.totalQuestions} | 
-                        时长: {Math.floor(item.durationSeconds / 60)}分钟
-                      </div>
-                    </div>
-                  }
-                />
-              </List.Item>
-            )}
+                    }
+                  />
+                </List.Item>
+              );
+            }}
           />
         </Spin>
       </Modal>
