@@ -3,7 +3,6 @@ import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Prog
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
-import './FloatingPolygons.css';
 
 export default function InterviewPage() {
   const [mode, setMode] = useState<'practice' | 'assessment'>('practice');
@@ -282,17 +281,7 @@ export default function InterviewPage() {
   };
 
   return (
-    <div className="min-h-screen animated-gradient p-4">
-      {/* 浮动多边形背景 */}
-      <div className="floating-polygons">
-        <div className="polygon polygon-1"></div>
-        <div className="polygon polygon-2"></div>
-        <div className="polygon polygon-3"></div>
-        <div className="polygon polygon-4"></div>
-        <div className="polygon polygon-5"></div>
-        <div className="polygon polygon-6"></div>
-      </div>
-      
+    <div className="min-h-screen p-4">
       {!started ? (
         <div className="max-w-4xl mx-auto mt-10 relative z-10">
           <Card title={<div className="text-2xl font-bold text-center">面试模拟系统</div>} className="glass-effect shadow-xl">

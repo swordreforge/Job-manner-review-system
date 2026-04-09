@@ -65,7 +65,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-lg">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">职业规划助手</h1>
