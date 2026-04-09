@@ -95,15 +95,18 @@ func (l *EndInterviewLogic) EndInterview(req *types.EndInterviewReq) (*types.End
 
 // generateReport 生成面试报告
 func (l *EndInterviewLogic) generateReport(sessionId int64, userId int64) {
+	// 创建新的context，避免原始context被取消
+	ctx := context.Background()
+	
 	// 获取会话信息
-	session, err := l.svcCtx.InterviewSessionsModel.FindOne(l.ctx, sessionId)
+	session, err := l.svcCtx.InterviewSessionsModel.FindOne(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get session for report: %v", err)
 		return
 	}
 
 	// 获取所有消息
-	messages, err := l.svcCtx.InterviewMessagesModel.FindBySessionId(l.ctx, sessionId)
+	messages, err := l.svcCtx.InterviewMessagesModel.FindBySessionId(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get messages for report: %v", err)
 		return
@@ -126,7 +129,7 @@ func (l *EndInterviewLogic) generateReport(sessionId int64, userId int64) {
 		UpdatedAt:             time.Now().Unix(),
 	}
 
-	_, err = l.svcCtx.InterviewReportsModel.InsertWithTimestamp(l.ctx, report)
+	_, err = l.svcCtx.InterviewReportsModel.InsertWithTimestamp(ctx, report)
 	if err != nil {
 		logx.Errorf("Failed to create report: %v", err)
 	}
