@@ -9,6 +9,7 @@ import AuthPage from './pages/Auth';
 import HollandTestPage from './pages/Holland';
 import HollandResultPage from './pages/Holland/Result';
 import HollandHistoryPage from './pages/Holland/History';
+import InterviewPage from './pages/Interview';
 import ProtectedRoute from './components/ProtectedRoute';
 
 export default function App() {
@@ -39,6 +40,11 @@ export default function App() {
       <Route path="/holland/history" element={
         <ProtectedRoute>
           <HollandHistoryPage />
+        </ProtectedRoute>
+      } />
+      <Route path="/interview" element={
+        <ProtectedRoute>
+          <InterviewPage />
         </ProtectedRoute>
       } />
       <Route path="*" element={<Navigate to="/" replace />} />
