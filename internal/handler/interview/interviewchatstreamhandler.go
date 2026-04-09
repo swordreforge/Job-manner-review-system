@@ -1,6 +1,7 @@
 package interview
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -18,13 +19,20 @@ func InterviewChatStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		
 		// 支持GET请求（EventSource只支持GET）
 		if r.Method == http.MethodGet {
-			// 从URL参数中获取sessionId和message
+			// 从URL查询参数中获取sessionId和message
 			sessionIdStr := r.URL.Query().Get("sessionId")
 			message := r.URL.Query().Get("message")
 			
+			if sessionIdStr == "" || message == "" {
+				httpx.ErrorCtx(r.Context(), w, 
+					errors.New("sessionId and message are required"))
+				return
+			}
+			
 			sessionId, err := strconv.ParseInt(sessionIdStr, 10, 64)
 			if err != nil {
-				httpx.ErrorCtx(r.Context(), w, err)
+				httpx.ErrorCtx(r.Context(), w, 
+					errors.New("invalid sessionId: must be a number"))
 				return
 			}
 			
