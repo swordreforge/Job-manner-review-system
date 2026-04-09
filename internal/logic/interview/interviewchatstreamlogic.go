@@ -148,10 +148,18 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	}
 
 	// 构建AI消息列表
+	systemPrompt := l.getSystemPrompt(session.Mode)
+
+	// 添加对话上下文
+	contextPrompt := fmt.Sprintf("\n\n当前面试进度：\n- 当前是第%d个问题\n- 已完成%d轮对话\n- 当前平均分：%.1f\n\n请根据当前进度提出合适的面试问题。", 
+		session.CurrentQuestion + 1, 
+		len(messages), 
+		session.AverageScore)
+
 	aiMessages := []ChatMessage{
 		{
 			Role:    "system",
-			Content: l.getSystemPrompt(session.Mode),
+			Content: systemPrompt + contextPrompt,
 		},
 	}
 
@@ -207,11 +215,27 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	// 解析AI响应
 	if err := json.Unmarshal([]byte(fullResponse.String()), &aiResp); err != nil {
 		logx.WithContext(l.ctx).Errorf("Failed to parse AI response: %v", err)
-		// 如果解析失败，使用默认回复
+		// 如果解析失败，根据当前轮次使用具体的默认回复
+		defaultQuestions := []string{
+			"请简单介绍一下你自己",
+			"请详细介绍你最得意的一个项目，你在其中扮演什么角色？",
+			"你在项目中遇到的最大挑战是什么？如何解决的？",
+			"请详细讲讲你使用的主要技术栈的核心原理",
+			"如果让你设计一个高并发的系统，你会如何设计？",
+			"你遇到过最困难的技术问题是什么？是如何解决的？",
+			"你对我们公司有什么了解？为什么想加入我们？",
+			"你未来3-5年的职业规划是什么？",
+		}
+		
+		questionIndex := session.CurrentQuestion
+		if questionIndex >= len(defaultQuestions) {
+			questionIndex = len(defaultQuestions) - 1
+		}
+		
 		aiResp = AIResponse{
-			Question: "你能再详细说说吗？",
+			Question: defaultQuestions[questionIndex],
 			Score:    75,
-			Feedback: "你的回答可以更具体一些。",
+			Feedback: "回答不错，继续努力！",
 			QuestionType: "followup",
 			SessionEnd:   false,
 		}
@@ -288,12 +312,36 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 
 // getSystemPrompt 获取系统提示词
 func (l *InterviewChatStreamLogic) getSystemPrompt(mode string) string {
-	basePrompt := `你是一名专业的面试官，负责评估候选人的能力和潜力。
+	basePrompt := `你是一名专业的面试官，正在对候选人进行面试。
 
-你的任务是：
-1. 根据用户的回答，提出相关的面试问题
-2. 对用户的回答进行评分（0-100分）
-3. 提供具体的反馈和改进建议
+**重要：每次回复都必须提出一个新的面试问题，不能省略question字段！**
+
+面试流程和问题类型：
+1. 自我介绍阶段（第1-2题）：要求候选人做自我介绍
+   - "请简单介绍一下你自己"
+   - "请详细介绍一下你的技术背景和项目经验"
+
+2. 项目经验阶段（第3-4题）：询问候选人参与的项目
+   - "请详细介绍你最得意的一个项目，你在其中扮演什么角色？"
+   - "你在项目中遇到的最大挑战是什么？如何解决的？"
+
+3. 技术深度阶段（第5-6题）：针对技术栈进行深入提问
+   - "你提到了使用Go语言，能详细讲讲Go的协程调度机制吗？"
+   - "请解释一下XX技术的核心原理和适用场景"
+
+4. 系统设计阶段（第7题）：询问系统架构、设计思路
+   - "如果让你设计一个高并发的消息队列系统，你会如何设计？"
+   - "如何设计一个秒杀系统来应对高并发？"
+
+5. 场景问题阶段（第8题）：给出具体场景，询问解决方案
+   - "如果你的服务突然崩溃，你会如何排查和解决？"
+   - "如何处理数据库的死锁问题？"
+
+6. HR阶段（可选）：询问薪资期望、职业规划等
+   - "你对我们公司有什么了解？为什么想加入我们？"
+   - "你未来3-5年的职业规划是什么？"
+
+**每次都要根据回答内容提出新的、针对性的问题！**
 
 评分标准：
 - 技术能力（30分）：技术深度、广度、应用能力
@@ -301,34 +349,25 @@ func (l *InterviewChatStreamLogic) getSystemPrompt(mode string) string {
 - 项目经验（25分）：项目质量、责任范围
 - 综合素质（15分）：学习能力、团队合作等
 
-面试阶段：
-1. 自我介绍
-2. 项目经验
-3. 技术深度
-4. 场景问题
-5. 薪资期望（可选）
-
 请严格按照JSON格式返回：
 {
-  "question": "下一个问题",
-  "score": 分数,
-  "feedback": "反馈建议",
-  "questionType": "问题类型（self_intro/project/technical/hr/followup）",
+  "question": "你的下一个面试问题（必须包含具体的问题内容）",
+  "score": 对用户回答的评分（0-100）,
+  "feedback": "对用户回答的反馈建议",
+  "questionType": "问题类型（self_intro/project/technical/design/scenario/hr）",
   "sessionEnd": false
 }
 
-注意：
-- question: 面试官的下一个问题
-- score: 对用户回答的评分（0-100）
-- feedback: 对用户回答的反馈和建议
-- questionType: 问题类型
-- sessionEnd: 是否结束会话（当问了5-8个问题后设置为true）
+**记住：**
+- 每次都要提出新的问题，不能省略！
+- 问题要具体、有针对性，体现专业性
+- 5-8个问题后可以结束面试
 - 返回纯JSON，不要有任何其他文字或markdown标记`
 
 	if mode == "assessment" {
-		basePrompt += "\n\n当前是评估模式，请更加严格地评分，重点关注技术深度和实际能力。"
+		basePrompt += "\n\n当前是评估模式（大厂技术面）：\n- 更加严格地评分\n- 重点关注技术深度和实际能力\n- 问题难度较高，要求深入分析\n- 期望回答具体、准确、有深度"
 	} else {
-		basePrompt += "\n\n当前是练习模式，请以鼓励为主，帮助用户提升面试技巧。"
+		basePrompt += "\n\n当前是练习模式（国企综合面）：\n- 以鼓励为主，帮助用户提升面试技巧\n- 重点关注综合素质和表达能力\n- 问题难度适中，循序渐进\n- 提供更多改进建议和指导"
 	}
 
 	return basePrompt
