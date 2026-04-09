@@ -116,6 +116,8 @@ export default function InterviewPage() {
           
           if (event.type === 'done' && event.data.message === '面试结束') {
             message.success('面试已完成，可以查看报告');
+            // 更新会话状态为已完成
+            setSession(prev => prev ? { ...prev, status: 'completed' } : null);
             handleShowReport(session.id);
           }
         },
@@ -147,8 +149,13 @@ export default function InterviewPage() {
             message.success('面试已结束');
             setSession(prev => prev ? { ...prev, status: 'completed' } : null);
             handleShowReport(session.id);
+          } else if (response.code === 400 && response.msg === 'session already ended') {
+            // 会话已结束，直接显示报告
+            message.info('面试已经结束，正在为您显示报告');
+            setSession(prev => prev ? { ...prev, status: 'completed' } : null);
+            handleShowReport(session.id);
           } else {
-            message.error('结束面试失败');
+            message.error(response.msg || '结束面试失败');
           }
         } catch (error) {
           message.error('结束面试失败');
@@ -208,19 +215,43 @@ export default function InterviewPage() {
   const handleShowReport = async (sessionId: number) => {
     setReportVisible(true);
     setReportLoading(true);
-    try {
-      const response = await interviewApi.getReport(sessionId);
-      if (response.code === 0 && response.data) {
-        setCurrentReport(response.data);
-      } else {
-        message.error('获取报告失败');
+    
+    // 添加重试逻辑，因为报告生成是异步的
+    let retries = 0;
+    const maxRetries = 3;
+    
+    const tryGetReport = async (): Promise<boolean> => {
+      try {
+        const response = await interviewApi.getReport(sessionId);
+        if (response.code === 0 && response.data) {
+          setCurrentReport(response.data);
+          return true;
+        } else {
+          console.log('获取报告失败，可能报告还在生成中');
+          return false;
+        }
+      } catch (error) {
+        console.error('获取报告异常:', error);
+        return false;
       }
-    } catch (error) {
-      message.error('获取报告失败');
-      console.error(error);
-    } finally {
-      setReportLoading(false);
+    };
+    
+    // 尝试获取报告
+    let success = await tryGetReport();
+    
+    // 如果失败，进行重试
+    while (!success && retries < maxRetries) {
+      retries++;
+      console.log(`重试获取报告 (${retries}/${maxRetries})...`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // 递增延迟
+      success = await tryGetReport();
     }
+    
+    if (!success) {
+      message.error('获取报告失败，请稍后手动刷新或重新生成');
+    }
+    
+    setReportLoading(false);
   };
 
   const getModeLabel = (m: 'practice' | 'assessment') => {
@@ -356,12 +387,16 @@ export default function InterviewPage() {
                   </div>
                 </div>
                 <div className="flex gap-2">
-                <Button danger onClick={handleCancel}>
-                  取消面试
-                </Button>
-                <Button type="primary" onClick={handleEnd}>
-                  结束面试
-                </Button>
+                {session && session.status === 'running' && (
+                  <>
+                    <Button danger onClick={handleCancel}>
+                      取消面试
+                    </Button>
+                    <Button type="primary" onClick={handleEnd}>
+                      结束面试
+                    </Button>
+                  </>
+                )}
               </div>
               </div>
             }

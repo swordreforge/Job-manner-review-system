@@ -23,6 +23,7 @@ type (
 		FindRunningByUserId(ctx context.Context, userId int64) (*InterviewSessions, error)
 		UpdateStats(ctx context.Context, sessionId int64, score float64) error
 		EndSession(ctx context.Context, sessionId int64, duration int) error
+		FindCompletedWithoutReports(ctx context.Context) ([]*InterviewSessions, error)
 	}
 
 	customInterviewSessionsModel struct {
@@ -156,4 +157,23 @@ func (m *customInterviewSessionsModel) Insert(ctx context.Context, data *Intervi
 	query := fmt.Sprintf("insert into %s (`user_id`, `student_id`, `mode`, `status`, `total_questions`, `current_question`, `average_score`, `max_score`, `min_score`, `duration_seconds`, `created_at`, `updated_at`, `completed_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
 	ret, err := m.conn.ExecCtx(ctx, query, data.UserId, data.StudentId, data.Mode, data.Status, data.TotalQuestions, data.CurrentQuestion, data.AverageScore, data.MaxScore, data.MinScore, data.DurationSeconds, data.CreatedAt, data.UpdatedAt, data.CompletedAt)
 	return ret, err
+}
+
+// FindCompletedWithoutReports 查找已完成但没有报告的会话
+func (m *customInterviewSessionsModel) FindCompletedWithoutReports(ctx context.Context) ([]*InterviewSessions, error) {
+	query := fmt.Sprintf(`
+		SELECT s.id, s.user_id, s.student_id, s.mode, s.status, s.total_questions, s.current_question, 
+		       s.average_score, s.max_score, s.min_score, s.duration_seconds, s.created_at, s.updated_at, s.completed_at
+		FROM %s s
+		LEFT JOIN interview_reports r ON s.id = r.session_id
+		WHERE s.status = 'completed' AND r.id IS NULL
+		ORDER BY s.id
+	`, m.table)
+	
+	var resp []*InterviewSessions
+	err := m.conn.QueryRowsCtx(ctx, &resp, query)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }

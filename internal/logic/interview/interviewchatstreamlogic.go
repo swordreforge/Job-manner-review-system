@@ -490,15 +490,18 @@ func (l *InterviewChatStreamLogic) sendSSEEvent(w http.ResponseWriter, flusher h
 
 // generateReport 生成面试报告
 func (l *InterviewChatStreamLogic) generateReport(sessionId int64, userId int64) {
+	// 使用独立context，避免HTTP请求context取消导致异步操作失败
+	ctx := context.Background()
+	
 	// 获取会话信息
-	session, err := l.svcCtx.InterviewSessionsModel.FindOne(l.ctx, sessionId)
+	session, err := l.svcCtx.InterviewSessionsModel.FindOne(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get session for report: %v", err)
 		return
 	}
 
 	// 获取所有消息
-	messages, err := l.svcCtx.InterviewMessagesModel.FindBySessionId(l.ctx, sessionId)
+	messages, err := l.svcCtx.InterviewMessagesModel.FindBySessionId(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get messages for report: %v", err)
 		return
@@ -531,7 +534,7 @@ func (l *InterviewChatStreamLogic) generateReport(sessionId int64, userId int64)
 		UpdatedAt:             time.Now().Unix(),
 	}
 
-	_, err = l.svcCtx.InterviewReportsModel.InsertWithTimestamp(l.ctx, report)
+	_, err = l.svcCtx.InterviewReportsModel.InsertWithTimestamp(ctx, report)
 	if err != nil {
 		logx.Errorf("Failed to create report: %v", err)
 	}
