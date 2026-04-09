@@ -3,6 +3,7 @@ import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Prog
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
+import './FloatingPolygons.css';
 
 export default function InterviewPage() {
   const [mode, setMode] = useState<'practice' | 'assessment'>('practice');
@@ -281,10 +282,20 @@ export default function InterviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+    <div className="min-h-screen animated-gradient p-4">
+      {/* 浮动多边形背景 */}
+      <div className="floating-polygons">
+        <div className="polygon polygon-1"></div>
+        <div className="polygon polygon-2"></div>
+        <div className="polygon polygon-3"></div>
+        <div className="polygon polygon-4"></div>
+        <div className="polygon polygon-5"></div>
+        <div className="polygon polygon-6"></div>
+      </div>
+      
       {!started ? (
-        <div className="max-w-4xl mx-auto mt-10">
-          <Card title={<div className="text-2xl font-bold text-center">面试模拟系统</div>} className="shadow-xl">
+        <div className="max-w-4xl mx-auto mt-10 relative z-10">
+          <Card title={<div className="text-2xl font-bold text-center">面试模拟系统</div>} className="glass-effect shadow-xl">
             <div className="text-center mb-6">
               <p className="text-gray-600">选择面试模式，开始你的模拟面试练习</p>
             </div>
@@ -314,7 +325,7 @@ export default function InterviewPage() {
             
             <div className="grid grid-cols-2 gap-4 mb-6">
               <Card 
-                className={mode === 'practice' ? 'border-blue-500 shadow-md' : ''}
+                className={mode === 'practice' ? 'glass-effect border-blue-500 shadow-md' : 'glass-effect'}
                 hoverable
                 onClick={() => setMode('practice')}
               >
@@ -331,7 +342,7 @@ export default function InterviewPage() {
               </Card>
               
               <Card 
-                className={mode === 'assessment' ? 'border-green-500 shadow-md' : ''}
+                className={mode === 'assessment' ? 'glass-effect border-green-500 shadow-md' : 'glass-effect'}
                 hoverable
                 onClick={() => setMode('assessment')}
               >
@@ -371,7 +382,7 @@ export default function InterviewPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto relative z-10">
           <Card 
             title={
               <div className="flex justify-between items-center">
@@ -400,7 +411,7 @@ export default function InterviewPage() {
               </div>
               </div>
             }
-            className="shadow-xl"
+            className="glass-effect shadow-xl"
           >
             <div className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
               <div className="flex-1 overflow-auto mb-4 space-y-4 p-2">
@@ -444,7 +455,7 @@ export default function InterviewPage() {
                 ))}
                 {currentScore !== null && (
                   <div className="flex justify-center">
-                    <Card size="small" className="bg-gradient-to-r from-green-50 to-blue-50">
+                    <Card size="small" className="glass-effect bg-gradient-to-r from-green-50 to-blue-50">
                       <div className="text-center">
                         <div className="text-sm text-gray-600 mb-1">本次回答评分</div>
                         <div className="text-3xl font-bold" style={{ color: getScoreColor(currentScore) }}>
@@ -566,7 +577,7 @@ export default function InterviewPage() {
           {currentReport && (
             <div className="space-y-6">
               {/* 总体评分 */}
-              <Card title="总体评价" className="bg-gradient-to-r from-blue-50 to-indigo-50">
+              <Card title="总体评价" className="glass-effect bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="text-center">
                   <div className="text-6xl font-bold mb-2" style={{ color: getScoreColor(currentReport.overallScore) }}>
                     {currentReport.overallScore.toFixed(1)}
@@ -577,7 +588,7 @@ export default function InterviewPage() {
               </Card>
               
               {/* 各项能力评分 */}
-              <Card title="能力评分">
+              <Card title="能力评分" className="glass-effect">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="flex justify-between mb-1">
@@ -627,7 +638,7 @@ export default function InterviewPage() {
               </Card>
               
               {/* 优势分析 */}
-              <Card title="✅ 优势分析">
+              <Card title="✅ 优势分析" className="glass-effect">
                 <List
                   dataSource={currentReport.strengths}
                   renderItem={(item) => (
@@ -640,7 +651,7 @@ export default function InterviewPage() {
               </Card>
               
               {/* 改进建议 */}
-              <Card title="💡 改进建议">
+              <Card title="💡 改进建议" className="glass-effect">
                 <List
                   dataSource={currentReport.improvementSuggestions}
                   renderItem={(item) => (
