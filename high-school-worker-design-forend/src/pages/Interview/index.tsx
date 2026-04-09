@@ -157,6 +157,37 @@ export default function InterviewPage() {
     });
   };
 
+  const handleCancel = async () => {
+    if (!session) return;
+
+    Modal.confirm({
+      title: '确认取消面试？',
+      content: '取消后将不会生成面试报告，可以重新开始新的面试',
+      okText: '确认取消',
+      okButtonProps: { danger: true },
+      cancelText: '继续面试',
+      onOk: async () => {
+        try {
+          const response = await interviewApi.end(session.id, 'cancelled');
+          if (response.code === 0) {
+            message.success('面试已取消');
+            setSession(null);
+            setMessages([]);
+            setCurrentScore(null);
+            setCurrentFeedback('');
+            setAverageScore(0);
+            setStarted(false);
+          } else {
+            message.error('取消面试失败');
+          }
+        } catch (error) {
+          message.error('取消面试失败');
+          console.error(error);
+        }
+      },
+    });
+  };
+
   const handleShowHistory = async () => {
     setHistoryVisible(true);
     setHistoryLoading(true);
@@ -323,9 +354,14 @@ export default function InterviewPage() {
                     </div>
                   </div>
                 </div>
-                <Button danger onClick={handleEnd}>
+                <div className="flex gap-2">
+                <Button danger onClick={handleCancel}>
+                  取消面试
+                </Button>
+                <Button type="primary" onClick={handleEnd}>
                   结束面试
                 </Button>
+              </div>
               </div>
             }
             className="shadow-xl"
