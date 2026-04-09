@@ -63,7 +63,7 @@ func (l *EndInterviewLogic) EndInterview(req *types.EndInterviewReq) (*types.End
 		status = "completed"
 	}
 
-	err = l.svcCtx.InterviewSessionsModel.EndSession(l.ctx, req.Id, duration)
+	err = l.svcCtx.InterviewSessionsModel.EndSession(l.ctx, req.Id, duration, status)
 	if err != nil {
 		logx.WithContext(l.ctx).Errorf("Failed to end session: %v", err)
 		return &types.EndInterviewResp{
@@ -102,6 +102,12 @@ func (l *EndInterviewLogic) generateReport(sessionId int64, userId int64) {
 	session, err := l.svcCtx.InterviewSessionsModel.FindOne(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get session for report: %v", err)
+		return
+	}
+
+	// 检查是否为取消的面试（averageScore为0）
+	if session.AverageScore == 0 {
+		logx.Infof("Session %d is cancelled, skipping report generation", sessionId)
 		return
 	}
 

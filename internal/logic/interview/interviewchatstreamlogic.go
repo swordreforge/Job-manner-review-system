@@ -291,7 +291,7 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	if aiResp.SessionEnd || updatedSession.CurrentQuestion >= 10 {
 		// 结束会话
 		duration := int(time.Now().Unix() - session.CreatedAt)
-		err = l.svcCtx.InterviewSessionsModel.EndSession(l.ctx, req.SessionId, duration)
+		err = l.svcCtx.InterviewSessionsModel.EndSession(l.ctx, req.SessionId, duration, "completed")
 		if err != nil {
 			logx.WithContext(l.ctx).Errorf("Failed to end session: %v", err)
 		}
@@ -497,6 +497,12 @@ func (l *InterviewChatStreamLogic) generateReport(sessionId int64, userId int64)
 	session, err := l.svcCtx.InterviewSessionsModel.FindOne(ctx, sessionId)
 	if err != nil {
 		logx.Errorf("Failed to get session for report: %v", err)
+		return
+	}
+
+	// 检查是否为取消的面试（averageScore为0）
+	if session.AverageScore == 0 {
+		logx.Infof("Session %d is cancelled, skipping report generation", sessionId)
 		return
 	}
 

@@ -137,10 +137,10 @@ func (m *customInterviewSessionsModel) UpdateStats(ctx context.Context, sessionI
 }
 
 // EndSession ends an interview session
-func (m *customInterviewSessionsModel) EndSession(ctx context.Context, sessionId int64, duration int) error {
-	query := fmt.Sprintf("update %s set `status` = 'completed', `completed_at` = ?, `duration_seconds` = ?, `updated_at` = ? where `id` = ?", m.table)
+func (m *customInterviewSessionsModel) EndSession(ctx context.Context, sessionId int64, duration int, status string) error {
+	query := fmt.Sprintf("update %s set `status` = ?, `completed_at` = ?, `duration_seconds` = ?, `average_score` = CASE WHEN ? = 'cancelled' THEN 0 ELSE average_score END, `updated_at` = ? where `id` = ?", m.table)
 	now := time.Now().Unix()
-	_, err := m.conn.ExecCtx(ctx, query, now, duration, now, sessionId)
+	_, err := m.conn.ExecCtx(ctx, query, status, now, duration, status, now, sessionId)
 	return err
 }
 
