@@ -42,14 +42,14 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen relative z-10">
-      <div className="pb-[60px]">
+    <div className="min-h-screen">
+      <div className="relative z-10 pb-[60px]">
         <Outlet />
       </div>
       <TabBar
         activeKey={activeTab}
         onChange={handleTabChange}
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200"
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20"
       >
         {tabs.map((tab) => (
           <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
