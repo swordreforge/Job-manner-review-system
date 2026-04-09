@@ -22,7 +22,7 @@ type (
 		FindByUserId(ctx context.Context, userId int64, page, pageSize int, status, mode string) ([]*InterviewSessions, int64, error)
 		FindRunningByUserId(ctx context.Context, userId int64) (*InterviewSessions, error)
 		UpdateStats(ctx context.Context, sessionId int64, score float64) error
-		EndSession(ctx context.Context, sessionId int64, duration int) error
+		EndSession(ctx context.Context, sessionId int64, duration int, status string) error
 		FindCompletedWithoutReports(ctx context.Context) ([]*InterviewSessions, error)
 	}
 
