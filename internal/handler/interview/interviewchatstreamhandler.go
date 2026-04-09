@@ -2,6 +2,7 @@ package interview
 
 import (
 	"net/http"
+	"strconv"
 
 	"career-api/internal/logic/interview"
 	"career-api/internal/svc"
@@ -14,9 +15,27 @@ import (
 func InterviewChatStreamHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.InterviewChatStreamReq
-		if err := httpx.Parse(r, &req); err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
-			return
+		
+		// 支持GET请求（EventSource只支持GET）
+		if r.Method == http.MethodGet {
+			// 从URL参数中获取sessionId和message
+			sessionIdStr := r.URL.Query().Get("sessionId")
+			message := r.URL.Query().Get("message")
+			
+			sessionId, err := strconv.ParseInt(sessionIdStr, 10, 64)
+			if err != nil {
+				httpx.ErrorCtx(r.Context(), w, err)
+				return
+			}
+			
+			req.SessionId = sessionId
+			req.Message = message
+		} else {
+			// POST请求，使用JSON格式
+			if err := httpx.Parse(r, &req); err != nil {
+				httpx.ErrorCtx(r.Context(), w, err)
+				return
+			}
 		}
 
 		l := interview.NewInterviewChatStreamLogic(r.Context(), svcCtx)

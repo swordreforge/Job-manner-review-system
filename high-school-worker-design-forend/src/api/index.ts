@@ -187,10 +187,12 @@ export const interviewApi = {
   start: (data: { mode: 'practice' | 'assessment'; studentId?: number }) =>
     api.post<{ code: number; msg: string; data: import('../types').InterviewSession }>('/interview/start', data),
   
-  chatStream: (_data: { sessionId: number; message: string }) => {
+  chatStream: (data: { sessionId: number; message: string }) => {
     const token = localStorage.getItem('token');
     const params = new URLSearchParams({
       token: token || '',
+      sessionId: String(data.sessionId),
+      message: data.message,
     });
     return `${BASE_URL}/interview/chat-stream?${params.toString()}`;
   },
