@@ -248,3 +248,103 @@ export interface HollandHistoryData {
   total: number;
   list: HollandResult[];
 }
+
+// 面试模块相关类型
+export interface InterviewSession {
+  id: number;
+  userId: number;
+  studentId?: number;
+  mode: 'practice' | 'assessment';
+  status: 'running' | 'completed' | 'cancelled';
+  totalQuestions: number;
+  currentQuestion: number;
+  averageScore: number;
+  createdAt: number;
+  firstQuestion: string;
+}
+
+export interface InterviewHistoryResult {
+  total: number;
+  list: InterviewHistoryItem[];
+}
+
+export interface InterviewHistoryItem {
+  id: number;
+  userId: number;
+  studentId?: number;
+  mode: 'practice' | 'assessment';
+  status: 'running' | 'completed' | 'cancelled';
+  averageScore: number;
+  totalQuestions: number;
+  currentQuestion: number;
+  durationSeconds: number;
+  createdAt: number;
+  completedAt?: number;
+}
+
+export interface InterviewDetail {
+  id: number;
+  userId: number;
+  studentId?: number;
+  mode: 'practice' | 'assessment';
+  status: 'running' | 'completed' | 'cancelled';
+  totalQuestions: number;
+  currentQuestion: number;
+  averageScore: number;
+  maxScore: number;
+  minScore: number;
+  durationSeconds: number;
+  createdAt: number;
+  completedAt?: number;
+  messages: InterviewMessage[];
+}
+
+export interface InterviewMessage {
+  id: number;
+  sessionId: number;
+  role: 'user' | 'assistant';
+  content: string;
+  questionType?: string;
+  score?: number;
+  feedback?: string;
+  createdAt: number;
+}
+
+export interface InterviewReport {
+  id: number;
+  sessionId: number;
+  userId: number;
+  overallScore: number;
+  skillScore: number;
+  communicationScore: number;
+  logicScore: number;
+  confidenceScore: number;
+  strengths: string[];
+  weaknesses: string[];
+  improvementSuggestions: string[];
+  summary: string;
+  createdAt: number;
+}
+
+export interface EndInterviewData {
+  id: number;
+  status: 'completed' | 'cancelled';
+  averageScore: number;
+  durationSeconds: number;
+  completedAt: number;
+}
+
+export interface InterviewStreamEvent {
+  event: 'question' | 'score' | 'feedback' | 'session_update' | 'done' | 'error';
+  data: {
+    content?: string;
+    value?: number;
+    sessionId?: number;
+    currentQuestion?: number;
+    averageScore?: number;
+    message?: string;
+    reportId?: number;
+    code?: number;
+    msg?: string;
+  };
+}

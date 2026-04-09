@@ -183,4 +183,32 @@ export const hollandApi = {
     api.get<{ code: number; msg: string; data: import('../types').HollandHistoryData }>('/holland/history', { params }),
 };
 
+export const interviewApi = {
+  start: (data: { mode: 'practice' | 'assessment'; studentId?: number }) =>
+    api.post<{ code: number; msg: string; data: import('../types').InterviewSession }>('/interview/start', data),
+  
+  chatStream: (_data: { sessionId: number; message: string }) => {
+    const token = localStorage.getItem('token');
+    const params = new URLSearchParams({
+      token: token || '',
+    });
+    return `${BASE_URL}/interview/chat-stream?${params.toString()}`;
+  },
+  
+  getHistory: (params?: { page?: number; pageSize?: number; status?: string; mode?: string }) =>
+    api.get<{ code: number; msg: string; data: import('../types').InterviewHistoryResult }>('/interview/history', { params }),
+  
+  getDetail: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').InterviewDetail }>(`/interview/${id}`),
+  
+  getReport: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').InterviewReport }>(`/interview/${id}/report`),
+  
+  end: (id: number, reason: 'user_completed' | 'timeout' | 'cancelled') =>
+    api.post<{ code: number; msg: string; data: import('../types').EndInterviewData }>(`/interview/${id}/end`, { reason }),
+  
+  delete: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/interview/${id}`),
+};
+
 export default api;

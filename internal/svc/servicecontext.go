@@ -32,6 +32,9 @@ type ServiceContext struct {
 	PromotionPathModel       model.JobPromotionPathsModel
 	ResumeParseHistoryModel  model.ResumeParseHistoryModel
 	HollandTestResultsModel  model.HollandTestResultsModel
+	InterviewSessionsModel   model.InterviewSessionsModel
+	InterviewMessagesModel   model.InterviewMessagesModel
+	InterviewReportsModel    model.InterviewReportsModel
 }
 
 func NewServiceContext(c *config.Config) *ServiceContext {
@@ -60,6 +63,9 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		PromotionPathModel:       model.NewJobPromotionPathsModel(mysqlConn),
 		ResumeParseHistoryModel:  model.NewResumeParseHistoryModel(mysqlConn),
 		HollandTestResultsModel:  model.NewHollandTestResultsModel(mysqlConn),
+		InterviewSessionsModel:   model.NewInterviewSessionsModel(mysqlConn),
+		InterviewMessagesModel:   model.NewInterviewMessagesModel(mysqlConn),
+		InterviewReportsModel:    model.NewInterviewReportsModel(mysqlConn),
 	}
 }
 

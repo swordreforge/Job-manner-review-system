@@ -8,6 +8,7 @@ import (
 	"time"
 
 	graph "career-api/internal/handler/graph"
+	interview "career-api/internal/handler/interview"
 	job "career-api/internal/handler/job"
 	match "career-api/internal/handler/match"
 	report "career-api/internal/handler/report"
@@ -331,5 +332,54 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/api/v1"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// Start interview session
+				Method:  http.MethodPost,
+				Path:    "/interview/start",
+				Handler: interview.StartInterviewHandler(serverCtx),
+			},
+			{
+				// Interview chat via SSE stream
+				Method:  http.MethodPost,
+				Path:    "/interview/chat-stream",
+				Handler: interview.InterviewChatStreamHandler(serverCtx),
+			},
+			{
+				// Get interview history
+				Method:  http.MethodGet,
+				Path:    "/interview/history",
+				Handler: interview.GetInterviewHistoryHandler(serverCtx),
+			},
+			{
+				// Get interview detail
+				Method:  http.MethodGet,
+				Path:    "/interview/:id",
+				Handler: interview.GetInterviewDetailHandler(serverCtx),
+			},
+			{
+				// Get interview report
+				Method:  http.MethodGet,
+				Path:    "/interview/:id/report",
+				Handler: interview.GetInterviewReportHandler(serverCtx),
+			},
+			{
+				// End interview session
+				Method:  http.MethodPost,
+				Path:    "/interview/:id/end",
+				Handler: interview.EndInterviewHandler(serverCtx),
+			},
+			{
+				// Delete interview session
+				Method:  http.MethodDelete,
+				Path:    "/interview/:id",
+				Handler: interview.DeleteInterviewHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+		rest.WithTimeout(120000*time.Millisecond), // 2分钟超时，用于SSE流式输出
 	)
 }

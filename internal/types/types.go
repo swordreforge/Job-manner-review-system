@@ -622,3 +622,157 @@ type HollandHistoryData struct {
 	Total int64          `json:"total"`
 	List  []HollandResult `json:"list"`
 }
+
+// 面试模块相关类型
+type StartInterviewReq struct {
+	Mode      string `json:"mode,validate:"required,oneof=practice assessment"`
+	StudentId int64  `json:"studentId,optional,validate:"omitempty,gt=0"`
+}
+
+type InterviewResp struct {
+	Code int               `json:"code"`
+	Msg  string            `json:"msg"`
+	Data *InterviewSession `json:"data,optional"`
+}
+
+type InterviewSession struct {
+	Id             int64  `json:"id"`
+	UserId         int64  `json:"userId"`
+	StudentId      int64  `json:"studentId"`
+	Mode           string `json:"mode"`
+	Status         string `json:"status"`
+	TotalQuestions int    `json:"totalQuestions"`
+	CurrentQuestion int   `json:"currentQuestion"`
+	AverageScore   float64 `json:"averageScore"`
+	CreatedAt      int64  `json:"createdAt"`
+	FirstQuestion  string `json:"firstQuestion"`
+}
+
+type InterviewChatStreamReq struct {
+	SessionId int64  `json:"sessionId,validate:"required,gt=0"`
+	Message   string `json:"message,validate:"required,min=1,max=2000"`
+}
+
+type GetInterviewHistoryReq struct {
+	Page     int    `form:"page,default=1" validate:"omitempty,min=1"`
+	PageSize int    `form:"pageSize,default=10" validate:"omitempty,min=1,max=100"`
+	Status   string `form:"status,optional" validate:"omitempty,oneof=running completed cancelled"`
+	Mode     string `form:"mode,optional" validate:"omitempty,oneof=practice assessment"`
+}
+
+type InterviewHistoryListResp struct {
+	Code int                     `json:"code"`
+	Msg  string                  `json:"msg"`
+	Data *InterviewHistoryResult `json:"data,optional"`
+}
+
+type InterviewHistoryResult struct {
+	Total int64                  `json:"total"`
+	List  []InterviewHistoryResp `json:"list"`
+}
+
+type InterviewHistoryResp struct {
+	Id              int64   `json:"id"`
+	UserId          int64   `json:"userId"`
+	StudentId       int64   `json:"studentId"`
+	Mode            string  `json:"mode"`
+	Status          string  `json:"status"`
+	AverageScore    float64 `json:"averageScore"`
+	TotalQuestions  int     `json:"totalQuestions"`
+	CurrentQuestion int     `json:"currentQuestion"`
+	DurationSeconds int     `json:"durationSeconds"`
+	CreatedAt       int64   `json:"createdAt"`
+	CompletedAt     int64   `json:"completedAt"`
+}
+
+type GetInterviewDetailReq struct {
+	Id int64 `path:"id" validate:"required,gt=0"`
+}
+
+type InterviewDetailResp struct {
+	Code int              `json:"code"`
+	Msg  string           `json:"msg"`
+	Data *InterviewDetail `json:"data,optional"`
+}
+
+type InterviewDetail struct {
+	Id              int64                `json:"id"`
+	UserId          int64                `json:"userId"`
+	StudentId       int64                `json:"studentId"`
+	Mode            string               `json:"mode"`
+	Status          string               `json:"status"`
+	TotalQuestions  int                  `json:"totalQuestions"`
+	CurrentQuestion int                  `json:"currentQuestion"`
+	AverageScore    float64              `json:"averageScore"`
+	MaxScore        float64              `json:"maxScore"`
+	MinScore        float64              `json:"minScore"`
+	DurationSeconds int                  `json:"durationSeconds"`
+	CreatedAt       int64                `json:"createdAt"`
+	CompletedAt     int64                `json:"completedAt"`
+	Messages        []InterviewMessageResp `json:"messages"`
+}
+
+type InterviewMessageResp struct {
+	Id           int64   `json:"id"`
+	SessionId    int64   `json:"sessionId"`
+	Role         string  `json:"role"`
+	Content      string  `json:"content"`
+	QuestionType string  `json:"questionType"`
+	Score        float64 `json:"score"`
+	Feedback     string  `json:"feedback"`
+	CreatedAt    int64   `json:"createdAt"`
+}
+
+type GetInterviewReportReq struct {
+	Id int64 `path:"id" validate:"required,gt=0"`
+}
+
+type InterviewReportResp struct {
+	Code int              `json:"code"`
+	Msg  string           `json:"msg"`
+	Data *InterviewReport `json:"data,optional"`
+}
+
+type InterviewReport struct {
+	Id                    int64    `json:"id"`
+	SessionId             int64    `json:"sessionId"`
+	UserId                int64    `json:"userId"`
+	OverallScore          float64  `json:"overallScore"`
+	SkillScore            float64  `json:"skillScore"`
+	CommunicationScore    float64  `json:"communicationScore"`
+	LogicScore            float64  `json:"logicScore"`
+	ConfidenceScore       float64  `json:"confidenceScore"`
+	Strengths             []string `json:"strengths"`
+	Weaknesses            []string `json:"weaknesses"`
+	ImprovementSuggestions []string `json:"improvementSuggestions"`
+	Summary               string   `json:"summary"`
+	CreatedAt             int64    `json:"createdAt"`
+}
+
+type EndInterviewReq struct {
+	Id     int64  `path:"id" validate:"required,gt=0"`
+	Reason string `json:"reason,validate:"required,oneof=user_completed timeout cancelled"`
+}
+
+type EndInterviewResp struct {
+	Code int               `json:"code"`
+	Msg  string            `json:"msg"`
+	Data *EndInterviewData `json:"data,optional"`
+}
+
+type EndInterviewData struct {
+	Id              int64 `json:"id"`
+	Status          string `json:"status"`
+	AverageScore    float64 `json:"averageScore"`
+	DurationSeconds int    `json:"durationSeconds"`
+	CompletedAt     int64  `json:"completedAt"`
+}
+
+type DeleteInterviewReq struct {
+	Id int64 `path:"id" validate:"required,gt=0"`
+}
+
+type InterviewBaseResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}

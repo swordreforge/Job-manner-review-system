@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { hollandApi, type HollandResult } from '../../api';
+import { hollandApi } from '../../api';
+import type { HollandResult } from '../../types';
 
 export default function HollandResultPage() {
   const { id } = useParams<{ id: string }>();
@@ -95,7 +96,7 @@ export default function HollandResultPage() {
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">职业类型分布</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {result.topTypes.map((typeInfo, index) => (
+            {result.topTypes.map((typeInfo) => (
               <div
                 key={typeInfo.type}
                 className="p-4 rounded-lg border-2"

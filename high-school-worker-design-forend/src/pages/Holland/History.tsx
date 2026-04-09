@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hollandApi, type HollandResult } from '../../api';
+import { hollandApi } from '../../api';
+import type { HollandResult } from '../../types';
 
 export default function HollandHistoryPage() {
   const navigate = useNavigate();
@@ -109,7 +110,7 @@ export default function HollandHistoryPage() {
                         {record.careerCode}
                       </div>
                       <div className="flex gap-2">
-                        {record.topTypes.slice(0, 3).map((typeInfo, index) => (
+                        {record.topTypes.slice(0, 3).map((typeInfo) => (
                           <span
                             key={typeInfo.type}
                             className="px-2 py-1 text-xs rounded-full text-white"

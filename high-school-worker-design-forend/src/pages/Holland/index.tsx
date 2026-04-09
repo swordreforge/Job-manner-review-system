@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { hollandApi, type HollandQuestion, type HollandAnswer, type HollandTestInfo } from '../../api';
-import type { HollandResult } from '../../types';
+import { hollandApi } from '../../api';
+import type { HollandAnswer, HollandTestInfo } from '../../types';
 
 export default function HollandTestPage() {
   const navigate = useNavigate();
@@ -33,7 +33,7 @@ export default function HollandTestPage() {
     }
   };
 
-  const handleAnswer = (questionId: number, selectedType: string) => {
+  const handleAnswer = (questionId: number, selectedType: 'R' | 'I' | 'A' | 'S' | 'E' | 'C') => {
     // 检查是否已经回答过这个问题
     const existingIndex = answers.findIndex(a => a.questionId === questionId);
     const newAnswers = existingIndex >= 0
