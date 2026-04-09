@@ -197,7 +197,6 @@ export const interviewApi = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
           'Accept': 'text/event-stream',
-          'Cache-Control': 'no-cache',
         },
         body: JSON.stringify(data),
       });
