@@ -33,7 +33,10 @@ export default function HomePage() {
               <span className="text-green-600 font-medium">上传简历优化</span>
               <p className="text-sm text-gray-500 mt-1">AI 智能分析和优化建议</p>
             </div>
-            <div className="p-3 bg-purple-50 rounded-lg">
+            <div 
+              className="p-3 bg-purple-50 rounded-lg cursor-pointer hover:bg-purple-100 transition-colors"
+              onClick={() => navigate('/interview')}
+            >
               <span className="text-purple-600 font-medium">模拟面试练习</span>
               <p className="text-sm text-gray-500 mt-1">大厂/国企双模式实战演练</p>
             </div>
