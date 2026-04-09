@@ -11,6 +11,7 @@ export default function InterviewPage() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
+  const [isChatting, setIsChatting] = useState(false);
   const [currentScore, setCurrentScore] = useState<number | null>(null);
   const [currentFeedback, setCurrentFeedback] = useState<string>('');
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -57,7 +58,7 @@ export default function InterviewPage() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || !session) return;
+    if (!input.trim() || !session || isChatting) return;
 
     const userMessage: InterviewMessage = {
       id: Date.now(),
@@ -71,106 +72,62 @@ export default function InterviewPage() {
     setInput('');
     setCurrentScore(null);
     setCurrentFeedback('');
+    setIsChatting(true);
 
     try {
-      const streamUrl = interviewApi.chatStream({ sessionId: session.id, message: input });
-      const eventSource = new EventSource(streamUrl);
-
-      let aiMessageContent = '';
-      let aiScore: number | null = null;
-      let aiFeedback = '';
-
-      // 监听question事件
-      eventSource.addEventListener('question', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.content) {
-            aiMessageContent = data.content;
-            setMessages(prev => [...prev, {
-              id: Date.now(),
-              sessionId: session.id,
-              role: 'assistant',
-              content: aiMessageContent,
-              createdAt: Date.now() / 1000,
-            }]);
+      await interviewApi.chatStream(
+        { sessionId: session.id, message: input },
+        (event) => {
+          console.log('收到SSE事件:', event);
+          
+          if (event.data.content) {
+            // 添加或更新AI回复
+            setMessages(prev => {
+              const lastMessage = prev[prev.length - 1];
+              const newAiMessage: InterviewMessage = {
+                id: Date.now(),
+                sessionId: session.id,
+                role: 'assistant',
+                content: event.data.content,
+                createdAt: Date.now() / 1000,
+              };
+              
+              // 检查是否已经有一条AI消息，如果就更新它，否则添加新的
+              if (lastMessage && lastMessage.role === 'assistant') {
+                return [...prev.slice(0, -1), newAiMessage];
+              } else {
+                return [...prev, newAiMessage];
+              }
+            });
           }
-        } catch (error) {
-          console.error('解析question事件失败:', error);
-        }
-      });
-
-      // 监听score事件
-      eventSource.addEventListener('score', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.value !== undefined) {
-            aiScore = data.value;
-            setCurrentScore(aiScore);
+          
+          if (event.data.value !== undefined) {
+            setCurrentScore(event.data.value);
           }
-        } catch (error) {
-          console.error('解析score事件失败:', error);
-        }
-      });
-
-      // 监听feedback事件
-      eventSource.addEventListener('feedback', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.content) {
-            aiFeedback = data.content;
-            setCurrentFeedback(aiFeedback);
+          
+          if (event.data.content && event.data.score) {
+            setCurrentFeedback(event.data.content);
           }
-        } catch (error) {
-          console.error('解析feedback事件失败:', error);
-        }
-      });
-
-      // 监听session_update事件
-      eventSource.addEventListener('session_update', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.averageScore !== undefined) {
-            setAverageScore(data.averageScore);
+          
+          if (event.data.averageScore !== undefined) {
+            setAverageScore(event.data.averageScore);
           }
-        } catch (error) {
-          console.error('解析session_update事件失败:', error);
-        }
-      });
-
-      // 监听done事件
-      eventSource.addEventListener('done', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          eventSource.close();
-          if (data.message === '面试结束') {
+          
+          if (event.data.message === '面试结束') {
             message.success('面试已完成，可以查看报告');
             handleShowReport(session.id);
           }
-        } catch (error) {
-          console.error('解析done事件失败:', error);
+        },
+        (error) => {
+          console.error('SSE错误:', error);
+          message.error('连接断开');
         }
-      });
-
-      // 监听error事件
-      eventSource.addEventListener('error', (event: MessageEvent) => {
-        try {
-          const data = JSON.parse(event.data);
-          message.error(data.msg || '发生错误');
-        } catch (error) {
-          console.error('解析error事件失败:', error);
-        }
-        eventSource.close();
-      });
-
-      // 监听连接错误
-      eventSource.onerror = (error) => {
-        console.error('SSE连接错误:', error);
-        eventSource.close();
-        message.error('连接断开');
-      };
+      );
     } catch (error) {
+      console.error('发送消息失败:', error);
       message.error('发送消息失败');
-      console.error(error);
+    } finally {
+      setIsChatting(false);
     }
   };
 

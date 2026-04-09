@@ -343,13 +343,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: interview.StartInterviewHandler(serverCtx),
 			},
 			{
-				// Interview chat via SSE stream (GET for EventSource, POST for direct API)
-				Method:  http.MethodGet,
-				Path:    "/interview/chat-stream",
-				Handler: interview.InterviewChatStreamHandler(serverCtx),
-			},
-			{
-				// Interview chat via SSE stream (POST for direct API)
+				// Interview chat via SSE stream (POST only)
 				Method:  http.MethodPost,
 				Path:    "/interview/chat-stream",
 				Handler: interview.InterviewChatStreamHandler(serverCtx),

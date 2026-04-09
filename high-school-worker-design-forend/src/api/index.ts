@@ -187,14 +187,70 @@ export const interviewApi = {
   start: (data: { mode: 'practice' | 'assessment'; studentId?: number }) =>
     api.post<{ code: number; msg: string; data: import('../types').InterviewSession }>('/interview/start', data),
   
-  chatStream: (data: { sessionId: number; message: string }) => {
+  chatStream: async (data: { sessionId: number; message: string }, onEvent: (event: { type: string; data: any }) => void, onError: (error: Error) => void) => {
     const token = localStorage.getItem('token');
-    const params = new URLSearchParams({
-      token: token || '',
-      sessionId: String(data.sessionId),
-      message: data.message,
-    });
-    return `${BASE_URL}/interview/chat-stream?${params.toString()}`;
+    
+    try {
+      const response = await fetch(`${BASE_URL}/interview/chat-stream`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('Response body is null');
+      }
+
+      let buffer = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+
+        buffer += decoder.decode(value, { stream: true });
+        
+        // 处理SSE事件
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine === '') continue;
+
+          // 忽略event行，我们只处理data
+          if (trimmedLine.startsWith('event: ')) {
+            continue;
+          }
+
+          if (trimmedLine.startsWith('data: ')) {
+            const data = trimmedLine.substring(6);
+            try {
+              const parsedData = JSON.parse(data);
+              onEvent({ type: 'data', data: parsedData });
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error as Error);
+    }
   },
   
   getHistory: (params?: { page?: number; pageSize?: number; status?: string; mode?: string }) =>
