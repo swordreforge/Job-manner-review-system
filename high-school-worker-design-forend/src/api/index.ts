@@ -213,6 +213,7 @@ export const interviewApi = {
       }
 
       let buffer = '';
+      let currentEventType = '';
 
       while (true) {
         const { done, value } = await reader.read();
@@ -231,16 +232,19 @@ export const interviewApi = {
           const trimmedLine = line.trim();
           if (trimmedLine === '') continue;
 
-          // 忽略event行，我们只处理data
+          // 处理event行，记录事件类型
           if (trimmedLine.startsWith('event: ')) {
+            currentEventType = trimmedLine.substring(7);
             continue;
           }
 
+          // 处理data行，发送事件
           if (trimmedLine.startsWith('data: ')) {
             const data = trimmedLine.substring(6);
             try {
               const parsedData = JSON.parse(data);
-              onEvent({ type: 'data', data: parsedData });
+              onEvent({ type: currentEventType || 'data', data: parsedData });
+              currentEventType = ''; // 重置事件类型
             } catch (e) {
               console.error('Failed to parse SSE data:', e);
             }

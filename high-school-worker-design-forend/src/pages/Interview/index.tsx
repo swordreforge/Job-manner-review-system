@@ -80,7 +80,8 @@ export default function InterviewPage() {
         (event) => {
           console.log('收到SSE事件:', event);
           
-          if (event.data.content) {
+          // 根据事件类型处理不同的数据
+          if (event.type === 'question' && event.data.content) {
             // 添加或更新AI回复
             setMessages(prev => {
               const lastMessage = prev[prev.length - 1];
@@ -101,19 +102,19 @@ export default function InterviewPage() {
             });
           }
           
-          if (event.data.value !== undefined) {
+          if (event.type === 'score' && event.data.value !== undefined) {
             setCurrentScore(event.data.value);
           }
           
-          if (event.data.content && event.data.score) {
+          if (event.type === 'feedback' && event.data.content) {
             setCurrentFeedback(event.data.content);
           }
           
-          if (event.data.averageScore !== undefined) {
+          if (event.type === 'session_update' && event.data.averageScore !== undefined) {
             setAverageScore(event.data.averageScore);
           }
           
-          if (event.data.message === '面试结束') {
+          if (event.type === 'done' && event.data.message === '面试结束') {
             message.success('面试已完成，可以查看报告');
             handleShowReport(session.id);
           }
