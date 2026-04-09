@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
-import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport, InterviewStreamEvent } from '../../types';
+import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
 
 export default function InterviewPage() {
   const [mode, setMode] = useState<'practice' | 'assessment'>('practice');
@@ -80,59 +80,91 @@ export default function InterviewPage() {
       let aiScore: number | null = null;
       let aiFeedback = '';
 
-      eventSource.onmessage = (event) => {
+      // 监听question事件
+      eventSource.addEventListener('question', (event: MessageEvent) => {
         try {
-          const streamEvent: InterviewStreamEvent = JSON.parse(event.data);
-          
-          switch (streamEvent.event) {
-            case 'question':
-              if (streamEvent.data.content) {
-                aiMessageContent = streamEvent.data.content;
-                setMessages(prev => [...prev, {
-                  id: Date.now(),
-                  sessionId: session.id,
-                  role: 'assistant',
-                  content: aiMessageContent,
-                  createdAt: Date.now() / 1000,
-                }]);
-              }
-              break;
-            case 'score':
-              if (streamEvent.data.value !== undefined) {
-                aiScore = streamEvent.data.value;
-                setCurrentScore(aiScore);
-              }
-              break;
-            case 'feedback':
-              if (streamEvent.data.content) {
-                aiFeedback = streamEvent.data.content;
-                setCurrentFeedback(aiFeedback);
-              }
-              break;
-            case 'session_update':
-              if (streamEvent.data.averageScore !== undefined) {
-                setAverageScore(streamEvent.data.averageScore);
-              }
-              break;
-            case 'done':
-              eventSource.close();
-              if (streamEvent.data.message === '面试结束') {
-                message.success('面试已完成，可以查看报告');
-                handleShowReport(session.id);
-              }
-              break;
-            case 'error':
-              message.error(streamEvent.data.msg || '发生错误');
-              eventSource.close();
-              break;
+          const data = JSON.parse(event.data);
+          if (data.content) {
+            aiMessageContent = data.content;
+            setMessages(prev => [...prev, {
+              id: Date.now(),
+              sessionId: session.id,
+              role: 'assistant',
+              content: aiMessageContent,
+              createdAt: Date.now() / 1000,
+            }]);
           }
         } catch (error) {
-          console.error('解析流式事件失败:', error);
+          console.error('解析question事件失败:', error);
         }
-      };
+      });
 
+      // 监听score事件
+      eventSource.addEventListener('score', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.value !== undefined) {
+            aiScore = data.value;
+            setCurrentScore(aiScore);
+          }
+        } catch (error) {
+          console.error('解析score事件失败:', error);
+        }
+      });
+
+      // 监听feedback事件
+      eventSource.addEventListener('feedback', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.content) {
+            aiFeedback = data.content;
+            setCurrentFeedback(aiFeedback);
+          }
+        } catch (error) {
+          console.error('解析feedback事件失败:', error);
+        }
+      });
+
+      // 监听session_update事件
+      eventSource.addEventListener('session_update', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.averageScore !== undefined) {
+            setAverageScore(data.averageScore);
+          }
+        } catch (error) {
+          console.error('解析session_update事件失败:', error);
+        }
+      });
+
+      // 监听done事件
+      eventSource.addEventListener('done', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          eventSource.close();
+          if (data.message === '面试结束') {
+            message.success('面试已完成，可以查看报告');
+            handleShowReport(session.id);
+          }
+        } catch (error) {
+          console.error('解析done事件失败:', error);
+        }
+      });
+
+      // 监听error事件
+      eventSource.addEventListener('error', (event: MessageEvent) => {
+        try {
+          const data = JSON.parse(event.data);
+          message.error(data.msg || '发生错误');
+        } catch (error) {
+          console.error('解析error事件失败:', error);
+        }
+        eventSource.close();
+      });
+
+      // 监听连接错误
       eventSource.onerror = (error) => {
-        console.error('SSE错误:', error);
+        console.error('SSE连接错误:', error);
         eventSource.close();
         message.error('连接断开');
       };
