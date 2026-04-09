@@ -76,7 +76,7 @@ export default function HollandTestPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex items-center justify-center">
+      <div className="min-h-screen relative z-10 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
           <p className="text-gray-600">加载题目中...</p>
@@ -87,7 +87,7 @@ export default function HollandTestPage() {
 
   if (error && !testInfo) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex items-center justify-center">
+      <div className="min-h-screen relative z-10 flex items-center justify-center">
         <div className="bg-white rounded-xl p-6 shadow-sm max-w-md text-center">
           <p className="text-red-600 mb-4">{error}</p>
           <button
@@ -111,7 +111,7 @@ export default function HollandTestPage() {
   const allAnswered = answers.length === testInfo.questions.length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+    <div className="min-h-screen relative z-10">
       <div className="p-6 max-w-3xl mx-auto">
         {/* 头部信息 */}
         <div className="mb-6">

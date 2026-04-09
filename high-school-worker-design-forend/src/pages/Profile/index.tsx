@@ -84,7 +84,7 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen relative z-10 p-4">
       {/* 用户信息卡片 */}
       <Card className="mb-4">
         <div className="flex items-center gap-4">

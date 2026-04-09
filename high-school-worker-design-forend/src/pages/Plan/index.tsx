@@ -215,14 +215,14 @@ export default function PlanPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen relative z-10 flex items-center justify-center">
         <Spin size="large" tip="加载中..." />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen relative z-10 p-4">
       <div className="mb-4 flex items-center justify-between">
         <Segmented
           value={activeTrack}

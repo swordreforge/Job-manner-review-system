@@ -223,7 +223,7 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
+    <div className="min-h-screen relative z-10 p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">简历解析</h1>
         <Button

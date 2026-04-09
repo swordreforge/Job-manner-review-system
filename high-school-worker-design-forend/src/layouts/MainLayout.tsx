@@ -42,7 +42,7 @@ export default function MainLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen relative z-10">
       <div className="pb-[60px]">
         <Outlet />
       </div>

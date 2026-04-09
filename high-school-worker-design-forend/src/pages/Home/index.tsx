@@ -4,7 +4,7 @@ export default function HomePage() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen relative z-10">
       <div className="p-6">
         <h1 className="text-2xl font-bold text-gray-800 mb-2">欢迎使用职业规划助手</h1>
         <p className="text-gray-600 mb-6">AI 驱动的职业发展解决方案</p>

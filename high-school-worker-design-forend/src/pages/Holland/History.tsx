@@ -52,7 +52,7 @@ export default function HollandHistoryPage() {
 
   if (loading && history.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white flex items-center justify-center">
+      <div className="min-h-screen relative z-10 flex items-center justify-center">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
           <p className="text-gray-600">加载历史记录中...</p>
@@ -62,7 +62,7 @@ export default function HollandHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-orange-50 to-white">
+    <div className="min-h-screen relative z-10">
       <div className="p-6 max-w-4xl mx-auto">
         {/* 头部 */}
         <div className="mb-6">
