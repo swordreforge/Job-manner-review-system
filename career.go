@@ -25,6 +25,15 @@ func main() {
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
+	// 配置日志使用 console 模式以支持颜色
+	logx.MustSetup(logx.LogConf{
+		ServiceName: c.Log.ServiceName,
+		Mode:        "console",
+		Encoding:    "plain",
+		Level:       c.Log.Level,
+		KeepDays:    c.Log.KeepDays,
+	})
+
 	if err := autoMigrate(c.Mysql.DataSource); err != nil {
 		logx.Errorf("Auto migration failed: %v", err)
 		os.Exit(1)

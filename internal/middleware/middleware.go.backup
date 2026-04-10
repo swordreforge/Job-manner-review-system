@@ -44,14 +44,14 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 
 		if token == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("\x1b[31m401 Unauthorized: missing authorization token\x1b[0m\n"))
+			w.Write([]byte(`{"code":401,"msg":"missing authorization token"}`))
 			return
 		}
 
 		claims, err := pkg.ParseToken(token, m.accessSecret)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("\x1b[31m401 Unauthorized: invalid token\x1b[0m\n"))
+			w.Write([]byte(`{"code":401,"msg":"invalid token"}`))
 			return
 		}
 
