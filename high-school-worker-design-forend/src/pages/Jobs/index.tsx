@@ -241,7 +241,7 @@ export default function JobsPage() {
         nodeMap.set(transferPath.toJob.id, {
           id: transferPath.toJob.id,
           name: transferPath.toJob.name,
-          category: 2,
+          category: 1,
           symbolSize: 45,
           itemStyle: { color: '#faad14' },
         });
@@ -252,7 +252,7 @@ export default function JobsPage() {
         nodeMap.set(transferPath.fromJob.id, {
           id: transferPath.fromJob.id,
           name: transferPath.fromJob.name,
-          category: 2,
+          category: 1,
           symbolSize: 40,
           itemStyle: { color: '#faad14' },
         });
@@ -309,7 +309,7 @@ export default function JobsPage() {
         },
       },
       legend: {
-        data: ['当前岗位', '晋升岗位', '换岗岗位'],
+        data: ['当前岗位', '发展路径'],
         top: '10%',
       },
       series: [
@@ -320,8 +320,7 @@ export default function JobsPage() {
           links: links,
           categories: [
             { name: '当前岗位' },
-            { name: '晋升岗位' },
-            { name: '换岗岗位' },
+            { name: '发展路径' },
           ],
           roam: true,
           label: {
