@@ -59,11 +59,12 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    const hasSeenModal = localStorage.getItem('profile_complete_modal_shown');
+    const modalKey = `profile_complete_modal_shown_${user?.id}`;
+    const hasSeenModal = localStorage.getItem(modalKey);
     if (studentData === null && !loadingStudent && !hasSeenModal) {
       setShowCompleteModal(true);
     }
-  }, [studentData, loadingStudent]);
+  }, [studentData, loadingStudent, user?.id]);
 
   const handleLogout = () => {
     logout();
@@ -287,7 +288,8 @@ export default function ProfilePage() {
               block
               onClick={() => {
                 setShowCompleteModal(false);
-                localStorage.setItem('profile_complete_modal_shown', 'true');
+                const modalKey = `profile_complete_modal_shown_${user?.id}`;
+                localStorage.setItem(modalKey, 'true');
               }}
             >
               暂时不需要
