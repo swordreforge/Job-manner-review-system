@@ -314,7 +314,7 @@ export default function InterviewPage() {
               <div className="flex items-center gap-4">
                 <Button 
                   icon={<ArrowLeftOutlined />} 
-                  onClick={() => navigate('/')}
+                  onClick={() => navigate('/start')}
                   type="text"
                 />
                 <span className="text-2xl font-bold text-center flex-1">面试模拟系统</span>
