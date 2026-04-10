@@ -303,19 +303,21 @@ func autoMigrate(dataSource string) error {
 			createSQL: `CREATE TABLE IF NOT EXISTS interview_reports (
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				session_id BIGINT(20) NOT NULL,
-				student_id BIGINT(20) NOT NULL,
-				title VARCHAR(200) DEFAULT NULL,
-				summary TEXT DEFAULT NULL,
+				user_id BIGINT(20) NOT NULL,
+				overall_score DECIMAL(5,2) NOT NULL DEFAULT 0,
+				skill_score DECIMAL(5,2) DEFAULT NULL,
+				communication_score DECIMAL(5,2) DEFAULT NULL,
+				logic_score DECIMAL(5,2) DEFAULT NULL,
+				confidence_score DECIMAL(5,2) DEFAULT NULL,
 				strengths TEXT DEFAULT NULL,
 				weaknesses TEXT DEFAULT NULL,
-				suggestions TEXT DEFAULT NULL,
-				overall_score DECIMAL(5,2) DEFAULT NULL,
+				improvement_suggestions TEXT DEFAULT NULL,
+				summary TEXT DEFAULT NULL,
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
 				KEY idx_session_id (session_id),
-				KEY idx_student_id (student_id),
-				CONSTRAINT fk_interview_report_session FOREIGN KEY (session_id) REFERENCES interview_sessions (id) ON DELETE CASCADE
+				KEY idx_user_id (user_id)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},
 		{
