@@ -493,18 +493,19 @@ func initTables(dbConfig *DatabaseConfig) error {
 			name: "resume_parse_history",
 			createSQL: `CREATE TABLE IF NOT EXISTS resume_parse_history (
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				student_id BIGINT(20) NOT NULL,
-				file_path VARCHAR(255) NOT NULL,
-				file_name VARCHAR(255) NOT NULL,
-				file_size BIGINT(20) DEFAULT NULL,
-				parse_status VARCHAR(20) DEFAULT 'pending',
-				parse_result TEXT DEFAULT NULL,
-				error_message TEXT DEFAULT NULL,
+				user_id BIGINT(20) NOT NULL,
+				student_id BIGINT(20) DEFAULT NULL,
+				resume_file_name VARCHAR(255) DEFAULT NULL,
+				resume_content TEXT DEFAULT NULL,
+				parsed_profile TEXT DEFAULT NULL,
+				suggestions TEXT DEFAULT NULL,
+				completeness_score DOUBLE NOT NULL DEFAULT 0,
+				competitiveness_score DOUBLE NOT NULL DEFAULT 0,
 				created_at BIGINT(20) NOT NULL,
-				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
+				KEY idx_user_id (user_id),
 				KEY idx_student_id (student_id),
-				KEY idx_status (parse_status)
+				KEY idx_created (created_at)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},
 	}
