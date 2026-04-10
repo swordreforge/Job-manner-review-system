@@ -35,6 +35,48 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				// Get job profile by id
+				Method:  http.MethodGet,
+				Path:    "/jobs/:id",
+				Handler: job.GetJobHandler(serverCtx),
+			},
+			{
+				// Delete job profile
+				Method:  http.MethodDelete,
+				Path:    "/jobs/:id",
+				Handler: job.DeleteJobHandler(serverCtx),
+			},
+			{
+				// Create job profile
+				Method:  http.MethodPost,
+				Path:    "/jobs",
+				Handler: job.CreateJobHandler(serverCtx),
+			},
+			{
+				// Update job profile
+				Method:  http.MethodPut,
+				Path:    "/jobs",
+				Handler: job.UpdateJobHandler(serverCtx),
+			},
+			{
+				// List job profiles
+				Method:  http.MethodGet,
+				Path:    "/jobs",
+				Handler: job.ListJobsHandler(serverCtx),
+			},
+			{
+				// Generate job profile via AI
+				Method:  http.MethodPost,
+				Path:    "/jobs/generate",
+				Handler: job.GenerateJobProfileHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
 				// Get all job paths (promotion + transfer)
 				Method:  http.MethodGet,
 				Path:    "/jobs/:id/all-paths",
@@ -57,48 +99,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodGet,
 				Path:    "/jobs/:id/transfer-paths",
 				Handler: graph.GetTransferPathsHandler(serverCtx),
-			},
-		},
-		rest.WithPrefix("/api/v1"),
-	)
-
-	server.AddRoutes(
-		[]rest.Route{
-			{
-				// Create job profile
-				Method:  http.MethodPost,
-				Path:    "/jobs",
-				Handler: job.CreateJobHandler(serverCtx),
-			},
-			{
-				// Update job profile
-				Method:  http.MethodPut,
-				Path:    "/jobs",
-				Handler: job.UpdateJobHandler(serverCtx),
-			},
-			{
-				// List job profiles
-				Method:  http.MethodGet,
-				Path:    "/jobs",
-				Handler: job.ListJobsHandler(serverCtx),
-			},
-			{
-				// Get job profile by id
-				Method:  http.MethodGet,
-				Path:    "/jobs/:id",
-				Handler: job.GetJobHandler(serverCtx),
-			},
-			{
-				// Delete job profile
-				Method:  http.MethodDelete,
-				Path:    "/jobs/:id",
-				Handler: job.DeleteJobHandler(serverCtx),
-			},
-			{
-				// Generate job profile via AI
-				Method:  http.MethodPost,
-				Path:    "/jobs/generate",
-				Handler: job.GenerateJobProfileHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/api/v1"),

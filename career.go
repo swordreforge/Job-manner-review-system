@@ -187,21 +187,22 @@ func autoMigrate(dataSource string) error {
 			name: "jobs",
 			createSQL: `CREATE TABLE IF NOT EXISTS jobs (
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				title VARCHAR(200) NOT NULL,
-				category VARCHAR(100) DEFAULT NULL,
+				name VARCHAR(200) NOT NULL,
 				description TEXT DEFAULT NULL,
-				requirements TEXT DEFAULT NULL,
-				salary_range VARCHAR(100) DEFAULT NULL,
 				company VARCHAR(100) DEFAULT NULL,
+				industry VARCHAR(100) DEFAULT NULL,
 				location VARCHAR(100) DEFAULT NULL,
-				education_requirement VARCHAR(50) DEFAULT NULL,
-				experience_requirement VARCHAR(50) DEFAULT NULL,
-				holland_code VARCHAR(10) DEFAULT NULL,
+				salary_range VARCHAR(100) DEFAULT NULL,
+				skills TEXT DEFAULT NULL,
+				certificates TEXT DEFAULT NULL,
+				soft_skills TEXT DEFAULT NULL,
+				requirements TEXT DEFAULT NULL,
+				growth_potential TEXT DEFAULT NULL,
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
-				KEY idx_category (category),
-				KEY idx_holland_code (holland_code)
+				KEY idx_industry (industry),
+				KEY idx_location (location)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},
 		{
@@ -210,6 +211,9 @@ func autoMigrate(dataSource string) error {
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				from_job_id BIGINT(20) NOT NULL,
 				to_job_id BIGINT(20) NOT NULL,
+				match_score DECIMAL(5,2) DEFAULT NULL,
+				transfer_skills TEXT DEFAULT NULL,
+				learning_path TEXT DEFAULT NULL,
 				path_description TEXT DEFAULT NULL,
 				required_skills TEXT DEFAULT NULL,
 				estimated_years INT DEFAULT NULL,
@@ -400,32 +404,31 @@ func seedData(dataSource string) error {
 	}
 	if jobCount == 0 {
 		jobs := []struct {
-			title        string
-			category     string
+			name         string
+			industry     string
 			description  string
 			requirements string
 			salaryRange  string
 			company      string
 			location     string
-			hollandCode  string
 		}{
-			{"Golang后端开发工程师", "技术", "负责公司后端服务开发，参与微服务架构设计与实现", "熟练掌握Golang编程语言，熟悉MySQL/Redis，了解微服务架构", "15000-30000", "字节跳动", "北京", "IRC"},
-			{"Java开发工程师", "技术", "负责企业级应用后端开发，参与系统架构设计", "熟练掌握Java，熟悉Spring框架，了解分布式系统", "12000-25000", "阿里巴巴", "杭州", "IRC"},
-			{"前端开发工程师", "技术", "负责Web前端开发，与后端工程师协作完成产品功能", "熟练掌握Vue/React，熟悉HTML/CSS/JavaScript", "12000-22000", "腾讯", "深圳", "AIR"},
-			{"Python数据分析师", "数据", "负责数据分析和可视化，为业务决策提供支持", "熟练掌握Python，熟悉Pandas/NumPy，了解数据可视化", "15000-28000", "美团", "北京", "IEC"},
-			{"产品经理", "产品", "负责产品规划与设计，协调研发团队推动产品迭代", "良好的沟通能力，了解互联网产品，有项目管理经验", "18000-35000", "字节跳动", "北京", "ESA"},
-			{"UI设计师", "设计", "负责产品界面设计，提升用户体验", "熟练掌握Figma/Sketch，了解用户体验设计原则", "15000-28000", "网易", "杭州", "AIR"},
-			{"测试工程师", "技术", "负责产品测试工作，保障软件质量", "熟悉测试流程，了解自动化测试框架", "10000-20000", "华为", "深圳", "RIC"},
-			{"运维工程师", "技术", "负责服务器运维，保障系统稳定运行", "熟悉Linux，了解Docker/K8s，有运维经验", "15000-25000", "阿里巴巴", "杭州", "RIC"},
-			{"新媒体运营", "运营", "负责新媒体平台运营，策划优质内容", "熟悉各平台运营规则，有内容策划能力", "8000-15000", "小红书", "上海", "SEA"},
-			{"内容编辑", "内容", "负责内容策划与编辑，产出优质文章", "良好的文字功底，了解内容运营", "7000-14000", "今日头条", "北京", "AES"},
+			{"Golang后端开发工程师", "技术", "负责公司后端服务开发，参与微服务架构设计与实现", "熟练掌握Golang编程语言，熟悉MySQL/Redis，了解微服务架构", "15000-30000", "字节跳动", "北京"},
+			{"Java开发工程师", "技术", "负责企业级应用后端开发，参与系统架构设计", "熟练掌握Java，熟悉Spring框架，了解分布式系统", "12000-25000", "阿里巴巴", "杭州"},
+			{"前端开发工程师", "技术", "负责Web前端开发，与后端工程师协作完成产品功能", "熟练掌握Vue/React，熟悉HTML/CSS/JavaScript", "12000-22000", "腾讯", "深圳"},
+			{"Python数据分析师", "数据", "负责数据分析和可视化，为业务决策提供支持", "熟练掌握Python，熟悉Pandas/NumPy，了解数据可视化", "15000-28000", "美团", "北京"},
+			{"产品经理", "产品", "负责产品规划与设计，协调研发团队推动产品迭代", "良好的沟通能力，了解互联网产品，有项目管理经验", "18000-35000", "字节跳动", "北京"},
+			{"UI设计师", "设计", "负责产品界面设计，提升用户体验", "熟练掌握Figma/Sketch，了解用户体验设计原则", "15000-28000", "网易", "杭州"},
+			{"测试工程师", "技术", "负责产品测试工作，保障软件质量", "熟悉测试流程，了解自动化测试框架", "10000-20000", "华为", "深圳"},
+			{"运维工程师", "技术", "负责服务器运维，保障系统稳定运行", "熟悉Linux，了解Docker/K8s，有运维经验", "15000-25000", "阿里巴巴", "杭州"},
+			{"新媒体运营", "运营", "负责新媒体平台运营，策划优质内容", "熟悉各平台运营规则，有内容策划能力", "8000-15000", "小红书", "上海"},
+			{"内容编辑", "内容", "负责内容策划与编辑，产出优质文章", "良好的文字功底，了解内容运营", "7000-14000", "今日头条", "北京"},
 		}
 
 		for _, job := range jobs {
-			_, err = db.Exec(`INSERT INTO jobs (title, category, description, requirements, salary_range, company, location, education_requirement, experience_requirement, holland_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-				job.title, job.category, job.description, job.requirements, job.salaryRange, job.company, job.location, "本科", "1-3年", job.hollandCode, now, now)
+			_, err = db.Exec(`INSERT INTO jobs (name, industry, description, requirements, salary_range, company, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				job.name, job.industry, job.description, job.requirements, job.salaryRange, job.company, job.location, now, now)
 			if err != nil {
-				logx.Errorf("Failed to insert job %s: %v", job.title, err)
+				logx.Errorf("Failed to insert job %s: %v", job.name, err)
 			}
 		}
 		logx.Infof("Sample jobs seeded: %d jobs", len(jobs))
