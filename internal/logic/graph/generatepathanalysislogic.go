@@ -195,8 +195,11 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 	// 解析AI返回的晋升目标
 	type TargetResult struct {
 		Targets []struct {
-			JobName string `json:"jobName"`
-			Reason  string `json:"reason"`
+			JobName        string   `json:"jobName"`
+			Reason         string   `json:"reason"`
+			MatchScore     float64  `json:"matchScore"`
+			TransferSkills []string `json:"transferSkills"`
+			LearningPath   string   `json:"learningPath"`
 		} `json:"targets"`
 	}
 
@@ -280,18 +283,31 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 		}
 
 		if !exists {
+			// 序列化 transferSkills 为 JSON
+			transferSkillsJSON := ""
+			if len(target.TransferSkills) > 0 {
+				skillsJSON, _ := json.Marshal(target.TransferSkills)
+				transferSkillsJSON = string(skillsJSON)
+			}
+
+			// 使用 AI 返回的 learningPath 或 reason
+			learningPath := target.LearningPath
+			if learningPath == "" {
+				learningPath = target.Reason
+			}
+
 			newPath := &model.JobPromotionPaths{
 				FromJobId:      req.JobId,
 				ToJobId:        matchedJob.Id,
-				MatchScore:     sql.NullFloat64{Valid: false},
-				TransferSkills: sql.NullString{Valid: false},
-				LearningPath:   sql.NullString{String: target.Reason, Valid: true},
+				MatchScore:     sql.NullFloat64{Float64: target.MatchScore, Valid: target.MatchScore > 0},
+				TransferSkills: sql.NullString{String: transferSkillsJSON, Valid: transferSkillsJSON != ""},
+				LearningPath:   sql.NullString{String: learningPath, Valid: learningPath != ""},
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
 			l.svcCtx.PromotionPathModel.Insert(l.ctx, newPath)
 			createdCount++
-			logx.Infof("Created promotion path: %d -> %d (%s)", req.JobId, matchedJob.Id, target.JobName)
+			logx.Infof("Created promotion path: %d -> %d (%s) with score %v", req.JobId, matchedJob.Id, target.JobName, target.MatchScore)
 		}
 	}
 
@@ -345,8 +361,11 @@ func (l *GeneratePathAnalysisLogic) GenerateTransferTargets(req *GenerateTransfe
 
 	type TargetResult struct {
 		Targets []struct {
-			JobName string `json:"jobName"`
-			Reason  string `json:"reason"`
+			JobName        string   `json:"jobName"`
+			Reason         string   `json:"reason"`
+			MatchScore     float64  `json:"matchScore"`
+			TransferSkills []string `json:"transferSkills"`
+			LearningPath   string   `json:"learningPath"`
 		} `json:"targets"`
 	}
 
@@ -420,18 +439,31 @@ func (l *GeneratePathAnalysisLogic) GenerateTransferTargets(req *GenerateTransfe
 		}
 
 		if !exists {
+			// 序列化 transferSkills 为 JSON
+			transferSkillsJSON := ""
+			if len(target.TransferSkills) > 0 {
+				skillsJSON, _ := json.Marshal(target.TransferSkills)
+				transferSkillsJSON = string(skillsJSON)
+			}
+
+			// 使用 AI 返回的 learningPath 或 reason
+			learningPath := target.LearningPath
+			if learningPath == "" {
+				learningPath = target.Reason
+			}
+
 			newPath := &model.JobPromotionPaths{
 				FromJobId:      req.JobId,
 				ToJobId:        matchedJob.Id,
-				MatchScore:     sql.NullFloat64{Valid: false},
-				TransferSkills: sql.NullString{Valid: false},
-				LearningPath:   sql.NullString{String: target.Reason, Valid: true},
+				MatchScore:     sql.NullFloat64{Float64: target.MatchScore, Valid: target.MatchScore > 0},
+				TransferSkills: sql.NullString{String: transferSkillsJSON, Valid: transferSkillsJSON != ""},
+				LearningPath:   sql.NullString{String: learningPath, Valid: learningPath != ""},
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
 			l.svcCtx.PromotionPathModel.Insert(l.ctx, newPath)
 			createdCount++
-			logx.Infof("Created transfer path: %d -> %d (%s)", req.JobId, matchedJob.Id, target.JobName)
+			logx.Infof("Created transfer path: %d -> %d (%s) with score %v", req.JobId, matchedJob.Id, target.JobName, target.MatchScore)
 		}
 	}
 

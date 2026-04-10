@@ -439,13 +439,23 @@ func (p *OpenAIProvider) GeneratePathAnalysis(ctx context.Context, req PathAnaly
 func (p *OpenAIProvider) GeneratePromotionTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
 	prompt := fmt.Sprintf(`你是一名专业的职业规划顾问。请根据当前岗位信息，分析可能的晋升目标岗位。
 
-请返回JSON格式的晋升目标列表：
+请返回JSON格式的晋升目标列表，包含匹配度和可迁移技能：
 {
   "targets": [
-    {"jobName": "晋升目标岗位名称1", "reason": "晋升原因和价值"},
-    {"jobName": "晋升目标岗位名称2", "reason": "晋升原因和价值"}
+    {
+      "jobName": "晋升目标岗位名称",
+      "reason": "晋升原因和价值",
+      "matchScore": 75,
+      "transferSkills": ["技能1", "技能2", "技能3"],
+      "learningPath": "学习路径建议"
+    }
   ]
 }
+
+要求：
+- matchScore: 0-100的整数，表示从当前岗位到晋升目标的匹配度百分比
+- transferSkills: 从当前岗位迁移到目标岗位所需的技能数组
+- learningPath: 学习路径建议
 
 当前岗位信息：%s
 
@@ -475,13 +485,23 @@ func (p *OpenAIProvider) GeneratePromotionTargets(ctx context.Context, jobInfo, 
 func (p *OpenAIProvider) GenerateTransferTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
 	prompt := fmt.Sprintf(`你是一名专业的职业规划顾问。请根据当前岗位信息，分析可能的转岗目标岗位（与当前岗位平级但技能可迁移的其他岗位）。
 
-请返回JSON格式的转岗目标列表：
+请返回JSON格式的转岗目标列表，包含匹配度和可迁移技能：
 {
   "targets": [
-    {"jobName": "转岗目标岗位名称1", "reason": "转岗原因和价值"},
-    {"jobName": "转岗目标岗位名称2", "reason": "转岗原因和价值"}
+    {
+      "jobName": "转岗目标岗位名称",
+      "reason": "转岗原因和价值",
+      "matchScore": 75,
+      "transferSkills": ["技能1", "技能2", "技能3"],
+      "learningPath": "学习路径建议"
+    }
   ]
 }
+
+要求：
+- matchScore: 0-100的整数，表示从当前岗位到目标岗位的技能匹配度百分比
+- transferSkills: 可迁移的技能数组
+- learningPath: 学习路径建议
 
 当前岗位信息：%s
 
