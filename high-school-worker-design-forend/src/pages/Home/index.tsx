@@ -2,15 +2,14 @@ import { useNavigate } from 'react-router-dom';
 import { Card, Steps, Button } from 'antd';
 import { CompassOutlined, FileTextOutlined, SolutionOutlined, MessageOutlined } from '@ant-design/icons';
 
-const GraduationCapSVG = () => (
+const QuestionMarkSVG = () => (
   <svg 
     viewBox="0 0 24 24" 
     fill="currentColor" 
-    className="w-16 h-16 text-yellow-400"
+    className="w-20 h-20 text-gray-400"
     style={{ transform: 'rotate(-15deg)', filter: 'drop-shadow(2px 2px 4px rgba(0,0,0,0.3))' }}
   >
-    <path d="M21.79 8.65l-9.5-5.7c-.46-.28-1.02-.28-1.48 0l-9.5 5.7C.58 9.17 0 10.12 0 11.15v1.7c0 1.03.58 1.98 1.31 2.5l9.5 5.7c.46.28 1.02.28 1.48 0l9.5-5.7c.73-.52 1.31-1.47 1.31-2.5v-1.7c0-1.03-.58-1.98-1.31-2.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5z"/>
-    <path d="M12 6c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/>
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17h-2v-2h2v2zm2.07-7.75l-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26c.37-.36.59-.86.59-1.41 0-1.1-.9-2-2-2s-2 .9-2 2H8c0-2.21 1.79-4 4-4s4 1.79 4 4c0 .88-.36 1.68-.93 2.25z"/>
   </svg>
 );
 
@@ -110,7 +109,7 @@ export default function HomePage() {
           style={{ background: '#1a1a1a', minHeight: '160px' }}
         >
           <div className="absolute right-4 top-1/2 -translate-y-1/2">
-            <GraduationCapSVG />
+            <QuestionMarkSVG />
           </div>
           <div className="text-white pr-28">
             <div className="text-2xl mb-2">
