@@ -20,12 +20,13 @@ export default function App() {
       <GlobalBackground />
       <Routes>
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/start" element={<HomePage />} />
       <Route path="/" element={
         <ProtectedRoute>
           <MainLayout />
         </ProtectedRoute>
       }>
-        <Route index element={<HomePage />} />
+        <Route index element={<Navigate to="/start" replace />} />
         <Route path="plan" element={<PlanPage />} />
         <Route path="resume" element={<ResumePage />} />
         <Route path="profile" element={<ProfilePage />} />
