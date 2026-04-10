@@ -1,3 +1,6 @@
+// Code scaffolded by goctl. Safe to edit.
+// goctl 1.9.2
+
 package graph
 
 import (
@@ -83,7 +86,6 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 
 	logx.Infof("AI Path Analysis Result: %s", aiResult)
 
-	// 清理AI返回的markdown格式
 	cleanResult := strings.TrimSpace(aiResult)
 	cleanResult = strings.TrimPrefix(cleanResult, "```json")
 	cleanResult = strings.TrimPrefix(cleanResult, "```")
@@ -122,6 +124,7 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 		existingPath.MatchScore = sql.NullFloat64{Float64: analysis.MatchScore, Valid: true}
 		existingPath.TransferSkills = sql.NullString{String: string(requiredSkillsJSON), Valid: true}
 		existingPath.LearningPath = sql.NullString{String: analysis.LearningPath, Valid: true}
+		existingPath.UpdatedAt = time.Now().Unix()
 
 		l.svcCtx.PromotionPathModel.Update(l.ctx, existingPath)
 		logx.Infof("Updated path analysis for job %d -> %d", req.FromJobId, req.ToJobId)
@@ -144,6 +147,152 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 		Code: 0,
 		Msg:  "success",
 	}, nil
+}
+
+// GeneratePromotionTargets generates possible promotion targets for a job based on user resume
+type GeneratePromotionTargetsReq struct {
+	JobId     int64 `json:"jobId"`
+	StudentId int64 `json:"studentId"`
+}
+
+func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromotionTargetsReq) (resp *types.ErrorResp, err error) {
+	job, err := l.svcCtx.JobModel.FindOne(l.ctx, req.JobId)
+	if err != nil {
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "岗位不存在",
+		}, nil
+	}
+
+	var studentProfile string
+	if req.StudentId > 0 {
+		student, err := l.svcCtx.StudentModel.FindOne(l.ctx, req.StudentId)
+		if err == nil && student != nil {
+			studentProfile = formatStudentInfo(student)
+		}
+	}
+
+	jobInfo := formatJobInfoForAI(job)
+
+	aiReq := pkg.PathAnalysisRequest{
+		StudentProfile: studentProfile,
+		FromJobInfo:    jobInfo,
+		ToJobInfo:      "晋升目标岗位",
+		PathType:       "promotion",
+	}
+
+	aiResult, err := l.svcCtx.AIProvider.GeneratePathAnalysis(l.ctx, aiReq)
+	if err != nil {
+		logx.Errorf("AI generate promotion targets failed: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "AI生成晋升目标失败: " + err.Error(),
+		}, nil
+	}
+
+	logx.Infof("AI Generate Promotion Targets Result: %s", aiResult)
+
+	// 解析AI返回的晋升目标
+	type TargetResult struct {
+		Targets []struct {
+			JobName string `json:"jobName"`
+			Reason  string `json:"reason"`
+		} `json:"targets"`
+	}
+
+	cleanResult := strings.TrimSpace(aiResult)
+	cleanResult = strings.TrimPrefix(cleanResult, "```json")
+	cleanResult = strings.TrimPrefix(cleanResult, "```")
+	cleanResult = strings.TrimSuffix(cleanResult, "```")
+	cleanResult = strings.TrimSpace(cleanResult)
+
+	logx.Infof("Cleaned AI result: %s", cleanResult)
+
+	var targetResult TargetResult
+	if err := json.Unmarshal([]byte(cleanResult), &targetResult); err != nil {
+		logx.Errorf("Failed to parse AI targets result: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "解析晋升目标失败",
+		}, nil
+	}
+
+	// 为每个目标岗位创建晋升路径记录
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "")
+	if err != nil {
+		logx.Errorf("Failed to get all jobs: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "获取岗位列表失败",
+		}, nil
+	}
+
+	now := time.Now().Unix()
+	createdCount := 0
+
+	logx.Infof("Looking for matching jobs among %d jobs", len(allJobs))
+	logx.Infof("AI returned %d targets", len(targetResult.Targets))
+
+	for _, target := range targetResult.Targets {
+		logx.Infof("Looking for job matching: %s", target.JobName)
+		// 在现有岗位中查找匹配的目标岗位
+		var matchedJob *model.Jobs
+		for _, job := range allJobs {
+			if strings.Contains(job.Name, target.JobName) || strings.Contains(target.JobName, job.Name) {
+				matchedJob = job
+				logx.Infof("Matched: %s (id=%d)", job.Name, job.Id)
+				break
+			}
+		}
+
+		if matchedJob == nil {
+			logx.Errorf("No matching job found for: %s", target.JobName)
+		}
+
+		if matchedJob != nil {
+			// 检查是否已存在
+			existingPaths, _ := l.svcCtx.PromotionPathModel.FindByFromJob(l.ctx, req.JobId)
+			exists := false
+			for _, p := range existingPaths {
+				if p.ToJobId == matchedJob.Id {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				newPath := &model.JobPromotionPaths{
+					FromJobId:      req.JobId,
+					ToJobId:        matchedJob.Id,
+					MatchScore:     sql.NullFloat64{Valid: false},
+					TransferSkills: sql.NullString{Valid: false},
+					LearningPath:   sql.NullString{String: target.Reason, Valid: true},
+					CreatedAt:      now,
+					UpdatedAt:      now,
+				}
+				l.svcCtx.PromotionPathModel.Insert(l.ctx, newPath)
+				createdCount++
+				logx.Infof("Created promotion path: %d -> %d (%s)", req.JobId, matchedJob.Id, target.JobName)
+			}
+		}
+	}
+
+	if createdCount == 0 {
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "未能找到匹配的晋升目标岗位",
+		}, nil
+	}
+
+	return &types.ErrorResp{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+// FindAll gets all jobs
+func (l *GeneratePathAnalysisLogic) FindAll() ([]*model.Jobs, error) {
+	return nil, nil
 }
 
 func formatJobInfoForAI(job *model.Jobs) string {

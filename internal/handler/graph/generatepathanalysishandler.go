@@ -34,15 +34,31 @@ func GeneratePathAnalysisHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		req := &graph.GeneratePathAnalysisReq{
-			FromJobId: fromJobId,
-			ToJobId:   bodyReq.ToJobId,
-			StudentId: bodyReq.StudentId,
-			PathType:  bodyReq.PathType,
+		l := graph.NewGeneratePathAnalysisLogic(r.Context(), svcCtx)
+
+		// 如果有toJobId，分析具体路径
+		if bodyReq.ToJobId > 0 {
+			req := &graph.GeneratePathAnalysisReq{
+				FromJobId: fromJobId,
+				ToJobId:   bodyReq.ToJobId,
+				StudentId: bodyReq.StudentId,
+				PathType:  bodyReq.PathType,
+			}
+			resp, err := l.GeneratePathAnalysis(req)
+			if err != nil {
+				httpx.ErrorCtx(r.Context(), w, err)
+			} else {
+				httpx.OkJsonCtx(r.Context(), w, resp)
+			}
+			return
 		}
 
-		l := graph.NewGeneratePathAnalysisLogic(r.Context(), svcCtx)
-		resp, err := l.GeneratePathAnalysis(req)
+		// 没有toJobId，生成晋升目标
+		req := &graph.GeneratePromotionTargetsReq{
+			JobId:     fromJobId,
+			StudentId: bodyReq.StudentId,
+		}
+		resp, err := l.GeneratePromotionTargets(req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

@@ -119,6 +119,25 @@ export default function JobsPage() {
     // 等待状态更新
     await new Promise(resolve => setTimeout(resolve, 500));
     
+    // 如果没有路径数据，调用AI生成晋升目标
+    if (!promotionPath || promotionPath.nextJobs.length === 0) {
+      message.loading('正在生成晋升目标，请稍候...', 0);
+      try {
+        await jobPathApi.generatePathAnalysis(selectedJobId, {
+          pathType: 'promotion',
+        });
+        message.destroy();
+        message.success('晋升目标生成成功');
+        // 刷新路径数据
+        await loadJobPaths(selectedJobId);
+      } catch (error) {
+        message.destroy();
+        console.error('生成晋升目标失败:', error);
+        message.error('生成晋升目标失败');
+      }
+      return;
+    }
+    
     const promises: Promise<void>[] = [];
     
     // 对每个晋升路径目标调用AI分析
