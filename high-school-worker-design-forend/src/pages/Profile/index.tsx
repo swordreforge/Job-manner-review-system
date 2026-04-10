@@ -59,12 +59,8 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    if (studentData !== null) {
-      const completeness = calculateCompleteness(studentData);
-      if (completeness === 0) {
-        setShowCompleteModal(true);
-      }
-    } else if (studentData === null && !loadingStudent) {
+    const hasSeenModal = localStorage.getItem('profile_complete_modal_shown');
+    if (studentData === null && !loadingStudent && !hasSeenModal) {
       setShowCompleteModal(true);
     }
   }, [studentData, loadingStudent]);
@@ -289,7 +285,10 @@ export default function ProfilePage() {
             <Button 
               type="text" 
               block
-              onClick={() => setShowCompleteModal(false)}
+              onClick={() => {
+                setShowCompleteModal(false);
+                localStorage.setItem('profile_complete_modal_shown', 'true');
+              }}
             >
               暂时不需要
             </Button>
