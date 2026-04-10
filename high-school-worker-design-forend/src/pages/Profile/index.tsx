@@ -58,12 +58,14 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    const modalKey = `profile_complete_modal_shown_${user?.id}`;
+    if (!user?.id || loadingStudent) return;
+    
+    const modalKey = `profile_complete_modal_shown_${user.id}`;
     const hasSeenModal = localStorage.getItem(modalKey);
-    if (studentData === null && !loadingStudent && !hasSeenModal) {
+    if (studentData === null && !hasSeenModal) {
       setShowCompleteModal(true);
     }
-  }, [studentData, loadingStudent, user?.id]);
+  }, [user?.id, studentData, loadingStudent]);
 
   const handleLogout = () => {
     logout();
