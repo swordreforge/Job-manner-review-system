@@ -5,9 +5,13 @@
   width: 100vw;
   height: 100vh;
   pointer-events: none;
-  z-index: 0;
+  z-index: -1;
   overflow: hidden;
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecf1 100%);
+}
+
+.global-background.dark {
+  background: linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%);
 }
 
 .global-background-grid {

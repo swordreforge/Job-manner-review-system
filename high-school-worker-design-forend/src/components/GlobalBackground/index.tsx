@@ -1,8 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import './GlobalBackground.css';
 
 export default function GlobalBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  
+  const isLandingPage = location.pathname === '/';
+  const bgClass = isLandingPage ? 'global-background dark' : 'global-background';
 
   useEffect(() => {
     const container = containerRef.current;
@@ -133,9 +138,9 @@ export default function GlobalBackground() {
   }, []);
 
   return (
-    <div ref={containerRef} className="global-background">
+    <div ref={containerRef} className={bgClass}>
       {/* 网格背景 */}
-      <div className="global-background-grid"></div>
+      <div className={isLandingPage ? '' : 'global-background-grid'}></div>
     </div>
   );
 }
