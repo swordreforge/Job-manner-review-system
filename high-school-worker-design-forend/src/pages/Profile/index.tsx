@@ -1,5 +1,5 @@
 import { Card, Avatar, Button, message, Tag, Modal } from 'antd';
-import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
@@ -7,7 +7,6 @@ import { userApi, studentApi } from '../../api';
 import type { Student } from '../../types';
 
 const menuItems = [
-  { icon: <HistoryOutlined />, title: '历史记录', desc: '查看所有操作记录' },
   { icon: <SettingOutlined />, title: '设置', desc: '应用偏好设置' },
 ];
 
