@@ -150,6 +150,7 @@ func autoMigrate(dataSource string) error {
 				password VARCHAR(255) NOT NULL,
 				email VARCHAR(100) DEFAULT NULL,
 				phone VARCHAR(20) DEFAULT NULL,
+				avatar VARCHAR(255) DEFAULT NULL,
 				role VARCHAR(20) NOT NULL DEFAULT 'student',
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
