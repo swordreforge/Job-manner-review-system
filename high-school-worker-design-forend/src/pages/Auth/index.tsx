@@ -31,7 +31,7 @@ export default function AuthPage() {
           console.error('Failed to get user info:', error);
         }
 
-        navigate('/main/start');
+        navigate('/start');
       } else {
         message.error('登录失败');
       }

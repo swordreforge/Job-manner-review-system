@@ -23,7 +23,7 @@ export default function App() {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/welcome" element={<Landing />} />
       <Route path="/" element={<MainLayout />}>
-        <Route index element={<Navigate to="/start" replace />} />
+        <Route index element={<Navigate to="/welcome" replace />} />
         <Route path="start" element={<HomePage />} />
         <Route path="plan" element={
           <ProtectedRoute>
