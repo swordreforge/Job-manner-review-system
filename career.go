@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
+	"golang.org/x/crypto/bcrypt"
 
 	"career-api/internal/config"
 	"career-api/internal/handler"
@@ -361,6 +363,74 @@ func autoMigrate(dataSource string) error {
 	return nil
 }
 
+func seedData(dataSource string) error {
+	db, err := sql.Open("mysql", dataSource)
+	if err != nil {
+		return fmt.Errorf("failed to connect to database: %w", err)
+	}
+	defer db.Close()
+
+	now := time.Now().Unix()
+
+	var userCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM users WHERE username = 'testuser'").Scan(&userCount)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("failed to check user: %w", err)
+	}
+	if userCount == 0 {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte("123456"), bcrypt.DefaultCost)
+		if err != nil {
+			return fmt.Errorf("failed to hash password: %w", err)
+		}
+		_, err = db.Exec("INSERT INTO users (username, password, email, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+			"testuser", string(hashedPassword), "test@example.com", "user", now, now)
+		if err != nil {
+			return fmt.Errorf("failed to insert test user: %w", err)
+		}
+		logx.Infof("Test user created: testuser / 123456")
+	}
+
+	var jobCount int
+	err = db.QueryRow("SELECT COUNT(*) FROM jobs").Scan(&jobCount)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("failed to check jobs: %w", err)
+	}
+	if jobCount == 0 {
+		jobs := []struct {
+			title        string
+			category     string
+			description  string
+			requirements string
+			salaryRange  string
+			company      string
+			location     string
+			hollandCode  string
+		}{
+			{"Golang后端开发工程师", "技术", "负责公司后端服务开发，参与微服务架构设计与实现", "熟练掌握Golang编程语言，熟悉MySQL/Redis，了解微服务架构", "15000-30000", "字节跳动", "北京", "IRC"},
+			{"Java开发工程师", "技术", "负责企业级应用后端开发，参与系统架构设计", "熟练掌握Java，熟悉Spring框架，了解分布式系统", "12000-25000", "阿里巴巴", "杭州", "IRC"},
+			{"前端开发工程师", "技术", "负责Web前端开发，与后端工程师协作完成产品功能", "熟练掌握Vue/React，熟悉HTML/CSS/JavaScript", "12000-22000", "腾讯", "深圳", "AIR"},
+			{"Python数据分析师", "数据", "负责数据分析和可视化，为业务决策提供支持", "熟练掌握Python，熟悉Pandas/NumPy，了解数据可视化", "15000-28000", "美团", "北京", "IEC"},
+			{"产品经理", "产品", "负责产品规划与设计，协调研发团队推动产品迭代", "良好的沟通能力，了解互联网产品，有项目管理经验", "18000-35000", "字节跳动", "北京", "ESA"},
+			{"UI设计师", "设计", "负责产品界面设计，提升用户体验", "熟练掌握Figma/Sketch，了解用户体验设计原则", "15000-28000", "网易", "杭州", "AIR"},
+			{"测试工程师", "技术", "负责产品测试工作，保障软件质量", "熟悉测试流程，了解自动化测试框架", "10000-20000", "华为", "深圳", "RIC"},
+			{"运维工程师", "技术", "负责服务器运维，保障系统稳定运行", "熟悉Linux，了解Docker/K8s，有运维经验", "15000-25000", "阿里巴巴", "杭州", "RIC"},
+			{"新媒体运营", "运营", "负责新媒体平台运营，策划优质内容", "熟悉各平台运营规则，有内容策划能力", "8000-15000", "小红书", "上海", "SEA"},
+			{"内容编辑", "内容", "负责内容策划与编辑，产出优质文章", "良好的文字功底，了解内容运营", "7000-14000", "今日头条", "北京", "AES"},
+		}
+
+		for _, job := range jobs {
+			_, err = db.Exec(`INSERT INTO jobs (title, category, description, requirements, salary_range, company, location, education_requirement, experience_requirement, holland_code, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+				job.title, job.category, job.description, job.requirements, job.salaryRange, job.company, job.location, "本科", "1-3年", job.hollandCode, now, now)
+			if err != nil {
+				logx.Errorf("Failed to insert job %s: %v", job.title, err)
+			}
+		}
+		logx.Infof("Sample jobs seeded: %d jobs", len(jobs))
+	}
+
+	return nil
+}
+
 // checkDatabaseNeedsInit 检查数据库是否需要初始化
 func checkDatabaseNeedsInit(dataSource string) (bool, error) {
 	idx := strings.Index(dataSource, "/")
@@ -428,6 +498,11 @@ func runInteractiveInit(c config.Config) error {
 	// 直接调用autoMigrate函数创建表结构
 	if err := autoMigrate(c.Mysql.DataSource); err != nil {
 		return fmt.Errorf("初始化失败: %w", err)
+	}
+
+	// 插入测试数据
+	if err := seedData(c.Mysql.DataSource); err != nil {
+		logx.Errorf("Seed data failed: %v", err)
 	}
 
 	fmt.Println()
