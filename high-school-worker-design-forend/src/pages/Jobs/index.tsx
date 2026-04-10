@@ -116,20 +116,38 @@ export default function JobsPage() {
     // 先加载路径数据
     await loadJobPaths(selectedJobId);
     
+    // 等待状态更新
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    const promises: Promise<void>[] = [];
+    
     // 对每个晋升路径目标调用AI分析
     if (promotionPath?.nextJobs && promotionPath.nextJobs.length > 0) {
       for (const nextJob of promotionPath.nextJobs) {
-        await handleGenerateAnalysis(nextJob.id, 'promotion');
+        promises.push(handleGenerateAnalysis(nextJob.id, 'promotion'));
       }
     }
     
     // 对每个换岗路径目标调用AI分析
-    for (const transferPath of transferPaths) {
-      await handleGenerateAnalysis(transferPath.toJob.id, 'transfer');
+    if (transferPaths.length > 0) {
+      for (const transferPath of transferPaths) {
+        promises.push(handleGenerateAnalysis(transferPath.toJob.id, 'transfer'));
+      }
     }
+    
+    if (promises.length === 0) {
+      message.warning('该岗位暂无发展路径数据');
+      return;
+    }
+    
+    message.loading('正在分析路径，请稍候...', 0);
+    
+    // 并行执行所有分析
+    await Promise.all(promises);
     
     // 刷新显示
     await loadJobPaths(selectedJobId);
+    message.destroy();
     message.success('路径分析完成');
   };
 
