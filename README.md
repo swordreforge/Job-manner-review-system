@@ -515,4 +515,24 @@ go run cmd/test-ai/main.go
 ```bash
 export DEEPSEEK_API_KEY="your-api-key"
 go run cmd/test-ai/main.go
+ ./career-api -f etc/career-api.yaml
+========================================
+数据库尚未初始化
+========================================
+
+系统需要初始化数据库。请选择:
+  1. 现在初始化 (推荐)
+  2. 跳过并使用现有数据库 (可能失败)
+  3. 退出并手动运行 ./init-db.sh
+
+请输入选项 (1-3): 1
+
+正在启动交互式初始化程序...
+
+检测到当前配置:
+  数据库: root:123456zj@tcp(localhost:3306)/career_db?charset=utf8mb4&parseTime=true&loc=Local
+
+将使用现有配置进行初始化...
+
+2026-04-10T14:02:44.028+08:00	error 	Initialization failed: 请使用 ./init-db.sh 进行初始化	caller=high-school-worker-design/career.go:65
 ```

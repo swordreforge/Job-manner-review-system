@@ -18,6 +18,7 @@ import (
 )
 
 var configFile = flag.String("f", "etc/career-api.yaml", "the config file")
+var skipAll = flag.Bool("skip-all", false, "skip all database initialization prompts")
 
 func main() {
 	flag.Parse()
@@ -33,6 +34,50 @@ func main() {
 		Level:       c.Log.Level,
 		KeepDays:    c.Log.KeepDays,
 	})
+
+	// 检查数据库是否需要初始化
+	needsInit, err := checkDatabaseNeedsInit(c.Mysql.DataSource)
+	if err != nil {
+		logx.Errorf("Database check failed: %v", err)
+		os.Exit(1)
+	}
+
+	if needsInit {
+		if !*skipAll {
+			fmt.Println("========================================")
+			fmt.Println("数据库尚未初始化")
+			fmt.Println("========================================")
+			fmt.Println()
+			fmt.Println("系统需要初始化数据库。请选择:")
+			fmt.Println("  1. 现在初始化 (推荐)")
+			fmt.Println("  2. 跳过并使用现有数据库 (可能失败)")
+			fmt.Println("  3. 退出并手动运行 ./init-db.sh")
+			fmt.Println()
+			fmt.Print("请输入选项 (1-3): ")
+
+			var choice string
+			fmt.Scanln(&choice)
+
+			switch choice {
+			case "1":
+				fmt.Println()
+				if err := runInteractiveInit(c); err != nil {
+					logx.Errorf("Initialization failed: %v", err)
+					os.Exit(1)
+				}
+			case "2":
+				logx.Info("跳过初始化，继续启动服务...")
+			case "3":
+				logx.Info("已退出。请运行 ./init-db.sh 来初始化数据库")
+				os.Exit(0)
+			default:
+				logx.Info("无效选项，退出")
+				os.Exit(1)
+			}
+		} else {
+			logx.Info("使用 --skip-all 参数，跳过初始化检查")
+		}
+	}
 
 	if err := autoMigrate(c.Mysql.DataSource); err != nil {
 		logx.Errorf("Auto migration failed: %v", err)
@@ -69,7 +114,7 @@ func autoMigrate(dataSource string) error {
 		dbName = rest[:queryIdx]
 	}
 
-	baseDSN := prefix + "/"
+	baseDSN := prefix + "/?charset=utf8mb4&parseTime=true&loc=Local"
 
 	db, err := sql.Open("mysql", baseDSN)
 	if err != nil {
@@ -90,22 +135,303 @@ func autoMigrate(dataSource string) error {
 	}
 	defer db.Close()
 
-	schema, err := os.ReadFile("sql/schema.sql")
-	if err != nil {
-		return fmt.Errorf("failed to read schema file: %w", err)
+	// 直接在 Golang 层面创建表结构
+	tables := []struct {
+		name      string
+		createSQL string
+	}{
+		{
+			name: "users",
+			createSQL: `CREATE TABLE IF NOT EXISTS users (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				username VARCHAR(50) NOT NULL UNIQUE,
+				password VARCHAR(255) NOT NULL,
+				email VARCHAR(100) DEFAULT NULL,
+				phone VARCHAR(20) DEFAULT NULL,
+				role VARCHAR(20) NOT NULL DEFAULT 'student',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_username (username)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "students",
+			createSQL: `CREATE TABLE IF NOT EXISTS students (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				user_id BIGINT(20) NOT NULL,
+				name VARCHAR(50) NOT NULL,
+				education VARCHAR(50) DEFAULT NULL,
+				major VARCHAR(100) DEFAULT NULL,
+				graduation_year BIGINT(20) DEFAULT NULL,
+				skills TEXT DEFAULT NULL,
+				certificates TEXT DEFAULT NULL,
+				soft_skills TEXT DEFAULT NULL,
+				internship TEXT DEFAULT NULL,
+				projects TEXT DEFAULT NULL,
+				completeness_score DOUBLE NOT NULL DEFAULT 0,
+				competitiveness_score DOUBLE NOT NULL DEFAULT 0,
+				resume_url VARCHAR(255) DEFAULT NULL,
+				suggestions TEXT DEFAULT NULL,
+				resume_content TEXT DEFAULT NULL,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_user_id (user_id),
+				KEY idx_name (name)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "jobs",
+			createSQL: `CREATE TABLE IF NOT EXISTS jobs (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				title VARCHAR(200) NOT NULL,
+				category VARCHAR(100) DEFAULT NULL,
+				description TEXT DEFAULT NULL,
+				requirements TEXT DEFAULT NULL,
+				salary_range VARCHAR(100) DEFAULT NULL,
+				company VARCHAR(100) DEFAULT NULL,
+				location VARCHAR(100) DEFAULT NULL,
+				education_requirement VARCHAR(50) DEFAULT NULL,
+				experience_requirement VARCHAR(50) DEFAULT NULL,
+				holland_code VARCHAR(10) DEFAULT NULL,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_category (category),
+				KEY idx_holland_code (holland_code)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "job_promotion_paths",
+			createSQL: `CREATE TABLE IF NOT EXISTS job_promotion_paths (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				from_job_id BIGINT(20) NOT NULL,
+				to_job_id BIGINT(20) NOT NULL,
+				path_description TEXT DEFAULT NULL,
+				required_skills TEXT DEFAULT NULL,
+				estimated_years INT DEFAULT NULL,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_from_job (from_job_id),
+				KEY idx_to_job (to_job_id)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "holland_test_results",
+			createSQL: `CREATE TABLE IF NOT EXISTS holland_test_results (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL,
+				career_code VARCHAR(10) NOT NULL COMMENT '职业代码，如RIA、SEC',
+				scores LONGTEXT NOT NULL COMMENT '各类型得分，如{"R":4,"I":3,"A":2,"S":1,"E":1,"C":0}' CHECK (json_valid(scores)),
+				suitable_jobs LONGTEXT NOT NULL COMMENT '推荐职业列表' CHECK (json_valid(suitable_jobs)),
+				description TEXT DEFAULT NULL COMMENT '测试结果描述',
+				created_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_student_id (student_id),
+				KEY idx_career_code (career_code)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "career_reports",
+			createSQL: `CREATE TABLE IF NOT EXISTS career_reports (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL,
+				target_job_id BIGINT(20) DEFAULT NULL,
+				title VARCHAR(200) DEFAULT NULL,
+				content TEXT DEFAULT NULL,
+				overview LONGTEXT DEFAULT NULL CHECK (json_valid(overview)),
+				match_analysis LONGTEXT DEFAULT NULL CHECK (json_valid(match_analysis)),
+				career_path LONGTEXT DEFAULT NULL CHECK (json_valid(career_path)),
+				action_plan LONGTEXT DEFAULT NULL CHECK (json_valid(action_plan)),
+				status VARCHAR(20) DEFAULT 'draft',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_student (student_id)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "interview_sessions",
+			createSQL: `CREATE TABLE IF NOT EXISTS interview_sessions (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				user_id BIGINT(20) NOT NULL,
+				student_id BIGINT(20) DEFAULT NULL,
+				mode VARCHAR(50) NOT NULL,
+				status VARCHAR(50) NOT NULL DEFAULT 'running',
+				total_questions INT DEFAULT 0,
+				current_question INT DEFAULT 0,
+				average_score DECIMAL(5,2) DEFAULT 0.00,
+				max_score DECIMAL(5,2) DEFAULT 0.00,
+				min_score DECIMAL(5,2) DEFAULT 0.00,
+				duration_seconds INT DEFAULT 0,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				completed_at BIGINT(20) DEFAULT NULL,
+				PRIMARY KEY (id),
+				KEY idx_user (user_id),
+				KEY idx_student (student_id),
+				KEY idx_status (status),
+				KEY idx_created (created_at),
+				KEY idx_user_status (user_id, status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "interview_messages",
+			createSQL: `CREATE TABLE IF NOT EXISTS interview_messages (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT COMMENT '消息ID',
+				session_id BIGINT(20) NOT NULL COMMENT '会话ID，关联interview_sessions表',
+				role VARCHAR(20) NOT NULL COMMENT '角色：user-用户, assistant-AI面试官',
+				content TEXT NOT NULL COMMENT '消息内容',
+				question_type VARCHAR(50) DEFAULT NULL COMMENT '问题类型：self_intro-自我介绍, project-项目经验, technical-技术问题, hr-人事问题',
+				score DECIMAL(5,2) DEFAULT NULL COMMENT '评分（仅AI回复时有效）',
+				feedback TEXT DEFAULT NULL COMMENT '反馈内容（仅AI回复时有效）',
+				created_at BIGINT(20) NOT NULL COMMENT '创建时间',
+				PRIMARY KEY (id),
+				KEY idx_session (session_id),
+				KEY idx_role (role),
+				KEY idx_created (created_at),
+				KEY idx_session_created (session_id, created_at),
+				CONSTRAINT fk_interview_message_session FOREIGN KEY (session_id) REFERENCES interview_sessions (id) ON DELETE CASCADE
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='面试对话记录表'`,
+		},
+		{
+			name: "interview_reports",
+			createSQL: `CREATE TABLE IF NOT EXISTS interview_reports (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				session_id BIGINT(20) NOT NULL,
+				student_id BIGINT(20) NOT NULL,
+				title VARCHAR(200) DEFAULT NULL,
+				summary TEXT DEFAULT NULL,
+				strengths TEXT DEFAULT NULL,
+				weaknesses TEXT DEFAULT NULL,
+				suggestions TEXT DEFAULT NULL,
+				overall_score DECIMAL(5,2) DEFAULT NULL,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_session_id (session_id),
+				KEY idx_student_id (student_id),
+				CONSTRAINT fk_interview_report_session FOREIGN KEY (session_id) REFERENCES interview_sessions (id) ON DELETE CASCADE
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "match_records",
+			createSQL: `CREATE TABLE IF NOT EXISTS match_records (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL,
+				job_id BIGINT(20) NOT NULL,
+				match_score DECIMAL(5,2) NOT NULL,
+				match_details LONGTEXT DEFAULT NULL CHECK (json_valid(match_details)),
+				created_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_student_id (student_id),
+				KEY idx_job_id (job_id),
+				KEY idx_match_score (match_score)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "resume_parse_history",
+			createSQL: `CREATE TABLE IF NOT EXISTS resume_parse_history (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL,
+				file_path VARCHAR(255) NOT NULL,
+				file_name VARCHAR(255) NOT NULL,
+				file_size BIGINT(20) DEFAULT NULL,
+				parse_status VARCHAR(20) DEFAULT 'pending',
+				parse_result TEXT DEFAULT NULL,
+				error_message TEXT DEFAULT NULL,
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_student_id (student_id),
+				KEY idx_status (parse_status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
 	}
 
-	statements := strings.Split(string(schema), ";")
-	for _, stmt := range statements {
-		stmt = strings.TrimSpace(stmt)
-		if stmt == "" {
-			continue
-		}
-		if _, err := db.Exec(stmt); err != nil {
-			return fmt.Errorf("failed to execute schema: %w", err)
+	for _, table := range tables {
+		if _, err := db.Exec(table.createSQL); err != nil {
+			return fmt.Errorf("创建表 %s 失败: %w", table.name, err)
 		}
 	}
 
 	logx.Infof("Database migration completed")
+	return nil
+}
+
+// checkDatabaseNeedsInit 检查数据库是否需要初始化
+func checkDatabaseNeedsInit(dataSource string) (bool, error) {
+	idx := strings.Index(dataSource, "/")
+	if idx == -1 {
+		return false, fmt.Errorf("invalid datasource format")
+	}
+
+	rest := dataSource[idx+1:]
+
+	queryIdx := strings.Index(rest, "?")
+	var dbName string
+	if queryIdx == -1 {
+		dbName = rest
+	} else {
+		dbName = rest[:queryIdx]
+	}
+
+	// 检查配置文件是否存在
+	if _, err := os.Stat(*configFile); os.IsNotExist(err) {
+		return true, nil
+	}
+
+	// 尝试连接数据库
+	db, err := sql.Open("mysql", dataSource)
+	if err != nil {
+		// 无法连接，可能需要初始化
+		return true, nil
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		// 数据库可能不存在，需要初始化
+		return true, nil
+	}
+
+	// 检查关键表是否存在
+	var count int
+	err = db.QueryRow("SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = ? AND table_name = 'career_reports'", dbName).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count == 0, nil
+}
+
+// runInteractiveInit 运行交互式初始化
+func runInteractiveInit(c config.Config) error {
+	fmt.Println("正在启动交互式初始化程序...")
+	fmt.Println()
+
+	// 调用初始化程序
+	cmd := os.Args[0]
+	args := []string{cmd, "run", "cmd/init-db/main.go"}
+	if *configFile != "" {
+		args = append(args, "-config", *configFile)
+	}
+
+	// 读取现有配置中的数据库信息
+	fmt.Println("检测到当前配置:")
+	fmt.Printf("  数据库: %s\n", c.Mysql.DataSource)
+	fmt.Println()
+	fmt.Println("将使用现有配置进行初始化...")
+	fmt.Println()
+
+	// 直接调用autoMigrate函数创建表结构
+	if err := autoMigrate(c.Mysql.DataSource); err != nil {
+		return fmt.Errorf("初始化失败: %w", err)
+	}
+
+	fmt.Println()
+	fmt.Println("✓ 数据库初始化完成")
+	fmt.Println("现在可以正常使用系统了")
 	return nil
 }

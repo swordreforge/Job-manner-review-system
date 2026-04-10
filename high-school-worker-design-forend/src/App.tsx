@@ -5,6 +5,7 @@ import PlanPage from './pages/Plan';
 import ResumePage from './pages/Resume';
 import ProfilePage from './pages/Profile';
 import StudentPage from './pages/Student';
+import JobsPage from './pages/Jobs';
 import AuthPage from './pages/Auth';
 import HollandTestPage from './pages/Holland';
 import HollandResultPage from './pages/Holland/Result';
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="resume" element={<ResumePage />} />
         <Route path="profile" element={<ProfilePage />} />
         <Route path="student" element={<StudentPage />} />
+        <Route path="jobs" element={<JobsPage />} />
       </Route>
       <Route path="/holland" element={
         <ProtectedRoute>

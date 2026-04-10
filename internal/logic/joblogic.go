@@ -386,14 +386,19 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (*types.JobListResultRes
 		})
 	}
 
-	return &types.JobListResultResp{
+	result := &types.JobListResultResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
-		Data: &types.JobListResp{
+	}
+	
+	if len(jobProfiles) > 0 || total > 0 {
+		result.Data = &types.JobListResp{
 			Total: total,
 			List:  jobProfiles,
-		},
-	}, nil
+		}
+	}
+	
+	return result, nil
 }
 
 type GenerateJobProfileLogic struct {
