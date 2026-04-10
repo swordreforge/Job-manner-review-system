@@ -21,8 +21,8 @@ export default function App() {
       <GlobalBackground />
       <Routes>
       <Route path="/auth" element={<AuthPage />} />
-      <Route path="/" element={<Landing />} />
-      <Route path="/main" element={<MainLayout />}>
+      <Route path="/welcome" element={<Landing />} />
+      <Route path="/" element={<MainLayout />}>
         <Route index element={<Navigate to="/start" replace />} />
         <Route path="start" element={<HomePage />} />
         <Route path="plan" element={
