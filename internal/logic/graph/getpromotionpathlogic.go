@@ -64,11 +64,25 @@ func (l *GetPromotionPathLogic) GetPromotionPath(req *types.JobGraphReq) (resp *
 			json.Unmarshal([]byte(path.TransferSkills.String), &transferSkills)
 		}
 
+		// 解析learning path（推荐理由）
+		var learningPath string
+		if path.LearningPath.Valid {
+			learningPath = path.LearningPath.String
+		}
+
+		// 解析match score
+		var matchScore float64
+		if path.MatchScore.Valid {
+			matchScore = path.MatchScore.Float64
+		}
+
 		nextJobs = append(nextJobs, types.JobNode{
-			Id:     toJob.Id,
-			Name:   toJob.Name,
-			Level:  2,
-			Skills: transferSkills,
+			Id:           toJob.Id,
+			Name:         toJob.Name,
+			Level:        2,
+			Skills:       transferSkills,
+			LearningPath: learningPath,
+			MatchScore:   matchScore,
 		})
 	}
 

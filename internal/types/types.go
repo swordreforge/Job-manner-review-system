@@ -157,11 +157,13 @@ type JobListResultResp struct {
 }
 
 type JobNode struct {
-	Id          int64    `json:"id"`
-	Name        string   `json:"name"`
-	Level       int      `json:"level"`
-	Description string   `json:"description"`
-	Skills      []string `json:"skills"`
+	Id           int64    `json:"id"`
+	Name         string   `json:"name"`
+	Level        int      `json:"level"`
+	Description  string   `json:"description"`
+	Skills       []string `json:"skills"`
+	LearningPath string   `json:"learningPath,omitempty"`
+	MatchScore   float64  `json:"matchScore,omitempty"`
 }
 
 type JobProfile struct {

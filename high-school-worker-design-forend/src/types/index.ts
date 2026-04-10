@@ -126,6 +126,16 @@ export interface NextJob {
   matchScore?: number;
 }
 
+export interface JobNode {
+  id: number;
+  name: string;
+  level?: number;
+  description?: string;
+  skills?: string[];
+  learningPath?: string;
+  matchScore?: number;
+}
+
 export interface TransferPath {
   fromJob: Job;
   toJob: Job;

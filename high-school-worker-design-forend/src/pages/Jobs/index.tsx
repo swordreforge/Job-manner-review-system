@@ -143,6 +143,8 @@ export default function JobsPage() {
     // 对每个晋升路径目标调用AI分析
     if (promotionPath?.nextJobs && promotionPath.nextJobs.length > 0) {
       for (const nextJob of promotionPath.nextJobs) {
+        // 跳过自引用路径
+        if (nextJob.id === selectedJobId) continue;
         promises.push(handleGenerateAnalysis(nextJob.id, 'promotion'));
       }
     }
@@ -150,6 +152,8 @@ export default function JobsPage() {
     // 对每个换岗路径目标调用AI分析
     if (transferPaths.length > 0) {
       for (const transferPath of transferPaths) {
+        // 跳过自引用路径
+        if (transferPath.toJob.id === selectedJobId) continue;
         promises.push(handleGenerateAnalysis(transferPath.toJob.id, 'transfer'));
       }
     }
@@ -173,86 +177,116 @@ export default function JobsPage() {
   const getGraphOption = () => {
     if (!selectedJob) return {};
 
-    const nodes = [
-      {
-        id: selectedJob.id,
-        name: selectedJob.name,
-        category: 0,
-        symbolSize: 60,
-        itemStyle: {
-          color: '#1890ff',
-        },
-      },
-    ];
+    // 使用 Map 来追踪已添加的节点，避免重复
+    const nodeMap = new Map();
+    const links: any[] = [];
 
-    const links = [];
+    // 添加当前岗位节点
+    nodeMap.set(selectedJob.id, {
+      id: selectedJob.id,
+      name: selectedJob.name,
+      category: 0,
+      symbolSize: 60,
+      itemStyle: { color: '#1890ff' },
+    });
 
     // 添加晋升路径节点
     if (promotionPath?.nextJobs) {
-      promotionPath.nextJobs.forEach((nextJob, index) => {
-        nodes.push({
-          id: nextJob.id,
-          name: nextJob.name,
-          category: 1,
-          symbolSize: 50,
-          itemStyle: {
-            color: '#52c41a',
-          },
-        });
+      promotionPath.nextJobs.forEach((nextJob: any) => {
+        // 跳过自引用路径（目标岗位不能是当前岗位）
+        if (nextJob.id === selectedJob.id) return;
+        
+        // 显示标签：名称 + 匹配分数
+        const labelText = nextJob.matchScore 
+          ? `${nextJob.name}\n${Math.round(nextJob.matchScore * 100)}%`
+          : nextJob.name;
+        
+        if (!nodeMap.has(nextJob.id)) {
+          nodeMap.set(nextJob.id, {
+            id: nextJob.id,
+            name: labelText,
+            category: 1,
+            symbolSize: 50,
+            itemStyle: { color: '#52c41a' },
+          });
+        }
 
-        links.push({
-          source: selectedJob.id,
-          target: nextJob.id,
-          name: '晋升',
-          lineStyle: {
-            color: '#52c41a',
-            width: 2,
-          },
-          label: {
-            show: true,
-            formatter: '晋升',
-          },
-        });
+        // 检查是否已存在相同的链接
+        const linkExists = links.some(
+          l => l.source === selectedJob.id && l.target === nextJob.id
+        );
+        if (!linkExists) {
+          links.push({
+            source: selectedJob.id,
+            target: nextJob.id,
+            name: '晋升',
+            lineStyle: { color: '#52c41a', width: 2 },
+            label: { show: true, formatter: '晋升' },
+          });
+        }
       });
     }
 
     // 添加换岗路径节点
-    transferPaths.forEach((transferPath) => {
-      if (transferPath.toJob.id !== selectedJob.id) {
-        const existingNode = nodes.find(n => n.id === transferPath.toJob.id);
-        if (!existingNode) {
-          nodes.push({
-            id: transferPath.toJob.id,
-            name: transferPath.toJob.name,
-            category: 2,
-            symbolSize: 45,
-            itemStyle: {
-              color: '#faad14',
-            },
+    transferPaths.forEach((transferPath: any) => {
+      // 跳过自引用路径
+      if (transferPath.toJob.id === selectedJob.id) return;
+      if (transferPath.fromJob.id === selectedJob.id && transferPath.toJob.id === selectedJob.id) return;
+
+      // 添加目标岗位节点
+      if (!nodeMap.has(transferPath.toJob.id)) {
+        nodeMap.set(transferPath.toJob.id, {
+          id: transferPath.toJob.id,
+          name: transferPath.toJob.name,
+          category: 2,
+          symbolSize: 45,
+          itemStyle: { color: '#faad14' },
+        });
+      }
+
+      // 添加源岗位节点（从其他岗位转来的）
+      if (transferPath.fromJob.id !== selectedJob.id && !nodeMap.has(transferPath.fromJob.id)) {
+        nodeMap.set(transferPath.fromJob.id, {
+          id: transferPath.fromJob.id,
+          name: transferPath.fromJob.name,
+          category: 2,
+          symbolSize: 40,
+          itemStyle: { color: '#faad14' },
+        });
+        
+        // 添加反向链接
+        const linkExists = links.some(
+          l => l.source === transferPath.fromJob.id && l.target === transferPath.toJob.id
+        );
+        if (!linkExists) {
+          links.push({
+            source: transferPath.fromJob.id,
+            target: transferPath.toJob.id,
+            name: '换岗',
+            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+            label: { show: true, formatter: '换岗' },
           });
         }
+      }
 
-        const existingLink = links.find(
+      // 添加从当前岗位到目标岗位的链接
+      if (transferPath.fromJob.id === selectedJob.id) {
+        const linkExists = links.some(
           l => l.source === selectedJob.id && l.target === transferPath.toJob.id
         );
-        if (!existingLink) {
+        if (!linkExists) {
           links.push({
             source: selectedJob.id,
             target: transferPath.toJob.id,
-            name: `换岗 (${Math.round(transferPath.matchScore * 100)}%)`,
-            lineStyle: {
-              color: '#faad14',
-              width: 2,
-              type: 'dashed',
-            },
-            label: {
-              show: true,
-              formatter: `换岗\n${Math.round(transferPath.matchScore * 100)}%`,
-            },
+            name: `换岗 ${Math.round(transferPath.matchScore * 100)}%`,
+            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+            label: { show: true, formatter: `换岗\n${Math.round(transferPath.matchScore * 100)}%` },
           });
         }
       }
     });
+
+    const nodes = Array.from(nodeMap.values());
 
     return {
       title: {
@@ -450,10 +484,15 @@ export default function JobsPage() {
                                       )}
                                       {nextJob.learningPath && (
                                         <div className="mt-2">
-                                          <div className="text-gray-600 text-sm">学习路径：</div>
+                                          <div className="text-gray-600 text-sm">推荐理由：</div>
                                           <div className="mt-1 text-sm text-gray-500">
                                             {nextJob.learningPath}
                                           </div>
+                                        </div>
+                                      )}
+                                      {nextJob.matchScore && nextJob.matchScore > 0 && (
+                                        <div className="mt-2">
+                                          <Tag color="blue">匹配度: {Math.round(nextJob.matchScore * 100)}%</Tag>
                                         </div>
                                       )}
                                     </div>
