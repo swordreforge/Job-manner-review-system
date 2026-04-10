@@ -74,8 +74,14 @@ export const userApi = {
 
   getInfo: () => api.get<{ code: number; msg: string; data: import('../types').User }>('/user/info'),
 
-  updateInfo: (data: { email?: string; phone?: string }) =>
+  updateInfo: (data: { username?: string; phone?: string }) =>
     api.put<{ code: number; msg: string; data: import('../types').User }>('/user/info', data),
+
+  updateEmail: (data: { email: string; password: string }) =>
+    api.put<{ code: number; msg: string }>('/user/email', data),
+
+  deleteAccount: () =>
+    api.delete<{ code: number; msg: string }>('/user/account'),
 };
 
 export const studentApi = {

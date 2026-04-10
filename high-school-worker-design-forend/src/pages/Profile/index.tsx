@@ -7,7 +7,7 @@ import { userApi, studentApi } from '../../api';
 import type { Student } from '../../types';
 
 const menuItems = [
-  { icon: <SettingOutlined />, title: '设置', desc: '应用偏好设置' },
+  { icon: <SettingOutlined />, title: '设置', desc: '应用偏好设置', path: '/settings' },
 ];
 
 export default function ProfilePage() {
@@ -226,6 +226,7 @@ export default function ProfilePage() {
             <div
               key={index}
               className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
+              onClick={() => item.path && navigate(item.path)}
             >
               <Avatar size="small" icon={item.icon} className="bg-blue-500" />
               <div className="flex-1">

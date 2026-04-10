@@ -5,6 +5,7 @@ import HomePage from './pages/Home';
 import PlanPage from './pages/Plan';
 import ResumePage from './pages/Resume';
 import ProfilePage from './pages/Profile';
+import SettingsPage from './pages/Settings';
 import StudentPage from './pages/Student';
 import JobsPage from './pages/Jobs';
 import AuthPage from './pages/Auth';
@@ -38,6 +39,11 @@ export default function App() {
         <Route path="profile" element={
           <ProtectedRoute>
             <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="settings" element={
+          <ProtectedRoute>
+            <SettingsPage />
           </ProtectedRoute>
         } />
         <Route path="student" element={
