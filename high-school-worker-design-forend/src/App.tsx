@@ -20,18 +20,34 @@ export default function App() {
       <GlobalBackground />
       <Routes>
       <Route path="/auth" element={<AuthPage />} />
-      <Route path="/start" element={<HomePage />} />
-      <Route path="/" element={
-        <ProtectedRoute>
-          <MainLayout />
-        </ProtectedRoute>
-      }>
+      <Route path="/" element={<MainLayout />}>
         <Route index element={<Navigate to="/start" replace />} />
-        <Route path="plan" element={<PlanPage />} />
-        <Route path="resume" element={<ResumePage />} />
-        <Route path="profile" element={<ProfilePage />} />
-        <Route path="student" element={<StudentPage />} />
-        <Route path="jobs" element={<JobsPage />} />
+        <Route path="start" element={<HomePage />} />
+        <Route path="plan" element={
+          <ProtectedRoute>
+            <PlanPage />
+          </ProtectedRoute>
+        } />
+        <Route path="resume" element={
+          <ProtectedRoute>
+            <ResumePage />
+          </ProtectedRoute>
+        } />
+        <Route path="profile" element={
+          <ProtectedRoute>
+            <ProfilePage />
+          </ProtectedRoute>
+        } />
+        <Route path="student" element={
+          <ProtectedRoute>
+            <StudentPage />
+          </ProtectedRoute>
+        } />
+        <Route path="jobs" element={
+          <ProtectedRoute>
+            <JobsPage />
+          </ProtectedRoute>
+        } />
       </Route>
       <Route path="/holland" element={
         <ProtectedRoute>

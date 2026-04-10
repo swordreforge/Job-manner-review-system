@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, RocketOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 export default function MainLayout() {
@@ -15,9 +15,15 @@ export default function MainLayout() {
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
 
+  // 处理 /start 路由，显示为首页
+  const isStartPage = location.pathname === '/start';
+
   // 根据当前路由计算应该高亮的标签
   const getActiveTab = () => {
     const pathname = location.pathname;
+    
+    // /start 也高亮首页
+    if (pathname === '/start') return 'home';
     
     // 精确匹配
     const exactMatch = tabs.find(tab => tab.path === pathname);
@@ -39,7 +45,12 @@ export default function MainLayout() {
   const handleTabChange = (key: string) => {
     const tab = tabs.find(t => t.key === key);
     if (tab) {
-      navigate(tab.path);
+      // 首页跳转到 /start
+      if (tab.key === 'home') {
+        navigate('/start');
+      } else {
+        navigate(tab.path);
+      }
     }
   };
 
@@ -53,7 +64,12 @@ export default function MainLayout() {
         onChange={handleTabChange}
         className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20"
       >
-        {tabs.map((tab) => (
+        <TabBar.Item 
+          key="home" 
+          title={isStartPage ? "开始" : "首页"} 
+          icon={<RocketOutlined />} 
+        />
+        {tabs.slice(1).map((tab) => (
           <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
         ))}
       </TabBar>
