@@ -1,4 +1,4 @@
-import { Card, Avatar, Button, message, Tag } from 'antd';
+import { Card, Avatar, Button, message, Tag, Modal } from 'antd';
 import { UserOutlined, SettingOutlined, HistoryOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ export default function ProfilePage() {
   const { user, logout, setUser } = useAuthStore();
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(false);
+  const [showCompleteModal, setShowCompleteModal] = useState(false);
 
   useEffect(() => {
     // 如果用户信息为空，重新获取
@@ -56,6 +57,17 @@ export default function ProfilePage() {
       setLoadingStudent(false);
     }
   };
+
+  useEffect(() => {
+    if (studentData !== null) {
+      const completeness = calculateCompleteness(studentData);
+      if (completeness === 0) {
+        setShowCompleteModal(true);
+      }
+    } else if (studentData === null && !loadingStudent) {
+      setShowCompleteModal(true);
+    }
+  }, [studentData, loadingStudent]);
 
   const handleLogout = () => {
     logout();
@@ -239,6 +251,51 @@ export default function ProfilePage() {
       >
         退出登录
       </Button>
+
+      {/* 完善资料提示模态框 */}
+      <Modal
+        open={showCompleteModal}
+        onCancel={() => setShowCompleteModal(false)}
+        footer={null}
+        centered
+        closable={false}
+      >
+        <div className="text-center p-4">
+          <div className="text-4xl mb-4">🔔</div>
+          <div className="text-lg font-medium mb-2">完善学生资料，提升求职竞争力！</div>
+          <div className="text-gray-500 mb-6">
+            您可以通过上传简历快速完善学生资料，AI将自动解析并填充信息。
+          </div>
+          <div className="flex flex-col gap-3">
+            <Button 
+              type="primary" 
+              block
+              onClick={() => {
+                setShowCompleteModal(false);
+                navigate('/resume');
+              }}
+            >
+              📄 上传简历快速完善资料
+            </Button>
+            <Button 
+              block
+              onClick={() => {
+                setShowCompleteModal(false);
+                navigate('/student');
+              }}
+            >
+              ✏️ 手动编辑资料
+            </Button>
+            <Button 
+              type="text" 
+              block
+              onClick={() => setShowCompleteModal(false)}
+            >
+              暂时不需要
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 }
