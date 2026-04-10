@@ -200,6 +200,8 @@ type LoginReq struct {
 }
 
 type LoginResp struct {
+	Code    int    `json:"code,optional"`
+	Msg     string `json:"msg,optional"`
 	Token   string `json:"token"`
 	Expires int64  `json:"expires"`
 	UserId  int64  `json:"userId"`
