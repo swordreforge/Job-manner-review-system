@@ -49,6 +49,18 @@ const compareData = [
   { feature: '个性化学习路径', us: true, competitionA: false, competitionB: false },
 ];
 
+// 用户评论弹幕数据
+const comments = [
+  { id: 1, user: '小明', avatar: '👨‍💼', text: 'AI职业规划太准了！精准定位了我的优势方向', color: '#FF6B6B' },
+  { id: 2, user: '小李', avatar: '👩‍💻', text: '模拟面试帮我拿到了字节offer！感谢！', color: '#4ECDC4' },
+  { id: 3, user: '王同学', avatar: '🧑‍🎓', text: '职业图谱让我清楚看到了晋升路径', color: '#45B7D1' },
+  { id: 4, user: '张工', avatar: '👨‍🔬', text: '简历优化建议很专业，投递回复率提升200%', color: '#96CEB4' },
+  { id: 5, user: '刘学姐', avatar: '👩‍🏫', text: '霍兰德测试结果和我的性格完全吻合', color: '#FFEAA7' },
+  { id: 6, user: '陈同学', avatar: '🧑‍💻', text: '一站式服务太方便了，再也不用到处找资源', color: '#DDA0DD' },
+  { id: 7, user: '赵总', avatar: '👨‍💼', text: '推荐给团队新人，反馈都很好', color: '#98D8C8' },
+  { id: 8, user: '孙同学', avatar: '👩‍🎨', text: '界面设计很赞，用户体验一流', color: '#F7DC6F' },
+];
+
 export default function Landing() {
   const navigate = useNavigate();
 
@@ -520,6 +532,57 @@ export default function Landing() {
                   ))}
 
                 </motion.div>
+      </div>
+
+      {/* 用户评论弹幕区域 */}
+      <div className="px-6 py-12 max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="text-center mb-8"
+        >
+          <h2 className="text-3xl font-bold mb-3">
+            用户<span className="text-orange-400">真实评价</span>
+          </h2>
+          <p className="text-gray-400">听听他们的使用体验</p>
+        </motion.div>
+
+        {/* 弹幕区域 */}
+        <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
+          {/* 弹幕轨道 - 每条弹幕独立的垂直轨道 */}
+          <div className="absolute inset-0 py-6">
+            {comments.map((comment, idx) => (
+              <motion.div
+                key={comment.id}
+                className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
+                style={{
+                  top: `${idx * 40}px`,
+                  backgroundColor: `${comment.color}20`,
+                  borderColor: `${comment.color}40`,
+                }}
+                initial={{ x: '100%' }}
+                animate={{ x: '-150%' }}
+                transition={{
+                  duration: 20,
+                  repeat: Infinity,
+                  ease: 'linear',
+                  delay: idx * 2.5,
+                }}
+              >
+                <span className="text-lg">{comment.avatar}</span>
+                <span className="text-sm font-semibold" style={{ color: comment.color }}>{comment.user}:</span>
+                <span className="text-sm text-gray-300">{comment.text}</span>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* 装饰性元素 */}
+          <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
+          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+          <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
+        </div>
       </div>
 
       {/* CTA Section */}
