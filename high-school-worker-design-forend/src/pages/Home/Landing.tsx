@@ -3,6 +3,8 @@ import { Button } from 'antd';
 import { RocketOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
 import { motion, useInView } from 'framer-motion';
 import { useRef } from 'react';
+import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
+import { RiWindowsFill } from 'react-icons/ri';
 
 const features = [
   {
@@ -25,6 +27,17 @@ const features = [
     desc: '大厂/国企双模式，AI实时反馈面试表现',
     icon: '🎯',
   },
+];
+
+// 浮动图标配置
+const floatingIcons = [
+  { Icon: FaFolder, size: 28, left: '5%', top: '15%', duration: 6, delay: 0 },
+  { Icon: FaCog, size: 32, left: '85%', top: '25%', duration: 8, delay: 1 },
+  { Icon: FaFileAlt, size: 24, left: '15%', top: '70%', duration: 5, delay: 0.5 },
+  { Icon: FaLaptopCode, size: 36, left: '75%', top: '80%', duration: 9, delay: 1.5 },
+  { Icon: FaChartLine, size: 30, left: '45%', top: '10%', duration: 7, delay: 2.5 },
+  { Icon: FaUserGraduate, size: 26, left: '92%', top: '60%', duration: 5.5, delay: 3.5 },
+  { Icon: RiWindowsFill, size: 34, left: '8%', top: '45%', duration: 8, delay: 2 },
 ];
 
 const compareData = [
@@ -76,78 +89,114 @@ export default function Landing() {
       </motion.div>
 
       {/* Hero Section */}
-      <div className="px-6 py-20 text-center">
-        <motion.div
-          initial={{ scale: 0, rotate: -180, opacity: 0 }}
-          animate={{ scale: 1, rotate: 0, opacity: 1 }}
-          transition={{ 
-            type: "spring",
-            damping: 15,
-            stiffness: 200,
-            duration: 0.8
-          }}
-          className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-8 shadow-lg shadow-orange-500/30"
-        >
-          <RocketOutlined className="text-5xl text-white" />
-        </motion.div>
-        
-        <motion.h1
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-5xl md:text-6xl font-bold mb-6"
-        >
-          职业规划<span className="text-orange-400">助手</span>
-        </motion.h1>
-        
-        <motion.p
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed"
-        >
-          AI驱动的职业发展解决方案，助你找到理想工作
-          <br />
-          <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
-        </motion.p>
-        
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          className="flex flex-col sm:flex-row gap-4 justify-center"
-        >
+      <div className="relative px-6 py-20 text-center overflow-hidden">
+        {/* 淡紫色渐变背景 */}
+        <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
+
+        {/* 浮动图标层 - 不影响点击 */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          {floatingIcons.map((item, idx) => {
+            const { Icon, size, left, top, duration, delay } = item;
+            return (
+              <motion.div
+                key={idx}
+                className="absolute text-purple-400/40"
+                style={{
+                  left,
+                  top,
+                }}
+                initial={{ y: 0, rotate: 0 }}
+                animate={{
+                  y: [0, -40, 0],
+                  rotate: [0, 8, 0],
+                }}
+                transition={{
+                  duration,
+                  delay,
+                  repeat: Infinity,
+                  ease: "easeInOut",
+                }}
+              >
+                <Icon size={size} />
+              </motion.div>
+            );
+          })}
+        </div>
+
+        {/* 内容层 - 确保在浮动层上方 */}
+        <div className="relative z-10">
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 400 }}
+            initial={{ scale: 0, rotate: -180, opacity: 0 }}
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            transition={{
+              type: "spring",
+              damping: 15,
+              stiffness: 200,
+              duration: 0.8
+            }}
+            className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-8 shadow-lg shadow-orange-500/30"
           >
-            <Button
-              type="primary"
-              size="large"
-              icon={<RightOutlined />}
-              onClick={() => navigate('/auth')}
-              className="bg-orange-500 border-orange-500 hover:bg-orange-600 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
-            >
-              立即开始
-            </Button>
+            <RocketOutlined className="text-5xl text-white" />
           </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="text-5xl md:text-6xl font-bold mb-6"
+          >
+            职业规划<span className="text-orange-400">助手</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+            className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed"
+          >
+            AI驱动的职业发展解决方案，助你找到理想工作
+            <br />
+            <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
+          </motion.p>
+
           <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.98 }}
-            transition={{ type: "spring", stiffness: 400 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="flex flex-col sm:flex-row gap-4 justify-center"
           >
-            <Button
-              size="large"
-              onClick={() => {
-                document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="border-gray-600 text-white hover:bg-gray-800 h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
-              了解更多
-            </Button>
+              <Button
+                type="primary"
+                size="large"
+                icon={<RightOutlined />}
+                onClick={() => navigate('/auth')}
+                className="bg-orange-500 border-orange-500 hover:bg-orange-600 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+              >
+                立即开始
+              </Button>
+            </motion.div>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              <Button
+                size="large"
+                onClick={() => {
+                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+                className="border-gray-600 text-white hover:bg-gray-800 h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+              >
+                了解更多
+              </Button>
+            </motion.div>
           </motion.div>
-        </motion.div>
+        </div>
       </div>
 
       {/* Features Section */}
