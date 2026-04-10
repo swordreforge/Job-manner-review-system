@@ -174,14 +174,7 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 
 	jobInfo := formatJobInfoForAI(job)
 
-	aiReq := pkg.PathAnalysisRequest{
-		StudentProfile: studentProfile,
-		FromJobInfo:    jobInfo,
-		ToJobInfo:      "晋升目标岗位",
-		PathType:       "promotion",
-	}
-
-	aiResult, err := l.svcCtx.AIProvider.GeneratePathAnalysis(l.ctx, aiReq)
+	aiResult, err := l.svcCtx.AIProvider.GeneratePromotionTargets(l.ctx, jobInfo, studentProfile)
 	if err != nil {
 		logx.Errorf("AI generate promotion targets failed: %v", err)
 		return &types.ErrorResp{
@@ -281,6 +274,135 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 		return &types.ErrorResp{
 			Code: 500,
 			Msg:  "未能找到匹配的晋升目标岗位",
+		}, nil
+	}
+
+	return &types.ErrorResp{
+		Code: 0,
+		Msg:  "success",
+	}, nil
+}
+
+type GenerateTransferTargetsReq struct {
+	JobId     int64 `json:"jobId"`
+	StudentId int64 `json:"studentId"`
+}
+
+func (l *GeneratePathAnalysisLogic) GenerateTransferTargets(req *GenerateTransferTargetsReq) (resp *types.ErrorResp, err error) {
+	job, err := l.svcCtx.JobModel.FindOne(l.ctx, req.JobId)
+	if err != nil {
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "岗位不存在",
+		}, nil
+	}
+
+	var studentProfile string
+	if req.StudentId > 0 {
+		student, err := l.svcCtx.StudentModel.FindOne(l.ctx, req.StudentId)
+		if err == nil && student != nil {
+			studentProfile = formatStudentInfo(student)
+		}
+	}
+
+	jobInfo := formatJobInfoForAI(job)
+
+	aiResult, err := l.svcCtx.AIProvider.GenerateTransferTargets(l.ctx, jobInfo, studentProfile)
+	if err != nil {
+		logx.Errorf("AI generate transfer targets failed: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "AI生成转岗目标失败: " + err.Error(),
+		}, nil
+	}
+
+	logx.Infof("AI Generate Transfer Targets Result: %s", aiResult)
+
+	type TargetResult struct {
+		Targets []struct {
+			JobName string `json:"jobName"`
+			Reason  string `json:"reason"`
+		} `json:"targets"`
+	}
+
+	cleanResult := strings.TrimSpace(aiResult)
+	cleanResult = strings.TrimPrefix(cleanResult, "```json")
+	cleanResult = strings.TrimPrefix(cleanResult, "```")
+	cleanResult = strings.TrimSuffix(cleanResult, "```")
+	cleanResult = strings.TrimSpace(cleanResult)
+
+	logx.Infof("Cleaned AI result: %s", cleanResult)
+
+	var targetResult TargetResult
+	if err := json.Unmarshal([]byte(cleanResult), &targetResult); err != nil {
+		logx.Errorf("Failed to parse AI targets result: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "解析转岗目标失败",
+		}, nil
+	}
+
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "")
+	if err != nil {
+		logx.Errorf("Failed to get all jobs: %v", err)
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "获取岗位列表失败",
+		}, nil
+	}
+
+	now := time.Now().Unix()
+	createdCount := 0
+
+	logx.Infof("Looking for matching jobs among %d jobs", len(allJobs))
+	logx.Infof("AI returned %d targets", len(targetResult.Targets))
+
+	for _, target := range targetResult.Targets {
+		logx.Infof("Looking for job matching: %s", target.JobName)
+		var matchedJob *model.Jobs
+		for _, job := range allJobs {
+			if strings.Contains(job.Name, target.JobName) || strings.Contains(target.JobName, job.Name) {
+				matchedJob = job
+				logx.Infof("Matched: %s (id=%d)", job.Name, job.Id)
+				break
+			}
+		}
+
+		if matchedJob == nil {
+			logx.Errorf("No matching job found for: %s", target.JobName)
+		}
+
+		if matchedJob != nil {
+			existingPaths, _ := l.svcCtx.PromotionPathModel.FindByFromJob(l.ctx, req.JobId)
+			exists := false
+			for _, p := range existingPaths {
+				if p.ToJobId == matchedJob.Id {
+					exists = true
+					break
+				}
+			}
+
+			if !exists {
+				newPath := &model.JobPromotionPaths{
+					FromJobId:      req.JobId,
+					ToJobId:        matchedJob.Id,
+					MatchScore:     sql.NullFloat64{Valid: false},
+					TransferSkills: sql.NullString{Valid: false},
+					LearningPath:   sql.NullString{String: target.Reason, Valid: true},
+					CreatedAt:      now,
+					UpdatedAt:      now,
+				}
+				l.svcCtx.PromotionPathModel.Insert(l.ctx, newPath)
+				createdCount++
+				logx.Infof("Created transfer path: %d -> %d (%s)", req.JobId, matchedJob.Id, target.JobName)
+			}
+		}
+	}
+
+	if createdCount == 0 {
+		return &types.ErrorResp{
+			Code: 500,
+			Msg:  "未能找到匹配的转岗目标岗位",
 		}, nil
 	}
 

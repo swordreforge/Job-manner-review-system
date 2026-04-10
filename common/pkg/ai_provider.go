@@ -21,6 +21,8 @@ type AIProvider interface {
 	GenerateCareerReport(ctx context.Context, req ReportGenerationRequest) (string, error)
 	GenerateCareerReportStream(ctx context.Context, req ReportGenerationRequest) (<-chan string, <-chan error)
 	GeneratePathAnalysis(ctx context.Context, req PathAnalysisRequest) (string, error)
+	GeneratePromotionTargets(ctx context.Context, jobInfo, studentProfile string) (string, error)
+	GenerateTransferTargets(ctx context.Context, jobInfo, studentProfile string) (string, error)
 }
 
 type ReportGenerationRequest struct {
@@ -428,6 +430,78 @@ func (p *OpenAIProvider) GeneratePathAnalysis(ctx context.Context, req PathAnaly
 	content, err := p.callAPI(ctx, reqData)
 	if err != nil {
 		logx.Errorf("GeneratePathAnalysis failed: %v", err)
+		return "", err
+	}
+
+	return content, nil
+}
+
+func (p *OpenAIProvider) GeneratePromotionTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
+	prompt := fmt.Sprintf(`你是一名专业的职业规划顾问。请根据当前岗位信息，分析可能的晋升目标岗位。
+
+请返回JSON格式的晋升目标列表：
+{
+  "targets": [
+    {"jobName": "晋升目标岗位名称1", "reason": "晋升原因和价值"},
+    {"jobName": "晋升目标岗位名称2", "reason": "晋升原因和价值"}
+  ]
+}
+
+当前岗位信息：%s
+
+用户简历信息：%s
+
+请只返回JSON，不要包含其他文字。`, jobInfo, studentProfile)
+
+	reqData := OpenAIRequest{
+		Model: p.model,
+		Messages: []ChatMessage{
+			{Role: "system", Content: "You are a professional career advisor. Analyze possible promotion targets based on current job information. Return results in JSON format with targets array."},
+			{Role: "user", Content: prompt},
+		},
+		MaxTokens:   2000,
+		Temperature: 0.7,
+	}
+
+	content, err := p.callAPI(ctx, reqData)
+	if err != nil {
+		logx.Errorf("GeneratePromotionTargets failed: %v", err)
+		return "", err
+	}
+
+	return content, nil
+}
+
+func (p *OpenAIProvider) GenerateTransferTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
+	prompt := fmt.Sprintf(`你是一名专业的职业规划顾问。请根据当前岗位信息，分析可能的转岗目标岗位（与当前岗位平级但技能可迁移的其他岗位）。
+
+请返回JSON格式的转岗目标列表：
+{
+  "targets": [
+    {"jobName": "转岗目标岗位名称1", "reason": "转岗原因和价值"},
+    {"jobName": "转岗目标岗位名称2", "reason": "转岗原因和价值"}
+  ]
+}
+
+当前岗位信息：%s
+
+用户简历信息：%s
+
+请只返回JSON，不要包含其他文字。`, jobInfo, studentProfile)
+
+	reqData := OpenAIRequest{
+		Model: p.model,
+		Messages: []ChatMessage{
+			{Role: "system", Content: "You are a professional career advisor. Analyze possible job transfer targets (similar level but different role) based on current job information. Return results in JSON format with targets array."},
+			{Role: "user", Content: prompt},
+		},
+		MaxTokens:   2000,
+		Temperature: 0.7,
+	}
+
+	content, err := p.callAPI(ctx, reqData)
+	if err != nil {
+		logx.Errorf("GenerateTransferTargets failed: %v", err)
 		return "", err
 	}
 
