@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
+import Landing from './pages/Home/Landing';
 import HomePage from './pages/Home';
 import PlanPage from './pages/Plan';
 import ResumePage from './pages/Resume';
@@ -20,7 +21,8 @@ export default function App() {
       <GlobalBackground />
       <Routes>
       <Route path="/auth" element={<AuthPage />} />
-      <Route path="/" element={<MainLayout />}>
+      <Route path="/" element={<Landing />} />
+      <Route path="/main" element={<MainLayout />}>
         <Route index element={<Navigate to="/start" replace />} />
         <Route path="start" element={<HomePage />} />
         <Route path="plan" element={
