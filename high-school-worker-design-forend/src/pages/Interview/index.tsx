@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
-import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
 
@@ -22,6 +23,7 @@ export default function InterviewPage() {
   const [currentReport, setCurrentReport] = useState<InterviewReport | null>(null);
   const [averageScore, setAverageScore] = useState<number>(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -280,11 +282,46 @@ export default function InterviewPage() {
     return '需要改进';
   };
 
+  const handleBack = () => {
+    if (started) {
+      Modal.confirm({
+        title: '确认返回？',
+        content: '返回后将结束当前面试',
+        okText: '确认返回',
+        okButtonProps: { danger: true },
+        cancelText: '继续面试',
+        onOk: () => {
+          if (session) {
+            interviewApi.end(session.id, 'cancelled').catch(console.error);
+          }
+          setSession(null);
+          setMessages([]);
+          setCurrentScore(null);
+          setCurrentFeedback('');
+          setAverageScore(0);
+          setStarted(false);
+        },
+      });
+    }
+  };
+
   return (
     <div className="min-h-screen p-4">
       {!started ? (
         <div className="max-w-4xl mx-auto mt-10 relative z-10">
-          <Card title={<div className="text-2xl font-bold text-center">面试模拟系统</div>} className="glass-effect shadow-xl">
+          <Card 
+            title={
+              <div className="flex items-center gap-4">
+                <Button 
+                  icon={<ArrowLeftOutlined />} 
+                  onClick={() => navigate('/')}
+                  type="text"
+                />
+                <span className="text-2xl font-bold text-center flex-1">面试模拟系统</span>
+              </div>
+            } 
+            className="glass-effect shadow-xl"
+          >
             <div className="text-center mb-6">
               <p className="text-gray-600">选择面试模式，开始你的模拟面试练习</p>
             </div>
@@ -376,6 +413,11 @@ export default function InterviewPage() {
             title={
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
+                  <Button 
+                    icon={<ArrowLeftOutlined />} 
+                    onClick={handleBack}
+                    type="text"
+                  />
                   <Avatar size="large" icon={<RobotOutlined />} />
                   <div>
                     <div className="text-lg font-semibold">{getModeLabel(mode)} - 模拟面试</div>
