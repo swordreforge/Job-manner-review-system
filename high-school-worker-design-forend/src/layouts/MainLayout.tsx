@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 
 export default function MainLayout() {
@@ -11,6 +11,7 @@ export default function MainLayout() {
     { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
     { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
     { key: 'resume', title: '简历', icon: <FileTextOutlined />, path: '/resume' },
+    { key: 'jobs', title: '岗位', icon: <BankOutlined />, path: '/jobs' },
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
 
@@ -26,6 +27,7 @@ export default function MainLayout() {
     if (pathname.startsWith('/holland')) return 'home';
     if (pathname.startsWith('/plan')) return 'plan';
     if (pathname.startsWith('/resume')) return 'resume';
+    if (pathname.startsWith('/jobs')) return 'jobs';
     if (pathname.startsWith('/profile')) return 'profile';
     
     // 默认返回首页

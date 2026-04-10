@@ -163,13 +163,13 @@ export const healthApi = {
 
 export const jobPathApi = {
   getPromotionPath: (jobId: number) => 
-    api.get<import('../types').PromotionPath>(`/jobs/${jobId}/promotion-path`),
+    api.get<{ code: number; msg: string; data: import('../types').PromotionPath }>(`/jobs/${jobId}/promotion-path`),
   getTransferPaths: (jobId: number) => 
-    api.get<import('../types').TransferPath[]>(`/jobs/${jobId}/transfer-paths`),
+    api.get<{ code: number; msg: string; data: import('../types').TransferPath[] }>(`/jobs/${jobId}/transfer-paths`),
   getAllPaths: (jobId: number) => 
-    api.get<{ promotion: import('../types').PromotionPath; transfer: import('../types').TransferPath[] }>(`/jobs/${jobId}/all-paths`),
+    api.get<{ code: number; msg: string; data: { promotion: import('../types').PromotionPath; transfer: import('../types').TransferPath[] } }>(`/jobs/${jobId}/all-paths`),
   getRelated: (jobId: number, params?: { type?: string }) => 
-    api.get<import('../types').Job[]>(`/jobs/${jobId}/related`, { params }),
+    api.get<{ code: number; msg: string; data: import('../types').Job[] }>(`/jobs/${jobId}/related`, { params }),
 };
 
 export const hollandApi = {
