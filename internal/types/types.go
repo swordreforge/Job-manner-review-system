@@ -467,8 +467,29 @@ type UpdateStudentReq struct {
 }
 
 type UpdateUserReq struct {
-	Email string `json:"email,optional" validate:"omitempty,email"`
-	Phone string `json:"phone,optional" validate:"omitempty,len=11"`
+	Username string `json:"username,optional" validate:"omitempty,min=2,max=50"`
+	Email    string `json:"email,optional" validate:"omitempty,email"`
+	Phone    string `json:"phone,optional" validate:"omitempty,len=11"`
+}
+
+type UpdateEmailReq struct {
+	Email    string `json:"email,validate:"required,email"`
+	Password string `json:"password,validate:"required,min=6"`
+}
+
+type DeleteAccountReq struct {
+	Password string `json:"password,validate:"required,min=6"`
+}
+
+type UploadAvatarReq struct {
+	FileContent string `json:"fileContent,validate:"required"` // base64 encoded
+	FileName    string `json:"fileName,validate:"required"`
+}
+
+type UploadAvatarResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+	Url  string `json:"url"`
 }
 
 type UserInfo struct {
@@ -476,6 +497,7 @@ type UserInfo struct {
 	Username  string `json:"username"`
 	Email     string `json:"email"`
 	Phone     string `json:"phone"`
+	Avatar    string `json:"avatar"`
 	Role      string `json:"role"`
 	CreatedAt int64  `json:"createdAt"`
 }

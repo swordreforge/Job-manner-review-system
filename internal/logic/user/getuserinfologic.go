@@ -53,6 +53,14 @@ func (l *GetUserInfoLogic) GetUserInfo() (resp *types.UserResp, err error) {
 		phone = user.Phone.String
 	}
 
+	avatar := ""
+	if user.Avatar.Valid {
+		avatar = user.Avatar.String
+	} else {
+		// 默认头像
+		avatar = l.svcCtx.Config.Avatar.BaseURL + "/mo"
+	}
+
 	return &types.UserResp{
 		Code: errors.CodeSuccess,
 		Msg:  "success",
@@ -61,6 +69,7 @@ func (l *GetUserInfoLogic) GetUserInfo() (resp *types.UserResp, err error) {
 			Username:  user.Username,
 			Email:     user.Email,
 			Phone:     phone,
+			Avatar:    avatar,
 			Role:      user.Role,
 			CreatedAt: user.CreatedAt,
 		},

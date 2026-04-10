@@ -43,6 +43,7 @@ type (
 		Password  string         `db:"password"`
 		Email     string         `db:"email"`
 		Phone     sql.NullString `db:"phone"`
+		Avatar    sql.NullString `db:"avatar"`
 		Role      string         `db:"role"`
 		CreatedAt int64          `db:"created_at"`
 		UpdatedAt int64          `db:"updated_at"`

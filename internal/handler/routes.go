@@ -301,6 +301,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: user.UpdateUserInfoHandler(serverCtx),
 			},
 			{
+				// Upload avatar
+				Method:  http.MethodPost,
+				Path:    "/user/avatar",
+				Handler: user.UploadAvatarHandler(serverCtx),
+			},
+			{
 				// User login
 				Method:  http.MethodPost,
 				Path:    "/user/login",

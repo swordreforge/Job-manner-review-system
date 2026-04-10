@@ -56,4 +56,10 @@ type Config struct {
 		Methods []string
 		Headers []string
 	}
+
+	Avatar struct {
+		SavePath    string
+		BaseURL     string
+		MaxFileSize int64
+	}
 }

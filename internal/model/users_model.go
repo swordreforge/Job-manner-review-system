@@ -17,6 +17,7 @@ type (
 	UsersModel interface {
 		usersModel
 		withSession(session sqlx.Session) UsersModel
+		UpdateAvatar(ctx context.Context, id int64, avatar string) (sql.Result, error)
 	}
 
 	customUsersModel struct {
@@ -49,4 +50,10 @@ func (m *customUsersModel) Insert(ctx context.Context, data *Users) (sql.Result,
 	query := fmt.Sprintf("insert into %s (`username`, `password`, `email`, `phone`, `role`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?)", m.table)
 	ret, err := m.conn.ExecCtx(ctx, query, data.Username, data.Password, data.Email, data.Phone, data.Role, data.CreatedAt, data.UpdatedAt)
 	return ret, err
+}
+
+// UpdateAvatar 更新用户头像
+func (m *customUsersModel) UpdateAvatar(ctx context.Context, id int64, avatar string) (sql.Result, error) {
+	query := fmt.Sprintf("update %s set `avatar` = ?, `updated_at` = ? where `id` = ?", m.table)
+	return m.conn.ExecCtx(ctx, query, avatar, time.Now().Unix(), id)
 }
