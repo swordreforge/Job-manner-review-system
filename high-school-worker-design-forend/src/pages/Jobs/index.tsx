@@ -108,10 +108,16 @@ export default function JobsPage() {
   };
 
   const handleGenerateAllPaths = async () => {
-    if (!selectedJobId || !promotionPath) return;
+    if (!selectedJobId) {
+      message.warning('请先选择一个岗位');
+      return;
+    }
+    
+    // 先加载路径数据
+    await loadJobPaths(selectedJobId);
     
     // 对每个晋升路径目标调用AI分析
-    if (promotionPath.nextJobs && promotionPath.nextJobs.length > 0) {
+    if (promotionPath?.nextJobs && promotionPath.nextJobs.length > 0) {
       for (const nextJob of promotionPath.nextJobs) {
         await handleGenerateAnalysis(nextJob.id, 'promotion');
       }
@@ -121,6 +127,10 @@ export default function JobsPage() {
     for (const transferPath of transferPaths) {
       await handleGenerateAnalysis(transferPath.toJob.id, 'transfer');
     }
+    
+    // 刷新显示
+    await loadJobPaths(selectedJobId);
+    message.success('路径分析完成');
   };
 
   const getGraphOption = () => {

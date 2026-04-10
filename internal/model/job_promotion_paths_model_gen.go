@@ -42,6 +42,8 @@ type (
 		MatchScore     sql.NullFloat64 `db:"match_score"`
 		TransferSkills sql.NullString  `db:"transfer_skills"`
 		LearningPath   sql.NullString  `db:"learning_path"`
+		CreatedAt      int64           `db:"created_at"`
+		UpdatedAt      int64           `db:"updated_at"`
 	}
 )
 
@@ -73,8 +75,10 @@ func (m *defaultJobPromotionPathsModel) FindOne(ctx context.Context, id int64) (
 }
 
 func (m *defaultJobPromotionPathsModel) Insert(ctx context.Context, data *JobPromotionPaths) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?)", m.table, jobPromotionPathsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.FromJobId, data.ToJobId, data.MatchScore, data.TransferSkills, data.LearningPath)
+	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?)", m.table, strings.Join([]string{
+		"`from_job_id`", "`to_job_id`", "`match_score`", "`transfer_skills`", "`learning_path`", "`created_at`", "`updated_at`",
+	}, ","))
+	ret, err := m.conn.ExecCtx(ctx, query, data.FromJobId, data.ToJobId, data.MatchScore, data.TransferSkills, data.LearningPath, data.CreatedAt, data.UpdatedAt)
 	return ret, err
 }
 

@@ -4,6 +4,7 @@
 package graph
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -17,18 +18,31 @@ import (
 func GeneratePathAnalysisHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathParts := strings.Split(r.URL.Path, "/")
-		var req graph.GeneratePathAnalysisReq
+		var fromJobId int64
 		if len(pathParts) >= 5 {
-			req.FromJobId, _ = strconv.ParseInt(pathParts[4], 10, 64)
+			fromJobId, _ = strconv.ParseInt(pathParts[4], 10, 64)
 		}
 
-		if err := httpx.Parse(r, &req); err != nil {
+		var bodyReq struct {
+			ToJobId   int64  `json:"toJobId"`
+			StudentId int64  `json:"studentId"`
+			PathType  string `json:"pathType"`
+		}
+
+		if err := json.NewDecoder(r.Body).Decode(&bodyReq); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
+		req := &graph.GeneratePathAnalysisReq{
+			FromJobId: fromJobId,
+			ToJobId:   bodyReq.ToJobId,
+			StudentId: bodyReq.StudentId,
+			PathType:  bodyReq.PathType,
+		}
+
 		l := graph.NewGeneratePathAnalysisLogic(r.Context(), svcCtx)
-		resp, err := l.GeneratePathAnalysis(&req)
+		resp, err := l.GeneratePathAnalysis(req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {

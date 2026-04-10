@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 	"strconv"
+	"strings"
+	"time"
 
 	pkg "career-api/common/pkg"
 	"career-api/internal/model"
@@ -81,6 +83,13 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 
 	logx.Infof("AI Path Analysis Result: %s", aiResult)
 
+	// 清理AI返回的markdown格式
+	cleanResult := strings.TrimSpace(aiResult)
+	cleanResult = strings.TrimPrefix(cleanResult, "```json")
+	cleanResult = strings.TrimPrefix(cleanResult, "```")
+	cleanResult = strings.TrimSuffix(cleanResult, "```")
+	cleanResult = strings.TrimSpace(cleanResult)
+
 	var analysis struct {
 		MatchScore     float64  `json:"matchScore"`
 		GapAnalysis    string   `json:"gapAnalysis"`
@@ -90,8 +99,8 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 		Recommendation string   `json:"recommendation"`
 	}
 
-	if err := json.Unmarshal([]byte(aiResult), &analysis); err != nil {
-		logx.Errorf("Failed to parse AI result: %v, result: %s", err, aiResult)
+	if err := json.Unmarshal([]byte(cleanResult), &analysis); err != nil {
+		logx.Errorf("Failed to parse AI result: %v, result: %s", err, cleanResult)
 		return &types.ErrorResp{
 			Code: 500,
 			Msg:  "解析AI结果失败",
@@ -117,12 +126,15 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 		l.svcCtx.PromotionPathModel.Update(l.ctx, existingPath)
 		logx.Infof("Updated path analysis for job %d -> %d", req.FromJobId, req.ToJobId)
 	} else {
+		now := time.Now().Unix()
 		newPath := &model.JobPromotionPaths{
 			FromJobId:      req.FromJobId,
 			ToJobId:        req.ToJobId,
 			MatchScore:     sql.NullFloat64{Float64: analysis.MatchScore, Valid: true},
 			TransferSkills: sql.NullString{String: string(requiredSkillsJSON), Valid: true},
 			LearningPath:   sql.NullString{String: analysis.LearningPath, Valid: true},
+			CreatedAt:      now,
+			UpdatedAt:      now,
 		}
 		l.svcCtx.PromotionPathModel.Insert(l.ctx, newPath)
 		logx.Infof("Created new path analysis for job %d -> %d", req.FromJobId, req.ToJobId)
