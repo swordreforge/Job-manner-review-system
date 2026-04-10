@@ -98,7 +98,7 @@ export default function ProfilePage() {
       {/* 用户信息卡片 */}
       <Card className="mb-4">
         <div className="flex items-center gap-4">
-          <Avatar size={64} icon={<UserOutlined />} className="bg-blue-500" />
+          <Avatar size={64} src={user?.avatar} icon={<UserOutlined />} className="bg-blue-500" />
           <div className="flex-1">
             <div className="font-medium text-lg">{user?.username || '未登录'}</div>
             <div className="text-gray-500 text-sm">{user?.email || '暂无邮箱'}</div>
