@@ -122,6 +122,8 @@ export interface NextJob {
   name: string;
   requiredSkills: string[];
   experienceYears: number;
+  learningPath?: string;
+  matchScore?: number;
 }
 
 export interface TransferPath {
@@ -129,7 +131,7 @@ export interface TransferPath {
   toJob: Job;
   matchScore: number;
   transferSkills: string[];
-  learningPath: LearningItem[];
+  learningPath?: string;
 }
 
 export interface LearningItem {

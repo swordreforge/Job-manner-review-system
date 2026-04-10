@@ -20,6 +20,7 @@ type AIProvider interface {
 	MatchAnalysis(ctx context.Context, studentProfile, jobProfile string) (string, error)
 	GenerateCareerReport(ctx context.Context, req ReportGenerationRequest) (string, error)
 	GenerateCareerReportStream(ctx context.Context, req ReportGenerationRequest) (<-chan string, <-chan error)
+	GeneratePathAnalysis(ctx context.Context, req PathAnalysisRequest) (string, error)
 }
 
 type ReportGenerationRequest struct {
@@ -33,6 +34,13 @@ type ReportOptions struct {
 	IncludeGapAnalysis bool
 	IncludeActionPlan  bool
 	DetailedLevel      int
+}
+
+type PathAnalysisRequest struct {
+	StudentProfile string
+	FromJobInfo    string
+	ToJobInfo      string
+	PathType       string // "promotion" or "transfer"
 }
 
 type OpenAIProvider struct {
@@ -379,4 +387,49 @@ Requirements:
 	}()
 
 	return contentChan, errChan
+}
+
+func (p *OpenAIProvider) GeneratePathAnalysis(ctx context.Context, req PathAnalysisRequest) (string, error) {
+	pathTypeDesc := "晋升路径"
+	if req.PathType == "transfer" {
+		pathTypeDesc = "转岗路径"
+	}
+
+	prompt := fmt.Sprintf(`你是一名专业的职业规划顾问。请分析从当前岗位到目标岗位的%s，需要结合用户简历信息进行个性化分析。
+
+请根据以下信息，分析并返回JSON格式结果：
+{
+  "matchScore": 匹配分数(0-100),
+  "gapAnalysis": "技能差距分析",
+  "learningPath": "学习路径建议",
+  "requiredSkills": ["需要获取的技能1", "需要获取的技能2"],
+  "timeline": "预计时间规划",
+  "recommendation": "总体建议"
+}
+
+用户简历信息：%s
+
+当前岗位：%s
+
+目标岗位：%s
+
+请只返回JSON，不要包含其他文字。`, pathTypeDesc, req.StudentProfile, req.FromJobInfo, req.ToJobInfo)
+
+	reqData := OpenAIRequest{
+		Model: p.model,
+		Messages: []ChatMessage{
+			{Role: "system", Content: "You are a professional career advisor. Analyze job transfer paths based on user resume and job information. Return results in JSON format."},
+			{Role: "user", Content: prompt},
+		},
+		MaxTokens:   2000,
+		Temperature: 0.7,
+	}
+
+	content, err := p.callAPI(ctx, reqData)
+	if err != nil {
+		logx.Errorf("GeneratePathAnalysis failed: %v", err)
+		return "", err
+	}
+
+	return content, nil
 }

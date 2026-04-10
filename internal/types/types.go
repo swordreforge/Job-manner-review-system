@@ -75,6 +75,11 @@ type ErrorResp struct {
 	Msg  string `json:"msg"`
 }
 
+type BaseResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
 type ExportReq struct {
 	ReportId int64  `json:"reportId,validate:"required,gt=0"`
 	Format   string `json:"format,validate:"required,oneof=pdf docx json"`
@@ -510,9 +515,9 @@ type ResumeHistoryListResp struct {
 }
 
 type ResumeHistoryDetailResp struct {
-	Code int                   `json:"code"`
-	Msg  string                `json:"msg"`
-	Data *ResumeHistoryRecord  `json:"data,optional"`
+	Code int                  `json:"code"`
+	Msg  string               `json:"msg"`
+	Data *ResumeHistoryRecord `json:"data,optional"`
 }
 
 type ResumeHistoryListResultResp struct {
@@ -539,14 +544,14 @@ type HollandAnswer struct {
 }
 
 type HollandResult struct {
-	TestId       int64                `json:"testId"`
-	StudentId    int64                `json:"studentId"`
-	CareerCode   string               `json:"careerCode"`
-	Scores       map[string]int       `json:"scores"`
-	TopTypes     []HollandTypeInfo    `json:"topTypes"`
-	SuitableJobs []string             `json:"suitableJobs"`
-	Description  string               `json:"description"`
-	CreatedAt    int64                `json:"createdAt"`
+	TestId       int64             `json:"testId"`
+	StudentId    int64             `json:"studentId"`
+	CareerCode   string            `json:"careerCode"`
+	Scores       map[string]int    `json:"scores"`
+	TopTypes     []HollandTypeInfo `json:"topTypes"`
+	SuitableJobs []string          `json:"suitableJobs"`
+	Description  string            `json:"description"`
+	CreatedAt    int64             `json:"createdAt"`
 }
 
 type HollandTypeInfo struct {
@@ -566,8 +571,8 @@ type GetHollandQuestionsResp struct {
 }
 
 type HollandTestInfo struct {
-	TestInfo    HollandTestMeta      `json:"testInfo"`
-	Questions   []HollandQuestion    `json:"questions"`
+	TestInfo    HollandTestMeta              `json:"testInfo"`
+	Questions   []HollandQuestion            `json:"questions"`
 	CareerTypes map[string]HollandCareerType `json:"careerTypes"`
 }
 
@@ -613,13 +618,13 @@ type GetHollandHistoryReq struct {
 }
 
 type GetHollandHistoryResp struct {
-	Code int                `json:"code"`
-	Msg  string             `json:"msg"`
+	Code int                 `json:"code"`
+	Msg  string              `json:"msg"`
 	Data *HollandHistoryData `json:"data,optional"`
 }
 
 type HollandHistoryData struct {
-	Total int64          `json:"total"`
+	Total int64           `json:"total"`
 	List  []HollandResult `json:"list"`
 }
 
@@ -636,16 +641,16 @@ type InterviewResp struct {
 }
 
 type InterviewSession struct {
-	Id             int64  `json:"id"`
-	UserId         int64  `json:"userId"`
-	StudentId      int64  `json:"studentId"`
-	Mode           string `json:"mode"`
-	Status         string `json:"status"`
-	TotalQuestions int    `json:"totalQuestions"`
-	CurrentQuestion int   `json:"currentQuestion"`
-	AverageScore   float64 `json:"averageScore"`
-	CreatedAt      int64  `json:"createdAt"`
-	FirstQuestion  string `json:"firstQuestion"`
+	Id              int64   `json:"id"`
+	UserId          int64   `json:"userId"`
+	StudentId       int64   `json:"studentId"`
+	Mode            string  `json:"mode"`
+	Status          string  `json:"status"`
+	TotalQuestions  int     `json:"totalQuestions"`
+	CurrentQuestion int     `json:"currentQuestion"`
+	AverageScore    float64 `json:"averageScore"`
+	CreatedAt       int64   `json:"createdAt"`
+	FirstQuestion   string  `json:"firstQuestion"`
 }
 
 type InterviewChatStreamReq struct {
@@ -696,19 +701,19 @@ type InterviewDetailResp struct {
 }
 
 type InterviewDetail struct {
-	Id              int64                `json:"id"`
-	UserId          int64                `json:"userId"`
-	StudentId       int64                `json:"studentId"`
-	Mode            string               `json:"mode"`
-	Status          string               `json:"status"`
-	TotalQuestions  int                  `json:"totalQuestions"`
-	CurrentQuestion int                  `json:"currentQuestion"`
-	AverageScore    float64              `json:"averageScore"`
-	MaxScore        float64              `json:"maxScore"`
-	MinScore        float64              `json:"minScore"`
-	DurationSeconds int                  `json:"durationSeconds"`
-	CreatedAt       int64                `json:"createdAt"`
-	CompletedAt     int64                `json:"completedAt"`
+	Id              int64                  `json:"id"`
+	UserId          int64                  `json:"userId"`
+	StudentId       int64                  `json:"studentId"`
+	Mode            string                 `json:"mode"`
+	Status          string                 `json:"status"`
+	TotalQuestions  int                    `json:"totalQuestions"`
+	CurrentQuestion int                    `json:"currentQuestion"`
+	AverageScore    float64                `json:"averageScore"`
+	MaxScore        float64                `json:"maxScore"`
+	MinScore        float64                `json:"minScore"`
+	DurationSeconds int                    `json:"durationSeconds"`
+	CreatedAt       int64                  `json:"createdAt"`
+	CompletedAt     int64                  `json:"completedAt"`
 	Messages        []InterviewMessageResp `json:"messages"`
 }
 
@@ -734,19 +739,19 @@ type InterviewReportResp struct {
 }
 
 type InterviewReport struct {
-	Id                    int64    `json:"id"`
-	SessionId             int64    `json:"sessionId"`
-	UserId                int64    `json:"userId"`
-	OverallScore          float64  `json:"overallScore"`
-	SkillScore            float64  `json:"skillScore"`
-	CommunicationScore    float64  `json:"communicationScore"`
-	LogicScore            float64  `json:"logicScore"`
-	ConfidenceScore       float64  `json:"confidenceScore"`
-	Strengths             []string `json:"strengths"`
-	Weaknesses            []string `json:"weaknesses"`
+	Id                     int64    `json:"id"`
+	SessionId              int64    `json:"sessionId"`
+	UserId                 int64    `json:"userId"`
+	OverallScore           float64  `json:"overallScore"`
+	SkillScore             float64  `json:"skillScore"`
+	CommunicationScore     float64  `json:"communicationScore"`
+	LogicScore             float64  `json:"logicScore"`
+	ConfidenceScore        float64  `json:"confidenceScore"`
+	Strengths              []string `json:"strengths"`
+	Weaknesses             []string `json:"weaknesses"`
 	ImprovementSuggestions []string `json:"improvementSuggestions"`
-	Summary               string   `json:"summary"`
-	CreatedAt             int64    `json:"createdAt"`
+	Summary                string   `json:"summary"`
+	CreatedAt              int64    `json:"createdAt"`
 }
 
 type EndInterviewReq struct {
@@ -761,11 +766,11 @@ type EndInterviewResp struct {
 }
 
 type EndInterviewData struct {
-	Id              int64 `json:"id"`
-	Status          string `json:"status"`
+	Id              int64   `json:"id"`
+	Status          string  `json:"status"`
 	AverageScore    float64 `json:"averageScore"`
-	DurationSeconds int    `json:"durationSeconds"`
-	CompletedAt     int64  `json:"completedAt"`
+	DurationSeconds int     `json:"durationSeconds"`
+	CompletedAt     int64   `json:"completedAt"`
 }
 
 type DeleteInterviewReq struct {

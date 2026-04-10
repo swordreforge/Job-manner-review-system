@@ -91,6 +91,38 @@ export default function JobsPage() {
     }
   };
 
+  const handleGenerateAnalysis = async (toJobId: number, pathType: string) => {
+    if (!selectedJobId) return;
+    try {
+      message.loading({ content: 'AI正在分析路径...', key: 'analysis' });
+      await jobPathApi.generatePathAnalysis(selectedJobId, {
+        toJobId,
+        pathType,
+      });
+      message.success({ content: '分析完成', key: 'analysis' });
+      loadJobPaths(selectedJobId);
+    } catch (error) {
+      console.error('生成路径分析失败:', error);
+      message.error({ content: '生成路径分析失败', key: 'analysis' });
+    }
+  };
+
+  const handleGenerateAllPaths = async () => {
+    if (!selectedJobId || !promotionPath) return;
+    
+    // 对每个晋升路径目标调用AI分析
+    if (promotionPath.nextJobs && promotionPath.nextJobs.length > 0) {
+      for (const nextJob of promotionPath.nextJobs) {
+        await handleGenerateAnalysis(nextJob.id, 'promotion');
+      }
+    }
+    
+    // 对每个换岗路径目标调用AI分析
+    for (const transferPath of transferPaths) {
+      await handleGenerateAnalysis(transferPath.toJob.id, 'transfer');
+    }
+  };
+
   const getGraphOption = () => {
     if (!selectedJob) return {};
 
@@ -308,7 +340,18 @@ export default function JobsPage() {
           </Card>
 
           {/* 右侧：路径图谱 */}
-          <Card className="flex-1" title="发展路径图谱">
+          <Card className="flex-1">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">发展路径图谱</h3>
+              <Button 
+                type="primary" 
+                icon={<ReloadOutlined />}
+                loading={pathsLoading}
+                onClick={() => handleGenerateAllPaths()}
+              >
+                AI智能分析
+              </Button>
+            </div>
             <Tabs
               activeKey={activeTab}
               onChange={setActiveTab}
@@ -341,46 +384,42 @@ export default function JobsPage() {
                         </div>
                       ) : promotionPath?.nextJobs && promotionPath.nextJobs.length > 0 ? (
                         <List
-                          dataSource={promotionPath.nextJobs}
-                          renderItem={(nextJob) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                title={nextJob.name}
-                                description={
-                                  <div>
-                                    {nextJob.requiredSkills && nextJob.requiredSkills.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-gray-600 text-sm">所需技能：</div>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          {nextJob.requiredSkills.map((skill, idx) => (
-                                            <Tag key={idx} size="small">{skill}</Tag>
-                                          ))}
+                            dataSource={promotionPath.nextJobs}
+                            renderItem={(nextJob) => (
+                              <List.Item>
+                                <List.Item.Meta
+                                  title={nextJob.name}
+                                  description={
+                                    <div>
+                                      {nextJob.requiredSkills && nextJob.requiredSkills.length > 0 && (
+                                        <div className="mt-2">
+                                          <div className="text-gray-600 text-sm">所需技能：</div>
+                                          <div className="flex flex-wrap gap-1 mt-1">
+                                            {nextJob.requiredSkills.map((skill, idx) => (
+                                              <Tag key={idx} size="small">{skill}</Tag>
+                                            ))}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                    {nextJob.learningPath && nextJob.learningPath.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-gray-600 text-sm">学习路径：</div>
-                                        <div className="mt-1">
-                                          {nextJob.learningPath.map((step, idx) => (
-                                            <div key={idx} className="text-sm text-gray-500">
-                                              {idx + 1}. {step}
-                                            </div>
-                                          ))}
+                                      )}
+                                      {nextJob.learningPath && (
+                                        <div className="mt-2">
+                                          <div className="text-gray-600 text-sm">学习路径：</div>
+                                          <div className="mt-1 text-sm text-gray-500">
+                                            {nextJob.learningPath}
+                                          </div>
                                         </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                }
-                              />
-                            </List.Item>
-                          )}
-                        />
-                      ) : (
-                        <Empty description="暂无晋升路径" />
-                      )}
-                    </div>
-                  ),
+                                      )}
+                                    </div>
+                                  }
+                                />
+                              </List.Item>
+                            )}
+                          />
+                        ) : (
+                          <Empty description="暂无晋升路径" />
+                        )}
+                      </div>
+                    ),
                 },
                 {
                   key: 'transfer',

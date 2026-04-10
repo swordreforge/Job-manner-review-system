@@ -100,6 +100,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/jobs/:id/transfer-paths",
 				Handler: graph.GetTransferPathsHandler(serverCtx),
 			},
+			{
+				// Generate path analysis via AI
+				Method:  http.MethodPost,
+				Path:    "/jobs/:id/path-analysis",
+				Handler: graph.GeneratePathAnalysisHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)

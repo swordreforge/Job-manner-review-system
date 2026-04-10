@@ -170,6 +170,8 @@ export const jobPathApi = {
     api.get<{ code: number; msg: string; data: { promotion: import('../types').PromotionPath; transfer: import('../types').TransferPath[] } }>(`/jobs/${jobId}/all-paths`),
   getRelated: (jobId: number, params?: { type?: string }) => 
     api.get<{ code: number; msg: string; data: import('../types').Job[] }>(`/jobs/${jobId}/related`, { params }),
+  generatePathAnalysis: (jobId: number, data: { toJobId: number; studentId?: number; pathType: string }) =>
+    api.post<{ code: number; msg: string }>(`/jobs/${jobId}/path-analysis`, data),
 };
 
 export const hollandApi = {
