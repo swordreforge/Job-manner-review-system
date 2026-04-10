@@ -29,6 +29,9 @@ func LoginHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		resp, err := l.Login(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
+		} else if resp != nil && resp.Code != 0 {
+			// 业务逻辑错误（如用户名密码错误）
+			httpx.WriteJson(w, http.StatusBadRequest, resp)
 		} else {
 			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
