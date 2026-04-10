@@ -197,8 +197,11 @@ export default function JobsPage() {
         if (nextJob.id === selectedJob.id) return;
         
         // 显示标签：名称 + 匹配分数
+        const displayScore = nextJob.matchScore > 1 
+          ? Math.round(nextJob.matchScore) 
+          : Math.round(nextJob.matchScore * 100);
         const labelText = nextJob.matchScore 
-          ? `${nextJob.name}\n${Math.round(nextJob.matchScore * 100)}%`
+          ? `${nextJob.name}\n${displayScore}%`
           : nextJob.name;
         
         if (!nodeMap.has(nextJob.id)) {
@@ -275,12 +278,15 @@ export default function JobsPage() {
           l => l.source === selectedJob.id && l.target === transferPath.toJob.id
         );
         if (!linkExists) {
+          const tsScore = transferPath.matchScore > 1 
+            ? Math.round(transferPath.matchScore) 
+            : Math.round(transferPath.matchScore * 100);
           links.push({
             source: selectedJob.id,
             target: transferPath.toJob.id,
-            name: `换岗 ${Math.round(transferPath.matchScore * 100)}%`,
+            name: `换岗 ${tsScore}%`,
             lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
-            label: { show: true, formatter: `换岗\n${Math.round(transferPath.matchScore * 100)}%` },
+            label: { show: true, formatter: `换岗\n${tsScore}%` },
           });
         }
       }
@@ -492,7 +498,7 @@ export default function JobsPage() {
                                       )}
                                       {nextJob.matchScore && nextJob.matchScore > 0 && (
                                         <div className="mt-2">
-                                          <Tag color="blue">匹配度: {Math.round(nextJob.matchScore * 100)}%</Tag>
+                                          <Tag color="blue">匹配度: {nextJob.matchScore > 1 ? Math.round(nextJob.matchScore) : Math.round(nextJob.matchScore * 100)}%</Tag>
                                         </div>
                                       )}
                                     </div>
@@ -518,7 +524,7 @@ export default function JobsPage() {
                         </div>
                       ) : transferPaths.length > 0 ? (
                         <List
-                          dataSource={transferPaths}
+                          dataSource={transferPaths.filter(tp => tp.toJob.id !== selectedJob.id)}
                           renderItem={(transferPath) => (
                             <List.Item>
                               <List.Item.Meta
@@ -526,7 +532,7 @@ export default function JobsPage() {
                                   <div className="flex items-center gap-2">
                                     <span>{transferPath.toJob.name}</span>
                                     <Tag color={getScoreColor(transferPath.matchScore)}>
-                                      匹配度: {Math.round(transferPath.matchScore * 100)}%
+                                      匹配度: {transferPath.matchScore > 1 ? Math.round(transferPath.matchScore) : Math.round(transferPath.matchScore * 100)}%
                                     </Tag>
                                   </div>
                                 }
