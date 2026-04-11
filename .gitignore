@@ -6,6 +6,7 @@ etc/
 *.dll
 *.so
 *.dylib
+*.sql
 
 # Test binary
 *.test
@@ -32,6 +33,10 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+*.png
+*.webp
+*.jpeg
 
 # Build
 dist/
