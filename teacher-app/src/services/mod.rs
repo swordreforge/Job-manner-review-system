@@ -1,2 +1,7 @@
 // 业务逻辑模块
-// 将在后续开发中添加具体服务
+
+pub mod auth_service;
+pub mod student_service;
+
+pub use auth_service::AuthService;
+pub use student_service::StudentService;

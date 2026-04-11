@@ -1,2 +1,5 @@
 // 中间件模块
-// 将在后续开发中添加认证、日志等中间件
+
+pub mod auth;
+
+pub use auth::AuthMiddleware;

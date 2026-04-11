@@ -26,11 +26,3 @@ pub async fn health_check(state: web::Data<AppState>) -> impl Responder {
 
     HttpResponse::Ok().json(response)
 }
-
-pub async fn index() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "message": "Teacher API",
-        "version": env!("CARGO_PKG_VERSION"),
-        "status": "running"
-    }))
-}
