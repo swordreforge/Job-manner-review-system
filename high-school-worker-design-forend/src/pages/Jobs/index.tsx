@@ -9,8 +9,8 @@ type GraphLink = {
   source: number;
   target: number;
   name: string;
-  lineStyle: { color: string; width: number; type?: 'dashed' };
-  label: { show: boolean; formatter: string };
+  lineStyle: { color: string; width: number; type?: 'solid' | 'dashed'; curveness?: number };
+  label?: { show: boolean; formatter: string };
 };
 
 type GraphTooltipParam = {
@@ -226,12 +226,15 @@ export default function JobsPage() {
       itemStyle: { color: '#1890ff' },
     });
 
-    // 添加晋升路径节点
+    // 添加晋升路径节点（按适配度从大到小排序，形成链式路径）
     if (promotionPath?.nextJobs) {
-      promotionPath.nextJobs.forEach((nextJob) => {
-        // 跳过自引用路径（目标岗位不能是当前岗位）
-        if (nextJob.id === selectedJob.id) return;
-        
+      const sortedJobs = [...promotionPath.nextJobs]
+        .filter(nextJob => nextJob.id !== selectedJob.id)
+        .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
+      
+      let prevJobId = selectedJob.id;
+      
+      sortedJobs.forEach((nextJob) => {
         // 显示标签：名称 + 匹配分数
         const rawScore = nextJob.matchScore ?? 0;
         const displayScore = rawScore > 1
@@ -246,87 +249,63 @@ export default function JobsPage() {
             id: nextJob.id,
             name: labelText,
             category: 1,
-            symbolSize: 80,
+            symbolSize: 55,
             itemStyle: { color: '#52c41a' },
           });
         }
 
-        // 检查是否已存在相同的链接
-        const linkExists = links.some(
-          l => l.source === selectedJob.id && l.target === nextJob.id
-        );
-        if (!linkExists) {
-          links.push({
-            source: selectedJob.id,
-            target: nextJob.id,
-            name: '晋升',
-            lineStyle: { color: '#52c41a', width: 2 },
-            label: { show: true, formatter: '晋升' },
-          });
-        }
+        // 从上一个节点连接到当前节点（形成链式）
+        links.push({
+          source: prevJobId,
+          target: nextJob.id,
+          name: '晋升',
+          lineStyle: {
+            color: '#52c41a',
+            width: 5,
+            curveness: 0,
+            type: 'solid',
+          },
+        });
+        
+        // 更新上一个节点 ID
+        prevJobId = nextJob.id;
       });
     }
 
-    // 添加换岗路径节点
-    transferPaths.forEach((transferPath) => {
-      // 跳过自引用路径
-      if (transferPath.toJob.id === selectedJob.id) return;
-      if (transferPath.fromJob.id === selectedJob.id && transferPath.toJob.id === selectedJob.id) return;
-
+    // 添加换岗路径节点（按适配度从大到小排序，形成链式路径）
+    const sortedTransferPaths = transferPaths
+      .filter(tp => tp.fromJob.id === selectedJob.id && tp.toJob.id !== selectedJob.id)
+      .sort((a, b) => b.matchScore - a.matchScore);
+    
+    let prevTransferJobId = selectedJob.id;
+    
+    sortedTransferPaths.forEach((transferPath) => {
       // 添加目标岗位节点
       if (!nodeMap.has(transferPath.toJob.id)) {
         nodeMap.set(transferPath.toJob.id, {
           id: transferPath.toJob.id,
           name: transferPath.toJob.name,
           category: 1,
-          symbolSize: 72,
+          symbolSize: 50,
           itemStyle: { color: '#faad14' },
         });
       }
 
-      // 添加源岗位节点（从其他岗位转来的）
-      if (transferPath.fromJob.id !== selectedJob.id && !nodeMap.has(transferPath.fromJob.id)) {
-        nodeMap.set(transferPath.fromJob.id, {
-          id: transferPath.fromJob.id,
-          name: transferPath.fromJob.name,
-          category: 1,
-          symbolSize: 64,
-          itemStyle: { color: '#faad14' },
-        });
-        
-        // 添加反向链接
-        const linkExists = links.some(
-          l => l.source === transferPath.fromJob.id && l.target === transferPath.toJob.id
-        );
-        if (!linkExists) {
-          links.push({
-            source: transferPath.fromJob.id,
-            target: transferPath.toJob.id,
-            name: '换岗',
-            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
-            label: { show: true, formatter: '换岗' },
-          });
-        }
-      }
-
-      // 添加从当前岗位到目标岗位的链接
-      if (transferPath.fromJob.id === selectedJob.id) {
-        const linkExists = links.some(
-          l => l.source === selectedJob.id && l.target === transferPath.toJob.id
-        );
-        if (!linkExists) {
-          const tsScore = transferPath.matchScore > 1 
-            ? Math.round(transferPath.matchScore) 
-            : Math.round(transferPath.matchScore * 100);
-          links.push({
-            source: selectedJob.id,
-            target: transferPath.toJob.id,
-            name: `换岗 ${tsScore}%`,
-            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
-            label: { show: true, formatter: `换岗\n${tsScore}%` },
-          });
-        }
-      }
+      // 从上一个节点连接到当前节点（形成链式）
+      links.push({
+        source: prevTransferJobId,
+        target: transferPath.toJob.id,
+        name: '换岗',
+        lineStyle: {
+          color: '#faad14',
+          width: 5,
+          curveness: 0,
+          type: 'dashed',
+        },
+      });
+      
+      // 更新上一个节点 ID
+      prevTransferJobId = transferPath.toJob.id;
     });
 
     const nodes = Array.from(nodeMap.values());
