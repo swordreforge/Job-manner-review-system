@@ -503,14 +503,7 @@ export default function StudentPage() {
                         label="等级"
                         style={{ flex: 1, marginBottom: 0 }}
                       >
-                        <Select
-                          placeholder="等级"
-                          options={[
-                            { value: '初级', label: '初级' },
-                            { value: '中级', label: '中级' },
-                            { value: '高级', label: '高级' },
-                          ]}
-                        />
+                        <Input placeholder="等级" />
                       </Form.Item>
                       <Form.Item
                         {...restField}
