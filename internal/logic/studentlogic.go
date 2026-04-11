@@ -601,11 +601,29 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.Stu
 		}, nil
 	}
 
-	// 5. 保存临时文件
-	tempDir := "/tmp"
-	tempFile := filepath.Join(tempDir, fmt.Sprintf("resume_%d%s", time.Now().UnixNano(), filepath.Ext(req.FileName)))
-	if err := os.WriteFile(tempFile, fileData, 0644); err != nil {
+	// 5. 保存临时文件（跨平台，避免 Windows 下 /tmp 路径不存在）
+	ext := filepath.Ext(req.FileName)
+	tempFile, err := os.CreateTemp("", "resume_*"+ext)
+	if err != nil {
+		logx.Errorf("Failed to create temp file: %v", err)
+		return &types.StudentResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to save file",
+		}, nil
+	}
+	tempFilePath := tempFile.Name()
+	if _, err := tempFile.Write(fileData); err != nil {
+		_ = tempFile.Close()
+		_ = os.Remove(tempFilePath)
 		logx.Errorf("Failed to save temp file: %v", err)
+		return &types.StudentResp{
+			Code: errors.CodeInternalError,
+			Msg:  "failed to save file",
+		}, nil
+	}
+	if err := tempFile.Close(); err != nil {
+		_ = os.Remove(tempFilePath)
+		logx.Errorf("Failed to close temp file: %v", err)
 		return &types.StudentResp{
 			Code: errors.CodeInternalError,
 			Msg:  "failed to save file",
@@ -613,13 +631,13 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.Stu
 	}
 	defer func() {
 		// 清理临时文件
-		if err := os.Remove(tempFile); err != nil {
-			logx.Errorf("Failed to remove temp file %s: %v", tempFile, err)
+		if err := os.Remove(tempFilePath); err != nil {
+			logx.Errorf("Failed to remove temp file %s: %v", tempFilePath, err)
 		}
 	}()
 
 	// 6. 提取文本内容
-	resumeText, err := pkg.ExtractText(tempFile)
+	resumeText, err := pkg.ExtractText(tempFilePath)
 	if err != nil {
 		logx.Errorf("Failed to extract text from file: %v", err)
 		return &types.StudentResp{
