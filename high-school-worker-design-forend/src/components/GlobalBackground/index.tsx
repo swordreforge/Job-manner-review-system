@@ -7,37 +7,36 @@ export default function GlobalBackground() {
   const location = useLocation();
   
   const isLandingPage = location.pathname === '/';
+  const isAuthPage = location.pathname === '/auth';
   const bgClass = isLandingPage ? 'global-background dark' : 'global-background';
 
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    // 创建小球
-    const createCircles = () => {
-      for (let i = 0; i < 8; i++) {
+    const createCircles = (count: number, opacity: number) => {
+      for (let i = 0; i < count; i++) {
         const circle = document.createElement('div');
         circle.className = 'bg-circle';
         
-        // 随机位置
         const left = Math.random() * 100;
         const top = Math.random() * 100;
-        
-        // 随机大小 (30-80px)
         const size = 30 + Math.random() * 50;
         
-        // 随机颜色（柔和的颜色）
-        const colors = [
-          'rgba(22, 119, 255, 0.08)',  // 蓝色
-          'rgba(82, 196, 26, 0.08)',   // 绿色
-          'rgba(250, 173, 20, 0.08)',  // 橙色
-          'rgba(114, 46, 209, 0.08)',  // 紫色
-          'rgba(24, 144, 255, 0.06)',  // 亮蓝
-          'rgba(255, 77, 79, 0.06)',   // 红色
+        const colors = isAuthPage ? [
+          `rgba(114, 46, 209, ${opacity})`,
+          `rgba(22, 119, 255, ${opacity})`,
+          `rgba(82, 196, 26, ${opacity * 0.5})`,
+        ] : [
+          'rgba(22, 119, 255, 0.08)',
+          'rgba(82, 196, 26, 0.08)',
+          'rgba(250, 173, 20, 0.08)',
+          'rgba(114, 46, 209, 0.08)',
+          'rgba(24, 144, 255, 0.06)',
+          'rgba(255, 77, 79, 0.06)',
         ];
         const color = colors[Math.floor(Math.random() * colors.length)];
         
-        // 随机动画时长
         const duration = 15 + Math.random() * 25;
         const delay = Math.random() * -20;
         
@@ -55,9 +54,8 @@ export default function GlobalBackground() {
       }
     };
 
-    // 创建三角形
-    const createTriangles = () => {
-      for (let i = 0; i < 6; i++) {
+    const createTriangles = (count: number, opacity: number) => {
+      for (let i = 0; i < count; i++) {
         const triangle = document.createElement('div');
         triangle.className = 'bg-triangle';
         
@@ -65,7 +63,10 @@ export default function GlobalBackground() {
         const top = Math.random() * 100;
         const size = 20 + Math.random() * 40;
         
-        const colors = [
+        const colors = isAuthPage ? [
+          `rgba(114, 46, 209, ${opacity})`,
+          `rgba(22, 119, 255, ${opacity})`,
+        ] : [
           'rgba(22, 119, 255, 0.06)',
           'rgba(82, 196, 26, 0.06)',
           'rgba(250, 173, 20, 0.06)',
@@ -92,9 +93,8 @@ export default function GlobalBackground() {
       }
     };
 
-    // 创建四边形
-    const createQuadrilaterals = () => {
-      for (let i = 0; i < 5; i++) {
+    const createQuadrilaterals = (count: number, opacity: number) => {
+      for (let i = 0; i < count; i++) {
         const quad = document.createElement('div');
         quad.className = 'bg-quadrilateral';
         
@@ -102,7 +102,10 @@ export default function GlobalBackground() {
         const top = Math.random() * 100;
         const size = 25 + Math.random() * 35;
         
-        const colors = [
+        const colors = isAuthPage ? [
+          `rgba(114, 46, 209, ${opacity})`,
+          `rgba(22, 119, 255, ${opacity})`,
+        ] : [
           'rgba(22, 119, 255, 0.05)',
           'rgba(82, 196, 26, 0.05)',
           'rgba(250, 173, 20, 0.05)',
@@ -126,16 +129,22 @@ export default function GlobalBackground() {
       }
     };
 
-    createCircles();
-    createTriangles();
-    createQuadrilaterals();
+    if (isAuthPage) {
+      createCircles(4, 0.04);
+      createTriangles(3, 0.03);
+      createQuadrilaterals(2, 0.03);
+    } else {
+      createCircles(8, 0.08);
+      createTriangles(6, 0.06);
+      createQuadrilaterals(5, 0.05);
+    }
 
     return () => {
       if (container) {
         container.innerHTML = '';
       }
     };
-  }, []);
+  }, [isAuthPage]);
 
   return (
     <div ref={containerRef} className={bgClass}>
