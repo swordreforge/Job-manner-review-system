@@ -353,379 +353,372 @@ export default function StudentPage() {
             </Button>
           </div>
 
-          <Card title={studentData ? '编辑学生资料' : '创建学生资料'}>
-            <Form
-                form={form}
-                layout="vertical"
-                onFinish={handleSubmit}
-                autoComplete="off"
-                preserve
-            >
-              <Collapse
-                  activeKey={expandedPanels}
-                  onChange={(keys) => {
-                    const next = Array.isArray(keys) ? keys.map(String) : [String(keys)];
-                    setExpandedPanels(next);
-                  }}
-                  items={[
-                    {
-                      key: 'basic',
-                      label: '基础信息',
-                      forceRender: true,
-                      children: (
-                          <div id="student-section-basic" className={getSectionClass('basic')}>
-                            <Row gutter={16}>
-                              <Col xs={24} sm={12}>
-                                <Form.Item
-                                    label="姓名"
-                                    name="name"
-                                    rules={[{ required: true, message: '请输入姓名' }]}
-                                >
-                                  <Input placeholder="请输入姓名" />
-                                </Form.Item>
-                              </Col>
-                              <Col xs={24} sm={12}>
-                                <Form.Item
-                                    label="学历"
-                                    name="education"
-                                    rules={[{ required: true, message: '请选择学历' }]}
-                                >
-                                  <Select
-                                      placeholder="请选择学历"
-                                      options={[
-                                        { value: 'high_school', label: '高中' },
-                                        { value: 'bachelor', label: '本科' },
-                                        { value: 'master', label: '硕士' },
-                                        { value: 'phd', label: '博士' },
-                                      ]}
-                                  />
-                                </Form.Item>
-                              </Col>
-                              <Col xs={24} sm={12}>
-                                <Form.Item
-                                    label="专业"
-                                    name="major"
-                                    rules={[{ required: true, message: '请输入专业' }]}
-                                >
-                                  <Input placeholder="请输入专业" />
-                                </Form.Item>
-                              </Col>
-                              <Col xs={24} sm={12}>
-                                <Form.Item
-                                    label="毕业年份"
-                                    name="graduationYear"
-                                    rules={[{ required: true, message: '请选择毕业年份' }]}
-                                >
-                                  <Select
-                                      placeholder="请选择毕业年份"
-                                      options={Array.from({ length: 10 }, (_, i) => {
-                                        const year = 2023 + i;
-                                        return { value: year, label: String(year) };
-                                      })}
-                                  />
-                                </Form.Item>
-                              </Col>
-                            </Row>
-                          </div>
-                      ),
-                    },
-                    {
-                      key: 'skills',
-                      label: '技能信息',
-                      forceRender: true,
-                      children: (
-                          <div id="student-section-skills" className={getSectionClass('skills')}>
-                            <Form.List name="skills">
-                              {(fields, { add, remove }) => (
-                                  <>
-                                    {fields.map(({ key, name, ...restField }) => (
-                                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'name']}
-                                              rules={[{ required: true, message: '请输入技能名称' }]}
-                                              style={{ flex: 2, marginBottom: 0 }}
-                                          >
-                                            <Input placeholder="技能名称" />
-                                          </Form.Item>
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'level']}
-                                              label="熟练度"
-                                              style={{ flex: 1, marginBottom: 0 }}
-                                          >
-                                            <Rate count={5} style={{ fontSize: 16 }} />
-                                          </Form.Item>
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'years']}
-                                              label="年限"
-                                              style={{ flex: 1, marginBottom: 0 }}
-                                          >
-                                            <Input type="number" placeholder="年限" min={0} max={10} />
-                                          </Form.Item>
-                                          <MinusCircleOutlined onClick={() => remove(name)} />
-                                        </Space>
-                                    ))}
-                                    <Form.Item>
-                                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                        添加技能
-                                      </Button>
-                                    </Form.Item>
-                                  </>
-                              )}
-                            </Form.List>
-                          </div>
-                      ),
-                    },
-                    {
-                      key: 'certificates',
-                      label: '证书信息',
-                      forceRender: true,
-                      children: (
-                          <div id="student-section-certificates" className={getSectionClass('certificates')}>
-                            <Form.List name="certificates">
-                              {(fields, { add, remove }) => (
-                                  <>
-                                    {fields.map(({ key, name, ...restField }) => (
-                                        <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'name']}
-                                              rules={[{ required: true, message: '请输入证书名称' }]}
-                                              style={{ flex: 2, marginBottom: 0 }}
-                                          >
-                                            <Input placeholder="证书名称" />
-                                          </Form.Item>
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'level']}
-                                              label="等级"
-                                              style={{ flex: 1, marginBottom: 0 }}
-                                          >
-                                            <Select
-                                                placeholder="等级"
-                                                options={[
-                                                  { value: '初级', label: '初级' },
-                                                  { value: '中级', label: '中级' },
-                                                  { value: '高级', label: '高级' },
-                                                ]}
-                                            />
-                                          </Form.Item>
-                                          <Form.Item
-                                              {...restField}
-                                              name={[name, 'year']}
-                                              label="年份"
-                                              style={{ flex: 1, marginBottom: 0 }}
-                                          >
-                                            <Input type="number" placeholder="年份" min={2000} max={2030} />
-                                          </Form.Item>
-                                          <MinusCircleOutlined onClick={() => remove(name)} />
-                                        </Space>
-                                    ))}
-                                    <Form.Item>
-                                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                        添加证书
-                                      </Button>
-                                    </Form.Item>
-                                  </>
-                              )}
-                            </Form.List>
-                          </div>
-                      ),
-                    },
-                    {
-                      key: 'soft-skills',
-                      label: '软技能评估',
-                      forceRender: true,
-                      children: (
-                          <Row gutter={16}>
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                  label="创新能力"
-                                  name={['softSkills', 'innovation']}
-                                  initialValue={5}
-                              >
-                                <Rate count={10} />
-                              </Form.Item>
-                            </Col>
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                  label="学习能力"
-                                  name={['softSkills', 'learning']}
-                                  initialValue={5}
-                              >
-                                <Rate count={10} />
-                              </Form.Item>
-                            </Col>
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                  label="抗压能力"
-                                  name={['softSkills', 'pressure']}
-                                  initialValue={5}
-                              >
-                                <Rate count={10} />
-                              </Form.Item>
-                            </Col>
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                  label="沟通能力"
-                                  name={['softSkills', 'communication']}
-                                  initialValue={5}
-                              >
-                                <Rate count={10} />
-                              </Form.Item>
-                            </Col>
-                            <Col xs={24} sm={12}>
-                              <Form.Item
-                                  label="团队合作"
-                                  name={['softSkills', 'teamwork']}
-                                  initialValue={5}
-                              >
-                                <Rate count={10} />
-                              </Form.Item>
-                            </Col>
-                          </Row>
-                      ),
-                    },
-                    {
-                      key: 'internship',
-                      label: '实习经历',
-                      forceRender: true,
-                      children: (
-                          <div id="student-section-internship" className={getSectionClass('internship')}>
-                            <Form.List name="internship">
-                              {(fields, { add, remove }) => (
-                                  <>
-                                    {fields.map(({ key, name, ...restField }) => (
-                                        <Card key={key} size="small" style={{ marginBottom: 16 }}>
-                                          <Row gutter={16}>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'company']}
-                                                  label="公司"
-                                                  rules={[{ required: true, message: '请输入公司名称' }]}
-                                              >
-                                                <Input placeholder="公司名称" />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'position']}
-                                                  label="职位"
-                                                  rules={[{ required: true, message: '请输入职位' }]}
-                                              >
-                                                <Input placeholder="职位" />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'duration']}
-                                                  label="时长（月）"
-                                                  rules={[{ required: true, message: '请输入时长' }]}
-                                              >
-                                                <Input type="number" placeholder="例如：3" min={1} />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'description']}
-                                                  label="描述"
-                                              >
-                                                <TextArea rows={2} placeholder="工作描述" />
-                                              </Form.Item>
-                                            </Col>
-                                          </Row>
-                                          <Button type="text" danger onClick={() => remove(name)}>
-                                            删除此实习经历
-                                          </Button>
-                                        </Card>
-                                    ))}
-                                    <Form.Item>
-                                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                        添加实习经历
-                                      </Button>
-                                    </Form.Item>
-                                  </>
-                              )}
-                            </Form.List>
-                          </div>
-                      ),
-                    },
-                    {
-                      key: 'projects',
-                      label: '项目经验',
-                      forceRender: true,
-                      children: (
-                          <div className={getSectionClass('projects')}>
-                            <Form.List name="projects">
-                              {(fields, { add, remove }) => (
-                                  <>
-                                    {fields.map(({ key, name, ...restField }) => (
-                                        <Card key={key} size="small" style={{ marginBottom: 16 }}>
-                                          <Row gutter={16}>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'name']}
-                                                  label="项目名称"
-                                                  rules={[{ required: true, message: '请输入项目名称' }]}
-                                              >
-                                                <Input placeholder="项目名称" />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24} sm={12}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'role']}
-                                                  label="角色"
-                                                  rules={[{ required: true, message: '请输入角色' }]}
-                                              >
-                                                <Input placeholder="例如：前端开发" />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'description']}
-                                                  label="项目描述"
-                                                  rules={[{ required: true, message: '请输入项目描述' }]}
-                                              >
-                                                <TextArea rows={3} placeholder="项目描述" />
-                                              </Form.Item>
-                                            </Col>
-                                            <Col xs={24}>
-                                              <Form.Item
-                                                  {...restField}
-                                                  name={[name, 'technologies']}
-                                                  label="技术栈"
-                                              >
-                                                <Select mode="tags" placeholder="技术栈（可多选）" />
-                                              </Form.Item>
-                                            </Col>
-                                          </Row>
-                                          <Button type="text" danger onClick={() => remove(name)}>
-                                            删除此项目经验
-                                          </Button>
-                                        </Card>
-                                    ))}
-                                    <Form.Item>
-                                      <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
-                                        添加项目经验
-                                      </Button>
-                                    </Form.Item>
-                                  </>
-                              )}
-                            </Form.List>
-                          </div>
-                      ),
-                    },
-                  ]}
-              />
+        <Card title={studentData ? '编辑学生资料' : '创建学生资料'}>
+          <Form
+            form={form}
+            layout="vertical"
+            onFinish={handleSubmit}
+            autoComplete="off"
+            preserve
+          >
+            <Collapse
+              activeKey={expandedPanels}
+              onChange={(keys) => {
+                const next = Array.isArray(keys) ? keys.map(String) : [String(keys)];
+                setExpandedPanels(next);
+              }}
+              items={[
+                {
+                  key: 'basic',
+                  label: '基础信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-basic" className={getSectionClass('basic')}>
+                      <Row gutter={16}>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="姓名"
+                  name="name"
+                  rules={[{ required: true, message: '请输入姓名' }]}
+                >
+                  <Input placeholder="请输入姓名" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="学历"
+                  name="education"
+                  rules={[{ required: true, message: '请选择学历' }]}
+                >
+                  <Select
+                    placeholder="请选择学历"
+                    options={[
+                      { value: 'high_school', label: '高中' },
+                      { value: 'bachelor', label: '本科' },
+                      { value: 'master', label: '硕士' },
+                      { value: 'phd', label: '博士' },
+                    ]}
+                  />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="专业"
+                  name="major"
+                  rules={[{ required: true, message: '请输入专业' }]}
+                >
+                  <Input placeholder="请输入专业" />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="毕业年份"
+                  name="graduationYear"
+                  rules={[{ required: true, message: '请选择毕业年份' }]}
+                >
+                  <Select
+                    placeholder="请选择毕业年份"
+                    options={Array.from({ length: 10 }, (_, i) => {
+                      const year = 2023 + i;
+                      return { value: year, label: String(year) };
+                    })}
+                  />
+                </Form.Item>
+              </Col>
+                      </Row>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'skills',
+                  label: '技能信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-skills" className={getSectionClass('skills')}>
+                      <Form.List name="skills">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'name']}
+                        rules={[{ required: true, message: '请输入技能名称' }]}
+                        style={{ flex: 2, marginBottom: 0 }}
+                      >
+                        <Input placeholder="技能名称" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'level']}
+                        label="熟练度"
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        <Rate count={5} style={{ fontSize: 16 }} />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'years']}
+                        label="年限"
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        <Input type="number" placeholder="年限" min={0} max={10} />
+                      </Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} />
+                    </Space>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      添加技能
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'certificates',
+                  label: '证书信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-certificates" className={getSectionClass('certificates')}>
+                      <Form.List name="certificates">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Space key={key} style={{ display: 'flex', marginBottom: 8 }} align="baseline">
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'name']}
+                        rules={[{ required: true, message: '请输入证书名称' }]}
+                        style={{ flex: 2, marginBottom: 0 }}
+                      >
+                        <Input placeholder="证书名称" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'level']}
+                        label="等级"
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        <Input placeholder="等级" />
+                      </Form.Item>
+                      <Form.Item
+                        {...restField}
+                        name={[name, 'year']}
+                        label="年份"
+                        style={{ flex: 1, marginBottom: 0 }}
+                      >
+                        <Input type="number" placeholder="年份" min={2000} max={2030} />
+                      </Form.Item>
+                      <MinusCircleOutlined onClick={() => remove(name)} />
+                    </Space>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      添加证书
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'soft-skills',
+                  label: '软技能评估',
+                  forceRender: true,
+                  children: (
+                    <Row gutter={16}>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="创新能力"
+                  name={['softSkills', 'innovation']}
+                  initialValue={5}
+                >
+                  <Rate count={10} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="学习能力"
+                  name={['softSkills', 'learning']}
+                  initialValue={5}
+                >
+                  <Rate count={10} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="抗压能力"
+                  name={['softSkills', 'pressure']}
+                  initialValue={5}
+                >
+                  <Rate count={10} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="沟通能力"
+                  name={['softSkills', 'communication']}
+                  initialValue={5}
+                >
+                  <Rate count={10} />
+                </Form.Item>
+              </Col>
+              <Col xs={24} sm={12}>
+                <Form.Item
+                  label="团队合作"
+                  name={['softSkills', 'teamwork']}
+                  initialValue={5}
+                >
+                  <Rate count={10} />
+                </Form.Item>
+              </Col>
+                    </Row>
+                  ),
+                },
+                {
+                  key: 'internship',
+                  label: '实习经历',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-internship" className={getSectionClass('internship')}>
+                      <Form.List name="internship">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Card key={key} size="small" style={{ marginBottom: 16 }}>
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'company']}
+                            label="公司"
+                            rules={[{ required: true, message: '请输入公司名称' }]}
+                          >
+                            <Input placeholder="公司名称" />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'position']}
+                            label="职位"
+                            rules={[{ required: true, message: '请输入职位' }]}
+                          >
+                            <Input placeholder="职位" />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'duration']}
+                            label="时长（月）"
+                            rules={[{ required: true, message: '请输入时长' }]}
+                          >
+                            <Input type="number" placeholder="例如：3" min={1} />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'description']}
+                            label="描述"
+                          >
+                            <TextArea rows={2} placeholder="工作描述" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Button type="text" danger onClick={() => remove(name)}>
+                        删除此实习经历
+                      </Button>
+                    </Card>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      添加实习经历
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'projects',
+                  label: '项目经验',
+                  forceRender: true,
+                  children: (
+                    <div className={getSectionClass('projects')}>
+                      <Form.List name="projects">
+              {(fields, { add, remove }) => (
+                <>
+                  {fields.map(({ key, name, ...restField }) => (
+                    <Card key={key} size="small" style={{ marginBottom: 16 }}>
+                      <Row gutter={16}>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'name']}
+                            label="项目名称"
+                            rules={[{ required: true, message: '请输入项目名称' }]}
+                          >
+                            <Input placeholder="项目名称" />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24} sm={12}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'role']}
+                            label="角色"
+                            rules={[{ required: true, message: '请输入角色' }]}
+                          >
+                            <Input placeholder="例如：前端开发" />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'description']}
+                            label="项目描述"
+                            rules={[{ required: true, message: '请输入项目描述' }]}
+                          >
+                            <TextArea rows={3} placeholder="项目描述" />
+                          </Form.Item>
+                        </Col>
+                        <Col xs={24}>
+                          <Form.Item
+                            {...restField}
+                            name={[name, 'technologies']}
+                            label="技术栈"
+                          >
+                            <Select mode="tags" placeholder="技术栈（可多选）" />
+                          </Form.Item>
+                        </Col>
+                      </Row>
+                      <Button type="text" danger onClick={() => remove(name)}>
+                        删除此项目经验
+                      </Button>
+                    </Card>
+                  ))}
+                  <Form.Item>
+                    <Button type="dashed" onClick={() => add()} block icon={<PlusOutlined />}>
+                      添加项目经验
+                    </Button>
+                  </Form.Item>
+                </>
+              )}
+                      </Form.List>
+                    </div>
+                  ),
+                },
+              ]}
+            />
 
               {/* 提交按钮 */}
               <Form.Item>

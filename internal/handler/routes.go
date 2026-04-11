@@ -318,6 +318,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: user.UploadAvatarHandler(serverCtx),
 			},
 			{
+				// Reset avatar
+				Method:  http.MethodDelete,
+				Path:    "/user/avatar",
+				Handler: user.ResetAvatarHandler(serverCtx),
+			},
+			{
 				// Update password
 				Method:  http.MethodPut,
 				Path:    "/user/password",

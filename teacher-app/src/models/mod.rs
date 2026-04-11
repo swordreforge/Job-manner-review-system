@@ -1,2 +1,10 @@
 // 数据模型模块
-// 将在后续开发中添加具体模型
+
+pub mod student;
+pub mod user;
+
+pub use student::{Student, CreateStudentRequest, UpdateStudentRequest, StudentQuery};
+pub use user::{
+    User, UserResponse, LoginRequest, LoginResponse, CreateUserRequest,
+    Claims, TokenInfo,
+};

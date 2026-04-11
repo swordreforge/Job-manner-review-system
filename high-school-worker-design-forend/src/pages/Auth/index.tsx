@@ -153,7 +153,7 @@ export default function AuthPage() {
               <Button
                 type="primary"
                 htmlType="submit"
-                loading={loading}
+                loading={loading && !loginSuccess}
                 block
                 size="large"
                 className={`auth-button ${loginSuccess ? 'auth-button-success' : ''}`}

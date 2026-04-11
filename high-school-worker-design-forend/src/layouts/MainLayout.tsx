@@ -66,7 +66,7 @@ export default function MainLayout() {
           <Outlet />
         </div>
       </div>
-      <TabBar
+<TabBar
         activeKey={activeTab}
         onChange={handleTabChange}
         className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}

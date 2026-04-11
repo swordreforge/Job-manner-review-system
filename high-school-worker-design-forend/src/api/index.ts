@@ -77,12 +77,14 @@ export const userApi = {
   updateInfo: (data: { username?: string; phone?: string }) =>
     api.put<{ code: number; msg: string; data: import('../types').User }>('/user/info', data),
 
-  uploadAvatar: (data: { fileContent: string; fileName: string }) =>
+uploadAvatar: (data: { fileContent: string; fileName: string }) =>
     api.post<{ code: number; msg: string; url: string }>('/user/avatar', data),
+
+  resetAvatar: () =>
+    api.delete<{ code: number; msg: string }>('/user/avatar'),
 
   updatePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.put<{ code: number; msg: string }>('/user/password', data),
-
   deleteAccount: (data: { password: string }) =>
     api.delete<{ code: number; msg: string }>('/user/account', { data }),
 };
