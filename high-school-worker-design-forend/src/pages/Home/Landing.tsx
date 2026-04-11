@@ -5,6 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
+import LaserRay from '../../components/LaserRay';
+import LaserGradient from '../../components/LaserGradient';
 
 const features = [
   {
@@ -107,6 +109,10 @@ export default function Landing() {
 
       {/* Hero Section */}
       <div className="relative px-6 py-20 text-center overflow-hidden">
+        {/* 镭射效果背景 */}
+        <LaserGradient />
+        <LaserRay />
+
         {/* 淡紫色渐变背景 */}
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
 
