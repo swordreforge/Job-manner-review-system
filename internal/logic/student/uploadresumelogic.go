@@ -236,8 +236,28 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (resp *type
 		existingStudent.Skills = sql.NullString{String: string(skillsJSON), Valid: true}
 		existingStudent.Certificates = sql.NullString{String: string(certificatesJSON), Valid: true}
 		existingStudent.SoftSkills = sql.NullString{String: string(softSkillsJSON), Valid: true}
-		existingStudent.Internship = sql.NullString{String: string(internshipJSON), Valid: true}
-		existingStudent.Projects = sql.NullString{String: string(projectsJSON), Valid: true}
+		// 如果 AI 解析到实习经历，则追加到已有经历（去重），而不是覆盖。
+		if len(profile.Internship) > 0 {
+			existingInternships := make([]types.Internship, 0)
+			if existingStudent.Internship.Valid && strings.TrimSpace(existingStudent.Internship.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Internship.String), &existingInternships)
+			}
+
+			mergedInternships := dedupeInternships(append(existingInternships, profile.Internship...))
+			mergedInternshipJSON, _ := json.Marshal(mergedInternships)
+			existingStudent.Internship = sql.NullString{String: string(mergedInternshipJSON), Valid: len(mergedInternships) > 0}
+		}
+		// 如果 AI 解析到项目经历，则追加到已有项目（去重），而不是覆盖。
+		if len(profile.Projects) > 0 {
+			existingProjects := make([]types.Project, 0)
+			if existingStudent.Projects.Valid && strings.TrimSpace(existingStudent.Projects.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Projects.String), &existingProjects)
+			}
+
+			mergedProjects := dedupeProjects(append(existingProjects, profile.Projects...))
+			mergedProjectsJSON, _ := json.Marshal(mergedProjects)
+			existingStudent.Projects = sql.NullString{String: string(mergedProjectsJSON), Valid: len(mergedProjects) > 0}
+		}
 		existingStudent.CompletenessScore = profile.Completeness
 		existingStudent.CompetitivenessScore = profile.Competitiveness
 		existingStudent.Suggestions = sql.NullString{String: string(suggestionsJSON), Valid: len(suggestionsJSON) > 0}
@@ -348,4 +368,73 @@ func min(a, b int) int {
 		return a
 	}
 	return b
+}
+
+func dedupeInternships(items []types.Internship) []types.Internship {
+	result := make([]types.Internship, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+
+	for _, item := range items {
+		key := internshipKey(item)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+
+	return result
+}
+
+func internshipKey(item types.Internship) string {
+	company := strings.TrimSpace(strings.ToLower(item.Company))
+	position := strings.TrimSpace(strings.ToLower(item.Position))
+	description := strings.TrimSpace(strings.ToLower(item.Description))
+
+	if company == "" && position == "" && description == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s|%s|%d|%s", company, position, item.Duration, description)
+}
+
+func dedupeProjects(items []types.Project) []types.Project {
+	result := make([]types.Project, 0, len(items))
+	seen := make(map[string]struct{}, len(items))
+
+	for _, item := range items {
+		key := projectKey(item)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+
+	return result
+}
+
+func projectKey(item types.Project) string {
+	name := strings.TrimSpace(strings.ToLower(item.Name))
+	role := strings.TrimSpace(strings.ToLower(item.Role))
+	description := strings.TrimSpace(strings.ToLower(item.Description))
+	technologies := make([]string, 0, len(item.Technologies))
+	for _, tech := range item.Technologies {
+		t := strings.TrimSpace(strings.ToLower(tech))
+		if t != "" {
+			technologies = append(technologies, t)
+		}
+	}
+
+	if name == "" && role == "" && description == "" && len(technologies) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("%s|%s|%s|%s", name, role, description, strings.Join(technologies, ","))
 }
