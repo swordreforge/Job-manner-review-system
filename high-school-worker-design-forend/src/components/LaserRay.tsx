@@ -10,10 +10,10 @@ const LaserRay = () => {
   }, []);
 
   return (
-    <div className="absolute flex flex-col z-[40] w-full !max-w-full items-center justify-center bg-transparent transition-bg overflow-hidden h-[60vh] -top-16 pointer-events-none opacity-[.5] dark:opacity-[.7]">
+    <div className="absolute flex flex-col z-[40] w-full !max-w-full items-center justify-center bg-transparent transition-bg overflow-hidden h-[60vh] -top-16 pointer-events-none opacity-[.3] dark:opacity-[.4]">
       <div
         ref={rayRef}
-        className="ray absolute opacity-80"
+        className="ray absolute opacity-60"
         style={{
           contain: 'strict',
           containIntrinsicSize: '100vw 40vh',
