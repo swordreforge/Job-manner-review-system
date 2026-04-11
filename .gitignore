@@ -1,6 +1,6 @@
 # Binaries
 career-api
-etc/*
+etc/
 *.exe
 *.exe~
 *.dll
