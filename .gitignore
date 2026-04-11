@@ -6,6 +6,7 @@ etc/
 *.dll
 *.so
 *.dylib
+*.sql
 
 # Test binary
 *.test
@@ -33,7 +34,20 @@ Thumbs.db
 .env
 .env.local
 
+*.png
+*.webp
+*.jpeg
+
 # Build
 dist/
 build/
 career-api
+
+
+Job-manner-review-system-lyt/
+
+high-school-worker-design-forend/playwright-report/
+
+high-school-worker-design-forend/test-results/
+
+high-school-worker-design-forend/dist/

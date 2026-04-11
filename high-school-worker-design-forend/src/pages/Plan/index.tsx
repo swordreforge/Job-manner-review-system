@@ -89,13 +89,23 @@ export default function PlanPage() {
       setLoadingReports(true);
       const reportsData = await reportApi.getMe();
       if (reportsData && reportsData.data && reportsData.data.list) {
-        const reportList = reportsData.data.list.map((r: any) => ({
-          id: r.id,
-          title: r.title || `职业规划报告 #${r.id}`,
-          status: r.status,
-          createdAt: r.createdAt,
-          content: r.content,
-        }));
+        const reportList = reportsData.data.list.map((r: any) => {
+          // 处理标题格式
+          let displayTitle = r.title || `职业规划报告 #${r.id}`;
+          if (displayTitle.includes('- full')) {
+            displayTitle = displayTitle.replace('- full', '(大厂)');
+          } else if (displayTitle.includes('- gap')) {
+            displayTitle = displayTitle.replace('- gap', '(国企)');
+          }
+          
+          return {
+            id: r.id,
+            title: displayTitle,
+            status: r.status,
+            createdAt: r.createdAt,
+            content: r.content,
+          };
+        });
         setReports(reportList);
         // 自动选择最新的报告
         if (reportList.length > 0 && !selectedReportId) {

@@ -1,0 +1,69 @@
+{
+  "name": "使用文档",
+  "version": "1.0.0",
+  "docs": [
+    {
+      "name": "快速开始",
+      "type": "folder",
+      "expanded": true,
+      "children": [
+        {
+          "name": "欢迎使用",
+          "type": "file",
+          "id": "welcome",
+          "path": "/docs/welcome.md"
+        },
+        {
+          "name": "快速开始指南",
+          "type": "file",
+          "id": "quick-start",
+          "path": "/docs/quick-start.md"
+        }
+      ]
+    },
+    {
+      "name": "功能说明",
+      "type": "folder",
+      "expanded": false,
+      "children": [
+        {
+          "name": "职业倾向测试",
+          "type": "file",
+          "id": "holland-test",
+          "path": "/docs/holland-test.md"
+        },
+        {
+          "name": "简历优化",
+          "type": "file",
+          "id": "resume-guide",
+          "path": "/docs/resume-guide.md"
+        },
+        {
+          "name": "成长规划",
+          "type": "file",
+          "id": "plan-guide",
+          "path": "/docs/plan-guide.md"
+        },
+        {
+          "name": "模拟面试",
+          "type": "file",
+          "id": "interview-guide",
+          "path": "/docs/interview-guide.md"
+        }
+      ]
+    },
+    {
+      "name": "常见问题",
+      "type": "folder",
+      "expanded": false,
+      "children": [
+        {
+          "name": "常见问题",
+          "type": "file",
+          "id": "faq",
+          "path": "/docs/faq.md"
+        }
+      ]
+    }
+  ]
+}

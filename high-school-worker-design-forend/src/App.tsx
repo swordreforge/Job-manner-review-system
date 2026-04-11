@@ -13,6 +13,7 @@ import HollandTestPage from './pages/Holland';
 import HollandResultPage from './pages/Holland/Result';
 import HollandHistoryPage from './pages/Holland/History';
 import InterviewPage from './pages/Interview';
+import DocPage from './pages/Doc';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalBackground from './components/GlobalBackground';
 
@@ -77,6 +78,7 @@ export default function App() {
           <InterviewPage />
         </ProtectedRoute>
       } />
+      <Route path="/doc" element={<DocPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>
