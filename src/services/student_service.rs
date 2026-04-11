@@ -1,143 +1,89 @@
-use crate::models::{Student, StudentCreateInfo, StudentUpdateInfo};
-use crate::services::DbPool;
+use crate::db::StudentRepository;
+use crate::models::{Student, CreateStudentRequest, UpdateStudentRequest, StudentQuery};
+use crate::state::AppState;
+use anyhow::Result;
+use uuid::Uuid;
 
-/// 获取所有学生
-pub async fn get_all_students(pool: &DbPool) -> Result<Vec<Student>, sqlx::Error> {
-    let students = sqlx::query_as::<_, Student>("SELECT * FROM students ORDER BY id DESC")
-        .fetch_all(pool.as_ref())
-        .await?;
-    Ok(students)
+/// 学生服务
+pub struct StudentService {
+    student_repo: StudentRepository,
 }
 
-/// 根据ID获取学生
-pub async fn get_student_by_id(pool: &DbPool, id: i64) -> Result<Option<Student>, sqlx::Error> {
-    let student = sqlx::query_as::<_, Student>("SELECT * FROM students WHERE id = ?")
-        .bind(id)
-        .fetch_optional(pool.as_ref())
-        .await?;
-    Ok(student)
-}
-
-/// 创建学生
-pub async fn create_student(pool: &DbPool, info: StudentCreateInfo) -> Result<i64, sqlx::Error> {
-    let now = chrono::Utc::now().timestamp();
-    let result = sqlx::query(
-        r#"
-        INSERT INTO students (user_id, name, education, major, graduation_year, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-        "#
-    )
-    .bind(info.user_id)
-    .bind(&info.name)
-    .bind(&info.education)
-    .bind(&info.major)
-    .bind(info.graduation_year)
-    .bind(now)
-    .bind(now)
-    .execute(pool.as_ref())
-    .await?;
-
-    Ok(result.last_insert_id() as i64)
-}
-
-/// 更新学生信息
-pub async fn update_student(
-    pool: &DbPool,
-    id: i64,
-    info: StudentUpdateInfo,
-) -> Result<u64, sqlx::Error> {
-    let now = chrono::Utc::now().timestamp();
-
-    // 根据提供的字段构建UPDATE查询
-    if let Some(education) = info.education {
-        sqlx::query("UPDATE students SET education = ?, updated_at = ? WHERE id = ?")
-            .bind(&education)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+impl StudentService {
+    pub fn new(state: &AppState) -> Self {
+        Self {
+            student_repo: StudentRepository::new(state.pool.clone()),
+        }
     }
 
-    if let Some(major) = info.major {
-        sqlx::query("UPDATE students SET major = ?, updated_at = ? WHERE id = ?")
-            .bind(&major)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 创建学生
+    pub async fn create_student(&self, req: CreateStudentRequest) -> Result<Student> {
+        // 检查学号是否已存在
+        if let Some(_) = self
+            .student_repo
+            .find_by_student_no(&req.student_no)
+            .await?
+        {
+            return Err(anyhow::anyhow!("学号已存在"));
+        }
+
+        // 创建学生
+        let student = self.student_repo.create(req).await?;
+        Ok(student)
     }
 
-    if let Some(graduation_year) = info.graduation_year {
-        sqlx::query("UPDATE students SET graduation_year = ?, updated_at = ? WHERE id = ?")
-            .bind(graduation_year)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 根据 ID 查询学生
+    pub async fn get_student(&self, id: &Uuid) -> Result<Student> {
+        self.student_repo
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("学生不存在"))
     }
 
-    if let Some(skills) = info.skills {
-        sqlx::query("UPDATE students SET skills = ?, updated_at = ? WHERE id = ?")
-            .bind(&skills)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 查询学生列表
+    pub async fn list_students(&self, query: StudentQuery) -> Result<(Vec<Student>, u64)> {
+        self.student_repo.find_all(&query).await
     }
 
-    if let Some(certificates) = info.certificates {
-        sqlx::query("UPDATE students SET certificates = ?, updated_at = ? WHERE id = ?")
-            .bind(&certificates)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 更新学生
+    pub async fn update_student(
+        &self,
+        id: &Uuid,
+        req: UpdateStudentRequest,
+    ) -> Result<Student> {
+        // 检查学生是否存在
+        let _ = self
+            .student_repo
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("学生不存在"))?;
+
+        // 更新学生
+        let student = self
+            .student_repo
+            .update(id, req)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("更新失败"))?;
+
+        Ok(student)
     }
 
-    if let Some(soft_skills) = info.soft_skills {
-        sqlx::query("UPDATE students SET soft_skills = ?, updated_at = ? WHERE id = ?")
-            .bind(&soft_skills)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 删除学生
+    pub async fn delete_student(&self, id: &Uuid) -> Result<()> {
+        // 检查学生是否存在
+        let _ = self
+            .student_repo
+            .find_by_id(id)
+            .await?
+            .ok_or_else(|| anyhow::anyhow!("学生不存在"))?;
+
+        // 删除学生
+        self.student_repo.delete(id).await?;
+        Ok(())
     }
 
-    if let Some(internship) = info.internship {
-        sqlx::query("UPDATE students SET internship = ?, updated_at = ? WHERE id = ?")
-            .bind(&internship)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
+    /// 统计学生总数
+    pub async fn count_students(&self) -> Result<u64> {
+        self.student_repo.count().await
     }
-
-    if let Some(projects) = info.projects {
-        sqlx::query("UPDATE students SET projects = ?, updated_at = ? WHERE id = ?")
-            .bind(&projects)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
-    }
-
-    if let Some(resume_url) = info.resume_url {
-        sqlx::query("UPDATE students SET resume_url = ?, updated_at = ? WHERE id = ?")
-            .bind(&resume_url)
-            .bind(now)
-            .bind(id)
-            .execute(pool.as_ref())
-            .await?;
-    }
-
-    Ok(1)
-}
-
-/// 删除学生
-pub async fn delete_student(pool: &DbPool, id: i64) -> Result<u64, sqlx::Error> {
-    let result = sqlx::query("DELETE FROM students WHERE id = ?")
-        .bind(id)
-        .execute(pool.as_ref())
-        .await?;
-    Ok(result.rows_affected())
 }

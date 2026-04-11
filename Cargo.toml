@@ -1,42 +1,31 @@
 [package]
-name = "teacher-app"
+name = "teacher-api"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-# Web框架
-axum = "0.7"
-tokio = { version = "1", features = ["full"] }
-tower = "0.4"
-tower-http = { version = "0.5", features = ["fs", "trace", "cors"] }
-
-# 数据库
-sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "chrono", "json"] }
-
-# 模板引擎
-askama = { version = "0.12", features = ["with-axum"] }
-askama_axum = "0.4"
-rust-embed = "8.0"
-
-# 命令行参数解析
-clap = { version = "4.5", features = ["derive"] }
-
-# 序列化
+actix-web = "4.9"
+actix-cors = "0.7"
+actix-files = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-
-# 日志
-tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
-
-# 时间处理
-chrono = "0.4"
-
-# 密码哈希
-bcrypt = "0.15"
-
-# 其他
+tokio = { version = "1.0", features = ["full"] }
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "mysql", "chrono", "uuid"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+env_logger = "0.11"
+log = "0.4"
 anyhow = "1.0"
-thiserror = "1.0"
-num_cpus = "1.16"
+dotenv = "0.15"
+validator = { version = "0.18", features = ["derive"] }
+async-trait = "0.1"
+rpassword = "7.3"
+rust-embed = "8.5"
 mime_guess = "2.0"
+jsonwebtoken = "9.3"
+bcrypt = "0.15"
+futures-util = "0.3"
+
+[dev-dependencies]
+serial_test = "3.1"
+fake = { version = "2.9", features = ["uuid", "chrono"] }

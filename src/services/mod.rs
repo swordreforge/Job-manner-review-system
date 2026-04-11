@@ -1,11 +1,7 @@
-pub mod database;
-pub mod student_service;
-pub mod job_service;
-pub mod interview_service;
-pub mod monitor_service;
+// 业务逻辑模块
 
-pub use database::*;
-pub use student_service::*;
-pub use job_service::*;
-pub use interview_service::*;
-pub use monitor_service::*;
+pub mod auth_service;
+pub mod student_service;
+
+pub use auth_service::AuthService;
+pub use student_service::StudentService;
