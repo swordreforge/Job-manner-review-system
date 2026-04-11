@@ -11,8 +11,10 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
+	"unicode"
 
 	"career-api/common/errors"
 	"career-api/internal/model"
@@ -158,6 +160,9 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (resp *type
 		}, nil
 	}
 
+	// 对 AI 导入的经历做合法性检查与清洗。
+	sanitizeAIImportedExperiences(profile)
+
 	// 10. 设置元数据
 	userId, ok := l.ctx.Value("userId").(int64)
 	if !ok {
@@ -229,15 +234,66 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (resp *type
 	if err == nil {
 		// 更新现有记录
 		studentId = existingStudent.Id
-		existingStudent.Name = profile.Name
-		existingStudent.Education = sql.NullString{String: profile.Education, Valid: profile.Education != ""}
-		existingStudent.Major = sql.NullString{String: profile.Major, Valid: profile.Major != ""}
-		existingStudent.GraduationYear = sql.NullInt64{Int64: int64(profile.GraduationYear), Valid: profile.GraduationYear > 0}
-		existingStudent.Skills = sql.NullString{String: string(skillsJSON), Valid: true}
-		existingStudent.Certificates = sql.NullString{String: string(certificatesJSON), Valid: true}
+
+		// 基础信息采用“缺失才补全”策略，避免 AI 空值覆盖已有数据。
+		if strings.TrimSpace(existingStudent.Name) == "" && strings.TrimSpace(profile.Name) != "" {
+			existingStudent.Name = profile.Name
+		}
+		if (!existingStudent.Education.Valid || strings.TrimSpace(existingStudent.Education.String) == "") && strings.TrimSpace(profile.Education) != "" {
+			existingStudent.Education = sql.NullString{String: profile.Education, Valid: true}
+		}
+		if (!existingStudent.Major.Valid || strings.TrimSpace(existingStudent.Major.String) == "") && strings.TrimSpace(profile.Major) != "" {
+			existingStudent.Major = sql.NullString{String: profile.Major, Valid: true}
+		}
+		if (!existingStudent.GraduationYear.Valid || existingStudent.GraduationYear.Int64 <= 0) && profile.GraduationYear > 0 {
+			existingStudent.GraduationYear = sql.NullInt64{Int64: int64(profile.GraduationYear), Valid: true}
+		}
+		// 技能改为追加+判重，避免覆盖已有内容。
+		if len(profile.Skills) > 0 {
+			existingSkills := make([]types.StudentSkill, 0)
+			if existingStudent.Skills.Valid && strings.TrimSpace(existingStudent.Skills.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Skills.String), &existingSkills)
+			}
+
+			mergedSkills := dedupeSkills(append(existingSkills, profile.Skills...))
+			mergedSkillsJSON, _ := json.Marshal(mergedSkills)
+			existingStudent.Skills = sql.NullString{String: string(mergedSkillsJSON), Valid: len(mergedSkills) > 0}
+		}
+
+		// 证书改为追加+判重，避免覆盖已有内容。
+		if len(profile.Certificates) > 0 {
+			existingCertificates := make([]types.StudentCert, 0)
+			if existingStudent.Certificates.Valid && strings.TrimSpace(existingStudent.Certificates.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Certificates.String), &existingCertificates)
+			}
+
+			mergedCertificates := dedupeCertificates(append(existingCertificates, profile.Certificates...))
+			mergedCertificatesJSON, _ := json.Marshal(mergedCertificates)
+			existingStudent.Certificates = sql.NullString{String: string(mergedCertificatesJSON), Valid: len(mergedCertificates) > 0}
+		}
 		existingStudent.SoftSkills = sql.NullString{String: string(softSkillsJSON), Valid: true}
-		existingStudent.Internship = sql.NullString{String: string(internshipJSON), Valid: true}
-		existingStudent.Projects = sql.NullString{String: string(projectsJSON), Valid: true}
+		// 如果 AI 解析到实习经历，则追加到已有经历（去重），而不是覆盖。
+		if len(profile.Internship) > 0 {
+			existingInternships := make([]types.Internship, 0)
+			if existingStudent.Internship.Valid && strings.TrimSpace(existingStudent.Internship.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Internship.String), &existingInternships)
+			}
+
+			mergedInternships := dedupeInternships(append(existingInternships, profile.Internship...))
+			mergedInternshipJSON, _ := json.Marshal(mergedInternships)
+			existingStudent.Internship = sql.NullString{String: string(mergedInternshipJSON), Valid: len(mergedInternships) > 0}
+		}
+		// 如果 AI 解析到项目经历，则追加到已有项目（去重），而不是覆盖。
+		if len(profile.Projects) > 0 {
+			existingProjects := make([]types.Project, 0)
+			if existingStudent.Projects.Valid && strings.TrimSpace(existingStudent.Projects.String) != "" {
+				_ = json.Unmarshal([]byte(existingStudent.Projects.String), &existingProjects)
+			}
+
+			mergedProjects := dedupeProjects(append(existingProjects, profile.Projects...))
+			mergedProjectsJSON, _ := json.Marshal(mergedProjects)
+			existingStudent.Projects = sql.NullString{String: string(mergedProjectsJSON), Valid: len(mergedProjects) > 0}
+		}
 		existingStudent.CompletenessScore = profile.Completeness
 		existingStudent.CompetitivenessScore = profile.Competitiveness
 		existingStudent.Suggestions = sql.NullString{String: string(suggestionsJSON), Valid: len(suggestionsJSON) > 0}
@@ -315,7 +371,7 @@ func parseAIResult(aiResult string) (*types.StudentProfile, error) {
 	// 尝试直接解析为 JSON
 	var profile types.StudentProfile
 	if err := json.Unmarshal([]byte(jsonStr), &profile); err != nil {
-		logx.Errorf("Failed to unmarshal JSON: %v, jsonStr: %s", err, jsonStr[:min(500, len(jsonStr))])
+		logx.Errorf("Failed to unmarshal JSON: %v, jsonStr: %s", err, jsonStr[:minInt(500, len(jsonStr))])
 		return nil, fmt.Errorf("failed to unmarshal JSON: %w", err)
 	}
 
@@ -343,9 +399,204 @@ func parseAIResult(aiResult string) (*types.StudentProfile, error) {
 }
 
 // min 返回两个整数中的较小值
-func min(a, b int) int {
+func minInt(a, b int) int {
 	if a < b {
 		return a
 	}
 	return b
+}
+
+func sanitizeAIImportedExperiences(profile *types.StudentProfile) {
+	if profile == nil {
+		return
+	}
+
+	originalInternships := len(profile.Internship)
+	validInternships := make([]types.Internship, 0, originalInternships)
+	for _, item := range profile.Internship {
+		// 合法性：实习时长必须大于 0 个月，且至少有公司或岗位信息。
+		if item.Duration <= 0 {
+			continue
+		}
+		if normalizeText(item.Company) == "" && normalizeText(item.Position) == "" {
+			continue
+		}
+		validInternships = append(validInternships, item)
+	}
+	profile.Internship = dedupeInternships(validInternships)
+
+	originalProjects := len(profile.Projects)
+	validProjects := make([]types.Project, 0, originalProjects)
+	for _, item := range profile.Projects {
+		// 合法性：项目至少需要项目名和角色。
+		if normalizeText(item.Name) == "" || normalizeText(item.Role) == "" {
+			continue
+		}
+		validProjects = append(validProjects, item)
+	}
+	profile.Projects = dedupeProjects(validProjects)
+
+	if len(profile.Internship) != originalInternships || len(profile.Projects) != originalProjects {
+		logx.Infof(
+			"AI import sanitized: internships %d -> %d, projects %d -> %d",
+			originalInternships,
+			len(profile.Internship),
+			originalProjects,
+			len(profile.Projects),
+		)
+	}
+}
+
+func dedupeSkills(items []types.StudentSkill) []types.StudentSkill {
+	merged := make(map[string]types.StudentSkill, len(items))
+	for _, item := range items {
+		name := normalizeText(item.Name)
+		if name == "" {
+			continue
+		}
+
+		current, ok := merged[name]
+		if !ok {
+			merged[name] = item
+			continue
+		}
+
+		if item.Level > current.Level {
+			current.Level = item.Level
+		}
+		if item.Years > current.Years {
+			current.Years = item.Years
+		}
+		if strings.TrimSpace(current.Name) == "" {
+			current.Name = item.Name
+		}
+		merged[name] = current
+	}
+
+	result := make([]types.StudentSkill, 0, len(merged))
+	for _, v := range merged {
+		result = append(result, v)
+	}
+	sort.Slice(result, func(i, j int) bool {
+		return normalizeText(result[i].Name) < normalizeText(result[j].Name)
+	})
+	return result
+}
+
+func dedupeCertificates(items []types.StudentCert) []types.StudentCert {
+	seen := make(map[string]struct{}, len(items))
+	result := make([]types.StudentCert, 0, len(items))
+
+	for _, item := range items {
+		key := certificateKey(item)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+
+	sort.Slice(result, func(i, j int) bool {
+		return certificateKey(result[i]) < certificateKey(result[j])
+	})
+	return result
+}
+
+func certificateKey(item types.StudentCert) string {
+	name := normalizeText(item.Name)
+	level := normalizeText(item.Level)
+	if name == "" {
+		return ""
+	}
+	return fmt.Sprintf("%s|%s|%d", name, level, item.Year)
+}
+
+func dedupeInternships(items []types.Internship) []types.Internship {
+	seen := make(map[string]struct{}, len(items))
+	result := make([]types.Internship, 0, len(items))
+	for _, item := range items {
+		key := internshipKey(item)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+	return result
+}
+
+func internshipKey(item types.Internship) string {
+	company := normalizeText(item.Company)
+	position := normalizeText(item.Position)
+	description := normalizeText(item.Description)
+
+	if company == "" && position == "" && description == "" {
+		return ""
+	}
+
+	return fmt.Sprintf("%s|%s|%d|%s", company, position, item.Duration, description)
+}
+
+func dedupeProjects(items []types.Project) []types.Project {
+	seen := make(map[string]struct{}, len(items))
+	result := make([]types.Project, 0, len(items))
+	for _, item := range items {
+		key := projectKey(item)
+		if key == "" {
+			continue
+		}
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		result = append(result, item)
+	}
+	return result
+}
+
+func projectKey(item types.Project) string {
+	name := normalizeText(item.Name)
+	role := normalizeText(item.Role)
+	description := normalizeText(item.Description)
+	technologies := normalizeTechnologies(item.Technologies)
+
+	if name == "" && role == "" && description == "" && len(technologies) == 0 {
+		return ""
+	}
+
+	return fmt.Sprintf("%s|%s|%s|%s", name, role, description, strings.Join(technologies, ","))
+}
+
+func normalizeText(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "" {
+		return ""
+	}
+
+	parts := strings.FieldsFunc(s, func(r rune) bool {
+		return !unicode.IsLetter(r) && !unicode.IsNumber(r) && !unicode.Is(unicode.Han, r)
+	})
+	return strings.Join(parts, "")
+}
+
+func normalizeTechnologies(items []string) []string {
+	set := make(map[string]struct{}, len(items))
+	for _, item := range items {
+		n := normalizeText(item)
+		if n != "" {
+			set[n] = struct{}{}
+		}
+	}
+	result := make([]string, 0, len(set))
+	for k := range set {
+		result = append(result, k)
+	}
+	sort.Strings(result)
+	return result
 }

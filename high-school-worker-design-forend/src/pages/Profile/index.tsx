@@ -1,14 +1,19 @@
-import { Card, Avatar, Button, message, Tag, Modal, Progress, Collapse } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Card, Avatar, Button, message, Tag, Modal, Progress, Collapse, Upload } from 'antd';
+import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
 import { userApi, studentApi } from '../../api';
-import type { Student, StudentSkill, StudentCert } from '../../types';
+import type { Student, StudentSkill, StudentCert, Internship as StudentInternship, Project as StudentProject } from '../../types';
 
 const menuItems = [
   { icon: <SettingOutlined />, title: '设置', desc: '应用偏好设置', path: '/settings' },
 ];
+
+const AVATAR_STAGE_WIDTH = 360;
+const AVATAR_STAGE_HEIGHT = 320;
+const AVATAR_CIRCLE_SIZE = 220;
+const AVATAR_OUTPUT_SIZE = 512;
 
 export default function ProfilePage() {
   const navigate = useNavigate();
@@ -16,6 +21,37 @@ export default function ProfilePage() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [experienceModalOpen, setExperienceModalOpen] = useState(false);
+  const [experienceType, setExperienceType] = useState<'internship' | 'project'>('internship');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarSrc, setAvatarSrc] = useState('/default-avatar.svg');
+  const [avatarPreviewOpen, setAvatarPreviewOpen] = useState(false);
+  const [avatarPreviewScale, setAvatarPreviewScale] = useState(1);
+  const [avatarPreviewOffset, setAvatarPreviewOffset] = useState({ x: 0, y: 0 });
+  const [avatarPreviewDragging, setAvatarPreviewDragging] = useState(false);
+  const [avatarPreviewDragStart, setAvatarPreviewDragStart] = useState({ x: 0, y: 0 });
+  const [avatarSelectModalOpen, setAvatarSelectModalOpen] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  const [pendingAvatarPreviewUrl, setPendingAvatarPreviewUrl] = useState<string>('');
+  const [pendingImageNaturalSize, setPendingImageNaturalSize] = useState({ width: 0, height: 0 });
+  const [pendingCropScale, setPendingCropScale] = useState(1);
+  const [pendingCropOffset, setPendingCropOffset] = useState({ x: 0, y: 0 });
+  const [pendingCircleOffset, setPendingCircleOffset] = useState({
+    x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+    y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+  });
+  const [pendingDragMode, setPendingDragMode] = useState<'none' | 'image' | 'circle'>('none');
+  const [pendingDragStartMouse, setPendingDragStartMouse] = useState({ x: 0, y: 0 });
+  const [pendingDragStartImageOffset, setPendingDragStartImageOffset] = useState({ x: 0, y: 0 });
+  const [pendingDragStartCircleOffset, setPendingDragStartCircleOffset] = useState({
+    x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+    y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+  });
+  const [pendingActivePointerId, setPendingActivePointerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setAvatarSrc(user?.avatar || '/default-avatar.svg');
+  }, [user?.avatar]);
 
   useEffect(() => {
     // 如果用户信息为空，重新获取
@@ -78,6 +114,341 @@ export default function ProfilePage() {
     navigate('/student');
   };
 
+  const openExperienceModal = (type: 'internship' | 'project') => {
+    setExperienceType(type);
+    setExperienceModalOpen(true);
+  };
+
+  const copyText = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      message.success(`${label}已复制`);
+    } catch {
+      message.error(`复制${label}失败`);
+    }
+  };
+
+  const exportTextFile = (text: string, fileName: string) => {
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
+  const internshipToText = (item: StudentInternship, index: number) => {
+    return [
+      `实习经历 ${index + 1}`,
+      `公司：${item.company || '-'}`,
+      `岗位：${item.position || '-'}`,
+      `时长：${item.duration || 0} 个月`,
+      `描述：${item.description || '-'}`,
+    ].join('\n');
+  };
+
+  const projectToText = (item: StudentProject, index: number) => {
+    return [
+      `项目经验 ${index + 1}`,
+      `项目名：${item.name || '-'}`,
+      `角色：${item.role || '-'}`,
+      `描述：${item.description || '-'}`,
+      `技术栈：${(item.technologies || []).join(', ') || '-'}`,
+    ].join('\n');
+  };
+
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve(base64);
+      };
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  const clearPendingAvatar = () => {
+    if (pendingAvatarPreviewUrl) {
+      URL.revokeObjectURL(pendingAvatarPreviewUrl);
+    }
+    setPendingAvatarFile(null);
+    setPendingAvatarPreviewUrl('');
+    setPendingImageNaturalSize({ width: 0, height: 0 });
+    setPendingCropScale(1);
+    setPendingCropOffset({ x: 0, y: 0 });
+    setPendingCircleOffset({
+      x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+      y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+    });
+    setPendingDragMode('none');
+    setPendingDragStartMouse({ x: 0, y: 0 });
+    setPendingDragStartImageOffset({ x: 0, y: 0 });
+    setPendingDragStartCircleOffset({
+      x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+      y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+    });
+    setPendingActivePointerId(null);
+  };
+
+  const getCropBaseScale = (width: number, height: number) => {
+    if (!width || !height) return 1;
+    return Math.max(AVATAR_CIRCLE_SIZE / width, AVATAR_CIRCLE_SIZE / height);
+  };
+
+  const getCropDisplaySize = (scale: number) => {
+    const baseScale = getCropBaseScale(pendingImageNaturalSize.width, pendingImageNaturalSize.height);
+    return {
+      width: pendingImageNaturalSize.width * baseScale * scale,
+      height: pendingImageNaturalSize.height * baseScale * scale,
+    };
+  };
+
+  const clampCropOffset = (nextX: number, nextY: number, scale: number) => {
+    const display = getCropDisplaySize(scale);
+    const minX = Math.min(0, pendingCircleOffset.x + AVATAR_CIRCLE_SIZE - display.width);
+    const minY = Math.min(0, pendingCircleOffset.y + AVATAR_CIRCLE_SIZE - display.height);
+    const maxX = pendingCircleOffset.x;
+    const maxY = pendingCircleOffset.y;
+    const x = Math.min(maxX, Math.max(minX, nextX));
+    const y = Math.min(maxY, Math.max(minY, nextY));
+    return { x, y };
+  };
+
+  const clampCircleOffsetByImage = (
+    nextX: number,
+    nextY: number,
+    imageOffset: { x: number; y: number },
+    scale: number,
+  ) => {
+    const display = getCropDisplaySize(scale);
+
+    // Circle must stay in stage bounds first.
+    const stageMinX = 0;
+    const stageMaxX = AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE;
+    const stageMinY = 0;
+    const stageMaxY = AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE;
+
+    // Circle must also stay inside current image coverage to avoid empty crop area.
+    const imageMinX = imageOffset.x;
+    const imageMaxX = imageOffset.x + display.width - AVATAR_CIRCLE_SIZE;
+    const imageMinY = imageOffset.y;
+    const imageMaxY = imageOffset.y + display.height - AVATAR_CIRCLE_SIZE;
+
+    const minX = Math.max(stageMinX, imageMinX);
+    const maxX = Math.min(stageMaxX, imageMaxX);
+    const minY = Math.max(stageMinY, imageMinY);
+    const maxY = Math.min(stageMaxY, imageMaxY);
+
+    return {
+      x: Math.min(maxX, Math.max(minX, nextX)),
+      y: Math.min(maxY, Math.max(minY, nextY)),
+    };
+  };
+
+  const clampCropOffsetByCircle = (
+    nextX: number,
+    nextY: number,
+    scale: number,
+    circle: { x: number; y: number },
+  ) => {
+    const display = getCropDisplaySize(scale);
+    const minX = Math.min(0, circle.x + AVATAR_CIRCLE_SIZE - display.width);
+    const minY = Math.min(0, circle.y + AVATAR_CIRCLE_SIZE - display.height);
+    const maxX = circle.x;
+    const maxY = circle.y;
+    return {
+      x: Math.min(maxX, Math.max(minX, nextX)),
+      y: Math.min(maxY, Math.max(minY, nextY)),
+    };
+  };
+
+  useEffect(() => {
+    if (!pendingAvatarPreviewUrl) return;
+
+    const img = new Image();
+    img.onload = () => {
+      const width = img.naturalWidth || 1;
+      const height = img.naturalHeight || 1;
+      setPendingImageNaturalSize({ width, height });
+      setPendingCropScale(1);
+      const initialCircle = {
+        x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+        y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+      };
+      setPendingCircleOffset(initialCircle);
+
+      const baseScale = getCropBaseScale(width, height);
+      const displayWidth = width * baseScale;
+      const displayHeight = height * baseScale;
+      setPendingCropOffset({
+        x: initialCircle.x + (AVATAR_CIRCLE_SIZE - displayWidth) / 2,
+        y: initialCircle.y + (AVATAR_CIRCLE_SIZE - displayHeight) / 2,
+      });
+    };
+    img.src = pendingAvatarPreviewUrl;
+  }, [pendingAvatarPreviewUrl]);
+
+  const stopPendingDrag = () => {
+    setPendingDragMode('none');
+    setPendingActivePointerId(null);
+  };
+
+  const handlePendingPointerMove = (clientX: number, clientY: number) => {
+    if (pendingDragMode === 'none') return;
+
+    const deltaX = clientX - pendingDragStartMouse.x;
+    const deltaY = clientY - pendingDragStartMouse.y;
+
+    if (pendingDragMode === 'circle') {
+      const nextCircle = clampCircleOffsetByImage(
+        pendingDragStartCircleOffset.x + deltaX,
+        pendingDragStartCircleOffset.y + deltaY,
+        pendingCropOffset,
+        pendingCropScale,
+      );
+      setPendingCircleOffset(nextCircle);
+      return;
+    }
+
+    setPendingCropOffset(
+      clampCropOffsetByCircle(
+        pendingDragStartImageOffset.x + deltaX,
+        pendingDragStartImageOffset.y + deltaY,
+        pendingCropScale,
+        pendingCircleOffset,
+      ),
+    );
+  };
+
+  const handleChooseAvatarFile = (file: File) => {
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.png') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.webp')) {
+      message.error('只支持 PNG/JPG/JPEG/WEBP 格式');
+      return false;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error('头像大小不能超过 5MB');
+      return false;
+    }
+
+    clearPendingAvatar();
+    setPendingAvatarFile(file);
+    setPendingAvatarPreviewUrl(URL.createObjectURL(file));
+    return false;
+  };
+
+  const handleOpenAvatarSelectModal = () => {
+    clearPendingAvatar();
+    setAvatarSelectModalOpen(true);
+  };
+
+  const handleCancelAvatarSelectModal = () => {
+    setAvatarSelectModalOpen(false);
+    clearPendingAvatar();
+  };
+
+  const handleConfirmAvatarUpload = async () => {
+    if (!pendingAvatarFile) {
+      message.warning('请先选择头像图片');
+      return;
+    }
+
+    try {
+      const image = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('预览图片读取失败'));
+        img.src = pendingAvatarPreviewUrl;
+      });
+
+      const display = getCropDisplaySize(pendingCropScale);
+      const sx = Math.max(0, ((pendingCircleOffset.x - pendingCropOffset.x) / display.width) * image.naturalWidth);
+      const sy = Math.max(0, ((pendingCircleOffset.y - pendingCropOffset.y) / display.height) * image.naturalHeight);
+      const sw = Math.min(image.naturalWidth - sx, (AVATAR_CIRCLE_SIZE / display.width) * image.naturalWidth);
+      const sh = Math.min(image.naturalHeight - sy, (AVATAR_CIRCLE_SIZE / display.height) * image.naturalHeight);
+
+      const canvas = document.createElement('canvas');
+      canvas.width = AVATAR_OUTPUT_SIZE;
+      canvas.height = AVATAR_OUTPUT_SIZE;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        message.error('裁剪失败，请重试');
+        return;
+      }
+
+      ctx.clearRect(0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, 0, Math.PI * 2);
+      ctx.closePath();
+      ctx.clip();
+      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+      ctx.restore();
+
+      const blob = await new Promise<Blob | null>((resolve) => {
+        canvas.toBlob((value) => resolve(value), 'image/png', 0.92);
+      });
+      if (!blob) {
+        message.error('裁剪失败，请重试');
+        return;
+      }
+
+      const croppedFile = new File([blob], `avatar-cropped-${Date.now()}.png`, { type: 'image/png' });
+      await handleUploadAvatar(croppedFile);
+    } catch {
+      message.error('头像处理失败，请重新选择图片');
+      return;
+    }
+
+    setAvatarSelectModalOpen(false);
+    clearPendingAvatar();
+  };
+
+  const handleUploadAvatar = async (file: File) => {
+    const fileName = file.name.toLowerCase();
+    if (!fileName.endsWith('.png') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.webp')) {
+      message.error('只支持 PNG/JPG/JPEG/WEBP 格式');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      message.error('头像大小不能超过 5MB');
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const base64 = await fileToBase64(file);
+      const res = await userApi.uploadAvatar({
+        fileContent: base64,
+        fileName: file.name,
+      });
+
+      if (res.code === 0 && res.url) {
+        setAvatarSrc(res.url);
+        if (user) {
+          setUser({ ...user, avatar: res.url });
+        }
+        message.success('头像更新成功');
+        return;
+      }
+
+      message.error(res.msg || '头像更新失败');
+    } catch {
+      message.error('头像更新失败，请稍后重试');
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const calculateCompleteness = (student: Student | null): number => {
     if (!student) return 0;
     let score = 0;
@@ -109,13 +480,39 @@ export default function ProfilePage() {
   const completenessItems = getCompletenessItems(studentData);
   const completedCount = completenessItems.filter((item) => item.completed).length;
   const completenessPercent = calculateCompleteness(studentData);
+  const internships: StudentInternship[] = studentData?.internship || [];
+  const projects: StudentProject[] = studentData?.projects || [];
 
   return (
     <div className="min-h-screen relative z-10 p-4">
       {/* 用户信息卡片 */}
       <Card className="mb-4">
         <div className="flex items-center gap-4">
-          <Avatar size={64} src={user?.avatar} icon={<UserOutlined />} className="bg-blue-500" />
+          <div className="flex flex-col items-center gap-2">
+            <div
+              className="cursor-pointer"
+              title="点击查看大图"
+              onClick={() => {
+                setAvatarPreviewScale(1);
+                setAvatarPreviewOffset({ x: 0, y: 0 });
+                setAvatarPreviewOpen(true);
+              }}
+            >
+              <Avatar
+                size={64}
+                src={avatarSrc}
+                icon={<UserOutlined />}
+                className="bg-blue-500"
+                onError={() => {
+                  setAvatarSrc('/default-avatar.svg');
+                  return false;
+                }}
+              />
+            </div>
+            <Button size="small" icon={<UploadOutlined />} loading={avatarUploading} onClick={handleOpenAvatarSelectModal}>
+              更换头像
+            </Button>
+          </div>
           <div className="flex-1">
             <div className="font-medium text-lg">{user?.username || '未登录'}</div>
             <div className="text-gray-500 text-sm">{user?.email || '暂无邮箱'}</div>
@@ -211,11 +608,25 @@ export default function ProfilePage() {
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-gray-600">实习经历</span>
-              <span className="font-medium">{studentData.internship?.length || 0} 条</span>
+              <Button
+                type="link"
+                className="px-0"
+                disabled={(studentData.internship?.length || 0) === 0}
+                onClick={() => openExperienceModal('internship')}
+              >
+                {studentData.internship?.length || 0} 条
+              </Button>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-gray-600">项目经验</span>
-              <span className="font-medium">{studentData.projects?.length || 0} 条</span>
+              <Button
+                type="link"
+                className="px-0"
+                disabled={(studentData.projects?.length || 0) === 0}
+                onClick={() => openExperienceModal('project')}
+              >
+                {studentData.projects?.length || 0} 条
+              </Button>
             </div>
           </div>
         ) : (
@@ -309,6 +720,97 @@ export default function ProfilePage() {
 
       {/* 完善资料提示模态框 */}
       <Modal
+        open={experienceModalOpen}
+        onCancel={() => setExperienceModalOpen(false)}
+        footer={null}
+        title={experienceType === 'internship' ? '实习经历详情（仅查看）' : '项目经验详情（仅查看）'}
+      >
+        {experienceType === 'internship' ? (
+          internships.length > 0 ? (
+            <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+              {internships.map((item: StudentInternship, index: number) => (
+                <Card
+                  key={`${item.company}-${item.position}-${index}`}
+                  size="small"
+                  title={`${index + 1}. ${item.company || '未填写公司'}`}
+                  extra={
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          void copyText(internshipToText(item, index), '实习经历');
+                        }}
+                      >
+                        复制
+                      </Button>
+                      <Button
+                        size="small"
+                        onClick={() => {
+                          exportTextFile(internshipToText(item, index), `internship-${index + 1}.txt`);
+                        }}
+                      >
+                        导出
+                      </Button>
+                    </div>
+                  }
+                >
+                  <div className="text-sm text-gray-700">岗位：{item.position || '-'}</div>
+                  <div className="text-sm text-gray-700 mt-1">时长：{item.duration || 0} 个月</div>
+                  <div className="text-sm text-gray-700 mt-1">描述：{item.description || '-'}</div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-gray-500 text-center py-6">暂无实习经历</div>
+          )
+        ) : projects.length > 0 ? (
+          <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+            {projects.map((item: StudentProject, index: number) => (
+              <Card
+                key={`${item.name}-${item.role}-${index}`}
+                size="small"
+                title={`${index + 1}. ${item.name || '未填写项目名'}`}
+                extra={
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        void copyText(projectToText(item, index), '项目经验');
+                      }}
+                    >
+                      复制
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        exportTextFile(projectToText(item, index), `project-${index + 1}.txt`);
+                      }}
+                    >
+                      导出
+                    </Button>
+                  </div>
+                }
+              >
+                <div className="text-sm text-gray-700">角色：{item.role || '-'}</div>
+                <div className="text-sm text-gray-700 mt-1">描述：{item.description || '-'}</div>
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {(item.technologies || []).length > 0 ? (
+                    (item.technologies || []).map((tech: string, idx: number) => (
+                      <Tag key={`${tech}-${idx}`} color="blue">{tech}</Tag>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">暂无技术栈</span>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-gray-500 text-center py-6">暂无项目经验</div>
+        )}
+      </Modal>
+
+      <Modal
         open={showCompleteModal}
         onCancel={() => setShowCompleteModal(false)}
         footer={null}
@@ -354,6 +856,160 @@ export default function ProfilePage() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        open={avatarPreviewOpen}
+        footer={null}
+        centered
+        onCancel={() => {
+          setAvatarPreviewOpen(false);
+          setAvatarPreviewScale(1);
+          setAvatarPreviewOffset({ x: 0, y: 0 });
+          setAvatarPreviewDragging(false);
+          setAvatarPreviewDragStart({ x: 0, y: 0 });
+        }}
+        title="头像预览"
+      >
+        <div
+          className="flex justify-center overflow-hidden select-none"
+          onWheel={(e) => {
+            e.preventDefault();
+            const nextScale = e.deltaY > 0 ? avatarPreviewScale - 0.1 : avatarPreviewScale + 0.1;
+            setAvatarPreviewScale(Math.min(4, Math.max(0.5, Number(nextScale.toFixed(2)))));
+          }}
+          onMouseMove={(e) => {
+            if (!avatarPreviewDragging) return;
+            setAvatarPreviewOffset({
+              x: e.clientX - avatarPreviewDragStart.x,
+              y: e.clientY - avatarPreviewDragStart.y,
+            });
+          }}
+          onMouseUp={() => setAvatarPreviewDragging(false)}
+          onMouseLeave={() => setAvatarPreviewDragging(false)}
+        >
+          <img
+            src={avatarSrc || '/default-avatar.svg'}
+            alt="头像预览"
+            className={`max-w-full max-h-[70vh] object-contain rounded-lg ${avatarPreviewDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            style={{
+              transform: `translate(${avatarPreviewOffset.x}px, ${avatarPreviewOffset.y}px) scale(${avatarPreviewScale})`,
+              transition: avatarPreviewDragging ? 'none' : 'transform 0.08s linear',
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setAvatarPreviewDragging(true);
+              setAvatarPreviewDragStart({
+                x: e.clientX - avatarPreviewOffset.x,
+                y: e.clientY - avatarPreviewOffset.y,
+              });
+            }}
+          />
+        </div>
+        <div className="text-center text-xs text-gray-500 mt-3">鼠标滚轮缩放，按住左键可拖拽移动（50% - 400%）</div>
+      </Modal>
+
+      <Modal
+        open={avatarSelectModalOpen}
+        centered
+        title="更换头像"
+        onCancel={handleCancelAvatarSelectModal}
+        footer={null}
+      >
+        {!pendingAvatarFile ? (
+          <Upload.Dragger
+            showUploadList={false}
+            multiple={false}
+            accept=".png,.jpg,.jpeg,.webp"
+            beforeUpload={(file) => {
+              handleChooseAvatarFile(file);
+              return false;
+            }}
+          >
+            <p className="ant-upload-text">点击或拖拽选择头像图片</p>
+            <p className="ant-upload-hint">支持 PNG/JPG/JPEG/WEBP，大小不超过 5MB</p>
+          </Upload.Dragger>
+        ) : (
+          <div>
+            <div
+              className="mx-auto mb-4 overflow-hidden select-none relative rounded-lg border border-gray-200 bg-black/5"
+              style={{ width: AVATAR_STAGE_WIDTH, height: AVATAR_STAGE_HEIGHT }}
+              onWheel={(e) => {
+                e.preventDefault();
+                const nextScale = Math.min(4, Math.max(1, Number((e.deltaY > 0 ? pendingCropScale - 0.1 : pendingCropScale + 0.1).toFixed(2))));
+                setPendingCropScale(nextScale);
+                setPendingCropOffset((prev) => clampCropOffset(prev.x, prev.y, nextScale));
+              }}
+              onPointerDown={(e) => {
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+                const rect = e.currentTarget.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const centerX = pendingCircleOffset.x + AVATAR_CIRCLE_SIZE / 2;
+                const centerY = pendingCircleOffset.y + AVATAR_CIRCLE_SIZE / 2;
+                const distance = Math.hypot(x - centerX, y - centerY);
+                const radius = AVATAR_CIRCLE_SIZE / 2;
+                const isInsideCircle = distance <= radius;
+
+                setPendingActivePointerId(e.pointerId);
+                setPendingDragMode(isInsideCircle ? 'circle' : 'image');
+                setPendingDragStartMouse({ x: e.clientX, y: e.clientY });
+                setPendingDragStartImageOffset(pendingCropOffset);
+                setPendingDragStartCircleOffset(pendingCircleOffset);
+
+                e.currentTarget.setPointerCapture(e.pointerId);
+                e.preventDefault();
+              }}
+              onPointerMove={(e) => {
+                if (pendingActivePointerId !== e.pointerId) return;
+                handlePendingPointerMove(e.clientX, e.clientY);
+              }}
+              onPointerUp={(e) => {
+                if (pendingActivePointerId !== e.pointerId) return;
+                stopPendingDrag();
+              }}
+              onPointerCancel={(e) => {
+                if (pendingActivePointerId !== e.pointerId) return;
+                stopPendingDrag();
+              }}
+              onLostPointerCapture={(e) => {
+                if (pendingActivePointerId !== e.pointerId) return;
+                stopPendingDrag();
+              }}
+            >
+              <img
+                src={pendingAvatarPreviewUrl}
+                alt="待上传头像预览"
+                className={`absolute top-0 left-0 ${pendingDragMode === 'image' ? 'cursor-grabbing' : 'cursor-grab'}`}
+                style={{
+                  width: getCropDisplaySize(pendingCropScale).width,
+                  height: getCropDisplaySize(pendingCropScale).height,
+                  transform: `translate(${pendingCropOffset.x}px, ${pendingCropOffset.y}px)`,
+                  transition: pendingDragMode === 'image' ? 'none' : 'transform 0.08s linear',
+                }}
+              />
+              <div
+                className="pointer-events-none absolute border-2 border-white/90"
+                style={{
+                  width: AVATAR_CIRCLE_SIZE,
+                  height: AVATAR_CIRCLE_SIZE,
+                  left: pendingCircleOffset.x,
+                  top: pendingCircleOffset.y,
+                  borderRadius: '50%',
+                  boxShadow: '0 0 0 9999px rgba(0,0,0,0.35)',
+                }}
+              />
+            </div>
+            <div className="text-center text-xs text-gray-500 mb-3">拖动圆形边框可移动选区，拖动图片可调整内容，滚轮缩放；边界已限制不会漏底</div>
+            <div className="flex justify-end gap-2">
+              <Button onClick={clearPendingAvatar}>返回选择图片</Button>
+              <Button type="primary" loading={avatarUploading} onClick={() => void handleConfirmAvatarUpload()}>
+                确认上传
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
     </div>
   );

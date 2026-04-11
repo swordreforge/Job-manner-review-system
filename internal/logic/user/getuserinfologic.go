@@ -55,10 +55,10 @@ func (l *GetUserInfoLogic) GetUserInfo() (resp *types.UserResp, err error) {
 
 	avatar := ""
 	if user.Avatar.Valid {
-		avatar = user.Avatar.String
-	} else {
-		// 默认头像
-		avatar = l.svcCtx.Config.Avatar.BaseURL + "/mo"
+		avatar = withAvatarVersion(
+			buildAvatarURL(user.Avatar.String, l.svcCtx.Config.Avatar.BaseURL),
+			user.UpdatedAt,
+		)
 	}
 
 	return &types.UserResp{

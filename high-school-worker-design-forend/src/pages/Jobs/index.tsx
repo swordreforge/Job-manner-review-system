@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Card, Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
-import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined } from '@ant-design/icons';
+import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
 import type { Job, PromotionPath, TransferPath } from '../../types';
@@ -9,8 +9,8 @@ type GraphLink = {
   source: number;
   target: number;
   name: string;
-  lineStyle: { color: string; width: number; type?: 'solid' | 'dashed'; curveness?: number };
-  label?: { show: boolean; formatter: string };
+  lineStyle: { color: string; width: number; type?: 'dashed' };
+  label: { show: boolean; formatter: string };
 };
 
 type GraphTooltipParam = {
@@ -29,6 +29,7 @@ export default function JobsPage() {
   const [pathsLoading, setPathsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('graph');
   const [activeCategory, setActiveCategory] = useState('tech');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   const popularJobs = ['前端工程师', 'Java 开发', '产品经理'];
 
@@ -64,7 +65,7 @@ export default function JobsPage() {
       chartRef.current?.getEchartsInstance().resize();
     }, 120);
     return () => window.clearTimeout(timer);
-  }, [selectedJobId, activeTab]);
+  }, [selectedJobId, sidebarCollapsed, activeTab]);
 
   const loadJobs = async () => {
     try {
@@ -220,19 +221,17 @@ export default function JobsPage() {
       id: selectedJob.id,
       name: selectedJob.name,
       category: 0,
-      symbolSize: 60,
+      // 缩小中心蓝色节点大小（ECharts graph 节点尺寸由 symbolSize 控制）
+      symbolSize: 48,
       itemStyle: { color: '#1890ff' },
     });
 
-    // 添加晋升路径节点（按适配度从大到小排序，形成链式路径）
+    // 添加晋升路径节点
     if (promotionPath?.nextJobs) {
-      const sortedJobs = [...promotionPath.nextJobs]
-        .filter(nextJob => nextJob.id !== selectedJob.id)
-        .sort((a, b) => (b.matchScore ?? 0) - (a.matchScore ?? 0));
-      
-      let prevJobId = selectedJob.id;
-      
-      sortedJobs.forEach((nextJob) => {
+      promotionPath.nextJobs.forEach((nextJob) => {
+        // 跳过自引用路径（目标岗位不能是当前岗位）
+        if (nextJob.id === selectedJob.id) return;
+        
         // 显示标签：名称 + 匹配分数
         const rawScore = nextJob.matchScore ?? 0;
         const displayScore = rawScore > 1
@@ -247,91 +246,90 @@ export default function JobsPage() {
             id: nextJob.id,
             name: labelText,
             category: 1,
-            symbolSize: 55,
+            symbolSize: 80,
             itemStyle: { color: '#52c41a' },
           });
         }
 
-        // 从上一个节点连接到当前节点（形成链式）
-        links.push({
-          source: prevJobId,
-          target: nextJob.id,
-          name: '晋升',
-          lineStyle: {
-            color: '#52c41a',
-            width: 5,
-            curveness: 0,
-            type: 'solid',
-          },
-        });
-        
-        // 更新上一个节点 ID
-        prevJobId = nextJob.id;
+        // 检查是否已存在相同的链接
+        const linkExists = links.some(
+          l => l.source === selectedJob.id && l.target === nextJob.id
+        );
+        if (!linkExists) {
+          links.push({
+            source: selectedJob.id,
+            target: nextJob.id,
+            name: '晋升',
+            lineStyle: { color: '#52c41a', width: 2 },
+            label: { show: true, formatter: '晋升' },
+          });
+        }
       });
     }
 
-    // 添加换岗路径节点（按适配度从大到小排序，形成链式路径）
-    const sortedTransferPaths = transferPaths
-      .filter(tp => tp.fromJob.id === selectedJob.id && tp.toJob.id !== selectedJob.id)
-      .sort((a, b) => b.matchScore - a.matchScore);
-    
-    let prevTransferJobId = selectedJob.id;
-    
-    sortedTransferPaths.forEach((transferPath) => {
+    // 添加换岗路径节点
+    transferPaths.forEach((transferPath) => {
+      // 跳过自引用路径
+      if (transferPath.toJob.id === selectedJob.id) return;
+      if (transferPath.fromJob.id === selectedJob.id && transferPath.toJob.id === selectedJob.id) return;
+
       // 添加目标岗位节点
       if (!nodeMap.has(transferPath.toJob.id)) {
-        const tsScore = transferPath.matchScore > 1 
-          ? Math.round(transferPath.matchScore) 
-          : Math.round(transferPath.matchScore * 100);
-        
         nodeMap.set(transferPath.toJob.id, {
           id: transferPath.toJob.id,
-          name: `${transferPath.toJob.name}\n${tsScore}%`,
+          name: transferPath.toJob.name,
           category: 1,
-          symbolSize: 50,
+          symbolSize: 72,
           itemStyle: { color: '#faad14' },
         });
       }
 
-      // 从上一个节点连接到当前节点（形成链式）
-      links.push({
-        source: prevTransferJobId,
-        target: transferPath.toJob.id,
-        name: '换岗',
-        lineStyle: {
-          color: '#faad14',
-          width: 5,
-          curveness: 0,
-          type: 'solid',
-        },
-      });
-      
-      // 更新上一个节点 ID
-      prevTransferJobId = transferPath.toJob.id;
+      // 添加源岗位节点（从其他岗位转来的）
+      if (transferPath.fromJob.id !== selectedJob.id && !nodeMap.has(transferPath.fromJob.id)) {
+        nodeMap.set(transferPath.fromJob.id, {
+          id: transferPath.fromJob.id,
+          name: transferPath.fromJob.name,
+          category: 1,
+          symbolSize: 64,
+          itemStyle: { color: '#faad14' },
+        });
+        
+        // 添加反向链接
+        const linkExists = links.some(
+          l => l.source === transferPath.fromJob.id && l.target === transferPath.toJob.id
+        );
+        if (!linkExists) {
+          links.push({
+            source: transferPath.fromJob.id,
+            target: transferPath.toJob.id,
+            name: '换岗',
+            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+            label: { show: true, formatter: '换岗' },
+          });
+        }
+      }
+
+      // 添加从当前岗位到目标岗位的链接
+      if (transferPath.fromJob.id === selectedJob.id) {
+        const linkExists = links.some(
+          l => l.source === selectedJob.id && l.target === transferPath.toJob.id
+        );
+        if (!linkExists) {
+          const tsScore = transferPath.matchScore > 1 
+            ? Math.round(transferPath.matchScore) 
+            : Math.round(transferPath.matchScore * 100);
+          links.push({
+            source: selectedJob.id,
+            target: transferPath.toJob.id,
+            name: `换岗 ${tsScore}%`,
+            lineStyle: { color: '#faad14', width: 2, type: 'dashed' },
+            label: { show: true, formatter: `换岗\n${tsScore}%` },
+          });
+        }
+      }
     });
 
     const nodes = Array.from(nodeMap.values());
-    
-    // 创建节点 ID 到索引的映射
-    const idToIndex = new Map<number, number>();
-    nodes.forEach((node, index) => {
-      idToIndex.set(node.id as number, index);
-    });
-    
-    // 调试信息
-    console.log('=== 图谱数据 ===');
-    console.log('节点数量:', nodes.length);
-    console.log('节点ID到索引的映射:', Object.fromEntries(idToIndex));
-    
-    // 将 links 中的 source 和 target 从 ID 转换为索引
-    const fixedLinks = links.map(link => ({
-      ...link,
-      source: idToIndex.get(link.source as number),
-      target: idToIndex.get(link.target as number),
-    })).filter(link => link.source !== undefined && link.target !== undefined);
-    
-    console.log('修正后的连线数量:', fixedLinks.length);
-    console.log('修正后的连线详情:', JSON.stringify(fixedLinks, null, 2));
 
     return {
       title: {
@@ -356,27 +354,30 @@ export default function JobsPage() {
           type: 'graph',
           layout: 'force',
           data: nodes,
-          links: fixedLinks,
+          links: links,
           categories: [
             { name: '当前岗位' },
             { name: '发展路径' },
           ],
           roam: true,
-          draggable: true,
           center: ['50%', '50%'],
-          zoom: 1.2,
+          zoom: 1.25,
           label: {
             show: true,
             position: 'bottom',
           },
-          edgeSymbol: ['none', 'arrow'],
-          edgeSymbolSize: [0, 15],
+          lineStyle: {
+            width: 2,
+          },
           force: {
-            repulsion: 400,
-            edgeLength: [150, 250],
+            repulsion: 420,
+            edgeLength: [130, 240],
           },
           emphasis: {
             focus: 'adjacency',
+            lineStyle: {
+              width: 4,
+            },
           },
         },
       ],
@@ -506,9 +507,11 @@ export default function JobsPage() {
         )}
 
         {selectedJob && (
-          <div className="space-y-4">
-            {/* 岗位详情 */}
-            <Card title="岗位详情">
+          <div className="xl:relative xl:left-1/2 xl:w-[min(1400px,calc(100vw-2rem))] xl:-translate-x-1/2 xl:px-2 2xl:w-[min(1440px,calc(100vw-3rem))]">
+          <div className={`flex flex-col ${sidebarCollapsed ? 'xl:gap-0' : 'xl:gap-4'} xl:flex-row`}>
+            {/* 左侧：岗位详情 */}
+            <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'xl:w-0 xl:opacity-0' : 'xl:w-72 xl:shrink-0 xl:opacity-100 xl:-ml-2'}`}>
+            <Card className="xl:sticky xl:top-4 h-fit" title="岗位详情">
               <Descriptions column={1} size="small">
                 <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
                 <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
@@ -541,21 +544,31 @@ export default function JobsPage() {
                 </div>
               )}
             </Card>
+            </div>
 
-            {/* 路径图谱 */}
+            {/* 右侧：路径图谱 */}
+            <div className="min-w-0 flex-1">
             <Card className="min-h-170 w-full [&_.ant-card-body]:flex [&_.ant-card-body]:h-full [&_.ant-card-body]:flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">发展路径图谱</h3>
-                <Button
-                  type="primary"
-                  icon={<ReloadOutlined />}
-                  loading={pathsLoading}
-                  onClick={() => {
-                    void handleGenerateAllPaths();
-                  }}
-                >
-                  AI智能分析
-                </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  >
+                    {sidebarCollapsed ? '展开岗位详情' : '收起岗位详情'}
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    loading={pathsLoading}
+                    onClick={() => {
+                      void handleGenerateAllPaths();
+                    }}
+                  >
+                    AI智能分析
+                  </Button>
+                </div>
               </div>
               <Tabs
                 className="flex-1 flex flex-col"
@@ -710,6 +723,8 @@ export default function JobsPage() {
                 ]}
               />
             </Card>
+            </div>
+          </div>
           </div>
         )}
       </div>

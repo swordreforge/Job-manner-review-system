@@ -78,7 +78,10 @@ func (l *UpdateUserInfoLogic) UpdateUserInfo(req *types.UpdateUserReq) (resp *ty
 	}
 	avatar := ""
 	if updated.Avatar.Valid {
-		avatar = updated.Avatar.String
+		avatar = withAvatarVersion(
+			buildAvatarURL(updated.Avatar.String, l.svcCtx.Config.Avatar.BaseURL),
+			updated.UpdatedAt,
+		)
 	}
 
 	return &types.UserResp{

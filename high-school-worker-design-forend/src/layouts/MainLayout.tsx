@@ -66,22 +66,20 @@ export default function MainLayout() {
           <Outlet />
         </div>
       </div>
-      {shouldFixTabBar && (
-        <TabBar
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20"
-        >
-          <TabBar.Item 
-            key="home" 
-            title={isStartPage ? "开始" : "首页"} 
-            icon={<RocketOutlined />} 
-          />
-          {tabs.slice(1).map((tab) => (
-            <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
-          ))}
-        </TabBar>
-      )}
+<TabBar
+        activeKey={activeTab}
+        onChange={handleTabChange}
+        className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
+      >
+        <TabBar.Item 
+          key="home" 
+          title={isStartPage ? "开始" : "首页"} 
+          icon={<RocketOutlined />} 
+        />
+        {tabs.slice(1).map((tab) => (
+          <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
+        ))}
+      </TabBar>
     </div>
   );
 }

@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/zeromicro/go-zero/core/logx"
 
@@ -98,7 +99,7 @@ func (l *UploadAvatarLogic) UploadAvatar(req *types.UploadAvatarReq) (resp *type
 		}, nil
 	}
 
-	// 生成文件名
+	// 生成稳定文件名，重复上传会覆盖旧头像
 	filename := fmt.Sprintf("avatar_%d%s", userId, ext)
 	filePath := filepath.Join(savePath, filename)
 
@@ -112,8 +113,8 @@ func (l *UploadAvatarLogic) UploadAvatar(req *types.UploadAvatarReq) (resp *type
 		}, nil
 	}
 
-	// 更新数据库 - 使用 UpdateAvatar 方法
-	_, err = l.svcCtx.UserModel.UpdateAvatar(l.ctx, userId, filePath)
+	// 数据库存储相对路径（文件名），避免写入机器相关绝对路径
+	_, err = l.svcCtx.UserModel.UpdateAvatar(l.ctx, userId, filename)
 	if err != nil {
 		logx.Errorf("更新用户头像失败: %v", err)
 		return &types.UploadAvatarResp{
@@ -122,12 +123,10 @@ func (l *UploadAvatarLogic) UploadAvatar(req *types.UploadAvatarReq) (resp *type
 		}, nil
 	}
 
-	// 返回URL
-	baseURL := l.svcCtx.Config.Avatar.BaseURL
-	if baseURL == "" {
-		baseURL = "https://pic.swordreforge.top/img"
-	}
-	avatarURL := baseURL + "/" + filename
+	avatarURL := withAvatarVersion(
+		buildAvatarURL(filename, l.svcCtx.Config.Avatar.BaseURL),
+		time.Now().Unix(),
+	)
 
 	return &types.UploadAvatarResp{
 		Code: errors.CodeSuccess,

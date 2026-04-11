@@ -21,7 +21,8 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		path := r.URL.Path
 		if strings.Contains(path, "/user/login") ||
 			strings.Contains(path, "/user/register") ||
-			strings.Contains(path, "/health") {
+			strings.Contains(path, "/health") ||
+			strings.HasPrefix(path, "/img/") {
 			next(w, r)
 			return
 		}

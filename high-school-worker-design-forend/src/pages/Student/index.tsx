@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Divider, Spin } from 'antd';
+import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Spin, Collapse } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { studentApi } from '../../api';
@@ -21,6 +21,87 @@ type StudentFormValues = {
   projects?: Student['projects'];
 };
 
+type InternshipFormItem = { company?: string; position?: string; duration?: number | string; description?: string };
+type ProjectFormItem = { name?: string; role?: string; description?: string; technologies?: string[] };
+type SkillFormItem = { name?: string; level?: number | string; years?: number | string };
+type CertificateFormItem = { name?: string; level?: string; year?: number | string };
+
+const normalizeText = (value?: string) => (value || '').trim().toLowerCase();
+
+const internshipDedupKey = (item: InternshipFormItem) => {
+  const duration = parseInt(String(item.duration ?? 0), 10) || 0;
+  return [
+    normalizeText(item.company),
+    normalizeText(item.position),
+    String(duration),
+    normalizeText(item.description),
+  ].join('|');
+};
+
+const projectDedupKey = (item: ProjectFormItem) => {
+  const technologies = (item.technologies || [])
+    .map((tech) => normalizeText(tech))
+    .filter((tech) => tech.length > 0)
+    .sort()
+    .join(',');
+
+  return [
+    normalizeText(item.name),
+    normalizeText(item.role),
+    normalizeText(item.description),
+    technologies,
+  ].join('|');
+};
+
+const skillDedupKey = (item: SkillFormItem) => {
+  return normalizeText(item.name);
+};
+
+const certificateDedupKey = (item: CertificateFormItem) => {
+  return normalizeText(item.name);
+};
+
+const findDuplicateIndex = <T,>(items: T[], keyGetter: (item: T) => string): number => {
+  const seen = new Map<string, number>();
+  for (let i = 0; i < items.length; i++) {
+    const key = keyGetter(items[i]);
+    if (!key || /^\|*0?\|*$/.test(key)) continue;
+    if (seen.has(key)) return i;
+    seen.set(key, i);
+  }
+  return -1;
+};
+
+const normalizeSkillItems = (items: unknown): SkillFormItem[] => {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    if (typeof item === 'string') {
+      return { name: item, level: 3, years: 1 };
+    }
+    const value = item as SkillFormItem;
+    return {
+      name: value.name,
+      level: value.level,
+      years: value.years,
+    };
+  });
+};
+
+const normalizeCertificateItems = (items: unknown): CertificateFormItem[] => {
+  if (!Array.isArray(items)) return [];
+  return items.map((item) => {
+    if (typeof item === 'string') {
+      return { name: item, level: '初级', year: new Date().getFullYear() };
+    }
+    const value = item as CertificateFormItem;
+    return {
+      name: value.name,
+      level: value.level,
+      year: value.year,
+    };
+  });
+};
+
 export default function StudentPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -29,6 +110,10 @@ export default function StudentPage() {
   const [submitting, setSubmitting] = useState(false);
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [activeSection, setActiveSection] = useState<string>('');
+  const [expandedPanels, setExpandedPanels] = useState<string[]>(['basic']);
+
+  const getSectionClass = (section: string) =>
+    activeSection === section ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : '';
 
   const scrollToSection = (section: string) => {
     const sectionIdMap: Record<string, string> = {
@@ -119,6 +204,17 @@ export default function StudentPage() {
     const section = searchParams.get('section');
     if (!section) return;
 
+    const sectionPanelMap: Record<string, string> = {
+      basic: 'basic',
+      skills: 'skills',
+      certificates: 'certificates',
+      internship: 'internship',
+    };
+    const panelKey = sectionPanelMap[section];
+    if (panelKey) {
+      setExpandedPanels((prev) => (prev.includes(panelKey) ? prev : [...prev, panelKey]));
+    }
+
     const timer = window.setTimeout(() => scrollToSection(section), 120);
     return () => window.clearTimeout(timer);
   }, [loading, searchParams]);
@@ -126,10 +222,79 @@ export default function StudentPage() {
   const handleSubmit = async (values: StudentFormValues) => {
     setSubmitting(true);
     try {
+      const allValues = form.getFieldsValue(true) as Partial<StudentFormValues>;
+
+      // If a collapsed panel was never mounted, fallback to existing data to avoid accidental clearing.
+      const skills = normalizeSkillItems(allValues.skills ?? studentData?.skills);
+      const certificates = normalizeCertificateItems(allValues.certificates ?? studentData?.certificates);
+      const internships = ((allValues.internship ?? studentData?.internship ?? []) as InternshipFormItem[]);
+      const projects = ((allValues.projects ?? studentData?.projects ?? []) as ProjectFormItem[]);
+
+      const duplicateSkillIndex = findDuplicateIndex(skills, skillDedupKey);
+      if (duplicateSkillIndex >= 0) {
+        message.warning(`第 ${duplicateSkillIndex + 1} 条技能与前面重复，未保存`);
+        return;
+      }
+
+      const duplicateCertificateIndex = findDuplicateIndex(certificates, certificateDedupKey);
+      if (duplicateCertificateIndex >= 0) {
+        message.warning(`第 ${duplicateCertificateIndex + 1} 条证书与前面重复，未保存`);
+        return;
+      }
+
+      const invalidInternshipIndex = internships.findIndex((item) => {
+        const duration = parseInt(String(item.duration ?? 0), 10) || 0;
+        const hasBasicInfo = normalizeText(item.company) !== '' || normalizeText(item.position) !== '';
+        return hasBasicInfo && duration <= 0;
+      });
+      if (invalidInternshipIndex >= 0) {
+        message.warning(`第 ${invalidInternshipIndex + 1} 条实习经历时长必须为正数`);
+        return;
+      }
+
+      const duplicateInternshipIndex = findDuplicateIndex(internships, internshipDedupKey);
+      if (duplicateInternshipIndex >= 0) {
+        message.warning(`第 ${duplicateInternshipIndex + 1} 条实习经历与前面重复，未保存`);
+        return;
+      }
+
+      const duplicateProjectIndex = findDuplicateIndex(projects, projectDedupKey);
+      if (duplicateProjectIndex >= 0) {
+        message.warning(`第 ${duplicateProjectIndex + 1} 条项目经验与前面重复，未保存`);
+        return;
+      }
+
+      const preparedSkills: NonNullable<Student['skills']> = skills
+        .map((s) => ({
+          name: (s.name || '').trim(),
+          level: Number(s.level) || 3,
+          years: parseInt(String(s.years), 10) || 1,
+        }))
+        .filter((s) => s.name.length > 0);
+
+      const preparedCertificates: NonNullable<Student['certificates']> = certificates
+        .map((c) => ({
+          name: (c.name || '').trim(),
+          level: c.level || '初级',
+          year: parseInt(String(c.year), 10) || new Date().getFullYear(),
+        }))
+        .filter((c) => c.name.length > 0);
+
       // 处理实习经历的duration，转换为数字（月数）
-      const processedInternship = (values.internship || []).map((item) => ({
-        ...item,
-        duration: parseInt(String(item.duration)) || 0,  // 确保是数字类型
+      const processedInternship: NonNullable<Student['internship']> = internships.map((item) => ({
+        company: (item.company || '').trim(),
+        position: (item.position || '').trim(),
+        duration: parseInt(String(item.duration), 10) || 0,
+        description: (item.description || '').trim(),
+      }));
+
+      const preparedProjects: NonNullable<Student['projects']> = projects.map((project) => ({
+        name: (project.name || '').trim(),
+        role: (project.role || '').trim(),
+        description: (project.description || '').trim(),
+        technologies: Array.isArray(project.technologies)
+          ? project.technologies.map((tech) => (tech || '').trim()).filter((tech) => tech.length > 0)
+          : [],
       }));
 
       const submitData: Partial<Student> = {
@@ -137,21 +302,11 @@ export default function StudentPage() {
         education: values.education,
         major: values.major,
         graduationYear: values.graduationYear,
-        softSkills: values.softSkills,
-        // 发送完整的skill对象 {name, level, years}，确保 years 是数字
-        skills: (values.skills || []).map((s) => ({
-          name: s.name,
-          level: s.level || 3,
-          years: parseInt(String(s.years)) || 1,  // 转换为数字
-        })) || [],
-        // 发送完整的certificate对象 {name, level, year}，确保 year 是数字
-        certificates: (values.certificates || []).map((c) => ({
-          name: c.name,
-          level: c.level || '初级',
-          year: parseInt(String(c.year)) || new Date().getFullYear(),  // 转换为数字
-        })) || [],
+        softSkills: allValues.softSkills,
+        skills: preparedSkills,
+        certificates: preparedCertificates,
         internship: processedInternship,
-        projects: values.projects || [],
+        projects: preparedProjects,
       };
 
       let response;
@@ -204,11 +359,22 @@ export default function StudentPage() {
             layout="vertical"
             onFinish={handleSubmit}
             autoComplete="off"
+            preserve
           >
-            {/* 基础信息 */}
-            <div id="student-section-basic" className={activeSection === 'basic' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
-            <Divider>基础信息</Divider>
-            <Row gutter={16}>
+            <Collapse
+              activeKey={expandedPanels}
+              onChange={(keys) => {
+                const next = Array.isArray(keys) ? keys.map(String) : [String(keys)];
+                setExpandedPanels(next);
+              }}
+              items={[
+                {
+                  key: 'basic',
+                  label: '基础信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-basic" className={getSectionClass('basic')}>
+                      <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <Form.Item
                   label="姓名"
@@ -259,13 +425,17 @@ export default function StudentPage() {
                   />
                 </Form.Item>
               </Col>
-            </Row>
-            </div>
-
-            {/* 技能信息 */}
-            <div id="student-section-skills" className={activeSection === 'skills' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
-            <Divider>技能信息</Divider>
-            <Form.List name="skills">
+                      </Row>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'skills',
+                  label: '技能信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-skills" className={getSectionClass('skills')}>
+                      <Form.List name="skills">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -304,13 +474,17 @@ export default function StudentPage() {
                   </Form.Item>
                 </>
               )}
-            </Form.List>
-            </div>
-
-            {/* 证书信息 */}
-            <div id="student-section-certificates" className={activeSection === 'certificates' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
-            <Divider>证书信息</Divider>
-            <Form.List name="certificates">
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'certificates',
+                  label: '证书信息',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-certificates" className={getSectionClass('certificates')}>
+                      <Form.List name="certificates">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -329,7 +503,14 @@ export default function StudentPage() {
                         label="等级"
                         style={{ flex: 1, marginBottom: 0 }}
                       >
-                        <Input placeholder="等级" />
+                        <Select
+                          placeholder="等级"
+                          options={[
+                            { value: '初级', label: '初级' },
+                            { value: '中级', label: '中级' },
+                            { value: '高级', label: '高级' },
+                          ]}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}
@@ -349,12 +530,16 @@ export default function StudentPage() {
                   </Form.Item>
                 </>
               )}
-            </Form.List>
-            </div>
-
-            {/* 软技能 */}
-            <Divider>软技能评估</Divider>
-            <Row gutter={16}>
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'soft-skills',
+                  label: '软技能评估',
+                  forceRender: true,
+                  children: (
+                    <Row gutter={16}>
               <Col xs={24} sm={12}>
                 <Form.Item
                   label="创新能力"
@@ -400,12 +585,16 @@ export default function StudentPage() {
                   <Rate count={10} />
                 </Form.Item>
               </Col>
-            </Row>
-
-            {/* 实习经历 */}
-            <div id="student-section-internship" className={activeSection === 'internship' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
-            <Divider>实习经历</Divider>
-            <Form.List name="internship">
+                    </Row>
+                  ),
+                },
+                {
+                  key: 'internship',
+                  label: '实习经历',
+                  forceRender: true,
+                  children: (
+                    <div id="student-section-internship" className={getSectionClass('internship')}>
+                      <Form.List name="internship">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -463,12 +652,17 @@ export default function StudentPage() {
                   </Form.Item>
                 </>
               )}
-            </Form.List>
-            </div>
-
-            {/* 项目经验 */}
-            <Divider>项目经验</Divider>
-            <Form.List name="projects">
+                      </Form.List>
+                    </div>
+                  ),
+                },
+                {
+                  key: 'projects',
+                  label: '项目经验',
+                  forceRender: true,
+                  children: (
+                    <div className={getSectionClass('projects')}>
+                      <Form.List name="projects">
               {(fields, { add, remove }) => (
                 <>
                   {fields.map(({ key, name, ...restField }) => (
@@ -526,7 +720,12 @@ export default function StudentPage() {
                   </Form.Item>
                 </>
               )}
-            </Form.List>
+                      </Form.List>
+                    </div>
+                  ),
+                },
+              ]}
+            />
 
             {/* 提交按钮 */}
             <Form.Item>
