@@ -1,11 +1,22 @@
 import { useState, useEffect } from 'react';
-import { Card, Select, Spin, Empty, Button, message, Tabs, Tag, Progress, List, Descriptions } from 'antd';
+import { Card, Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
 import { ReloadOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
 import type { Job, PromotionPath, TransferPath } from '../../types';
 
-const { Option } = Select;
+type GraphLink = {
+  source: number;
+  target: number;
+  name: string;
+  lineStyle: { color: string; width: number; type?: 'dashed' };
+  label: { show: boolean; formatter: string };
+};
+
+type GraphTooltipParam = {
+  dataType?: 'node' | 'edge';
+  data?: { name?: string };
+};
 
 export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -18,13 +29,13 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('graph');
 
   useEffect(() => {
-    loadJobs();
+    void loadJobs();
   }, []);
 
   useEffect(() => {
     if (selectedJobId) {
-      loadJobDetail(selectedJobId);
-      loadJobPaths(selectedJobId);
+      void loadJobDetail(selectedJobId);
+      void loadJobPaths(selectedJobId);
     } else {
       setSelectedJob(null);
       setPromotionPath(null);
@@ -87,7 +98,7 @@ export default function JobsPage() {
 
   const handleRefresh = () => {
     if (selectedJobId) {
-      loadJobPaths(selectedJobId);
+      void loadJobPaths(selectedJobId);
     }
   };
 
@@ -100,7 +111,7 @@ export default function JobsPage() {
         pathType,
       });
       message.success({ content: '分析完成', key: 'analysis' });
-      loadJobPaths(selectedJobId);
+      await loadJobPaths(selectedJobId);
     } catch (error) {
       console.error('生成路径分析失败:', error);
       message.error({ content: '生成路径分析失败', key: 'analysis' });
@@ -178,8 +189,8 @@ export default function JobsPage() {
     if (!selectedJob) return {};
 
     // 使用 Map 来追踪已添加的节点，避免重复
-    const nodeMap = new Map();
-    const links: any[] = [];
+    const nodeMap = new Map<number, Record<string, unknown>>();
+    const links: GraphLink[] = [];
 
     // 添加当前岗位节点
     nodeMap.set(selectedJob.id, {
@@ -192,15 +203,16 @@ export default function JobsPage() {
 
     // 添加晋升路径节点
     if (promotionPath?.nextJobs) {
-      promotionPath.nextJobs.forEach((nextJob: any) => {
+      promotionPath.nextJobs.forEach((nextJob) => {
         // 跳过自引用路径（目标岗位不能是当前岗位）
         if (nextJob.id === selectedJob.id) return;
         
         // 显示标签：名称 + 匹配分数
-        const displayScore = nextJob.matchScore > 1 
-          ? Math.round(nextJob.matchScore) 
-          : Math.round(nextJob.matchScore * 100);
-        const labelText = nextJob.matchScore 
+        const rawScore = nextJob.matchScore ?? 0;
+        const displayScore = rawScore > 1
+          ? Math.round(rawScore)
+          : Math.round(rawScore * 100);
+        const labelText = rawScore > 0
           ? `${nextJob.name}\n${displayScore}%`
           : nextJob.name;
         
@@ -231,7 +243,7 @@ export default function JobsPage() {
     }
 
     // 添加换岗路径节点
-    transferPaths.forEach((transferPath: any) => {
+    transferPaths.forEach((transferPath) => {
       // 跳过自引用路径
       if (transferPath.toJob.id === selectedJob.id) return;
       if (transferPath.fromJob.id === selectedJob.id && transferPath.toJob.id === selectedJob.id) return;
@@ -300,11 +312,11 @@ export default function JobsPage() {
         left: 'center',
       },
       tooltip: {
-        formatter: (params: any) => {
+        formatter: (params: GraphTooltipParam) => {
           if (params.dataType === 'node') {
-            return `<b>${params.data.name}</b>`;
+            return `<b>${params.data?.name ?? ''}</b>`;
           } else {
-            return `<b>${params.data.name}</b>`;
+            return `<b>${params.data?.name ?? ''}</b>`;
           }
         },
       },
@@ -362,14 +374,11 @@ export default function JobsPage() {
             value={selectedJobId}
             onChange={setSelectedJobId}
             allowClear
-          >
-            {jobs.map((job) => (
-              <Option key={job.id} value={job.id}>
-                {job.name}
-                {job.industry && <span className="ml-2 text-gray-400">({job.industry})</span>}
-              </Option>
-            ))}
-          </Select>
+            options={jobs.map((job) => ({
+              value: job.id,
+              label: `${job.name ?? ''}${job.industry ? ` (${job.industry})` : ''}`,
+            }))}
+          />
           <Button
             icon={<ReloadOutlined />}
             onClick={handleRefresh}
@@ -403,9 +412,8 @@ export default function JobsPage() {
                 <div className="text-gray-600 text-sm mb-2">专业技能：</div>
                 <div className="flex flex-wrap gap-2">
                   {selectedJob.skills.map((skill, index) => (
-                    <Tag key={index} color={skill.required ? 'blue' : 'default'}>
-                      {skill.name}
-                      {skill.level && ` (Lv.${skill.level})`}
+                    <Tag key={index} color="blue">
+                      {skill}
                     </Tag>
                   ))}
                 </div>
@@ -433,7 +441,9 @@ export default function JobsPage() {
                 type="primary" 
                 icon={<ReloadOutlined />}
                 loading={pathsLoading}
-                onClick={() => handleGenerateAllPaths()}
+                onClick={() => {
+                  void handleGenerateAllPaths();
+                }}
               >
                 AI智能分析
               </Button>
@@ -449,7 +459,7 @@ export default function JobsPage() {
                     <div>
                       {pathsLoading ? (
                         <div className="py-8 flex justify-center">
-                          <Spin size="large" tip="加载中..." />
+                          <Spin size="large" />
                         </div>
                       ) : promotionPath || transferPaths.length > 0 ? (
                         <ReactECharts option={getGraphOption()} style={{ height: '500px' }} />
@@ -466,7 +476,7 @@ export default function JobsPage() {
                     <div>
                       {pathsLoading ? (
                         <div className="py-8 flex justify-center">
-                          <Spin size="large" tip="加载中..." />
+                          <Spin size="large" />
                         </div>
                       ) : promotionPath?.nextJobs && promotionPath.nextJobs.length > 0 ? (
                         <List
@@ -482,7 +492,7 @@ export default function JobsPage() {
                                           <div className="text-gray-600 text-sm">所需技能：</div>
                                           <div className="flex flex-wrap gap-1 mt-1">
                                             {nextJob.requiredSkills.map((skill, idx) => (
-                                              <Tag key={idx} size="small">{skill}</Tag>
+                                              <Tag key={idx}>{skill}</Tag>
                                             ))}
                                           </div>
                                         </div>
@@ -519,7 +529,7 @@ export default function JobsPage() {
                     <div>
                       {pathsLoading ? (
                         <div className="py-8 flex justify-center">
-                          <Spin size="large" tip="加载中..." />
+                          <Spin size="large" />
                         </div>
                       ) : transferPaths.length > 0 ? (
                         <List
@@ -542,7 +552,7 @@ export default function JobsPage() {
                                         <div className="text-gray-600 text-sm">可迁移技能：</div>
                                         <div className="flex flex-wrap gap-1 mt-1">
                                           {transferPath.transferSkills.map((skill, idx) => (
-                                            <Tag key={idx} size="small">{skill}</Tag>
+                                            <Tag key={idx}>{skill}</Tag>
                                           ))}
                                         </div>
                                       </div>
@@ -551,11 +561,14 @@ export default function JobsPage() {
                                       <div className="mt-2">
                                         <div className="text-gray-600 text-sm">学习路径：</div>
                                         <div className="mt-1">
-                                          {transferPath.learningPath.map((step, idx) => (
-                                            <div key={idx} className="text-sm text-gray-500">
-                                              {idx + 1}. {step}
-                                            </div>
-                                          ))}
+                                          {String(transferPath.learningPath)
+                                            .split(/[\n；;]/)
+                                            .filter((step) => step.trim().length > 0)
+                                            .map((step: string, idx: number) => (
+                                              <div key={idx} className="text-sm text-gray-500">
+                                                {idx + 1}. {step.trim()}
+                                              </div>
+                                            ))}
                                         </div>
                                       </div>
                                     )}

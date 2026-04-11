@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Divider, Spin } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -6,7 +6,20 @@ import { studentApi } from '../../api';
 import type { Student } from '../../types';
 
 const { TextArea } = Input;
-const { Option } = Select;
+
+type SkillLike = string | { name?: string; level?: number; years?: number };
+type CertificateLike = string | { name?: string; level?: string; year?: number };
+type StudentFormValues = {
+  name: string;
+  education: string;
+  major: string;
+  graduationYear: number;
+  softSkills?: Record<string, unknown>;
+  skills?: Array<{ name: string; level?: number; years?: number | string }>;
+  certificates?: Array<{ name: string; level?: string; year?: number | string }>;
+  internship?: Array<{ company: string; position: string; duration: number | string; description?: string }>;
+  projects?: Student['projects'];
+};
 
 export default function StudentPage() {
   const navigate = useNavigate();
@@ -31,24 +44,17 @@ export default function StudentPage() {
     if (!target) return;
 
     setActiveSection(section);
-    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Keep target in the upper-middle area instead of sticking to the page top.
+    const targetTop = target.getBoundingClientRect().top + window.scrollY;
+    const viewportOffset = Math.round(window.innerHeight * 0.22);
+    const scrollTop = Math.max(0, targetTop - viewportOffset);
+    window.scrollTo({ top: scrollTop, behavior: 'smooth' });
+
     setTimeout(() => setActiveSection(''), 1800);
   };
 
-  useEffect(() => {
-    fetchStudentData();
-  }, []);
-
-  useEffect(() => {
-    if (loading) return;
-    const section = searchParams.get('section');
-    if (!section) return;
-
-    const timer = window.setTimeout(() => scrollToSection(section), 120);
-    return () => window.clearTimeout(timer);
-  }, [loading, searchParams]);
-
-  const fetchStudentData = async () => {
+  const fetchStudentData = useCallback(async () => {
     setLoading(true);
     try {
       const response = await studentApi.getMe();
@@ -56,40 +62,31 @@ export default function StudentPage() {
         const data = response.data;
         setStudentData(data);
 
-        // 转换数据格式以适应表单
-        // 处理skills：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
-        const skillsData = data.skills && Array.isArray(data.skills)
-          ? (typeof data.skills[0] === 'string'
-              ? (data.skills as unknown as string[]).map((skill: string, index: number) => ({
-                  key: index,
-                  name: skill,
-                  level: 3,
-                  years: 1,
-                }))
-              : (data.skills as unknown as any[]).map((skill: any, index: number) => ({
-                  key: index,
-                  name: skill.name || '',
-                  level: skill.level || 3,
-                  years: skill.years || 1,
-                })))
-          : [];
+        const rawSkills = (data.skills as SkillLike[] | undefined) ?? [];
+        const skillsData = rawSkills.map((skill, index) => {
+          if (typeof skill === 'string') {
+            return { key: index, name: skill, level: 3, years: 1 };
+          }
+          return {
+            key: index,
+            name: skill.name || '',
+            level: skill.level || 3,
+            years: skill.years || 1,
+          };
+        });
 
-        // 处理certificates：如果是字符串数组，转换为对象数组；如果是对象数组，直接使用
-        const certificatesData = data.certificates && Array.isArray(data.certificates)
-          ? (typeof data.certificates[0] === 'string'
-              ? (data.certificates as unknown as string[]).map((cert: string, index: number) => ({
-                  key: index,
-                  name: cert,
-                  level: '初级',
-                  year: new Date().getFullYear(),
-                }))
-              : (data.certificates as unknown as any[]).map((cert: any, index: number) => ({
-                  key: index,
-                  name: cert.name || '',
-                  level: cert.level || '初级',
-                  year: cert.year || new Date().getFullYear(),
-                })))
-          : [];
+        const rawCertificates = (data.certificates as CertificateLike[] | undefined) ?? [];
+        const certificatesData = rawCertificates.map((cert, index) => {
+          if (typeof cert === 'string') {
+            return { key: index, name: cert, level: '初级', year: new Date().getFullYear() };
+          }
+          return {
+            key: index,
+            name: cert.name || '',
+            level: cert.level || '初级',
+            year: cert.year || new Date().getFullYear(),
+          };
+        });
 
         form.setFieldsValue({
           name: data.name,
@@ -103,22 +100,34 @@ export default function StudentPage() {
           projects: data.projects || [],
         });
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
-        // 没有学生资料，不显示错误，让用户创建
-      } else {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } };
+      if (err.response?.status !== 404) {
         message.error('获取学生资料失败');
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [form]);
 
-  const handleSubmit = async (values: any) => {
+  useEffect(() => {
+    void fetchStudentData();
+  }, [fetchStudentData]);
+
+  useEffect(() => {
+    if (loading) return;
+    const section = searchParams.get('section');
+    if (!section) return;
+
+    const timer = window.setTimeout(() => scrollToSection(section), 120);
+    return () => window.clearTimeout(timer);
+  }, [loading, searchParams]);
+
+  const handleSubmit = async (values: StudentFormValues) => {
     setSubmitting(true);
     try {
       // 处理实习经历的duration，转换为数字（月数）
-      const processedInternship = (values.internship || []).map((item: any) => ({
+      const processedInternship = (values.internship || []).map((item) => ({
         ...item,
         duration: parseInt(String(item.duration)) || 0,  // 确保是数字类型
       }));
@@ -130,13 +139,13 @@ export default function StudentPage() {
         graduationYear: values.graduationYear,
         softSkills: values.softSkills,
         // 发送完整的skill对象 {name, level, years}，确保 years 是数字
-        skills: (values.skills || []).map((s: any) => ({
+        skills: (values.skills || []).map((s) => ({
           name: s.name,
           level: s.level || 3,
           years: parseInt(String(s.years)) || 1,  // 转换为数字
         })) || [],
         // 发送完整的certificate对象 {name, level, year}，确保 year 是数字
-        certificates: (values.certificates || []).map((c: any) => ({
+        certificates: (values.certificates || []).map((c) => ({
           name: c.name,
           level: c.level || '初级',
           year: parseInt(String(c.year)) || new Date().getFullYear(),  // 转换为数字
@@ -160,8 +169,9 @@ export default function StudentPage() {
       } else {
         message.error(response.msg || '操作失败');
       }
-    } catch (error: any) {
-      message.error(error.response?.data?.msg || '操作失败');
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { msg?: string } } };
+      message.error(err.response?.data?.msg || '操作失败');
     } finally {
       setSubmitting(false);
     }
@@ -170,7 +180,7 @@ export default function StudentPage() {
   if (loading) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <Spin size="large" tip="加载中..." />
+        <Spin size="large" />
       </div>
     );
   }
@@ -214,12 +224,15 @@ export default function StudentPage() {
                   name="education"
                   rules={[{ required: true, message: '请选择学历' }]}
                 >
-                  <Select placeholder="请选择学历">
-                    <Option value="high_school">高中</Option>
-                    <Option value="bachelor">本科</Option>
-                    <Option value="master">硕士</Option>
-                    <Option value="phd">博士</Option>
-                  </Select>
+                  <Select
+                    placeholder="请选择学历"
+                    options={[
+                      { value: 'high_school', label: '高中' },
+                      { value: 'bachelor', label: '本科' },
+                      { value: 'master', label: '硕士' },
+                      { value: 'phd', label: '博士' },
+                    ]}
+                  />
                 </Form.Item>
               </Col>
               <Col xs={24} sm={12}>
@@ -237,11 +250,13 @@ export default function StudentPage() {
                   name="graduationYear"
                   rules={[{ required: true, message: '请选择毕业年份' }]}
                 >
-                  <Select placeholder="请选择毕业年份">
-                    {Array.from({ length: 10 }, (_, i) => 2023 + i).map(year => (
-                      <Option key={year} value={year}>{year}</Option>
-                    ))}
-                  </Select>
+                  <Select
+                    placeholder="请选择毕业年份"
+                    options={Array.from({ length: 10 }, (_, i) => {
+                      const year = 2023 + i;
+                      return { value: year, label: String(year) };
+                    })}
+                  />
                 </Form.Item>
               </Col>
             </Row>
@@ -314,11 +329,14 @@ export default function StudentPage() {
                         label="等级"
                         style={{ flex: 1, marginBottom: 0 }}
                       >
-                        <Select placeholder="等级">
-                          <Option value="初级">初级</Option>
-                          <Option value="中级">中级</Option>
-                          <Option value="高级">高级</Option>
-                        </Select>
+                        <Select
+                          placeholder="等级"
+                          options={[
+                            { value: '初级', label: '初级' },
+                            { value: '中级', label: '中级' },
+                            { value: '高级', label: '高级' },
+                          ]}
+                        />
                       </Form.Item>
                       <Form.Item
                         {...restField}

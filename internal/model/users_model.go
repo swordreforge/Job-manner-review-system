@@ -52,6 +52,22 @@ func (m *customUsersModel) Insert(ctx context.Context, data *Users) (sql.Result,
 	return ret, err
 }
 
+// Update 更新用户记录，确保参数数量与字段一致，并刷新 updated_at。
+func (m *customUsersModel) Update(ctx context.Context, data *Users) error {
+	query := fmt.Sprintf("update %s set `username` = ?, `password` = ?, `email` = ?, `phone` = ?, `avatar` = ?, `role` = ?, `updated_at` = ? where `id` = ?", m.table)
+	_, err := m.conn.ExecCtx(ctx, query,
+		data.Username,
+		data.Password,
+		data.Email,
+		data.Phone,
+		data.Avatar,
+		data.Role,
+		time.Now().Unix(),
+		data.Id,
+	)
+	return err
+}
+
 // UpdateAvatar 更新用户头像
 func (m *customUsersModel) UpdateAvatar(ctx context.Context, id int64, avatar string) (sql.Result, error) {
 	query := fmt.Sprintf("update %s set `avatar` = ?, `updated_at` = ? where `id` = ?", m.table)

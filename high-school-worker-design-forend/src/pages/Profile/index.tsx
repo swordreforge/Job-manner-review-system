@@ -1,10 +1,10 @@
-import { Card, Avatar, Button, message, Tag, Modal, Progress } from 'antd';
+import { Card, Avatar, Button, message, Tag, Modal, Progress, Collapse } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
 import { userApi, studentApi } from '../../api';
-import type { Student } from '../../types';
+import type { Student, StudentSkill, StudentCert } from '../../types';
 
 const menuItems = [
   { icon: <SettingOutlined />, title: '设置', desc: '应用偏好设置', path: '/settings' },
@@ -46,8 +46,9 @@ export default function ProfilePage() {
       if (response.code === 0 && response.data) {
         setStudentData(response.data);
       }
-    } catch (error: any) {
-      if (error.response?.status === 404) {
+    } catch (error: unknown) {
+      const err = error as { response?: { status?: number } };
+      if (err.response?.status === 404) {
         setStudentData(null);
       } else {
         console.error('Failed to fetch student data:', error);
@@ -188,7 +189,7 @@ export default function ProfilePage() {
               <span className="text-gray-600">技能</span>
               <div className="flex flex-wrap gap-1">
                 {studentData.skills && studentData.skills.length > 0 ? (
-                  studentData.skills.map((skill: any, index: number) => (
+                  studentData.skills.map((skill: StudentSkill, index: number) => (
                     <Tag key={index} color="blue">{skill.name}</Tag>
                   ))
                 ) : (
@@ -200,7 +201,7 @@ export default function ProfilePage() {
               <span className="text-gray-600">证书</span>
               <div className="flex flex-wrap gap-1">
                 {studentData.certificates && studentData.certificates.length > 0 ? (
-                  studentData.certificates.map((cert: any, index: number) => (
+                  studentData.certificates.map((cert: StudentCert, index: number) => (
                     <Tag key={index} color="green">{cert.name}</Tag>
                   ))
                 ) : (
@@ -228,34 +229,52 @@ export default function ProfilePage() {
         )}
       </Card>
 
-      <Card title="资料完成度明细" className="mb-4">
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-gray-600">当前完成进度</span>
-            <span className="font-medium">{completedCount}/{completenessItems.length}</span>
-          </div>
-          <Progress percent={completenessPercent} status={completenessPercent === 100 ? 'success' : 'active'} />
-        </div>
-        <div className="space-y-2">
-          {completenessItems.map((item) => (
-            <div
-              key={item.key}
-              className={`flex items-center justify-between py-2 border-b border-gray-100 last:border-0 ${item.completed ? '' : 'cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded'}`}
-              onClick={() => {
-                if (!item.completed) {
-                  navigate(`/student?section=${item.targetSection}`);
-                }
-              }}
-            >
-              <span className="text-gray-700">{item.label}</span>
-              {item.completed ? (
-                <Tag color="success">已完成</Tag>
-              ) : (
-                <Tag color="warning">未完成</Tag>
-              )}
-            </div>
-          ))}
-        </div>
+      <Card className="mb-4" bodyStyle={{ padding: 0 }}>
+        <Collapse
+          ghost
+          items={[
+            {
+              key: 'completeness',
+              label: (
+                <div className="flex items-center pr-4">
+                  <span className="font-medium">资料完成度明细</span>
+                  <span className="ml-4 text-sm font-semibold text-green-600">{completenessPercent}%</span>
+                </div>
+              ),
+              children: (
+                <div className="px-4 pb-4">
+                  <div className="mb-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-gray-600">当前完成进度</span>
+                      <span className="font-medium">{completedCount}/{completenessItems.length}</span>
+                    </div>
+                    <Progress percent={completenessPercent} status={completenessPercent === 100 ? 'success' : 'active'} />
+                  </div>
+                  <div className="space-y-2">
+                    {completenessItems.map((item) => (
+                      <div
+                        key={item.key}
+                        className={`flex items-center justify-between py-2 border-b border-gray-100 last:border-0 ${item.completed ? '' : 'cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded'}`}
+                        onClick={() => {
+                          if (!item.completed) {
+                            navigate(`/student?section=${item.targetSection}`);
+                          }
+                        }}
+                      >
+                        <span className="text-gray-700">{item.label}</span>
+                        {item.completed ? (
+                          <Tag color="success">已完成</Tag>
+                        ) : (
+                          <Tag color="warning">未完成</Tag>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ),
+            },
+          ]}
+        />
       </Card>
 
       {/* 功能菜单 */}

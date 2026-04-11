@@ -307,6 +307,18 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: user.UploadAvatarHandler(serverCtx),
 			},
 			{
+				// Update password
+				Method:  http.MethodPut,
+				Path:    "/user/password",
+				Handler: user.UpdatePasswordHandler(serverCtx),
+			},
+			{
+				// Delete account
+				Method:  http.MethodDelete,
+				Path:    "/user/account",
+				Handler: user.DeleteAccountHandler(serverCtx),
+			},
+			{
 				// User login
 				Method:  http.MethodPost,
 				Path:    "/user/login",
