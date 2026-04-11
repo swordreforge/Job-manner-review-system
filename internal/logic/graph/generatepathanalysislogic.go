@@ -126,11 +126,12 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 	}
 
 	requiredSkillsJSON, _ := json.Marshal(analysis.RequiredSkills)
+	learningPathJSON := normalizeLearningPathJSON(analysis.LearningPath)
 
 	if existingPath != nil {
 		existingPath.MatchScore = sql.NullFloat64{Float64: analysis.MatchScore, Valid: true}
 		existingPath.TransferSkills = sql.NullString{String: string(requiredSkillsJSON), Valid: true}
-		existingPath.LearningPath = sql.NullString{String: analysis.LearningPath, Valid: true}
+		existingPath.LearningPath = sql.NullString{String: learningPathJSON, Valid: learningPathJSON != ""}
 		existingPath.UpdatedAt = time.Now().Unix()
 
 		l.svcCtx.PromotionPathModel.Update(l.ctx, existingPath)
@@ -142,7 +143,7 @@ func (l *GeneratePathAnalysisLogic) GeneratePathAnalysis(req *GeneratePathAnalys
 			ToJobId:        req.ToJobId,
 			MatchScore:     sql.NullFloat64{Float64: analysis.MatchScore, Valid: true},
 			TransferSkills: sql.NullString{String: string(requiredSkillsJSON), Valid: true},
-			LearningPath:   sql.NullString{String: analysis.LearningPath, Valid: true},
+			LearningPath:   sql.NullString{String: learningPathJSON, Valid: learningPathJSON != ""},
 			CreatedAt:      now,
 			UpdatedAt:      now,
 		}
@@ -295,13 +296,14 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 			if learningPath == "" {
 				learningPath = target.Reason
 			}
+			learningPathJSON := normalizeLearningPathJSON(learningPath)
 
 			newPath := &model.JobPromotionPaths{
 				FromJobId:      req.JobId,
 				ToJobId:        matchedJob.Id,
 				MatchScore:     sql.NullFloat64{Float64: target.MatchScore, Valid: target.MatchScore > 0},
 				TransferSkills: sql.NullString{String: transferSkillsJSON, Valid: transferSkillsJSON != ""},
-				LearningPath:   sql.NullString{String: learningPath, Valid: learningPath != ""},
+				LearningPath:   sql.NullString{String: learningPathJSON, Valid: learningPathJSON != ""},
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -451,13 +453,14 @@ func (l *GeneratePathAnalysisLogic) GenerateTransferTargets(req *GenerateTransfe
 			if learningPath == "" {
 				learningPath = target.Reason
 			}
+			learningPathJSON := normalizeLearningPathJSON(learningPath)
 
 			newPath := &model.JobPromotionPaths{
 				FromJobId:      req.JobId,
 				ToJobId:        matchedJob.Id,
 				MatchScore:     sql.NullFloat64{Float64: target.MatchScore, Valid: target.MatchScore > 0},
 				TransferSkills: sql.NullString{String: transferSkillsJSON, Valid: transferSkillsJSON != ""},
-				LearningPath:   sql.NullString{String: learningPath, Valid: learningPath != ""},
+				LearningPath:   sql.NullString{String: learningPathJSON, Valid: learningPathJSON != ""},
 				CreatedAt:      now,
 				UpdatedAt:      now,
 			}
@@ -521,6 +524,24 @@ func formatStudentInfo(student *model.Students) string {
 		info += "证书:" + student.Certificates.String
 	}
 	return info
+}
+
+func normalizeLearningPathJSON(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return ""
+	}
+
+	if json.Valid([]byte(trimmed)) {
+		return trimmed
+	}
+
+	bytes, err := json.Marshal([]string{trimmed})
+	if err != nil {
+		return ""
+	}
+
+	return string(bytes)
 }
 
 // fuzzyMatchJob 使用智能模糊匹配在岗位列表中查找匹配

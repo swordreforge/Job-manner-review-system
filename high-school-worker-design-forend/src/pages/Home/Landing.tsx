@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RocketOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
+import { RocketOutlined, RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -70,6 +70,14 @@ const comments = [
 export default function Landing() {
   const navigate = useNavigate();
   const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
+
+  const showPrevFeature = () => {
+    setHoveredFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
+  };
+
+  const showNextFeature = () => {
+    setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
+  };
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}>
@@ -276,6 +284,29 @@ export default function Landing() {
                   </motion.div>
                 </motion.div>
               </AnimatePresence>
+
+              <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none">
+                <motion.button
+                  type="button"
+                  aria-label="上一张"
+                  onClick={showPrevFeature}
+                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <LeftOutlined />
+                </motion.button>
+                <motion.button
+                  type="button"
+                  aria-label="下一张"
+                  onClick={showNextFeature}
+                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
+                  whileHover={{ scale: 1.08 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <RightOutlined />
+                </motion.button>
+              </div>
             </div>
             {/* 图片指示器 */}
             <div className="flex justify-center gap-2 mt-4">
@@ -704,3 +735,4 @@ export default function Landing() {
     </div>
   );
 }
+

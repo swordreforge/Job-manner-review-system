@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -84,6 +85,10 @@ func main() {
 	if err := autoMigrate(c.Mysql.DataSource); err != nil {
 		logx.Errorf("Auto migration failed: %v", err)
 		os.Exit(1)
+	}
+
+	if err := seedData(c.Mysql.DataSource); err != nil {
+		logx.Errorf("Seed data failed: %v", err)
 	}
 
 	server := rest.MustNewServer(c.RestConf, rest.WithCors())
@@ -362,13 +367,251 @@ func autoMigrate(dataSource string) error {
 	}
 
 	for _, table := range tables {
-		if _, err := db.Exec(table.createSQL); err != nil {
-			return fmt.Errorf("创建表 %s 失败: %w", table.name, err)
+		exists, err := tableExists(db, table.name)
+		if err != nil {
+			return fmt.Errorf("检查表 %s 是否存在失败: %w", table.name, err)
 		}
+
+		if !exists {
+			if _, err := db.Exec(table.createSQL); err != nil {
+				return fmt.Errorf("创建表 %s 失败: %w", table.name, err)
+			}
+			fmt.Printf("[DB-SYNC] 表 %s 不存在，已按内置结构创建\n", table.name)
+			continue
+		}
+
+		matched, err := isTableSchemaMatched(db, table.name, table.createSQL)
+		if err != nil {
+			return fmt.Errorf("比对表 %s 结构失败: %w", table.name, err)
+		}
+
+		if matched {
+			continue
+		}
+
+		fmt.Printf("[DB-SYNC] 检测到表 %s 结构不一致，正在同步为内置结构（保留数据）...\n", table.name)
+		if err := syncTableByBuiltinSchema(db, table.name, table.createSQL); err != nil {
+			return fmt.Errorf("同步表 %s 结构失败: %w", table.name, err)
+		}
+		fmt.Printf("[DB-SYNC] 表 %s 已完成结构同步\n", table.name)
+		logx.Infof("Table %s schema synced from builtin definition", table.name)
 	}
 
 	logx.Infof("Database migration completed")
 	return nil
+}
+
+func tableExists(db *sql.DB, tableName string) (bool, error) {
+	var count int
+	err := db.QueryRow(`
+		SELECT COUNT(*)
+		FROM information_schema.tables
+		WHERE table_schema = DATABASE() AND table_name = ?
+	`, tableName).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
+}
+
+func isTableSchemaMatched(db *sql.DB, tableName, expectedCreateSQL string) (bool, error) {
+	query := fmt.Sprintf("SHOW CREATE TABLE `%s`", tableName)
+
+	var currentTableName string
+	var currentCreateSQL string
+	if err := db.QueryRow(query).Scan(&currentTableName, &currentCreateSQL); err != nil {
+		return false, err
+	}
+
+	currentSchema, err := parseCreateTableSchema(currentCreateSQL)
+	if err != nil {
+		return false, err
+	}
+
+	expectedSchema, err := parseCreateTableSchema(expectedCreateSQL)
+	if err != nil {
+		return false, err
+	}
+
+	for name := range expectedSchema.Columns {
+		if _, ok := currentSchema.Columns[name]; !ok {
+			return false, nil
+		}
+	}
+
+	return true, nil
+}
+
+func syncTableByBuiltinSchema(db *sql.DB, tableName, createSQL string) error {
+	var currentTableName string
+	var currentCreateSQL string
+	showSQL := fmt.Sprintf("SHOW CREATE TABLE `%s`", tableName)
+	if err := db.QueryRow(showSQL).Scan(&currentTableName, &currentCreateSQL); err != nil {
+		return fmt.Errorf("read current create sql failed: %w", err)
+	}
+
+	currentSchema, err := parseCreateTableSchema(currentCreateSQL)
+	if err != nil {
+		return fmt.Errorf("parse current schema failed: %w", err)
+	}
+
+	expectedSchema, err := parseCreateTableSchema(createSQL)
+	if err != nil {
+		return fmt.Errorf("parse expected schema failed: %w", err)
+	}
+
+	if _, err := db.Exec("SET FOREIGN_KEY_CHECKS = 0"); err != nil {
+		return fmt.Errorf("disable foreign key checks failed: %w", err)
+	}
+	defer func() {
+		if _, err := db.Exec("SET FOREIGN_KEY_CHECKS = 1"); err != nil {
+			logx.Errorf("failed to re-enable foreign key checks: %v", err)
+		}
+	}()
+
+	statements := buildAlterStatements(currentSchema, expectedSchema)
+	for _, stmt := range statements {
+		alterSQL := fmt.Sprintf("ALTER TABLE `%s` %s", tableName, stmt)
+		fmt.Printf("[DB-SYNC] 执行: %s\n", alterSQL)
+		if _, err := db.Exec(alterSQL); err != nil {
+			return fmt.Errorf("execute alter failed: %w", err)
+		}
+	}
+
+	if len(statements) == 0 {
+		fmt.Printf("[DB-SYNC] 表 %s 无需 ALTER 变更\n", tableName)
+	}
+
+	return nil
+}
+
+type tableSchema struct {
+	Columns     map[string]string
+	ColumnOrder []string
+	PrimaryKey  string
+	Indexes     map[string]string
+	ForeignKeys map[string]string
+}
+
+func parseCreateTableSchema(createSQL string) (*tableSchema, error) {
+	start := strings.Index(createSQL, "(")
+	end := strings.LastIndex(createSQL, ")")
+	if start == -1 || end == -1 || end <= start {
+		return nil, fmt.Errorf("invalid create table sql")
+	}
+
+	body := createSQL[start+1 : end]
+	lines := strings.Split(body, "\n")
+
+	schema := &tableSchema{
+		Columns:     make(map[string]string),
+		ColumnOrder: make([]string, 0),
+		Indexes:     make(map[string]string),
+		ForeignKeys: make(map[string]string),
+	}
+
+	for _, rawLine := range lines {
+		line := strings.TrimSpace(rawLine)
+		line = strings.TrimSuffix(line, ",")
+		if line == "" {
+			continue
+		}
+
+		upper := strings.ToUpper(line)
+		switch {
+		case strings.HasPrefix(upper, "PRIMARY KEY"):
+			schema.PrimaryKey = line
+		case strings.HasPrefix(upper, "UNIQUE KEY") || strings.HasPrefix(upper, "KEY "):
+			name, ok := parseIndexName(line)
+			if ok {
+				schema.Indexes[name] = line
+			}
+		case strings.HasPrefix(upper, "CONSTRAINT "):
+			name, ok := parseConstraintName(line)
+			if ok {
+				schema.ForeignKeys[name] = line
+			}
+		default:
+			name, ok := parseColumnName(line)
+			if ok {
+				schema.Columns[name] = line
+				schema.ColumnOrder = append(schema.ColumnOrder, name)
+			}
+		}
+	}
+
+	return schema, nil
+}
+
+func parseColumnName(line string) (string, bool) {
+	if strings.HasPrefix(line, "`") {
+		end := strings.Index(line[1:], "`")
+		if end == -1 {
+			return "", false
+		}
+		return line[1 : end+1], true
+	}
+
+	parts := strings.Fields(line)
+	if len(parts) == 0 {
+		return "", false
+	}
+
+	first := strings.ToUpper(parts[0])
+	if first == "PRIMARY" || first == "KEY" || first == "UNIQUE" || first == "CONSTRAINT" {
+		return "", false
+	}
+
+	return parts[0], true
+}
+
+func parseIndexName(line string) (string, bool) {
+	re := regexp.MustCompile(`(?i)^(?:unique\s+key|key)\s+` + "`" + `?([a-zA-Z0-9_]+)` + "`" + `?`)
+	matches := re.FindStringSubmatch(line)
+	if len(matches) < 2 {
+		return "", false
+	}
+
+	return matches[1], true
+}
+
+func parseConstraintName(line string) (string, bool) {
+	re := regexp.MustCompile(`(?i)^constraint\s+` + "`" + `?([a-zA-Z0-9_]+)` + "`" + `?`)
+	matches := re.FindStringSubmatch(line)
+	if len(matches) < 2 {
+		return "", false
+	}
+
+	return matches[1], true
+}
+
+func buildAlterStatements(current, expected *tableSchema) []string {
+	statements := make([]string, 0)
+
+	for _, colName := range expected.ColumnOrder {
+		expectedDef := expected.Columns[colName]
+		_, ok := current.Columns[colName]
+		if !ok {
+			statements = append(statements, fmt.Sprintf("ADD COLUMN %s", expectedDef))
+		}
+	}
+
+	return statements
+}
+
+func normalizeCreateSQL(sqlText string) string {
+	normalized := strings.ToLower(sqlText)
+	normalized = strings.ReplaceAll(normalized, "`", "")
+
+	// Ignore runtime auto-increment values when comparing schemas.
+	autoIncrementPattern := regexp.MustCompile(`auto_increment=\d+`)
+	normalized = autoIncrementPattern.ReplaceAllString(normalized, "")
+
+	spacePattern := regexp.MustCompile(`\s+`)
+	normalized = spacePattern.ReplaceAllString(normalized, " ")
+
+	return strings.TrimSpace(normalized)
 }
 
 func seedData(dataSource string) error {
@@ -378,10 +621,32 @@ func seedData(dataSource string) error {
 	}
 	defer db.Close()
 
+	tx, err := db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin seed transaction: %w", err)
+	}
+
+	fkDisabled := false
+	defer func() {
+		if fkDisabled {
+			if _, setErr := tx.Exec("SET FOREIGN_KEY_CHECKS = 1"); setErr != nil && setErr != sql.ErrTxDone {
+				logx.Errorf("failed to restore foreign key checks in seedData: %v", setErr)
+			}
+		}
+		if rollbackErr := tx.Rollback(); rollbackErr != nil && rollbackErr != sql.ErrTxDone {
+			logx.Errorf("seed transaction rollback failed: %v", rollbackErr)
+		}
+	}()
+
+	if _, err := tx.Exec("SET FOREIGN_KEY_CHECKS = 0"); err != nil {
+		return fmt.Errorf("failed to disable foreign key checks in seedData: %w", err)
+	}
+	fkDisabled = true
+
 	now := time.Now().Unix()
 
 	var userCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM users WHERE username = 'testuser'").Scan(&userCount)
+	err = tx.QueryRow("SELECT COUNT(*) FROM users WHERE username = 'testuser'").Scan(&userCount)
 	if err != nil && err != sql.ErrNoRows {
 		return fmt.Errorf("failed to check user: %w", err)
 	}
@@ -390,7 +655,7 @@ func seedData(dataSource string) error {
 		if err != nil {
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
-		_, err = db.Exec("INSERT INTO users (username, password, email, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+		_, err = tx.Exec("INSERT INTO users (username, password, email, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
 			"testuser", string(hashedPassword), "test@example.com", "user", now, now)
 		if err != nil {
 			return fmt.Errorf("failed to insert test user: %w", err)
@@ -399,7 +664,7 @@ func seedData(dataSource string) error {
 	}
 
 	var jobCount int
-	err = db.QueryRow("SELECT COUNT(*) FROM jobs").Scan(&jobCount)
+	err = tx.QueryRow("SELECT COUNT(*) FROM jobs").Scan(&jobCount)
 	if err != nil && err != sql.ErrNoRows {
 		return fmt.Errorf("failed to check jobs: %w", err)
 	}
@@ -425,14 +690,42 @@ func seedData(dataSource string) error {
 			{"内容编辑", "内容", "负责内容策划与编辑，产出优质文章", "良好的文字功底，了解内容运营", "7000-14000", "今日头条", "北京"},
 		}
 
+		inserted := 0
+		failed := 0
 		for _, job := range jobs {
-			_, err = db.Exec(`INSERT INTO jobs (name, industry, description, requirements, salary_range, company, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+			_, err = tx.Exec(`INSERT INTO jobs (name, industry, description, requirements, salary_range, company, location, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
 				job.name, job.industry, job.description, job.requirements, job.salaryRange, job.company, job.location, now, now)
-			if err != nil {
-				logx.Errorf("Failed to insert job %s: %v", job.name, err)
+			if err == nil {
+				inserted++
+				continue
 			}
+
+			if strings.Contains(strings.ToLower(err.Error()), "check constraint") {
+				// Some existing databases may have legacy CHECK constraints on optional fields.
+				_, fallbackErr := tx.Exec(`INSERT INTO jobs (name, created_at, updated_at) VALUES (?, ?, ?)`, job.name, now, now)
+				if fallbackErr == nil {
+					inserted++
+					logx.Infof("Seed fallback succeeded for job %s (minimal fields)", job.name)
+					continue
+				}
+				logx.Errorf("Failed to insert job %s (fallback also failed): %v", job.name, fallbackErr)
+				failed++
+				continue
+			}
+
+			logx.Errorf("Failed to insert job %s: %v", job.name, err)
+			failed++
 		}
-		logx.Infof("Sample jobs seeded: %d jobs", len(jobs))
+		logx.Infof("Sample jobs seeded: %d success, %d failed", inserted, failed)
+	}
+
+	if _, err := tx.Exec("SET FOREIGN_KEY_CHECKS = 1"); err != nil {
+		return fmt.Errorf("failed to re-enable foreign key checks in seedData: %w", err)
+	}
+	fkDisabled = false
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit seed transaction: %w", err)
 	}
 
 	return nil

@@ -479,6 +479,11 @@ type UpdateEmailReq struct {
 	Password string `json:"password,validate:"required,min=6"`
 }
 
+type UpdatePasswordReq struct {
+	OldPassword string `json:"oldPassword,validate:"required,min=6"`
+	NewPassword string `json:"newPassword,validate:"required,min=6"`
+}
+
 type DeleteAccountReq struct {
 	Password string `json:"password,validate:"required,min=6"`
 }
