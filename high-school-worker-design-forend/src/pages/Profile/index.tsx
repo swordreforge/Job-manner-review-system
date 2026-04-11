@@ -15,6 +15,11 @@ const AVATAR_STAGE_HEIGHT = 320;
 const AVATAR_CIRCLE_SIZE = 220;
 const AVATAR_OUTPUT_SIZE = 512;
 
+const getDefaultCircleOffset = () => ({
+  x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
+  y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
+});
+
 export default function ProfilePage() {
   const navigate = useNavigate();
   const { user, logout, setUser } = useAuthStore();
@@ -36,17 +41,11 @@ export default function ProfilePage() {
   const [pendingImageNaturalSize, setPendingImageNaturalSize] = useState({ width: 0, height: 0 });
   const [pendingCropScale, setPendingCropScale] = useState(1);
   const [pendingCropOffset, setPendingCropOffset] = useState({ x: 0, y: 0 });
-  const [pendingCircleOffset, setPendingCircleOffset] = useState({
-    x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
-    y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
-  });
+  const [pendingCircleOffset, setPendingCircleOffset] = useState(getDefaultCircleOffset);
   const [pendingDragMode, setPendingDragMode] = useState<'none' | 'image' | 'circle'>('none');
   const [pendingDragStartMouse, setPendingDragStartMouse] = useState({ x: 0, y: 0 });
   const [pendingDragStartImageOffset, setPendingDragStartImageOffset] = useState({ x: 0, y: 0 });
-  const [pendingDragStartCircleOffset, setPendingDragStartCircleOffset] = useState({
-    x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
-    y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
-  });
+  const [pendingDragStartCircleOffset, setPendingDragStartCircleOffset] = useState(getDefaultCircleOffset);
   const [pendingActivePointerId, setPendingActivePointerId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -181,18 +180,36 @@ export default function ProfilePage() {
     setPendingImageNaturalSize({ width: 0, height: 0 });
     setPendingCropScale(1);
     setPendingCropOffset({ x: 0, y: 0 });
-    setPendingCircleOffset({
-      x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
-      y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
-    });
+    setPendingCircleOffset(getDefaultCircleOffset());
     setPendingDragMode('none');
     setPendingDragStartMouse({ x: 0, y: 0 });
     setPendingDragStartImageOffset({ x: 0, y: 0 });
-    setPendingDragStartCircleOffset({
-      x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
-      y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
-    });
+    setPendingDragStartCircleOffset(getDefaultCircleOffset());
     setPendingActivePointerId(null);
+  };
+
+  const resetPendingCropView = () => {
+    const width = pendingImageNaturalSize.width;
+    const height = pendingImageNaturalSize.height;
+    const defaultCircle = getDefaultCircleOffset();
+
+    setPendingCropScale(1);
+    setPendingCircleOffset(defaultCircle);
+    setPendingDragMode('none');
+    setPendingActivePointerId(null);
+
+    if (!width || !height) {
+      setPendingCropOffset({ x: 0, y: 0 });
+      return;
+    }
+
+    const baseScale = getCropBaseScale(width, height);
+    const displayWidth = width * baseScale;
+    const displayHeight = height * baseScale;
+    setPendingCropOffset({
+      x: defaultCircle.x + (AVATAR_CIRCLE_SIZE - displayWidth) / 2,
+      y: defaultCircle.y + (AVATAR_CIRCLE_SIZE - displayHeight) / 2,
+    });
   };
 
   const getCropBaseScale = (width: number, height: number) => {
@@ -202,21 +219,12 @@ export default function ProfilePage() {
 
   const getCropDisplaySize = (scale: number) => {
     const baseScale = getCropBaseScale(pendingImageNaturalSize.width, pendingImageNaturalSize.height);
+    const width = pendingImageNaturalSize.width * baseScale * scale;
+    const ratio = pendingImageNaturalSize.width > 0 ? (pendingImageNaturalSize.height / pendingImageNaturalSize.width) : 1;
     return {
-      width: pendingImageNaturalSize.width * baseScale * scale,
-      height: pendingImageNaturalSize.height * baseScale * scale,
+      width,
+      height: width * ratio,
     };
-  };
-
-  const clampCropOffset = (nextX: number, nextY: number, scale: number) => {
-    const display = getCropDisplaySize(scale);
-    const minX = Math.min(0, pendingCircleOffset.x + AVATAR_CIRCLE_SIZE - display.width);
-    const minY = Math.min(0, pendingCircleOffset.y + AVATAR_CIRCLE_SIZE - display.height);
-    const maxX = pendingCircleOffset.x;
-    const maxY = pendingCircleOffset.y;
-    const x = Math.min(maxX, Math.max(minX, nextX));
-    const y = Math.min(maxY, Math.max(minY, nextY));
-    return { x, y };
   };
 
   const clampCircleOffsetByImage = (
@@ -267,6 +275,16 @@ export default function ProfilePage() {
     };
   };
 
+  const normalizeCropState = (
+    nextScale: number,
+    crop: { x: number; y: number },
+    circle: { x: number; y: number },
+  ) => {
+    const clampedCircle = clampCircleOffsetByImage(circle.x, circle.y, crop, nextScale);
+    const clampedCrop = clampCropOffsetByCircle(crop.x, crop.y, nextScale, clampedCircle);
+    return { clampedCircle, clampedCrop };
+  };
+
   useEffect(() => {
     if (!pendingAvatarPreviewUrl) return;
 
@@ -276,10 +294,7 @@ export default function ProfilePage() {
       const height = img.naturalHeight || 1;
       setPendingImageNaturalSize({ width, height });
       setPendingCropScale(1);
-      const initialCircle = {
-        x: Math.round((AVATAR_STAGE_WIDTH - AVATAR_CIRCLE_SIZE) / 2),
-        y: Math.round((AVATAR_STAGE_HEIGHT - AVATAR_CIRCLE_SIZE) / 2),
-      };
+      const initialCircle = getDefaultCircleOffset();
       setPendingCircleOffset(initialCircle);
 
       const baseScale = getCropBaseScale(width, height);
@@ -374,6 +389,11 @@ export default function ProfilePage() {
       const sw = Math.min(image.naturalWidth - sx, (AVATAR_CIRCLE_SIZE / display.width) * image.naturalWidth);
       const sh = Math.min(image.naturalHeight - sy, (AVATAR_CIRCLE_SIZE / display.height) * image.naturalHeight);
 
+      // Keep output strictly proportional: crop a centered square from the selected region.
+      const side = Math.min(sw, sh);
+      const sxSquare = sx + (sw - side) / 2;
+      const sySquare = sy + (sh - side) / 2;
+
       const canvas = document.createElement('canvas');
       canvas.width = AVATAR_OUTPUT_SIZE;
       canvas.height = AVATAR_OUTPUT_SIZE;
@@ -389,7 +409,7 @@ export default function ProfilePage() {
       ctx.arc(AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, AVATAR_OUTPUT_SIZE / 2, 0, Math.PI * 2);
       ctx.closePath();
       ctx.clip();
-      ctx.drawImage(image, sx, sy, sw, sh, 0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
+      ctx.drawImage(image, sxSquare, sySquare, side, side, 0, 0, AVATAR_OUTPUT_SIZE, AVATAR_OUTPUT_SIZE);
       ctx.restore();
 
       const blob = await new Promise<Blob | null>((resolve) => {
@@ -937,8 +957,10 @@ export default function ProfilePage() {
               onWheel={(e) => {
                 e.preventDefault();
                 const nextScale = Math.min(4, Math.max(1, Number((e.deltaY > 0 ? pendingCropScale - 0.1 : pendingCropScale + 0.1).toFixed(2))));
+                const normalized = normalizeCropState(nextScale, pendingCropOffset, pendingCircleOffset);
                 setPendingCropScale(nextScale);
-                setPendingCropOffset((prev) => clampCropOffset(prev.x, prev.y, nextScale));
+                setPendingCircleOffset(normalized.clampedCircle);
+                setPendingCropOffset(normalized.clampedCrop);
               }}
               onPointerDown={(e) => {
                 if (e.pointerType === 'mouse' && e.button !== 0) return;
@@ -979,15 +1001,15 @@ export default function ProfilePage() {
               }}
             >
               <img
-                src={pendingAvatarPreviewUrl}
-                alt="待上传头像预览"
-                className={`absolute top-0 left-0 ${pendingDragMode === 'image' ? 'cursor-grabbing' : 'cursor-grab'}`}
-                style={{
-                  width: getCropDisplaySize(pendingCropScale).width,
-                  height: getCropDisplaySize(pendingCropScale).height,
-                  transform: `translate(${pendingCropOffset.x}px, ${pendingCropOffset.y}px)`,
-                  transition: pendingDragMode === 'image' ? 'none' : 'transform 0.08s linear',
-                }}
+                  src={pendingAvatarPreviewUrl}
+                  alt="待上传头像预览"
+                  className={`absolute top-0 left-0 max-w-none ${pendingDragMode === 'image' ? 'cursor-grabbing' : 'cursor-grab'}`}
+                  style={{
+                    width: getCropDisplaySize(pendingCropScale).width,
+                    height: 'auto',
+                    transform: `translate(${pendingCropOffset.x}px, ${pendingCropOffset.y}px)`,
+                    transition: pendingDragMode === 'image' ? 'none' : 'transform 0.08s linear',
+                  }}
               />
               <div
                 className="pointer-events-none absolute border-2 border-white/90"
@@ -1002,6 +1024,10 @@ export default function ProfilePage() {
               />
             </div>
             <div className="text-center text-xs text-gray-500 mb-3">拖动圆形边框可移动选区，拖动图片可调整内容，滚轮缩放；边界已限制不会漏底</div>
+            <div className="flex items-center justify-between mb-2 text-xs text-gray-500">
+              <span>当前缩放：{Math.round(pendingCropScale * 100)}%</span>
+              <Button size="small" onClick={resetPendingCropView}>重置位置和大小</Button>
+            </div>
             <div className="flex justify-end gap-2">
               <Button onClick={clearPendingAvatar}>返回选择图片</Button>
               <Button type="primary" loading={avatarUploading} onClick={() => void handleConfirmAvatarUpload()}>
