@@ -23,6 +23,17 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				// Serve avatar files
+				Method:  http.MethodGet,
+				Path:    "/img/:file",
+				Handler: AvatarFileHandler(serverCtx),
+			},
+		},
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
 				// Health check
 				Method:  http.MethodGet,
 				Path:    "/health",
