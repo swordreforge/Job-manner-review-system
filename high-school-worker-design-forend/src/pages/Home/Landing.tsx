@@ -1,8 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
 import { RocketOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { motion } from 'framer-motion';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 
@@ -11,21 +10,25 @@ const features = [
     title: 'AI智能分析',
     desc: '基于DeepSeek大模型，提供精准的职业规划建议',
     icon: '🤖',
+    imageUrl: 'https://swordreforge.top/img/worker-show/jobs.webp',
   },
   {
     title: '职业图谱',
     desc: '可视化展示岗位晋升和转岗路径，了解职业发展可能性',
     icon: '🗺️',
+    imageUrl: 'https://swordreforge.top/img/worker-show/plan.webp',
   },
   {
     title: '简历优化',
     desc: '智能分析简历，针对目标岗位提供优化建议',
     icon: '📝',
+    imageUrl: 'https://swordreforge.top/img/worker-show/profile.webp',
   },
   {
     title: '模拟面试',
     desc: '大厂/国企双模式，AI实时反馈面试表现',
     icon: '🎯',
+    imageUrl: 'https://swordreforge.top/img/worker-show/start.webp',
   },
 ];
 
@@ -215,8 +218,7 @@ export default function Landing() {
       <div id="features" className="px-6 py-16 max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ margin: "-100px" }}
+          animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
@@ -224,6 +226,51 @@ export default function Landing() {
             核心<span className="text-orange-400">功能</span>
           </h2>
           <p className="text-gray-400">全方位助你职业成长</p>
+        </motion.div>
+
+        {/* 功能图片展示区域 */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="mb-12"
+        >
+          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 p-8 backdrop-blur-sm">
+            {/* 图片轮播 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {features.map((item, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5, delay: idx * 0.1 }}
+                  whileHover={{ 
+                    scale: 1.05,
+                    boxShadow: "0 20px 40px rgba(251, 146, 60, 0.2)"
+                  }}
+                  className="relative group overflow-hidden rounded-xl cursor-pointer"
+                >
+                  <motion.img
+                    src={item.imageUrl}
+                    alt={item.title}
+                    className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                  {/* 悬停时的覆盖层 */}
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4"
+                  >
+                    <div>
+                      <h3 className="text-xl font-semibold text-white mb-1">{item.title}</h3>
+                      <p className="text-sm text-gray-300">{item.desc}</p>
+                    </div>
+                  </motion.div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
@@ -238,13 +285,9 @@ export default function Landing() {
 
                       whileInView={{ opacity: 1, y: 0 }}
 
-                      viewport={{ margin: "-50px" }}
-
-                      transition={{ duration: 0.5, delay: idx * 0.1 }}
-
                       whileHover={{
 
-                        scale: 1.08,
+                        scale: 1.05,
 
                         boxShadow: [
 
@@ -344,7 +387,6 @@ export default function Landing() {
 
                         transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
 
-                        transitionHover={{ duration: 0.5 }}
 
                         className="text-4xl mb-4 relative z-10"
 
@@ -615,7 +657,6 @@ export default function Landing() {
                   transition={{ duration: 0.6, delay: 0.6 }}
                   whileHover={{ scale: 1.08 }}
                   whileTap={{ scale: 0.98 }}
-                  transition={{ type: "spring", stiffness: 400 }}
                 >
                   <Button
                     type="primary"
