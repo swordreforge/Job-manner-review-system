@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
-import { ReloadOutlined } from '@ant-design/icons';
+import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
 import type { Job, PromotionPath, TransferPath } from '../../types';
@@ -19,6 +19,7 @@ type GraphTooltipParam = {
 };
 
 export default function JobsPage() {
+  const chartRef = useRef<ReactECharts | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
@@ -27,6 +28,10 @@ export default function JobsPage() {
   const [transferPaths, setTransferPaths] = useState<TransferPath[]>([]);
   const [pathsLoading, setPathsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('graph');
+  const [activeCategory, setActiveCategory] = useState('tech');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  const popularJobs = ['前端工程师', 'Java 开发', '产品经理'];
 
   useEffect(() => {
     void loadJobs();
@@ -42,6 +47,25 @@ export default function JobsPage() {
       setTransferPaths([]);
     }
   }, [selectedJobId]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (activeTab === 'graph') {
+        chartRef.current?.getEchartsInstance().resize();
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'graph') return;
+    const timer = window.setTimeout(() => {
+      chartRef.current?.getEchartsInstance().resize();
+    }, 120);
+    return () => window.clearTimeout(timer);
+  }, [selectedJobId, sidebarCollapsed, activeTab]);
 
   const loadJobs = async () => {
     try {
@@ -197,7 +221,8 @@ export default function JobsPage() {
       id: selectedJob.id,
       name: selectedJob.name,
       category: 0,
-      symbolSize: 60,
+      // 缩小中心蓝色节点大小（ECharts graph 节点尺寸由 symbolSize 控制）
+      symbolSize: 48,
       itemStyle: { color: '#1890ff' },
     });
 
@@ -221,7 +246,7 @@ export default function JobsPage() {
             id: nextJob.id,
             name: labelText,
             category: 1,
-            symbolSize: 50,
+            symbolSize: 80,
             itemStyle: { color: '#52c41a' },
           });
         }
@@ -254,7 +279,7 @@ export default function JobsPage() {
           id: transferPath.toJob.id,
           name: transferPath.toJob.name,
           category: 1,
-          symbolSize: 45,
+          symbolSize: 72,
           itemStyle: { color: '#faad14' },
         });
       }
@@ -265,7 +290,7 @@ export default function JobsPage() {
           id: transferPath.fromJob.id,
           name: transferPath.fromJob.name,
           category: 1,
-          symbolSize: 40,
+          symbolSize: 64,
           itemStyle: { color: '#faad14' },
         });
         
@@ -335,6 +360,8 @@ export default function JobsPage() {
             { name: '发展路径' },
           ],
           roam: true,
+          center: ['50%', '50%'],
+          zoom: 1.25,
           label: {
             show: true,
             position: 'bottom',
@@ -343,8 +370,8 @@ export default function JobsPage() {
             width: 2,
           },
           force: {
-            repulsion: 300,
-            edgeLength: [100, 200],
+            repulsion: 420,
+            edgeLength: [130, 240],
           },
           emphasis: {
             focus: 'adjacency',
@@ -363,151 +390,320 @@ export default function JobsPage() {
     return '#ff4d4f';
   };
 
+  const handleQuickPick = (jobName: string) => {
+    const target = jobs.find((job) => {
+      const name = job.name ?? '';
+      return name.includes(jobName) || jobName.includes(name);
+    });
+
+    if (!target) {
+      message.info(`未找到岗位: ${jobName}`);
+      return;
+    }
+
+    setSelectedJobId(target.id);
+    message.success(`已选择: ${target.name}`);
+  };
+
   return (
-    <div className="min-h-screen relative z-10 p-4">
-      <Card title="岗位发展路径图谱" className="mb-4">
-        <div className="flex gap-4 items-center">
-          <Select
-            style={{ width: 300 }}
-            placeholder="选择岗位"
-            loading={loading}
-            value={selectedJobId}
-            onChange={setSelectedJobId}
-            allowClear
-            options={jobs.map((job) => ({
-              value: job.id,
-              label: `${job.name ?? ''}${job.industry ? ` (${job.industry})` : ''}`,
-            }))}
+    <div className="min-h-screen relative z-10 p-4 md:p-6">
+      <div className="w-full space-y-4">
+        <Card title="岗位发展路径图谱" className="shadow-sm">
+          <Tabs
+            activeKey={activeCategory}
+            onChange={setActiveCategory}
+            className="mb-3"
+            items={[
+              { key: 'tech', label: '技术研发' },
+              { key: 'design', label: '产品设计' },
+              { key: 'ops', label: '运营' },
+              { key: 'sales', label: '销售' },
+            ]}
           />
-          <Button
-            icon={<ReloadOutlined />}
-            onClick={handleRefresh}
-            loading={pathsLoading}
-            disabled={!selectedJobId}
-          >
-            刷新
-          </Button>
-        </div>
-      </Card>
 
-      {!selectedJobId && (
-        <Card>
-          <Empty description="请选择一个岗位查看其发展路径" />
+          <div className="flex flex-wrap gap-3 items-center">
+            <Select
+              style={{ width: 320 }}
+              placeholder="选择岗位"
+              loading={loading}
+              value={selectedJobId}
+              onChange={setSelectedJobId}
+              allowClear
+              options={jobs.map((job) => ({
+                value: job.id,
+                label: `${job.name ?? ''}${job.industry ? ` (${job.industry})` : ''}`,
+              }))}
+            />
+            <Button
+              icon={<ReloadOutlined />}
+              onClick={handleRefresh}
+              loading={pathsLoading}
+              disabled={!selectedJobId}
+            >
+              刷新
+            </Button>
+          </div>
+
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-500">热门推荐:</span>
+            {popularJobs.map((name) => {
+              const isActive = selectedJob ? (selectedJob.name ?? '').includes(name) : false;
+              return (
+                <Tag
+                  key={name}
+                  color={isActive ? 'blue' : 'default'}
+                  className="cursor-pointer px-3 py-1"
+                  onClick={() => handleQuickPick(name)}
+                >
+                  {name}
+                </Tag>
+              );
+            })}
+          </div>
         </Card>
-      )}
 
-      {selectedJob && (
-        <div className="flex gap-4">
-          {/* 左侧：岗位详情 */}
-          <Card className="w-80" title="岗位详情">
-            <Descriptions column={1} size="small">
-              <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
-              <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
-              <Descriptions.Item label="公司">{selectedJob.company || '-'}</Descriptions.Item>
-              <Descriptions.Item label="地点">{selectedJob.location || '-'}</Descriptions.Item>
-              <Descriptions.Item label="薪资范围">{selectedJob.salaryRange || '-'}</Descriptions.Item>
-            </Descriptions>
-            {selectedJob.skills && selectedJob.skills.length > 0 && (
-              <div className="mt-4">
-                <div className="text-gray-600 text-sm mb-2">专业技能：</div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedJob.skills.map((skill, index) => (
-                    <Tag key={index} color="blue">
-                      {skill}
-                    </Tag>
-                  ))}
-                </div>
+        {!selectedJobId && (
+          <Card className="min-h-125 overflow-hidden">
+            <div className="relative min-h-125 rounded-xl border border-slate-200 bg-linear-to-b from-slate-50 to-white">
+              <div className="pointer-events-none absolute inset-0 opacity-40">
+                <div className="absolute left-[15%] top-[20%] h-2 w-2 rounded-full bg-slate-300" />
+                <div className="absolute left-[30%] top-[35%] h-2 w-2 rounded-full bg-slate-300" />
+                <div className="absolute right-[22%] top-[25%] h-2 w-2 rounded-full bg-slate-300" />
+                <div className="absolute right-[35%] bottom-[28%] h-2 w-2 rounded-full bg-slate-300" />
+                <div className="absolute left-[28%] bottom-[24%] h-2 w-2 rounded-full bg-slate-300" />
+                <div className="absolute left-[16%] top-[21%] h-px w-32 rotate-12 bg-slate-200" />
+                <div className="absolute left-[30%] top-[35%] h-px w-40 -rotate-12 bg-slate-200" />
+                <div className="absolute right-[35%] bottom-[28%] h-px w-28 rotate-6 bg-slate-200" />
               </div>
-            )}
-            {selectedJob.certificates && selectedJob.certificates.length > 0 && (
-              <div className="mt-4">
-                <div className="text-gray-600 text-sm mb-2">证书要求：</div>
-                <div className="flex flex-wrap gap-2">
-                  {selectedJob.certificates.map((cert, index) => (
-                    <Tag key={index} color="green">
-                      {cert}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-            )}
-          </Card>
 
-          {/* 右侧：路径图谱 */}
-          <Card className="flex-1">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-medium">发展路径图谱</h3>
-              <Button 
-                type="primary" 
-                icon={<ReloadOutlined />}
-                loading={pathsLoading}
-                onClick={() => {
-                  void handleGenerateAllPaths();
-                }}
-              >
-                AI智能分析
-              </Button>
-            </div>
-            <Tabs
-              activeKey={activeTab}
-              onChange={setActiveTab}
-              items={[
-                {
-                  key: 'graph',
-                  label: '图谱视图',
-                  children: (
-                    <div>
-                      {pathsLoading ? (
-                        <div className="py-8 flex justify-center">
-                          <Spin size="large" />
-                        </div>
-                      ) : promotionPath || transferPaths.length > 0 ? (
-                        <ReactECharts option={getGraphOption()} style={{ height: '500px' }} />
-                      ) : (
-                        <Empty description="暂无发展路径数据" />
-                      )}
+              <div className="relative z-10 flex min-h-125 flex-col items-center justify-center px-6 text-center">
+                <h3 className="text-2xl font-semibold text-slate-800">选择一个岗位，探索完整发展路径</h3>
+                <p className="mt-3 max-w-2xl text-slate-500">
+                  你可以通过上方筛选快速定位岗位，系统将自动生成岗位图谱、晋升方向与换岗机会。
+                </p>
+                <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 md:grid-cols-3">
+                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
+                    <div className="flex items-center gap-2 font-medium text-slate-700">
+                      <ApartmentOutlined />
+                      探索完整技能栈
                     </div>
-                  ),
-                },
-                {
-                  key: 'promotion',
-                  label: '晋升路径',
-                  children: (
-                    <div>
-                      {pathsLoading ? (
-                        <div className="py-8 flex justify-center">
-                          <Spin size="large" />
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
+                    <div className="flex items-center gap-2 font-medium text-slate-700">
+                      <RiseOutlined />
+                      清晰的晋升路线
+                    </div>
+                  </div>
+                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
+                    <div className="flex items-center gap-2 font-medium text-slate-700">
+                      <BulbOutlined />
+                      核心竞争力分析
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        )}
+
+        {selectedJob && (
+          <div className="xl:relative xl:left-1/2 xl:w-[min(1400px,calc(100vw-2rem))] xl:-translate-x-1/2 xl:px-2 2xl:w-[min(1440px,calc(100vw-3rem))]">
+          <div className={`flex flex-col ${sidebarCollapsed ? 'xl:gap-0' : 'xl:gap-4'} xl:flex-row`}>
+            {/* 左侧：岗位详情 */}
+            <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'xl:w-0 xl:opacity-0' : 'xl:w-72 xl:shrink-0 xl:opacity-100 xl:-ml-2'}`}>
+            <Card className="xl:sticky xl:top-4 h-fit" title="岗位详情">
+              <Descriptions column={1} size="small">
+                <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
+                <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
+                <Descriptions.Item label="公司">{selectedJob.company || '-'}</Descriptions.Item>
+                <Descriptions.Item label="地点">{selectedJob.location || '-'}</Descriptions.Item>
+                <Descriptions.Item label="薪资范围">{selectedJob.salaryRange || '-'}</Descriptions.Item>
+              </Descriptions>
+              {selectedJob.skills && selectedJob.skills.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-gray-600 text-sm mb-2">专业技能：</div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedJob.skills.map((skill, index) => (
+                      <Tag key={index} color="blue">
+                        {skill}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {selectedJob.certificates && selectedJob.certificates.length > 0 && (
+                <div className="mt-4">
+                  <div className="text-gray-600 text-sm mb-2">证书要求：</div>
+                  <div className="flex flex-wrap gap-2">
+                    {selectedJob.certificates.map((cert, index) => (
+                      <Tag key={index} color="green">
+                        {cert}
+                      </Tag>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </Card>
+            </div>
+
+            {/* 右侧：路径图谱 */}
+            <div className="min-w-0 flex-1">
+            <Card className="min-h-170 w-full [&_.ant-card-body]:flex [&_.ant-card-body]:h-full [&_.ant-card-body]:flex-col">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-medium">发展路径图谱</h3>
+                <div className="flex items-center gap-2">
+                  <Button
+                    icon={sidebarCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                    onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                  >
+                    {sidebarCollapsed ? '展开岗位详情' : '收起岗位详情'}
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    loading={pathsLoading}
+                    onClick={() => {
+                      void handleGenerateAllPaths();
+                    }}
+                  >
+                    AI智能分析
+                  </Button>
+                </div>
+              </div>
+              <Tabs
+                className="flex-1 flex flex-col"
+                activeKey={activeTab}
+                onChange={setActiveTab}
+                items={[
+                  {
+                    key: 'graph',
+                    label: '图谱视图',
+                    children: (
+                      <div className="flex w-full flex-1 items-center justify-center min-h-[520px]">
+                        {pathsLoading ? (
+                          <div className="py-8 flex justify-center items-center w-full">
+                            <Spin size="large" />
+                          </div>
+                        ) : promotionPath || transferPaths.length > 0 ? (
+                          <div className="flex h-full min-h-[520px] w-full items-center justify-center">
+                            <ReactECharts
+                              ref={chartRef}
+                              option={getGraphOption()}
+                              style={{ height: '100%', minHeight: '520px', width: '100%' }}
+                              onChartReady={(chart) => chart.resize()}
+                            />
+                          </div>
+                        ) : (
+                          <div className="flex w-full min-h-[520px] items-center justify-center">
+                            <Empty description="暂无发展路径数据" />
+                          </div>
+                        )}
+                      </div>
+                    ),
+                  },
+                  {
+                    key: 'promotion',
+                    label: '晋升路径',
+                    children: (
+                      <div className="min-h-150">
+                        {pathsLoading ? (
+                          <div className="py-8 flex justify-center">
+                            <Spin size="large" />
+                          </div>
+                        ) : promotionPath?.nextJobs && promotionPath.nextJobs.length > 0 ? (
+                          <List
+                              dataSource={promotionPath.nextJobs}
+                              renderItem={(nextJob) => (
+                                <List.Item>
+                                  <List.Item.Meta
+                                    title={nextJob.name}
+                                    description={
+                                      <div>
+                                        {nextJob.requiredSkills && nextJob.requiredSkills.length > 0 && (
+                                          <div className="mt-2">
+                                            <div className="text-gray-600 text-sm">所需技能：</div>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {nextJob.requiredSkills.map((skill, idx) => (
+                                                <Tag key={idx}>{skill}</Tag>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {nextJob.learningPath && (
+                                          <div className="mt-2">
+                                            <div className="text-gray-600 text-sm">推荐理由：</div>
+                                            <div className="mt-1 text-sm text-gray-500">
+                                              {nextJob.learningPath}
+                                            </div>
+                                          </div>
+                                        )}
+                                        {nextJob.matchScore && nextJob.matchScore > 0 && (
+                                          <div className="mt-2">
+                                            <Tag color="blue">匹配度: {nextJob.matchScore > 1 ? Math.round(nextJob.matchScore) : Math.round(nextJob.matchScore * 100)}%</Tag>
+                                          </div>
+                                        )}
+                                      </div>
+                                    }
+                                  />
+                                </List.Item>
+                              )}
+                            />
+                          ) : (
+                            <div className="min-h-150 flex items-center justify-center">
+                              <Empty description="暂无晋升路径" />
+                            </div>
+                          )}
                         </div>
-                      ) : promotionPath?.nextJobs && promotionPath.nextJobs.length > 0 ? (
-                        <List
-                            dataSource={promotionPath.nextJobs}
-                            renderItem={(nextJob) => (
+                      ),
+                  },
+                  {
+                    key: 'transfer',
+                    label: '换岗路径',
+                    children: (
+                      <div className="min-h-150">
+                        {pathsLoading ? (
+                          <div className="py-8 flex justify-center">
+                            <Spin size="large" />
+                          </div>
+                        ) : transferPaths.length > 0 ? (
+                          <List
+                            dataSource={transferPaths.filter(tp => tp.toJob.id !== selectedJob.id)}
+                            renderItem={(transferPath) => (
                               <List.Item>
                                 <List.Item.Meta
-                                  title={nextJob.name}
+                                  title={
+                                    <div className="flex items-center gap-2">
+                                      <span>{transferPath.toJob.name}</span>
+                                      <Tag color={getScoreColor(transferPath.matchScore)}>
+                                        匹配度: {transferPath.matchScore > 1 ? Math.round(transferPath.matchScore) : Math.round(transferPath.matchScore * 100)}%
+                                      </Tag>
+                                    </div>
+                                  }
                                   description={
                                     <div>
-                                      {nextJob.requiredSkills && nextJob.requiredSkills.length > 0 && (
+                                      {transferPath.transferSkills && transferPath.transferSkills.length > 0 && (
                                         <div className="mt-2">
-                                          <div className="text-gray-600 text-sm">所需技能：</div>
+                                          <div className="text-gray-600 text-sm">可迁移技能：</div>
                                           <div className="flex flex-wrap gap-1 mt-1">
-                                            {nextJob.requiredSkills.map((skill, idx) => (
+                                            {transferPath.transferSkills.map((skill, idx) => (
                                               <Tag key={idx}>{skill}</Tag>
                                             ))}
                                           </div>
                                         </div>
                                       )}
-                                      {nextJob.learningPath && (
+                                      {transferPath.learningPath && transferPath.learningPath.length > 0 && (
                                         <div className="mt-2">
-                                          <div className="text-gray-600 text-sm">推荐理由：</div>
-                                          <div className="mt-1 text-sm text-gray-500">
-                                            {nextJob.learningPath}
+                                          <div className="text-gray-600 text-sm">学习路径：</div>
+                                          <div className="mt-1">
+                                            {String(transferPath.learningPath)
+                                              .split(/[\n；;]/)
+                                              .filter((step) => step.trim().length > 0)
+                                              .map((step: string, idx: number) => (
+                                                <div key={idx} className="text-sm text-gray-500">
+                                                  {idx + 1}. {step.trim()}
+                                                </div>
+                                              ))}
                                           </div>
-                                        </div>
-                                      )}
-                                      {nextJob.matchScore && nextJob.matchScore > 0 && (
-                                        <div className="mt-2">
-                                          <Tag color="blue">匹配度: {nextJob.matchScore > 1 ? Math.round(nextJob.matchScore) : Math.round(nextJob.matchScore * 100)}%</Tag>
                                         </div>
                                       )}
                                     </div>
@@ -517,78 +713,21 @@ export default function JobsPage() {
                             )}
                           />
                         ) : (
-                          <Empty description="暂无晋升路径" />
+                          <div className="min-h-150 flex items-center justify-center">
+                            <Empty description="暂无换岗路径" />
+                          </div>
                         )}
                       </div>
                     ),
-                },
-                {
-                  key: 'transfer',
-                  label: '换岗路径',
-                  children: (
-                    <div>
-                      {pathsLoading ? (
-                        <div className="py-8 flex justify-center">
-                          <Spin size="large" />
-                        </div>
-                      ) : transferPaths.length > 0 ? (
-                        <List
-                          dataSource={transferPaths.filter(tp => tp.toJob.id !== selectedJob.id)}
-                          renderItem={(transferPath) => (
-                            <List.Item>
-                              <List.Item.Meta
-                                title={
-                                  <div className="flex items-center gap-2">
-                                    <span>{transferPath.toJob.name}</span>
-                                    <Tag color={getScoreColor(transferPath.matchScore)}>
-                                      匹配度: {transferPath.matchScore > 1 ? Math.round(transferPath.matchScore) : Math.round(transferPath.matchScore * 100)}%
-                                    </Tag>
-                                  </div>
-                                }
-                                description={
-                                  <div>
-                                    {transferPath.transferSkills && transferPath.transferSkills.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-gray-600 text-sm">可迁移技能：</div>
-                                        <div className="flex flex-wrap gap-1 mt-1">
-                                          {transferPath.transferSkills.map((skill, idx) => (
-                                            <Tag key={idx}>{skill}</Tag>
-                                          ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                    {transferPath.learningPath && transferPath.learningPath.length > 0 && (
-                                      <div className="mt-2">
-                                        <div className="text-gray-600 text-sm">学习路径：</div>
-                                        <div className="mt-1">
-                                          {String(transferPath.learningPath)
-                                            .split(/[\n；;]/)
-                                            .filter((step) => step.trim().length > 0)
-                                            .map((step: string, idx: number) => (
-                                              <div key={idx} className="text-sm text-gray-500">
-                                                {idx + 1}. {step.trim()}
-                                              </div>
-                                            ))}
-                                        </div>
-                                      </div>
-                                    )}
-                                  </div>
-                                }
-                              />
-                            </List.Item>
-                          )}
-                        />
-                      ) : (
-                        <Empty description="暂无换岗路径" />
-                      )}
-                    </div>
-                  ),
-                },
-              ]}
-            />
-          </Card>
-        </div>
-      )}
+                  },
+                ]}
+              />
+            </Card>
+            </div>
+          </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

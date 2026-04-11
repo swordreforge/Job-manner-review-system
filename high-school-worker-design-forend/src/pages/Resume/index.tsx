@@ -1,11 +1,22 @@
 import { useState } from 'react';
 import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
-import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined } from '@ant-design/icons';
+import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { studentApi } from '../../api';
 import type { Student, ResumeHistoryRecord } from '../../types';
 
 export default function ResumePage() {
+  type ApiErrorLike = {
+    response?: {
+      status?: number;
+      data?: {
+        msg?: string;
+        message?: string;
+      };
+    };
+    message?: string;
+  };
+
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -27,19 +38,21 @@ export default function ResumePage() {
   const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(null);
 
   // 加载历史记录
-  const loadHistory = async () => {
+  const loadHistory = async (page = historyPage) => {
     setHistoryLoading(true);
     try {
-      const response = await studentApi.getResumeHistory({ page: historyPage, pageSize: historyPageSize });
+      const response = await studentApi.getResumeHistory({ page, pageSize: historyPageSize });
       if (response.code === 0) {
+        setHistoryPage(page);
         setHistoryList(response.data.list);
         setHistoryTotal(response.data.total);
       } else {
         message.error(response.msg || '加载历史记录失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorLike;
       console.error('Load history error:', err);
-      if (err.response?.status === 401) {
+      if (apiErr.response?.status === 401) {
         message.error('请先登录');
         return;
       }
@@ -52,7 +65,7 @@ export default function ResumePage() {
   // 打开历史记录
   const handleOpenHistory = () => {
     setHistoryVisible(true);
-    loadHistory();
+    void loadHistory(1);
   };
 
   // 查看详情
@@ -65,7 +78,7 @@ export default function ResumePage() {
       } else {
         message.error(response.msg || '加载详情失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Load detail error:', err);
       message.error('加载详情失败');
     }
@@ -77,11 +90,11 @@ export default function ResumePage() {
       const response = await studentApi.deleteResumeHistory(id);
       if (response.code === 0) {
         message.success('删除成功');
-        loadHistory();
+        await loadHistory(historyPage);
       } else {
         message.error(response.msg || '删除失败');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Delete history error:', err);
       message.error('删除失败');
     }
@@ -173,18 +186,19 @@ export default function ResumePage() {
         setError(response.msg || '解析失败，请重试');
         message.error(response.msg || '解析失败，请重试');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorLike;
       console.error('Upload error:', err);
       let errorMsg = '上传失败，请检查网络连接';
 
-      if (err.response?.data) {
-        errorMsg = err.response.data.msg || err.response.data.message || errorMsg;
-      } else if (err.message) {
-        errorMsg = err.message;
+      if (apiErr.response?.data) {
+        errorMsg = apiErr.response.data.msg || apiErr.response.data.message || errorMsg;
+      } else if (apiErr.message) {
+        errorMsg = apiErr.message;
       }
 
       // 特殊处理 401 错误
-      if (err.response?.status === 401) {
+      if (apiErr.response?.status === 401) {
         errorMsg = '请先登录后再上传简历';
         message.error(errorMsg);
         setTimeout(() => {
@@ -223,70 +237,119 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="min-h-screen relative z-10 p-4">
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">简历解析</h1>
-        <Button
-          icon={<HistoryOutlined />}
-          onClick={handleOpenHistory}
-        >
-          查看历史
-        </Button>
-      </div>
-
-      <Steps
-        current={parsed ? 2 : parsing ? 1 : 0}
-        className="mb-6"
-        items={[
-          { title: '上传简历', icon: <UploadOutlined /> },
-          { title: 'AI 解析', icon: <FileTextOutlined /> },
-          { title: '优化建议', icon: <CheckCircleOutlined /> },
-        ]}
-      />
-
-      {!parsed ? (
-        <Card title="上传简历">
-          <Upload
-            fileList={fileList}
-            onChange={({ fileList }) => setFileList(fileList)}
-            beforeUpload={() => false}
-            accept=".pdf,.docx"
-            maxCount={1}
-            onRemove={() => setError(null)}
-          >
-            <Button icon={<UploadOutlined />}>点击选择文件</Button>
-          </Upload>
-          <p className="text-gray-500 text-sm mt-2">
-            支持 PDF、DOCX 格式，文件大小不超过 10MB
-          </p>
-
-          {progress > 0 && progress < 100 && (
-            <Progress
-              percent={progress}
-              status="active"
-              className="mt-4"
-              format={() => parsing ? 'AI 解析中...' : '上传中...'}
-            />
-          )}
-
-          {error && (
-            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
+    <div className="min-h-screen relative z-10 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">简历解析</h1>
           <Button
-            type="primary"
-            block
-            className="mt-4"
-            onClick={handleUpload}
-            loading={uploading || parsing}
-            disabled={fileList.length === 0}
+            icon={<HistoryOutlined />}
+            onClick={handleOpenHistory}
           >
-            {parsing ? 'AI 解析中...' : uploading ? '上传中...' : '开始解析'}
+            查看历史
           </Button>
-        </Card>
-      ) : (
+        </div>
+
+        <div className="max-w-4xl mx-auto">
+          <Steps
+            current={parsed ? 2 : parsing ? 1 : 0}
+            className="mb-6"
+            items={[
+              { title: '上传简历', icon: <UploadOutlined /> },
+              { title: 'AI 解析', icon: <FileTextOutlined /> },
+              { title: '优化建议', icon: <CheckCircleOutlined /> },
+            ]}
+          />
+
+          {!parsed ? (
+            <>
+              <Card title="上传简历" className="shadow-sm">
+                <Upload.Dragger
+                  fileList={fileList}
+                  onChange={({ fileList }) => setFileList(fileList)}
+                  beforeUpload={() => false}
+                  accept=".pdf,.docx"
+                  maxCount={1}
+                  onRemove={() => setError(null)}
+                  className="[&.ant-upload-wrapper_.ant-upload-drag]:border-2! [&.ant-upload-wrapper_.ant-upload-drag]:border-dashed! [&.ant-upload-wrapper_.ant-upload-drag]:border-slate-300! [&.ant-upload-wrapper_.ant-upload-drag]:bg-slate-50!"
+                >
+                  <p className="ant-upload-drag-icon mb-3!">
+                    <InboxOutlined className="text-5xl text-blue-500" />
+                  </p>
+                  <p className="ant-upload-text text-base font-medium">点击上传，或将文件拖拽到此处</p>
+                  <p className="ant-upload-hint mt-2">支持 PDF、DOCX 格式，文件大小不超过 10MB</p>
+                </Upload.Dragger>
+
+                {progress > 0 && progress < 100 && (
+                  <Progress
+                    percent={progress}
+                    status="active"
+                    className="mt-4"
+                    format={() => parsing ? 'AI 解析中...' : '上传中...'}
+                  />
+                )}
+
+                {error && (
+                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                )}
+
+                <div className="mt-5 flex justify-center">
+                  <Button
+                    type="primary"
+                    className="px-8"
+                    onClick={handleUpload}
+                    loading={uploading || parsing}
+                    disabled={fileList.length === 0}
+                  >
+                    {parsing ? 'AI 解析中...' : uploading ? '上传中...' : '开始解析'}
+                  </Button>
+                </div>
+              </Card>
+
+              <Card className="mt-4" size="small">
+                <div className="flex flex-wrap items-center gap-3 text-sm">
+                  <span className="text-gray-500">示例文档：</span>
+                  <Button type="link" className="px-0!" onClick={() => message.info('示例简历.pdf 下载功能开发中')}>
+                    尝试解析示例简历.pdf
+                  </Button>
+                  <Button type="link" className="px-0!" onClick={() => message.info('示例简历.docx 下载功能开发中')}>
+                    尝试解析示例简历.docx
+                  </Button>
+                </div>
+              </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+                <Card size="small">
+                  <div className="flex items-start gap-3">
+                    <BulbOutlined className="text-2xl text-violet-500" />
+                    <div>
+                      <div className="font-medium">智能提取</div>
+                      <div className="text-sm text-gray-500">自动识别教育背景、技能与项目经历</div>
+                    </div>
+                  </div>
+                </Card>
+                <Card size="small">
+                  <div className="flex items-start gap-3">
+                    <SafetyCertificateOutlined className="text-2xl text-emerald-500" />
+                    <div>
+                      <div className="font-medium">安全隐私</div>
+                      <div className="text-sm text-gray-500">上传链路受控，过程仅用于当前解析任务</div>
+                    </div>
+                  </div>
+                </Card>
+                <Card size="small">
+                  <div className="flex items-start gap-3">
+                    <RocketOutlined className="text-2xl text-orange-500" />
+                    <div>
+                      <div className="font-medium">优化建议</div>
+                      <div className="text-sm text-gray-500">生成可执行的简历完善建议，提升竞争力</div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </>
+          ) : (
         <Result
                     status="success"
                     title="简历解析完成"
@@ -515,7 +578,8 @@ export default function ResumePage() {
             )}
           </div>
         </Result>
-      )}
+          )}
+        </div>
 
       {/* 历史记录弹窗 */}
       <Modal
@@ -539,8 +603,7 @@ export default function ResumePage() {
             pageSize: historyPageSize,
             total: historyTotal,
             onChange: (page) => {
-              setHistoryPage(page);
-              loadHistory();
+              void loadHistory(page);
             },
           }}
           renderItem={(item) => (
@@ -709,6 +772,7 @@ export default function ResumePage() {
           </div>
         )}
       </Drawer>
+      </div>
     </div>
   );
 }

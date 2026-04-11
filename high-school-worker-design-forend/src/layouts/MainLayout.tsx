@@ -62,7 +62,9 @@ export default function MainLayout() {
   return (
     <div className="min-h-screen">
       <div className={`relative z-10 ${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
-        <Outlet />
+        <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
+          <Outlet />
+        </div>
       </div>
       <TabBar
         activeKey={activeTab}
