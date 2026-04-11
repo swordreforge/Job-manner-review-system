@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>学生管理</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+        }
+        .header h1 {
+            color: #2d3748;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .nav {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .nav a {
+            text-decoration: none;
+            color: #4a5568;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .nav a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        tr:hover {
+            background: #f7fafc;
+        }
+        .btn {
+            text-decoration: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #fc8181 0%, #f56565 100%);
+            color: white;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-box {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        .stat-box h3 {
+            font-size: 2em;
+            margin-bottom: 5px;
+        }
+        .stat-box p {
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>👨‍🎓 学生管理</h1>
+            <div class="nav">
+                <a href="/">系统监控</a>
+                <a href="/students">学生管理</a>
+                <a href="/jobs">职位管理</a>
+                <a href="/interviews">面试管理</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="stats">
+                        <div class="stat-box">
+                            <h3>{{ total_count }}</h3>
+                            <p>总学生数</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3>{{ avg_completeness_formatted }}</h3>
+                            <p>平均完整度</p>
+                        </div>
+                        <div class="stat-box">
+                            <h3>{{ avg_competitiveness_formatted }}</h3>
+                            <p>平均竞争力</p>
+                        </div>
+                    </div>            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>姓名</th>
+                        <th>学历</th>
+                        <th>专业</th>
+                        <th>毕业年份</th>
+                        <th>完整度</th>
+                        <th>竞争力</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr>
+                        <td>{{ student.id }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.education }}</td>
+                                            <td>{{ student.major }}</td>
+                                            <td>{{ student.graduation_year }}</td>
+                        <td>{{ student.completeness_formatted }}</td>
+                        <td>{{ student.competitiveness_formatted }}</td>
+                        <td>
+                            <a href="/students/edit/{{ student.id }}" class="btn btn-sm btn-primary">编辑</a>
+                            <a href="/students/delete/{{ student.id }}" class="btn btn-sm btn-danger" onclick="return confirm('确定要删除吗？')">删除</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% if students.is_empty() %}
+                    <tr><td colspan="8" style="text-align:center; padding: 30px;">暂无学生数据</td></tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>
