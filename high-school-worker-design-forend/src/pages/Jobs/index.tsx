@@ -9,8 +9,8 @@ type GraphLink = {
   source: number;
   target: number;
   name: string;
-  lineStyle: { color: string; width: number; type?: 'dashed' };
-  label: { show: boolean; formatter: string };
+  lineStyle: { color: string; width: number; type?: 'solid' | 'dashed'; curveness?: number };
+  label?: { show: boolean; formatter: string };
 };
 
 type GraphTooltipParam = {
