@@ -1,7 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
 import { RocketOutlined, RightOutlined, CheckOutlined } from '@ant-design/icons';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 
@@ -66,6 +67,7 @@ const comments = [
 
 export default function Landing() {
   const navigate = useNavigate();
+  const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
 
   return (
     <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}>
@@ -236,38 +238,51 @@ export default function Landing() {
           className="mb-12"
         >
           <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 p-8 backdrop-blur-sm">
-            {/* 图片轮播 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {features.map((item, idx) => (
+            {/* 单张大图展示 */}
+            <div className="relative h-64 md:h-80 w-full overflow-hidden rounded-xl">
+              <AnimatePresence mode="wait">
                 <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  whileHover={{ 
-                    scale: 1.05,
-                    boxShadow: "0 20px 40px rgba(251, 146, 60, 0.2)"
-                  }}
-                  className="relative group overflow-hidden rounded-xl cursor-pointer"
+                  key={hoveredFeatureIndex}
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute inset-0"
                 >
                   <motion.img
-                    src={item.imageUrl}
-                    alt={item.title}
-                    className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
+                    src={features[hoveredFeatureIndex].imageUrl}
+                    alt={features[hoveredFeatureIndex].title}
+                    className="w-full h-full object-cover"
+                    whileHover={{ scale: 1.05 }}
+                    transition={{ duration: 0.3 }}
                   />
-                  {/* 悬停时的覆盖层 */}
+                  {/* 功能信息覆盖层 */}
                   <motion.div
                     initial={{ opacity: 0 }}
-                    whileHover={{ opacity: 1 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-4"
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.3, delay: 0.2 }}
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6"
                   >
                     <div>
-                      <h3 className="text-xl font-semibold text-white mb-1">{item.title}</h3>
-                      <p className="text-sm text-gray-300">{item.desc}</p>
+                      <h3 className="text-2xl font-semibold text-white mb-2">{features[hoveredFeatureIndex].title}</h3>
+                      <p className="text-base text-gray-300">{features[hoveredFeatureIndex].desc}</p>
                     </div>
                   </motion.div>
                 </motion.div>
+              </AnimatePresence>
+            </div>
+            {/* 图片指示器 */}
+            <div className="flex justify-center gap-2 mt-4">
+              {features.map((_, idx) => (
+                <motion.button
+                  key={idx}
+                  onClick={() => setHoveredFeatureIndex(idx)}
+                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                    idx === hoveredFeatureIndex ? 'bg-orange-400 w-6' : 'bg-gray-600'
+                  }`}
+                  whileHover={{ scale: 1.2 }}
+                  whileTap={{ scale: 0.9 }}
+                />
               ))}
             </div>
           </div>
@@ -320,6 +335,8 @@ export default function Landing() {
                         scale: { duration: 0.3, type: "spring", stiffness: 400 }
 
                       }}
+
+                      onMouseEnter={() => setHoveredFeatureIndex(idx)}
 
                       className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
 
