@@ -1,4 +1,4 @@
-import { Card, Avatar, Button, message, Tag, Modal } from 'antd';
+import { Card, Avatar, Button, message, Tag, Modal, Progress } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -93,6 +93,22 @@ export default function ProfilePage() {
     return Math.round((score / totalFields) * 100);
   };
 
+  const getCompletenessItems = (student: Student | null) => {
+    return [
+      { key: 'name', label: '姓名', completed: !!student?.name, targetSection: 'basic' },
+      { key: 'education', label: '学历', completed: !!student?.education, targetSection: 'basic' },
+      { key: 'major', label: '专业', completed: !!student?.major, targetSection: 'basic' },
+      { key: 'graduationYear', label: '毕业年份', completed: !!student?.graduationYear, targetSection: 'basic' },
+      { key: 'skills', label: '技能信息', completed: !!student?.skills?.length, targetSection: 'skills' },
+      { key: 'certificates', label: '证书信息', completed: !!student?.certificates?.length, targetSection: 'certificates' },
+      { key: 'internship', label: '实习经历', completed: !!student?.internship?.length, targetSection: 'internship' },
+    ];
+  };
+
+  const completenessItems = getCompletenessItems(studentData);
+  const completedCount = completenessItems.filter((item) => item.completed).length;
+  const completenessPercent = calculateCompleteness(studentData);
+
   return (
     <div className="min-h-screen relative z-10 p-4">
       {/* 用户信息卡片 */}
@@ -141,15 +157,6 @@ export default function ProfilePage() {
       <Card 
         title="学生资料"
         className="mb-4"
-        extra={
-          <Button 
-            type="link" 
-            icon={<EditOutlined />} 
-            onClick={handleEditStudent}
-          >
-            {studentData ? '编辑' : '创建'}
-          </Button>
-        }
       >
         {loadingStudent ? (
           <div className="text-center py-8 text-gray-500">加载中...</div>
@@ -219,6 +226,36 @@ export default function ProfilePage() {
             </Button>
           </div>
         )}
+      </Card>
+
+      <Card title="资料完成度明细" className="mb-4">
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-gray-600">当前完成进度</span>
+            <span className="font-medium">{completedCount}/{completenessItems.length}</span>
+          </div>
+          <Progress percent={completenessPercent} status={completenessPercent === 100 ? 'success' : 'active'} />
+        </div>
+        <div className="space-y-2">
+          {completenessItems.map((item) => (
+            <div
+              key={item.key}
+              className={`flex items-center justify-between py-2 border-b border-gray-100 last:border-0 ${item.completed ? '' : 'cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded'}`}
+              onClick={() => {
+                if (!item.completed) {
+                  navigate(`/student?section=${item.targetSection}`);
+                }
+              }}
+            >
+              <span className="text-gray-700">{item.label}</span>
+              {item.completed ? (
+                <Tag color="success">已完成</Tag>
+              ) : (
+                <Tag color="warning">未完成</Tag>
+              )}
+            </div>
+          ))}
+        </div>
       </Card>
 
       {/* 功能菜单 */}

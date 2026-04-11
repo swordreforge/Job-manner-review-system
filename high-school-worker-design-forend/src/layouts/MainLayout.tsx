@@ -7,6 +7,9 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isStudentPage = location.pathname.startsWith('/student');
+  const shouldFixTabBar = !isStudentPage;
+
   const tabs = [
     { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
     { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
@@ -34,6 +37,8 @@ export default function MainLayout() {
     if (pathname.startsWith('/plan')) return 'plan';
     if (pathname.startsWith('/resume')) return 'resume';
     if (pathname.startsWith('/jobs')) return 'jobs';
+    if (pathname.startsWith('/student')) return 'profile';
+    if (pathname.startsWith('/settings')) return 'profile';
     if (pathname.startsWith('/profile')) return 'profile';
     
     // 默认返回首页
@@ -56,13 +61,13 @@ export default function MainLayout() {
 
   return (
     <div className="min-h-screen">
-      <div className="relative z-10 pb-[60px]">
+      <div className={`relative z-10 ${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
         <Outlet />
       </div>
       <TabBar
         activeKey={activeTab}
         onChange={handleTabChange}
-        className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-20"
+        className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
       >
         <TabBar.Item 
           key="home" 

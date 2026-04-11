@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Divider, Spin } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { studentApi } from '../../api';
 import type { Student } from '../../types';
 
@@ -10,14 +10,43 @@ const { Option } = Select;
 
 export default function StudentPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [studentData, setStudentData] = useState<Student | null>(null);
+  const [activeSection, setActiveSection] = useState<string>('');
+
+  const scrollToSection = (section: string) => {
+    const sectionIdMap: Record<string, string> = {
+      basic: 'student-section-basic',
+      skills: 'student-section-skills',
+      certificates: 'student-section-certificates',
+      internship: 'student-section-internship',
+    };
+    const sectionId = sectionIdMap[section];
+    if (!sectionId) return;
+
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    setActiveSection(section);
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => setActiveSection(''), 1800);
+  };
 
   useEffect(() => {
     fetchStudentData();
   }, []);
+
+  useEffect(() => {
+    if (loading) return;
+    const section = searchParams.get('section');
+    if (!section) return;
+
+    const timer = window.setTimeout(() => scrollToSection(section), 120);
+    return () => window.clearTimeout(timer);
+  }, [loading, searchParams]);
 
   const fetchStudentData = async () => {
     setLoading(true);
@@ -167,6 +196,7 @@ export default function StudentPage() {
             autoComplete="off"
           >
             {/* 基础信息 */}
+            <div id="student-section-basic" className={activeSection === 'basic' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
             <Divider>基础信息</Divider>
             <Row gutter={16}>
               <Col xs={24} sm={12}>
@@ -215,8 +245,10 @@ export default function StudentPage() {
                 </Form.Item>
               </Col>
             </Row>
+            </div>
 
             {/* 技能信息 */}
+            <div id="student-section-skills" className={activeSection === 'skills' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
             <Divider>技能信息</Divider>
             <Form.List name="skills">
               {(fields, { add, remove }) => (
@@ -258,8 +290,10 @@ export default function StudentPage() {
                 </>
               )}
             </Form.List>
+            </div>
 
             {/* 证书信息 */}
+            <div id="student-section-certificates" className={activeSection === 'certificates' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
             <Divider>证书信息</Divider>
             <Form.List name="certificates">
               {(fields, { add, remove }) => (
@@ -305,6 +339,7 @@ export default function StudentPage() {
                 </>
               )}
             </Form.List>
+            </div>
 
             {/* 软技能 */}
             <Divider>软技能评估</Divider>
@@ -357,6 +392,7 @@ export default function StudentPage() {
             </Row>
 
             {/* 实习经历 */}
+            <div id="student-section-internship" className={activeSection === 'internship' ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : ''}>
             <Divider>实习经历</Divider>
             <Form.List name="internship">
               {(fields, { add, remove }) => (
@@ -417,6 +453,7 @@ export default function StudentPage() {
                 </>
               )}
             </Form.List>
+            </div>
 
             {/* 项目经验 */}
             <Divider>项目经验</Divider>
