@@ -13,7 +13,12 @@ const state = {
     currentJobPage: 1,
     totalJobs: 0,
     jobs: [],
-    currentEditJobId: null
+    currentEditJobId: null,
+    // 用户相关
+    currentUserPage: 1,
+    totalUsers: 0,
+    users: [],
+    currentEditUserId: null
 };
 
 // API 基础URL
@@ -32,6 +37,7 @@ const elements = {
         dashboard: document.getElementById('dashboard-content'),
         students: document.getElementById('students-content'),
         jobs: document.getElementById('jobs-content'),
+        users: document.getElementById('users-content'),
         system: document.getElementById('system-content')
     },
     // 仪表盘元素
@@ -148,6 +154,9 @@ function switchPage(page) {
             break;
         case 'jobs':
             loadJobs();
+            break;
+        case 'users':
+            loadUsers();
             break;
         case 'system':
             loadSystemStatus();
@@ -913,6 +922,166 @@ async function deleteJob(jobId) {
         if (response.code === 200) {
             showToast('删除成功');
             loadJobs(state.currentJobPage);
+        }
+    } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
+    }
+}
+
+// ============ 用户管理 ============
+
+document.getElementById('add-user-btn').addEventListener('click', () => openUserModal());
+document.getElementById('user-search-btn').addEventListener('click', () => loadUsers(1));
+document.getElementById('user-search').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') loadUsers(1);
+});
+document.getElementById('user-prev-page').addEventListener('click', () => {
+    if (state.currentUserPage > 1) loadUsers(state.currentUserPage - 1);
+});
+document.getElementById('user-next-page').addEventListener('click', () => {
+    const totalPages = Math.ceil(state.totalUsers / state.pageSize);
+    if (state.currentUserPage < totalPages) loadUsers(state.currentUserPage + 1);
+});
+document.getElementById('close-user-modal').addEventListener('click', closeUserModal);
+document.getElementById('cancel-user-btn').addEventListener('click', closeUserModal);
+document.getElementById('user-form').addEventListener('submit', saveUser);
+document.getElementById('user-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('user-modal')) closeUserModal();
+});
+
+async function loadUsers(page = 1) {
+    try {
+        const url = `/users?page=${page}&page_size=${state.pageSize}`;
+        const response = await apiRequest(url);
+        if (response.code === 200) {
+            state.users = response.data.items;
+            state.totalUsers = response.data.total;
+            state.currentUserPage = page;
+            updateUsersTable();
+            updateUserPagination();
+        }
+    } catch (error) {
+        console.error('加载用户列表失败:', error);
+        showToast('加载用户列表失败', 'error');
+    }
+}
+
+function updateUsersTable() {
+    const tbody = document.getElementById('users-table-body');
+    if (state.users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" class="loading">暂无用户数据</td></tr>';
+        return;
+    }
+    tbody.innerHTML = state.users.map(user => `
+        <tr>
+            <td>${user.id}</td>
+            <td>${user.username}</td>
+            <td>${user.email || '-'}</td>
+            <td>${user.phone || '-'}</td>
+            <td>${getRoleName(user.role)}</td>
+            <td>
+                <button class="btn btn-secondary" onclick="editUser('${user.id}')">编辑</button>
+                <button class="btn btn-secondary" style="color: var(--danger-color);" onclick="deleteUser('${user.id}')">删除</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function getRoleName(role) {
+    const map = { user: '普通用户', teacher: '教师', admin: '管理员' };
+    return map[role] || role;
+}
+
+function updateUserPagination() {
+    const totalPages = Math.ceil(state.totalUsers / state.pageSize) || 1;
+    document.getElementById('user-page-info').textContent = `第 ${state.currentUserPage} / ${totalPages} 页`;
+    document.getElementById('user-prev-page').disabled = state.currentUserPage <= 1;
+    document.getElementById('user-next-page').disabled = state.currentUserPage >= totalPages;
+}
+
+function openUserModal(mode = 'add', userId = null) {
+    const modal = document.getElementById('user-modal');
+    const form = document.getElementById('user-form');
+    document.getElementById('user-modal-title').textContent = mode === 'add' ? '添加用户' : '编辑用户';
+    form.reset();
+
+    if (mode === 'edit' && userId) {
+        const user = state.users.find(u => u.id == userId);
+        if (user) {
+            document.getElementById('user-id').value = user.id;
+            document.getElementById('user-username').value = user.username;
+            document.getElementById('user-email').value = user.email || '';
+            document.getElementById('user-phone').value = user.phone || '';
+            document.getElementById('user-role').value = user.role || 'user';
+            document.getElementById('user-password').value = '';
+            document.getElementById('user-password').required = false;
+            document.getElementById('password-hint').style.display = '';
+        }
+    } else {
+        document.getElementById('user-id').value = '';
+        document.getElementById('user-password').required = true;
+        document.getElementById('password-hint').style.display = 'none';
+    }
+    modal.classList.add('active');
+}
+
+function closeUserModal() {
+    document.getElementById('user-modal').classList.remove('active');
+}
+
+function editUser(userId) {
+    openUserModal('edit', userId);
+}
+
+async function saveUser(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('user-form'));
+    const userData = {
+        username: formData.get('username'),
+        email: formData.get('email') || null,
+        phone: formData.get('phone') || null,
+        role: formData.get('role')
+    };
+    
+    const password = formData.get('password');
+    if (password) {
+        userData.password = password;
+    }
+
+    const userId = document.getElementById('user-id').value;
+
+    try {
+        let response;
+        if (userId) {
+            response = await apiRequest(`/users/${userId}`, {
+                method: 'PUT',
+                body: JSON.stringify(userData)
+            });
+        } else {
+            response = await apiRequest('/users', {
+                method: 'POST',
+                body: JSON.stringify(userData)
+            });
+        }
+
+        if (response.code === 200) {
+            showToast(userId ? '更新成功' : '添加成功');
+            closeUserModal();
+            loadUsers(state.currentUserPage);
+        }
+    } catch (error) {
+        console.error('保存用户失败:', error);
+        showToast('保存失败: ' + error.message, 'error');
+    }
+}
+
+async function deleteUser(userId) {
+    if (!confirm('确定要删除这个用户吗？')) return;
+    try {
+        const response = await apiRequest(`/users/${userId}`, { method: 'DELETE' });
+        if (response.code === 200) {
+            showToast('删除成功');
+            loadUsers(state.currentUserPage);
         }
     } catch (error) {
         showToast('删除失败: ' + error.message, 'error');

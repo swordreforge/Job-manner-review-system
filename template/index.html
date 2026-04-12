@@ -42,6 +42,7 @@
                         <a href="#" class="nav-item active" data-page="dashboard">首页</a>
                         <a href="#" class="nav-item" data-page="students">学生管理</a>
                         <a href="#" class="nav-item" data-page="jobs">岗位管理</a>
+                        <a href="#" class="nav-item" data-page="users">用户管理</a>
                         <a href="#" class="nav-item" data-page="system">系统状态</a>
                     </nav>
                     <div class="user-info">
@@ -258,6 +259,53 @@
                     <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
                 </div>
 
+            </div>
+
+            <!-- 用户管理内容 -->
+            <div id="users-content" class="content">
+                <div class="page-header">
+                    <h1>用户管理</h1>
+                    <button class="btn btn-primary" id="add-user-btn">添加用户</button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="搜索用户名...">
+                    <button class="btn btn-secondary" id="user-search-btn">搜索</button>
+                </div>
+
+                <div id="users-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>电话</th>
+                                <th>角色</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td colspan="6" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="user-pagination">
+                        <button class="btn btn-secondary" id="user-prev-page" disabled>上一页</button>
+                        <span id="user-page-info">第 1 页</span>
+                        <button class="btn btn-secondary" id="user-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统状态内容 -->
+            <div id="system-content" class="content">
+                <div class="page-header">
+                    <h1>系统状态</h1>
+                    <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
+                </div>
+
                 <div class="system-status-grid">
                     <div class="status-card">
                         <h3>服务器状态</h3>
@@ -427,6 +475,49 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 用户编辑模态框 -->
+        <div id="user-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="user-modal-title">添加用户</h2>
+                    <button class="close-btn" id="close-user-modal">&times;</button>
+                </div>
+                <form id="user-form">
+                    <input type="hidden" id="user-id">
+                    <div class="form-group">
+                        <label for="user-username">用户名 *</label>
+                        <input type="text" id="user-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">密码 <span id="password-hint">(留空则不修改)</span></label>
+                        <input type="password" id="user-password" name="password">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="user-email">邮箱</label>
+                            <input type="email" id="user-email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-phone">电话</label>
+                            <input type="tel" id="user-phone" name="phone">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">角色</label>
+                        <select id="user-role" name="role">
+                            <option value="user">普通用户</option>
+                            <option value="teacher">教师</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-user-btn">取消</button>
                         <button type="submit" class="btn btn-primary">保存</button>
                     </div>
                 </form>
