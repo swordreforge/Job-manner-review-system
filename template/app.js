@@ -26,7 +26,9 @@ const state = {
     // 图表数据历史
     cpuHistory: [],
     memoryHistory: [],
-    diskHistory: []
+    diskHistory: [],
+    // 历史数据时间戳
+    chartLabels: []
 };
 
 // API 基础URL
@@ -345,73 +347,130 @@ async function loadSystemStatus() {
 function initCharts() {
     if (state.cpuChart) return;
 
-    const chartOptions = {
+    const createGradient = (ctx, color) => {
+        const gradient = ctx.createLinearGradient(0, 0, 0, 180);
+        gradient.addColorStop(0, color.replace('1)', '0.4)').replace('rgb', 'rgba'));
+        gradient.addColorStop(1, color.replace('1)', '0)').replace('rgb', 'rgba'));
+        return gradient;
+    };
+
+    const baseOptions = {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        },
         plugins: {
-            legend: { display: false }
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleColor: '#f8fafc',
+                bodyColor: '#94a3b8',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y.toFixed(1)}%`
+                }
+            }
         },
         scales: {
-            r: {
+            x: {
+                display: false
+            },
+            y: {
                 min: 0,
                 max: 100,
-                ticks: {
-                    stepSize: 25,
-                    color: 'rgba(255,255,255,0.6)',
-                    backdropColor: 'transparent'
+                grid: {
+                    color: 'rgba(255,255,255,0.05)',
+                    drawBorder: false
                 },
-                grid: { color: 'rgba(255,255,255,0.1)' },
-                pointLabels: { color: 'rgba(255,255,255,0.8)' }
+                ticks: {
+                    color: 'rgba(255,255,255,0.4)',
+                    font: { size: 10 },
+                    callback: (v) => v + '%',
+                    maxTicksLimit: 5
+                }
+            }
+        },
+        elements: {
+            line: {
+                borderWidth: 2,
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
+            },
+            point: {
+                radius: 0,
+                hoverRadius: 5,
+                hoverBorderWidth: 2,
+                hoverBackgroundColor: '#fff'
             }
         }
     };
 
-    state.cpuChart = new Chart(document.getElementById('cpuChart'), {
-        type: 'doughnut',
+    const cpuCtx = document.getElementById('cpuChart').getContext('2d');
+    const cpuGradient = cpuCtx.createLinearGradient(0, 0, 0, 180);
+    cpuGradient.addColorStop(0, 'rgba(99, 102, 241, 0.4)');
+    cpuGradient.addColorStop(1, 'rgba(99, 102, 241, 0)');
+
+    state.cpuChart = new Chart(cpuCtx, {
+        type: 'line',
         data: {
-            labels: ['已使用', '空闲'],
+            labels: [],
             datasets: [{
-                data: [0, 100],
-                backgroundColor: ['#6366f1', '#334155'],
-                borderWidth: 0
+                label: 'CPU',
+                data: [],
+                borderColor: '#6366f1',
+                backgroundColor: cpuGradient,
+                fill: true,
+                pointBackgroundColor: '#6366f1'
             }]
         },
-        options: {
-            ...chartOptions,
-            cutout: '70%'
-        }
+        options: baseOptions
     });
 
-    state.memoryChart = new Chart(document.getElementById('memoryChart'), {
-        type: 'doughnut',
+    const memCtx = document.getElementById('memoryChart').getContext('2d');
+    const memGradient = memCtx.createLinearGradient(0, 0, 0, 180);
+    memGradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+    memGradient.addColorStop(1, 'rgba(16, 185, 129, 0)');
+
+    state.memoryChart = new Chart(memCtx, {
+        type: 'line',
         data: {
-            labels: ['已使用', '空闲'],
+            labels: [],
             datasets: [{
-                data: [0, 100],
-                backgroundColor: ['#10b981', '#334155'],
-                borderWidth: 0
+                label: '内存',
+                data: [],
+                borderColor: '#10b981',
+                backgroundColor: memGradient,
+                fill: true,
+                pointBackgroundColor: '#10b981'
             }]
         },
-        options: {
-            ...chartOptions,
-            cutout: '70%'
-        }
+        options: baseOptions
     });
 
-    state.diskChart = new Chart(document.getElementById('diskChart'), {
-        type: 'doughnut',
+    const diskCtx = document.getElementById('diskChart').getContext('2d');
+    const diskGradient = diskCtx.createLinearGradient(0, 0, 0, 180);
+    diskGradient.addColorStop(0, 'rgba(245, 158, 11, 0.4)');
+    diskGradient.addColorStop(1, 'rgba(245, 158, 11, 0)');
+
+    state.diskChart = new Chart(diskCtx, {
+        type: 'line',
         data: {
-            labels: ['已使用', '空闲'],
+            labels: [],
             datasets: [{
-                data: [0, 100],
-                backgroundColor: ['#f59e0b', '#334155'],
-                borderWidth: 0
+                label: '磁盘',
+                data: [],
+                borderColor: '#f59e0b',
+                backgroundColor: diskGradient,
+                fill: true,
+                pointBackgroundColor: '#f59e0b'
             }]
         },
-        options: {
-            ...chartOptions,
-            cutout: '70%'
-        }
+        options: baseOptions
     });
 }
 
@@ -449,21 +508,51 @@ function updateSystemStatusUI() {
     document.getElementById('memory-info').textContent = `${formatBytes(status.memory_used || 0)} / ${formatBytes(status.memory_total || 0)}`;
     document.getElementById('disk-info').textContent = `${formatBytes(status.disk_used || 0)} / ${formatBytes(status.disk_total || 0)}`;
 
+    fetchUsersCount();
+
+    const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+
+    state.cpuHistory.push(cpuValue);
+    state.memoryHistory.push(memoryValue);
+    state.diskHistory.push(diskValue);
+    state.chartLabels.push(now);
+
+    const maxPoints = 20;
+    if (state.cpuHistory.length > maxPoints) {
+        state.cpuHistory.shift();
+        state.memoryHistory.shift();
+        state.diskHistory.shift();
+        state.chartLabels.shift();
+    }
+
     if (state.cpuChart) {
-        state.cpuChart.data.datasets[0].data = [cpuValue, 100 - cpuValue];
+        state.cpuChart.data.labels = state.chartLabels;
+        state.cpuChart.data.datasets[0].data = state.cpuHistory;
         state.cpuChart.update('none');
     }
     if (state.memoryChart) {
-        state.memoryChart.data.datasets[0].data = [memoryValue, 100 - memoryValue];
+        state.memoryChart.data.labels = state.chartLabels;
+        state.memoryChart.data.datasets[0].data = state.memoryHistory;
         state.memoryChart.update('none');
     }
     if (state.diskChart) {
-        state.diskChart.data.datasets[0].data = [diskValue, 100 - diskValue];
+        state.diskChart.data.labels = state.chartLabels;
+        state.diskChart.data.datasets[0].data = state.diskHistory;
         state.diskChart.update('none');
     }
 
     const serverTime = new Date(status.server_time * 1000);
     document.getElementById('server-time').textContent = serverTime.toLocaleString('zh-CN');
+    
+    if (!window.serverTimeInterval) {
+        window.serverTimeInterval = setInterval(() => {
+            if (state.systemStatus && state.systemStatus.server_time) {
+                state.systemStatus.server_time += 1;
+                const time = new Date(state.systemStatus.server_time * 1000);
+                document.getElementById('server-time').textContent = time.toLocaleString('zh-CN');
+            }
+        }, 1000);
+    }
 }
 
 function formatBytes(bytes) {
@@ -472,6 +561,17 @@ function formatBytes(bytes) {
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+
+async function fetchUsersCount() {
+    try {
+        const response = await apiRequest('/users?page=1&page_size=1');
+        if (response.code === 200) {
+            document.getElementById('total-users-stat').textContent = response.data.total;
+        }
+    } catch (e) {
+        document.getElementById('total-users-stat').textContent = '-';
+    }
 }
 
 // 打开学生模态框
