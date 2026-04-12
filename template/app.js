@@ -37,6 +37,7 @@ const elements = {
     // 仪表盘元素
     totalStudents: document.getElementById('total-students'),
     totalClasses: document.getElementById('total-classes'),
+    totalJobs: document.getElementById('total-jobs'),
     databaseStatus: document.getElementById('database-status'),
     serverUptime: document.getElementById('server-uptime'),
     recentStudentsList: document.getElementById('recent-students-list'),
@@ -222,12 +223,24 @@ async function loadDashboardData() {
             updateRecentStudents();
         }
 
+        // 获取岗位数量
+        try {
+            const jobsResponse = await apiRequest('/jobs?page=1&page_size=1');
+            if (jobsResponse.code === 200) {
+                state.totalJobs = jobsResponse.data.total;
+                elements.totalJobs.textContent = state.totalJobs;
+            }
+        } catch (e) {
+            console.log('获取岗位数量失败:', e);
+        }
+
         // 获取系统状态
         await loadSystemStatusData();
 
     } catch (error) {
         console.error('加载仪表盘数据失败:', error);
-        showToast('加载数据失败', 'error');
+        handleLogout();
+        showToast('登录会话已过期', 'error');
     }
 }
 
@@ -627,9 +640,9 @@ function handleQuickAction(action) {
         case 'view-all':
             switchPage('students');
             break;
-        case 'search':
-            switchPage('students');
-            setTimeout(() => elements.studentSearch.focus(), 100);
+        case 'add-job':
+            switchPage('jobs');
+            setTimeout(() => openJobModal('add'), 100);
             break;
         case 'backup':
             switchPage('system');
