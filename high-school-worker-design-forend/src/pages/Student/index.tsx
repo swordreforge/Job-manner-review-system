@@ -40,10 +40,10 @@ const internshipDedupKey = (item: InternshipFormItem) => {
 
 const projectDedupKey = (item: ProjectFormItem) => {
   const technologies = (item.technologies || [])
-    .map((tech) => normalizeText(tech))
-    .filter((tech) => tech.length > 0)
-    .sort()
-    .join(',');
+      .map((tech) => normalizeText(tech))
+      .filter((tech) => tech.length > 0)
+      .sort()
+      .join(',');
 
   return [
     normalizeText(item.name),
@@ -113,7 +113,7 @@ export default function StudentPage() {
   const [expandedPanels, setExpandedPanels] = useState<string[]>(['basic']);
 
   const getSectionClass = (section: string) =>
-    activeSection === section ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : '';
+      activeSection === section ? 'rounded-lg ring-2 ring-orange-400/70 p-2 transition-all' : '';
 
   const scrollToSection = (section: string) => {
     const sectionIdMap: Record<string, string> = {
@@ -265,20 +265,20 @@ export default function StudentPage() {
       }
 
       const preparedSkills: NonNullable<Student['skills']> = skills
-        .map((s) => ({
-          name: (s.name || '').trim(),
-          level: Number(s.level) || 3,
-          years: parseInt(String(s.years), 10) || 1,
-        }))
-        .filter((s) => s.name.length > 0);
+          .map((s) => ({
+            name: (s.name || '').trim(),
+            level: Number(s.level) || 3,
+            years: parseInt(String(s.years), 10) || 1,
+          }))
+          .filter((s) => s.name.length > 0);
 
       const preparedCertificates: NonNullable<Student['certificates']> = certificates
-        .map((c) => ({
-          name: (c.name || '').trim(),
-          level: c.level || '初级',
-          year: parseInt(String(c.year), 10) || new Date().getFullYear(),
-        }))
-        .filter((c) => c.name.length > 0);
+          .map((c) => ({
+            name: (c.name || '').trim(),
+            level: c.level || '初级',
+            year: parseInt(String(c.year), 10) || new Date().getFullYear(),
+          }))
+          .filter((c) => c.name.length > 0);
 
       // 处理实习经历的duration，转换为数字（月数）
       const processedInternship: NonNullable<Student['internship']> = internships.map((item) => ({
@@ -293,8 +293,8 @@ export default function StudentPage() {
         role: (project.role || '').trim(),
         description: (project.description || '').trim(),
         technologies: Array.isArray(project.technologies)
-          ? project.technologies.map((tech) => (tech || '').trim()).filter((tech) => tech.length > 0)
-          : [],
+            ? project.technologies.map((tech) => (tech || '').trim()).filter((tech) => tech.length > 0)
+            : [],
       }));
 
       const submitData: Partial<Student> = {
@@ -334,24 +334,24 @@ export default function StudentPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <Spin size="large" />
-      </div>
+        <div className="min-h-screen relative z-10 flex items-center justify-center">
+          <Spin size="large" />
+        </div>
     );
   }
 
   return (
-    <div className="min-h-screen relative z-10 p-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="mb-4">
-          <Button 
-            type="text" 
-            icon={<ArrowLeftOutlined />} 
-            onClick={() => navigate('/profile')}
-          >
-            返回个人中心
-          </Button>
-        </div>
+      <div className="min-h-screen relative z-10 p-4">
+        <div className="max-w-4xl mx-auto">
+          <div className="mb-4">
+            <Button
+                type="text"
+                icon={<ArrowLeftOutlined />}
+                onClick={() => navigate('/profile')}
+            >
+              返回个人中心
+            </Button>
+          </div>
 
         <Card title={studentData ? '编辑学生资料' : '创建学生资料'}>
           <Form
@@ -720,22 +720,22 @@ export default function StudentPage() {
               ]}
             />
 
-            {/* 提交按钮 */}
-            <Form.Item>
-              <Button
-                type="primary"
-                htmlType="submit"
-                loading={submitting}
-                icon={<SaveOutlined />}
-                size="large"
-                block
-              >
-                {studentData ? '更新学生资料' : '创建学生资料'}
-              </Button>
-            </Form.Item>
-          </Form>
-        </Card>
+              {/* 提交按钮 */}
+              <Form.Item>
+                <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={submitting}
+                    icon={<SaveOutlined />}
+                    size="large"
+                    block
+                >
+                  {studentData ? '更新学生资料' : '创建学生资料'}
+                </Button>
+              </Form.Item>
+            </Form>
+          </Card>
+        </div>
       </div>
-    </div>
   );
 }

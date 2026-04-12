@@ -80,6 +80,9 @@ export const userApi = {
 uploadAvatar: (data: { fileContent: string; fileName: string }) =>
     api.post<{ code: number; msg: string; url: string }>('/user/avatar', data),
 
+  resetAvatar: () =>
+    api.delete<{ code: number; msg: string }>('/user/avatar'),
+
   updatePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.put<{ code: number; msg: string }>('/user/password', data),
   deleteAccount: (data: { password: string }) =>
