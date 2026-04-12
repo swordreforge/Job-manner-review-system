@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>教师端管理系统</title>
     <link rel="stylesheet" href="static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 <body>
     <div id="app">
@@ -252,15 +253,6 @@
                 </div>
             </div>
 
-            <!-- 系统状态内容 -->
-            <div id="system-content" class="content">
-                <div class="page-header">
-                    <h1>系统状态</h1>
-                    <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
-                </div>
-
-            </div>
-
             <!-- 用户管理内容 -->
             <div id="users-content" class="content">
                 <div class="page-header">
@@ -302,69 +294,103 @@
             <!-- 系统状态内容 -->
             <div id="system-content" class="content">
                 <div class="page-header">
-                    <h1>系统状态</h1>
-                    <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
+                    <h1>系统监控</h1>
+                    <div class="header-right">
+                        <span id="server-time" class="time-display">-</span>
+                        <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
+                    </div>
                 </div>
 
-                <div class="system-status-grid">
-                    <div class="status-card">
-                        <h3>服务器状态</h3>
-                        <div id="server-status" class="status-value">
-                            <span class="status-indicator"></span>
-                            <span class="status-text">检查中...</span>
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon server-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="server-status-text">-</h3>
+                            <p>服务器状态</p>
                         </div>
                     </div>
 
-                    <div class="status-card">
-                        <h3>数据库状态</h3>
-                        <div id="db-status" class="status-value">
-                            <span class="status-indicator"></span>
-                            <span class="status-text">检查中...</span>
+                    <div class="stat-card">
+                        <div class="stat-icon database-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="db-status-text">-</h3>
+                            <p>数据库状态</p>
                         </div>
                     </div>
 
-                    <div class="status-card">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="uptime-text">-</h3>
+                            <p>运行时间</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-students-stat">-</h3>
+                            <p>学生总数</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
                         <h3>CPU 使用率</h3>
-                        <div class="status-value" id="cpu-usage">0%</div>
-                        <div class="progress-bar">
-                            <div class="progress" id="cpu-progress" style="width: 0%"></div>
+                        <div class="chart-container">
+                            <canvas id="cpuChart"></canvas>
                         </div>
+                        <div class="chart-value" id="cpu-usage">-</div>
                     </div>
 
-                    <div class="status-card">
+                    <div class="chart-card">
                         <h3>内存使用率</h3>
-                        <div class="status-value" id="memory-usage">0%</div>
-                        <div class="progress-bar">
-                            <div class="progress" id="memory-progress" style="width: 0%"></div>
+                        <div class="chart-container">
+                            <canvas id="memoryChart"></canvas>
                         </div>
+                        <div class="chart-value" id="memory-info">-</div>
                     </div>
 
-                    <div class="status-card large">
-                        <h3>系统信息</h3>
-                        <div id="system-info" class="system-info">
-                            <div class="info-item">
-                                <label>运行时间:</label>
-                                <span id="uptime">-</span>
-                            </div>
-                            <div class="info-item">
-                                <label>服务器时间:</label>
-                                <span id="server-time">-</span>
-                            </div>
-                            <div class="info-item">
-                                <label>版本:</label>
-                                <span>1.0.0</span>
-                            </div>
+                    <div class="chart-card">
+                        <h3>磁盘使用率</h3>
+                        <div class="chart-container">
+                            <canvas id="diskChart"></canvas>
                         </div>
+                        <div class="chart-value" id="disk-info">-</div>
                     </div>
+                </div>
 
-                    <div class="status-card large">
-                        <h3>备份管理</h3>
-                        <div class="backup-actions">
-                            <button class="btn btn-primary" id="backup-btn">立即备份</button>
-                            <button class="btn btn-secondary" id="view-backups-btn">查看备份</button>
-                        </div>
-                        <div id="backups-list" class="backups-list"></div>
+                <div class="backup-section">
+                    <h3>备份管理</h3>
+                    <div class="backup-actions">
+                        <button class="btn btn-primary" id="backup-btn">立即备份</button>
+                        <button class="btn btn-secondary" id="view-backups-btn">查看备份</button>
                     </div>
+                    <div id="backups-list" class="backups-list"></div>
                 </div>
             </div>
         </div>

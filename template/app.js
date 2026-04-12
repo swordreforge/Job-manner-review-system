@@ -18,7 +18,15 @@ const state = {
     currentUserPage: 1,
     totalUsers: 0,
     users: [],
-    currentEditUserId: null
+    currentEditUserId: null,
+    // 图表实例
+    cpuChart: null,
+    memoryChart: null,
+    diskChart: null,
+    // 图表数据历史
+    cpuHistory: [],
+    memoryHistory: [],
+    diskHistory: []
 };
 
 // API 基础URL
@@ -44,8 +52,6 @@ const elements = {
     totalStudents: document.getElementById('total-students'),
     totalClasses: document.getElementById('total-classes'),
     totalJobs: document.getElementById('total-jobs'),
-    databaseStatus: document.getElementById('database-status'),
-    serverUptime: document.getElementById('server-uptime'),
     recentStudentsList: document.getElementById('recent-students-list'),
     // 学生管理元素
     addStudentBtn: document.getElementById('add-student-btn'),
@@ -57,14 +63,6 @@ const elements = {
     pageInfo: document.getElementById('page-info'),
     // 系统状态元素
     refreshStatusBtn: document.getElementById('refresh-status-btn'),
-    serverStatus: document.getElementById('server-status'),
-    dbStatus: document.getElementById('db-status'),
-    cpuUsage: document.getElementById('cpu-usage'),
-    cpuProgress: document.getElementById('cpu-progress'),
-    memoryUsage: document.getElementById('memory-usage'),
-    memoryProgress: document.getElementById('memory-progress'),
-    uptime: document.getElementById('uptime'),
-    serverTime: document.getElementById('server-time'),
     backupBtn: document.getElementById('backup-btn'),
     viewBackupsBtn: document.getElementById('view-backups-btn'),
     backupsList: document.getElementById('backups-list'),
@@ -340,7 +338,81 @@ function updatePagination() {
 
 // 加载系统状态
 async function loadSystemStatus() {
+    initCharts();
     await loadSystemStatusData();
+}
+
+function initCharts() {
+    if (state.cpuChart) return;
+
+    const chartOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            r: {
+                min: 0,
+                max: 100,
+                ticks: {
+                    stepSize: 25,
+                    color: 'rgba(255,255,255,0.6)',
+                    backdropColor: 'transparent'
+                },
+                grid: { color: 'rgba(255,255,255,0.1)' },
+                pointLabels: { color: 'rgba(255,255,255,0.8)' }
+            }
+        }
+    };
+
+    state.cpuChart = new Chart(document.getElementById('cpuChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['已使用', '空闲'],
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#6366f1', '#334155'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...chartOptions,
+            cutout: '70%'
+        }
+    });
+
+    state.memoryChart = new Chart(document.getElementById('memoryChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['已使用', '空闲'],
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#10b981', '#334155'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...chartOptions,
+            cutout: '70%'
+        }
+    });
+
+    state.diskChart = new Chart(document.getElementById('diskChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['已使用', '空闲'],
+            datasets: [{
+                data: [0, 100],
+                backgroundColor: ['#f59e0b', '#334155'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            ...chartOptions,
+            cutout: '70%'
+        }
+    });
 }
 
 async function loadSystemStatusData() {
@@ -353,59 +425,53 @@ async function loadSystemStatusData() {
         }
     } catch (error) {
         console.error('加载系统状态失败:', error);
-        showToast('加载系统状态失败', 'error');
     }
 }
 
-// 更新系统状态UI
 function updateSystemStatusUI() {
     if (!state.systemStatus) return;
 
     const status = state.systemStatus;
 
-    // 服务器状态
-    const serverIndicator = elements.serverStatus.querySelector('.status-indicator');
-    const serverText = elements.serverStatus.querySelector('.status-text');
-    serverIndicator.className = 'status-indicator';
-    if (status.server === 'running') {
-        serverText.textContent = '运行中';
-    } else {
-        serverIndicator.classList.add('danger');
-        serverText.textContent = '停止';
-    }
+    document.getElementById('server-status-text').textContent = status.server === 'running' ? '运行中' : '已停止';
+    document.getElementById('db-status-text').textContent = status.database === 'connected' ? '已连接' : '未连接';
 
-    // 数据库状态
-    const dbIndicator = elements.dbStatus.querySelector('.status-indicator');
-    const dbText = elements.dbStatus.querySelector('.status-text');
-    dbIndicator.className = 'status-indicator';
-    if (status.database === 'connected') {
-        dbText.textContent = '已连接';
-        elements.databaseStatus.textContent = '已连接';
-    } else {
-        dbIndicator.classList.add('danger');
-        dbText.textContent = '未连接';
-        elements.databaseStatus.textContent = '未连接';
-    }
-
-    // CPU 使用率
-    const cpuValue = status.cpu_usage || 0;
-    elements.cpuUsage.textContent = `${cpuValue.toFixed(1)}%`;
-    elements.cpuProgress.style.width = `${cpuValue}%`;
-
-    // 内存使用率
-    const memoryValue = status.memory_usage || 0;
-    elements.memoryUsage.textContent = `${memoryValue.toFixed(1)}%`;
-    elements.memoryProgress.style.width = `${memoryValue}%`;
-
-    // 运行时间
     const uptimeSeconds = status.uptime || 0;
-    const uptimeHours = Math.floor(uptimeSeconds / 3600);
-    const uptimeMinutes = Math.floor((uptimeSeconds % 3600) / 60);
-    elements.uptime.textContent = `${uptimeHours}小时 ${uptimeMinutes}分钟`;
-    elements.serverUptime.textContent = `${uptimeHours}h`;
+    const hours = Math.floor(uptimeSeconds / 3600);
+    const minutes = Math.floor((uptimeSeconds % 3600) / 60);
+    document.getElementById('uptime-text').textContent = `${hours}小时 ${minutes}分`;
 
-    // 服务器时间
-    elements.serverTime.textContent = new Date().toLocaleString('zh-CN');
+    const cpuValue = status.cpu_usage || 0;
+    const memoryValue = status.memory_usage || 0;
+    const diskValue = status.disk_usage || 0;
+
+    document.getElementById('cpu-usage').textContent = `${cpuValue.toFixed(1)}%`;
+    document.getElementById('memory-info').textContent = `${formatBytes(status.memory_used || 0)} / ${formatBytes(status.memory_total || 0)}`;
+    document.getElementById('disk-info').textContent = `${formatBytes(status.disk_used || 0)} / ${formatBytes(status.disk_total || 0)}`;
+
+    if (state.cpuChart) {
+        state.cpuChart.data.datasets[0].data = [cpuValue, 100 - cpuValue];
+        state.cpuChart.update('none');
+    }
+    if (state.memoryChart) {
+        state.memoryChart.data.datasets[0].data = [memoryValue, 100 - memoryValue];
+        state.memoryChart.update('none');
+    }
+    if (state.diskChart) {
+        state.diskChart.data.datasets[0].data = [diskValue, 100 - diskValue];
+        state.diskChart.update('none');
+    }
+
+    const serverTime = new Date(status.server_time * 1000);
+    document.getElementById('server-time').textContent = serverTime.toLocaleString('zh-CN');
+}
+
+function formatBytes(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
 // 打开学生模态框
@@ -729,12 +795,10 @@ function init() {
         });
     });
 
-    // 定时刷新系统状态
+    // 定时刷新系统状态和服务器时间
     setInterval(() => {
-        if (elements.contentSections.system.classList.contains('active')) {
-            loadSystemStatusData();
-        }
-    }, 30000); // 每30秒刷新一次
+        loadSystemStatusData();
+    }, 5000); // 每5秒刷新一次
 
     // 岗位管理事件监听
     document.getElementById('add-job-btn').addEventListener('click', () => openJobModal());
