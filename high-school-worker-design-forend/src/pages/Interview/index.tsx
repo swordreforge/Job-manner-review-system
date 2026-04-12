@@ -178,7 +178,7 @@ export default function InterviewPage() {
         const data = await response.json();
         
         if (data.text && data.text.trim()) {
-          setInput(data.text.trim());
+          setInput(prev => prev + (prev ? ' ' : '') + data.text.trim());
           message.success('语音识别完成');
         } else {
           message.warning('未识别到语音内容，请重试');
