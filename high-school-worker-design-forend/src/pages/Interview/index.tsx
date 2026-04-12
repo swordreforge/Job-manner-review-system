@@ -163,10 +163,11 @@ export default function InterviewPage() {
 
   // 文本纠错函数
   const correctText = (text: string): string => {
-    // 常见语音识别错误映射
+    // 扩展的常见语音识别错误映射
     const corrections: Record<string, string> = {
       // 面试相关
       '面是关好': '面试官好',
+      '面试关好': '面试官好',
       '魔神': '某人',
       '魔魔': '某某',
       '摇解': '了解',
@@ -183,9 +184,6 @@ export default function InterviewPage() {
       '摇期': '预期',
       '摇备': '预备',
       '摇案': '预案',
-      '理想': '理想',
-      '愿望': '愿望',
-      '梦想': '梦想',
       '摇考': '考虑',
       '摇查': '调查',
       '摇研': '研究',
@@ -198,7 +196,6 @@ export default function InterviewPage() {
       '摇答': '回答',
       '摇询': '咨询',
       '摇要': '需要',
-      '摇求': '需求',
       '摇控': '遥控',
       '摇制': '控制',
       '摇导': '指导',
@@ -231,18 +228,216 @@ export default function InterviewPage() {
       '摇刀': '小刀',
       '摇叉': '叉子',
       '摇勺': '勺子',
+      
+      // 常见同音字/近音字
+      '以致': '以致',
+      '以致于': '以至于',
+      '以至于': '以至于',
+      '必须': '必须',
+      '必须': '必需',
+      '必需': '必须',
+      '反应': '反应',
+      '反映': '反映',
+      '反映': '反应',
+      '截止': '截止',
+      '截至': '截至',
+      '截至': '截止',
+      '权利': '权利',
+      '权力': '权力',
+      '权力': '权利',
+      '制定': '制定',
+      '制订': '制订',
+      '制订': '制定',
+      '界限': '界限',
+      '界线': '界线',
+      '界线': '界限',
+      '包含': '包含',
+      '包涵': '包涵',
+      '包涵': '包含',
+      '交代': '交代',
+      '交待': '交待',
+      '交待': '交代',
+      '化妆': '化妆',
+      '化装': '化装',
+      '化装': '化妆',
+      '检查': '检查',
+      '检察': '检察',
+      '检察': '检查',
+      '分辨': '分辨',
+      '分辩': '分辩',
+      '分辩': '分辨',
+      '含义': '含义',
+      '涵义': '涵义',
+      '涵义': '含义',
+      
+      // 职场常用词
+      '简历': '简历',
+      '简力': '简历',
+      '简利': '简历',
+      '职位': '职位',
+      '只位': '职位',
+      '只围': '职位',
+      '岗位': '岗位',
+      '港位': '岗位',
+      '港尾': '岗位',
+      '公司': '公司',
+      '功司': '公司',
+      '恭司': '公司',
+      '项目': '项目',
+      '向目': '项目',
+      '项暮': '项目',
+      '经验': '经验',
+      '景验': '经验',
+      '井验': '经验',
+      '技能': '技能',
+      '记能': '技能',
+      '机能': '技能',
+      '团队': '团队',
+      '团对': '团队',
+      '团堆': '团队',
+      '合作': '合作',
+      '合座': '合作',
+      '合作': '合作',
+      '沟通': '沟通',
+      '勾通': '沟通',
+      '构通': '沟通',
+      '协调': '协调',
+      '些调': '协调',
+      '协条': '协调',
+      '挑战': '挑战',
+      '跳站': '挑战',
+      '跳战': '挑战',
+      '机会': '机会',
+      '机会': '机会',
+      '记会': '机会',
+      '期望': '期望',
+      '七望': '期望',
+      '奇望': '期望',
+      '发展': '发展',
+      '发展': '发展',
+      '发展': '发展',
+      '创新': '创新',
+      '创新': '创新',
+      '创心': '创新',
+      '学习': '学习',
+      '雪习': '学习',
+      '穴习': '学习',
+      '进步': '进步',
+      '进步': '进步',
+      '进不': '进步',
+      '目标': '目标',
+      '目票': '目标',
+      '目漂': '目标',
+      '计划': '计划',
+      '计划': '计划',
+      '计划': '计划',
+      '实现': '实现',
+      '现实': '现实',
+      '现实': '实现',
+      '成就': '成就',
+      '成就': '成就',
+      '成绩': '成绩',
+      '成功': '成功',
+      '成公': '成功',
+      '成功': '成功',
+      '失败': '失败',
+      '失败': '失败',
+      '失败': '失败',
+      '努力': '努力',
+      '努力': '努力',
+      '努力': '努力',
+      '坚持': '坚持',
+      '坚持': '坚持',
+      '坚持': '坚持',
+      '负责': '负责',
+      '负责': '负责',
+      '福责': '负责',
+      '主动': '主动',
+      '主动': '主动',
+      '猪动': '主动',
+      '积极': '积极',
+      '积极': '积极',
+      '机极': '积极',
+      '认真': '认真',
+      '认真': '认真',
+      '真任': '认真',
+      '仔细': '仔细',
+      '仔细': '仔细',
+      '仔细': '仔细',
+      '专注': '专注',
+      '专注': '专注',
+      '砖注': '专注',
     };
 
     let correctedText = text;
     
-    // 替换常见错误
+    // 第一步：精确匹配替换（最快）
     Object.keys(corrections).forEach(wrong => {
       const correct = corrections[wrong];
-      // 使用正则表达式全局替换
       correctedText = correctedText.replace(new RegExp(wrong, 'g'), correct);
     });
 
+    // 第二步：模糊匹配（基于编辑距离）
+    correctedText = correctWithFuzzyMatch(correctedText, corrections);
+
     return correctedText;
+  };
+
+  // 计算编辑距离（Levenshtein 距离）
+  const levenshteinDistance = (str1: string, str2: string): number => {
+    const len1 = str1.length;
+    const len2 = str2.length;
+    const matrix: number[][] = [];
+
+    // 初始化矩阵
+    for (let i = 0; i <= len1; i++) {
+      matrix[i] = [i];
+    }
+    for (let j = 0; j <= len2; j++) {
+      matrix[0][j] = j;
+    }
+
+    // 填充矩阵
+    for (let i = 1; i <= len1; i++) {
+      for (let j = 1; j <= len2; j++) {
+        const cost = str1[i - 1] === str2[j - 1] ? 0 : 1;
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j] + 1,      // 删除
+          matrix[i][j - 1] + 1,      // 插入
+          matrix[i - 1][j - 1] + cost // 替换
+        );
+      }
+    }
+
+    return matrix[len1][len2];
+  };
+
+  // 模糊匹配纠错
+  const correctWithFuzzyMatch = (text: string, corrections: Record<string, string>): string => {
+    const words = text.split('');
+    const correctedWords: string[] = [];
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      let bestMatch = word;
+      let minDistance = Infinity;
+      const threshold = 1; // 编辑距离阈值
+
+      // 检查所有可能的纠错项
+      for (const wrong of Object.keys(corrections)) {
+        const distance = levenshteinDistance(word, wrong);
+        
+        // 如果编辑距离小于阈值且比当前最佳匹配更近
+        if (distance <= threshold && distance < minDistance) {
+          minDistance = distance;
+          bestMatch = corrections[wrong];
+        }
+      }
+
+      correctedWords.push(bestMatch);
+    }
+
+    return correctedWords.join('');
   };
 
   // 语音识别
@@ -262,10 +457,10 @@ export default function InterviewPage() {
         const data = await response.json();
         
         if (data.text && data.text.trim()) {
-          // 应用文本纠错
+          // 应用增强文本纠错（精确匹配 + 模糊匹配）
           const correctedText = correctText(data.text.trim());
           setInput(prev => prev + (prev ? ' ' : '') + correctedText);
-          message.success('语音识别完成（已自动纠错）');
+          message.success('语音识别完成（已智能纠错）');
         } else {
           message.warning('未识别到语音内容，请重试');
         }
@@ -290,7 +485,7 @@ export default function InterviewPage() {
     
     const correctedText = correctText(input);
     setInput(correctedText);
-    message.success('文本已纠错');
+    message.success('已应用智能纠错（100+ 规则 + 模糊匹配）');
   };
 
   const handleSend = async () => {
@@ -809,9 +1004,9 @@ export default function InterviewPage() {
                   onClick={handleManualCorrect}
                   size="large"
                   disabled={!input.trim()}
-                  title="自动纠错"
+                  title="智能纠错（100+ 规则 + 模糊匹配）"
                 >
-                  纠错
+                  智能纠错
                 </Button>
               </div>
               </div>
