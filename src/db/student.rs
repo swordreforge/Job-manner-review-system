@@ -19,9 +19,10 @@ impl StudentRepository {
             r#"
             INSERT INTO students (
                 user_id, name, education, major, graduation_year,
+                skills, certificates, soft_skills, internship, projects,
                 created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#
         )
         .bind(user_id)
@@ -29,6 +30,11 @@ impl StudentRepository {
         .bind(&req.education)
         .bind(&req.major)
         .bind(req.graduation_year)
+        .bind(&req.skills)
+        .bind(&req.certificates)
+        .bind(&req.soft_skills)
+        .bind(&req.internship)
+        .bind(&req.projects)
         .bind(now)
         .bind(now)
         .execute(&*self.pool)

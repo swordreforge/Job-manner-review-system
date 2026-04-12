@@ -7,7 +7,8 @@ const state = {
     totalStudents: 0,
     students: [],
     classes: [],
-    systemStatus: null
+    systemStatus: null,
+    currentEditStudentId: null
 };
 
 // API 基础URL
@@ -375,7 +376,7 @@ function openStudentModal(mode = 'add', studentId = null) {
     elements.studentModal.classList.add('active');
     
     const form = elements.studentForm;
-    const inputs = form.querySelectorAll('input, select');
+    const inputs = form.querySelectorAll('input, select, textarea');
     const saveBtn = form.querySelector('[type="submit"]');
     
     if (mode === 'view' && studentId) {
@@ -392,6 +393,7 @@ function openStudentModal(mode = 'add', studentId = null) {
         if (saveBtn) saveBtn.style.display = 'none';
     } else if (mode === 'edit' && studentId) {
         elements.modalTitle.textContent = '编辑学生';
+        inputs.forEach(input => input.disabled = false);
         const student = state.students.find(s => s.id == studentId);
         if (student) {
             document.getElementById('student-id').value = student.id;
@@ -399,8 +401,13 @@ function openStudentModal(mode = 'add', studentId = null) {
             document.getElementById('student-education').value = student.education || '';
             document.getElementById('student-major').value = student.major || '';
             document.getElementById('student-graduation-year').value = student.graduation_year || '';
+            const skillsValue = Array.isArray(student.skills) ? JSON.stringify(student.skills, null, 2) : (student.skills || '');
+            const certsValue = Array.isArray(student.certificates) ? JSON.stringify(student.certificates, null, 2) : (student.certificates || '');
+            const projectsValue = Array.isArray(student.projects) ? JSON.stringify(student.projects, null, 2) : (student.projects || '');
+            document.getElementById('student-skills').value = skillsValue;
+            document.getElementById('student-certificates').value = certsValue;
+            document.getElementById('student-projects').value = projectsValue;
         }
-        inputs.forEach(input => input.disabled = false);
         if (saveBtn) saveBtn.style.display = '';
     } else {
         elements.modalTitle.textContent = '添加学生';
@@ -426,7 +433,10 @@ async function saveStudent(event) {
         name: formData.get('name'),
         education: formData.get('education') || null,
         major: formData.get('major') || null,
-        graduation_year: formData.get('graduation_year') ? parseInt(formData.get('graduation_year')) : null
+        graduation_year: formData.get('graduation_year') ? parseInt(formData.get('graduation_year')) : null,
+        skills: formData.get('skills') || null,
+        certificates: formData.get('certificates') || null,
+        projects: formData.get('projects') || null
     };
 
     const studentId = document.getElementById('student-id').value;
@@ -463,9 +473,64 @@ async function saveStudent(event) {
 function viewStudent(studentId) {
     const student = state.students.find(s => s.id == studentId);
     if (student) {
-        openStudentModal('view', studentId);
+        showStudentDetail(student);
     }
 }
+
+// 显示学生详情
+function showStudentDetail(student) {
+    const educationMap = {
+        'high_school': '高中',
+        'associate': '大专',
+        'bachelor': '本科',
+        'master': '硕士',
+        'doctor': '博士'
+    };
+    
+    document.getElementById('detail-name').textContent = student.name || '-';
+    document.getElementById('detail-education').textContent = educationMap[student.education] || '-';
+    document.getElementById('detail-major').textContent = student.major || '-';
+    document.getElementById('detail-graduation-year').textContent = student.graduation_year || '-';
+    document.getElementById('detail-completeness').textContent = student.completeness_score ? student.completeness_score.toFixed(1) + '%' : '-';
+    document.getElementById('detail-competitiveness').textContent = student.competitiveness_score ? student.competitiveness_score.toFixed(1) + '%' : '-';
+    
+    const skillsEl = document.getElementById('detail-skills');
+    if (student.skills && student.skills.length > 0) {
+        skillsEl.innerHTML = student.skills.map(s => 
+            `<span class="tag">${s.name || s}</span>`
+        ).join('');
+    } else {
+        skillsEl.textContent = '暂无';
+    }
+    
+    const certsEl = document.getElementById('detail-certificates');
+    if (student.certificates && student.certificates.length > 0) {
+        certsEl.innerHTML = student.certificates.map(c => 
+            `<span class="tag">${c.name || c} ${c.level ? '(' + c.level + ')' : ''}</span>`
+        ).join('');
+    } else {
+        certsEl.textContent = '暂无';
+    }
+    
+    state.currentEditStudentId = student.id;
+    document.getElementById('student-detail-modal').classList.add('active');
+}
+
+// 关闭详情模态框
+document.getElementById('close-detail-modal').addEventListener('click', () => {
+    document.getElementById('student-detail-modal').classList.remove('active');
+});
+document.getElementById('close-detail-btn').addEventListener('click', () => {
+    document.getElementById('student-detail-modal').classList.remove('active');
+});
+
+// 从详情进入编辑
+document.getElementById('edit-from-detail-btn').addEventListener('click', () => {
+    if (state.currentEditStudentId) {
+        document.getElementById('student-detail-modal').classList.remove('active');
+        openStudentModal('edit', state.currentEditStudentId);
+    }
+});
 
 // 编辑学生
 function editStudent(studentId) {

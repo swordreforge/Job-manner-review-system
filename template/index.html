@@ -273,11 +273,69 @@
             </div>
         </div>
 
-        <!-- 学生详情/编辑模态框 -->
+        <!-- 学生详情模态框 -->
+        <div id="student-detail-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>学生详情</h2>
+                    <button class="close-btn" id="close-detail-modal">&times;</button>
+                </div>
+                <div class="detail-content">
+                    <div class="detail-section">
+                        <h3>基本信息</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>姓名</label>
+                                <span id="detail-name">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>学历</label>
+                                <span id="detail-education">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>专业</label>
+                                <span id="detail-major">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>毕业年份</label>
+                                <span id="detail-graduation-year">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>能力评估</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>完整度</label>
+                                <span id="detail-completeness">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>竞争力</label>
+                                <span id="detail-competitiveness">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>技能</h3>
+                        <div id="detail-skills" class="tag-list">-</div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>证书</h3>
+                        <div id="detail-certificates" class="tag-list">-</div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="close-detail-btn">关闭</button>
+                    <button type="button" class="btn btn-primary" id="edit-from-detail-btn">编辑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学生编辑模态框 -->
         <div id="student-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h2 id="modal-title">添加学生</h2>
+                    <h2 id="modal-title">编辑学生</h2>
                     <button class="close-btn" id="close-modal">&times;</button>
                 </div>
                 <form id="student-form">
@@ -306,6 +364,18 @@
                     <div class="form-group">
                         <label for="student-graduation-year">毕业年份</label>
                         <input type="number" id="student-graduation-year" name="graduation_year" min="2000" max="2100">
+                    </div>
+                    <div class="form-group">
+                        <label for="student-skills">技能 (JSON格式)</label>
+                        <textarea id="student-skills" name="skills" rows="3" placeholder='[{"name":"Golang","level":80}]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-certificates">证书 (JSON格式)</label>
+                        <textarea id="student-certificates" name="certificates" rows="3" placeholder='[{"name":"英语四级","level":"通过"}]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-projects">项目经历 (JSON格式)</label>
+                        <textarea id="student-projects" name="projects" rows="3" placeholder='[{"name":"博客系统","description":"..."}]'></textarea>
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>

@@ -66,6 +66,11 @@ pub struct CreateStudentRequest {
     pub education: Option<String>,
     pub major: Option<String>,
     pub graduation_year: Option<i64>,
+    pub skills: Option<String>,
+    pub certificates: Option<String>,
+    pub soft_skills: Option<String>,
+    pub internship: Option<String>,
+    pub projects: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]

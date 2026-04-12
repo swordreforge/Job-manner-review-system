@@ -134,10 +134,24 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
     outline: none;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 1rem;
+    font-family: monospace;
+    resize: vertical;
+    transition: all 0.3s ease;
 }
 
 /* 按钮样式 */
@@ -851,4 +865,63 @@ select:focus {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-color);
+}
+
+/* 学生详情模态框 */
+.detail-content {
+    padding: 1.5rem;
+}
+
+.detail-section {
+    margin-bottom: 1.5rem;
+}
+
+.detail-section:last-child {
+    margin-bottom: 0;
+}
+
+.detail-section h3 {
+    font-size: 1rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 0.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item label {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.detail-item span {
+    font-size: 1rem;
+    color: var(--text-primary);
+}
+
+/* 标签列表 */
+.tag-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.375rem 0.75rem;
+    background: var(--bg-hover);
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    color: var(--text-primary);
 }
