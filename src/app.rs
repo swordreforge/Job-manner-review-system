@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::{web, App, HttpServer, middleware::Logger};
 
 use crate::config::Config;
-use crate::db::create_pool;
+use crate::db::{create_sqlite_pool, create_mysql_pool};
 use crate::state::AppState;
 use crate::routes::configure_routes;
 
@@ -42,11 +42,16 @@ impl AppBuilder {
     pub async fn build_and_run(self) -> anyhow::Result<()> {
         let config = self.config.ok_or_else(|| anyhow::anyhow!("Config not set"))?;
         
-        // 创建数据库连接池
-        let db_pool = create_pool(&config.database_url).await?;
-        
+        // 创建 SQLite 连接池（用于登录）
+        let sqlite_pool = create_sqlite_pool(&config.sqlite_database_url).await?;
+        log::info!("SQLite database connected for authentication");
+
+        // 创建 MySQL 连接池（用于管理功能）
+        let mysql_pool = create_mysql_pool(&config.mysql_database_url).await?;
+        log::info!("MySQL database connected for management");
+
         // 创建应用状态
-        let state = AppState::new(db_pool, config.clone());
+        let state = AppState::new(sqlite_pool, mysql_pool, config.clone());
 
         // 启动HTTP服务器
         let server = HttpServer::new(move || {
@@ -66,9 +71,9 @@ impl AppBuilder {
         .run();
 
         log::info!("Teacher API server started on {}", config.server_address());
-        
+
         server.await?;
-        
+
         Ok(())
     }
 }

@@ -12,7 +12,7 @@ pub struct StudentService {
 impl StudentService {
     pub fn new(state: &AppState) -> Self {
         Self {
-            student_repo: StudentRepository::new(state.pool.clone()),
+            student_repo: StudentRepository::new(state.mysql_pool.clone()),
         }
     }
 

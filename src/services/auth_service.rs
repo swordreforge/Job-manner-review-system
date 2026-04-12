@@ -1,4 +1,4 @@
-use crate::db::UserRepository;
+use crate::db::SqliteUserRepository;
 use crate::models::{LoginRequest, LoginResponse, Claims, TokenInfo};
 use crate::state::AppState;
 use anyhow::Result;
@@ -8,14 +8,14 @@ use uuid::Uuid;
 
 /// 认证服务
 pub struct AuthService {
-    user_repo: UserRepository,
+    user_repo: SqliteUserRepository,
     jwt_secret: String,
 }
 
 impl AuthService {
     pub fn new(state: &AppState) -> Self {
         Self {
-            user_repo: UserRepository::new(state.pool.clone()),
+            user_repo: SqliteUserRepository::new(state.sqlite_pool.clone()),
             jwt_secret: state.config.jwt_secret.clone(),
         }
     }

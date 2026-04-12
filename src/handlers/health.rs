@@ -11,7 +11,7 @@ pub struct HealthResponse {
 
 pub async fn health_check(state: web::Data<AppState>) -> impl Responder {
     let db_status = match sqlx::query("SELECT 1")
-        .fetch_one(state.db())
+        .fetch_one(state.mysql_db())
         .await
     {
         Ok(_) => "connected".to_string(),
