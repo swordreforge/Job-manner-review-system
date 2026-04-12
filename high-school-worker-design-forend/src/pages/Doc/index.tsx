@@ -6,13 +6,13 @@ import {
   FolderOpenOutlined,
   FileTextOutlined,
   RightOutlined,
-  MenuOutlined,
   ArrowLeftOutlined,
   ArrowRightOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 type DocConfig = {
   id: string;
@@ -251,6 +251,7 @@ function DocContent() {
 export default function DocPage() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { docs, setDocs, setActiveDocId } = useDocStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetch('/docs/doc-config.json')
@@ -275,8 +276,8 @@ export default function DocPage() {
         <div className="flex items-center gap-3">
           <Button
             type="text"
-            icon={<MenuOutlined />}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
             className="lg:hidden"
           />
           <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>
