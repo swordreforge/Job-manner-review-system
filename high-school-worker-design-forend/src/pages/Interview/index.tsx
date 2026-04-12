@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
+import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List, Select } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
@@ -22,6 +22,15 @@ export default function InterviewPage() {
   const [reportLoading, setReportLoading] = useState(false);
   const [currentReport, setCurrentReport] = useState<InterviewReport | null>(null);
   const [averageScore, setAverageScore] = useState<number>(0);
+  // 录音相关状态
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [transcribing, setTranscribing] = useState(false);
+  const [whisperModel, setWhisperModel] = useState('base');
+  // 录音相关引用
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
@@ -32,6 +41,19 @@ export default function InterviewPage() {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // 清理录音资源
+  useEffect(() => {
+    return () => {
+      // 组件卸载时清理资源
+      if (mediaRecorderRef.current) {
+        mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+      }
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, []);
 
   const handleStart = async () => {
     try {
@@ -56,6 +78,120 @@ export default function InterviewPage() {
       console.error(error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 格式化录音时间
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  // 开始录音
+  const startRecording = async () => {
+    try {
+      // 请求麦克风权限
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        }
+      });
+
+      // 创建 MediaRecorder
+      const mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm'
+      });
+      
+      audioChunksRef.current = [];
+      
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { 
+          type: 'audio/webm' 
+        });
+        await transcribeAudio(audioBlob);
+        
+        // 停止所有音频轨道
+        stream.getTracks().forEach(track => track.stop());
+      };
+      
+      mediaRecorder.start();
+      mediaRecorderRef.current = mediaRecorder;
+      setIsRecording(true);
+      setRecordingTime(0);
+      
+      // 开始计时
+      timerRef.current = setInterval(() => {
+        setRecordingTime(prev => prev + 1);
+      }, 1000);
+      
+      message.info('开始录音...');
+      
+    } catch (error: any) {
+      console.error('录音启动失败:', error);
+      if (error.name === 'NotAllowedError') {
+        message.error('无法访问麦克风，请允许麦克风权限');
+      } else if (error.name === 'NotFoundError') {
+        message.error('未检测到麦克风设备');
+      } else {
+        message.error('录音启动失败，请重试');
+      }
+    }
+  };
+
+  // 停止录音
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+      mediaRecorderRef.current.stop();
+      mediaRecorderRef.current = null;
+    }
+    setIsRecording(false);
+    
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  // 语音识别
+  const transcribeAudio = async (audioBlob: Blob) => {
+    setTranscribing(true);
+    
+    const formData = new FormData();
+    formData.append('file', audioBlob, 'recording.webm');
+    
+    try {
+      const response = await fetch(`http://localhost:8000/transcribe?model=${whisperModel}`, {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.text && data.text.trim()) {
+          setInput(data.text.trim());
+          message.success('语音识别完成');
+        } else {
+          message.warning('未识别到语音内容，请重试');
+        }
+      } else {
+        const error = await response.json();
+        message.error(`识别失败: ${error.detail || '未知错误'}`);
+      }
+    } catch (error) {
+      console.error('语音识别失败:', error);
+      message.error('语音识别服务连接失败，请检查服务是否启动');
+    } finally {
+      setTranscribing(false);
     }
   };
 
@@ -506,11 +642,60 @@ export default function InterviewPage() {
               </div>
               
               <div className="border-t pt-4">
+                {/* 录音控制区域 */}
+                <div className="flex items-center gap-3 mb-3">
+                  {isRecording ? (
+                    <Button
+                      danger
+                      size="large"
+                      onClick={stopRecording}
+                      loading={transcribing}
+                      className="flex items-center gap-2 min-w-[180px]"
+                    >
+                      <span className="animate-pulse text-red-500">●</span>
+                      停止录音 ({formatTime(recordingTime)})
+                    </Button>
+                  ) : (
+                    <Button
+                      size="large"
+                      onClick={startRecording}
+                      loading={transcribing}
+                      disabled={!session || session.status !== 'running'}
+                      className="flex items-center gap-2 min-w-[180px]"
+                    >
+                      🎤 开始录音
+                    </Button>
+                  )}
+                  
+                  {/* 模型选择器 */}
+                  <Select
+                    value={whisperModel}
+                    onChange={setWhisperModel}
+                    disabled={isRecording}
+                    className="w-[150px]"
+                    options={[
+                      { value: 'base', label: 'Base (快)' },
+                      { value: 'small', label: 'Small (准)' },
+                      { value: 'medium', label: 'Medium (更准)' },
+                    ]}
+                  />
+                  
+                  <div className="flex-1 text-center text-sm text-gray-500">
+                    {isRecording ? (
+                      <span className="text-red-500 font-medium">正在录音...</span>
+                    ) : transcribing ? (
+                      <span className="text-blue-500 font-medium">正在识别...</span>
+                    ) : (
+                      <span>支持语音输入，点击按钮开始录音</span>
+                    )}
+                  </div>
+                </div>
+                
                 <Input.Search
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onSearch={handleSend}
-                  placeholder="输入你的回答..."
+                  placeholder="输入你的回答或点击录音按钮..."
                   enterButton={
                     <Button type="primary" icon={<SendOutlined />}>
                       发送
