@@ -161,6 +161,90 @@ export default function InterviewPage() {
     }
   };
 
+  // 文本纠错函数
+  const correctText = (text: string): string => {
+    // 常见语音识别错误映射
+    const corrections: Record<string, string> = {
+      // 面试相关
+      '面是关好': '面试官好',
+      '魔神': '某人',
+      '魔魔': '某某',
+      '摇解': '了解',
+      '摇聘': '应聘',
+      '摇求': '要求',
+      '摇望': '希望',
+      '摇请': '邀请',
+      '摇约': '邀约',
+      '摇见': '遇见',
+      '摇想': '想象',
+      '摇测': '预测',
+      '摇计': '预计',
+      '摇算': '预算',
+      '摇期': '预期',
+      '摇备': '预备',
+      '摇案': '预案',
+      '理想': '理想',
+      '愿望': '愿望',
+      '梦想': '梦想',
+      '摇考': '考虑',
+      '摇查': '调查',
+      '摇研': '研究',
+      '摇究': '探究',
+      '摇验': '经验',
+      '摇历': '经历',
+      '摇练': '训练',
+      '摇习': '学习',
+      '摇问': '询问',
+      '摇答': '回答',
+      '摇询': '咨询',
+      '摇要': '需要',
+      '摇求': '需求',
+      '摇控': '遥控',
+      '摇制': '控制',
+      '摇导': '指导',
+      '摇向': '导向',
+      '摇引': '引导',
+      '摇领': '领导',
+      '摇管': '管理',
+      '摇理': '处理',
+      '摇办': '办理',
+      '摇序': '程序',
+      '摇列': '排列',
+      '摇放': '播放',
+      '摇音': '声音',
+      '摇乐': '音乐',
+      '摇曲': '歌曲',
+      '摇话': '通话',
+      '摇机': '手机',
+      '摇脑': '电脑',
+      '摇网': '网络',
+      '摇页': '网页',
+      '摇站': '网站',
+      '摇信': '短信',
+      '摇件': '文件',
+      '摇盘': '硬盘',
+      '摇器': '容器',
+      '摇瓶': '玻璃瓶',
+      '摇杯': '杯子',
+      '摇碗': '饭碗',
+      '摇筷': '筷子',
+      '摇刀': '小刀',
+      '摇叉': '叉子',
+      '摇勺': '勺子',
+    };
+
+    let correctedText = text;
+    
+    // 替换常见错误
+    Object.keys(corrections).forEach(wrong => {
+      const correct = corrections[wrong];
+      // 使用正则表达式全局替换
+      correctedText = correctedText.replace(new RegExp(wrong, 'g'), correct);
+    });
+
+    return correctedText;
+  };
+
   // 语音识别
   const transcribeAudio = async (audioBlob: Blob) => {
     setTranscribing(true);
@@ -178,8 +262,10 @@ export default function InterviewPage() {
         const data = await response.json();
         
         if (data.text && data.text.trim()) {
-          setInput(prev => prev + (prev ? ' ' : '') + data.text.trim());
-          message.success('语音识别完成');
+          // 应用文本纠错
+          const correctedText = correctText(data.text.trim());
+          setInput(prev => prev + (prev ? ' ' : '') + correctedText);
+          message.success('语音识别完成（已自动纠错）');
         } else {
           message.warning('未识别到语音内容，请重试');
         }
@@ -193,6 +279,18 @@ export default function InterviewPage() {
     } finally {
       setTranscribing(false);
     }
+  };
+
+  // 手动纠错函数
+  const handleManualCorrect = () => {
+    if (!input.trim()) {
+      message.warning('请先输入内容');
+      return;
+    }
+    
+    const correctedText = correctText(input);
+    setInput(correctedText);
+    message.success('文本已纠错');
   };
 
   const handleSend = async () => {
@@ -691,6 +789,7 @@ export default function InterviewPage() {
                   </div>
                 </div>
                 
+                <div className="flex gap-2">
                 <Input.Search
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
@@ -703,7 +802,18 @@ export default function InterviewPage() {
                   }
                   size="large"
                   disabled={!session || session.status !== 'running'}
+                  className="flex-1"
                 />
+                <Button
+                  icon={<CheckCircleOutlined />}
+                  onClick={handleManualCorrect}
+                  size="large"
+                  disabled={!input.trim()}
+                  title="自动纠错"
+                >
+                  纠错
+                </Button>
+              </div>
               </div>
             </div>
           </Card>

@@ -18,6 +18,14 @@ type (
 	InterviewChatStreamReq {
 		Message string `json:"message,validate:"required,min=1,max=500"`
 	}
+	CorrectTextReq {
+		Text string `json:"text,validate:"required,min=1,max=1000"`
+	}
+	CorrectTextResp {
+		Code int    `json:"code"`
+		Msg  string `json:"msg"`
+		Data string `json:"data,optional"`
+	}
 	InterviewHistoryResp {
 		Id        int64   `json:"id"`
 		Mode      string  `json:"mode"`
@@ -48,6 +56,10 @@ service career-api {
 	@doc "Interview chat via SSE stream"
 	@handler InterviewChatStream
 	post /interview/chat-stream (InterviewChatStreamReq)
+
+	@doc "Correct text errors"
+	@handler CorrectText
+	post /interview/correct-text (CorrectTextReq) returns (CorrectTextResp)
 
 	@doc "Get interview history"
 	@handler GetInterviewHistory
