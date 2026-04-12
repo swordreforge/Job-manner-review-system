@@ -24,6 +24,7 @@ rust-embed = "8.5"
 mime_guess = "2.0"
 jsonwebtoken = "9.3"
 bcrypt = "0.15"
+rand = "0.8"
 futures-util = "0.3"
 
 [dev-dependencies]

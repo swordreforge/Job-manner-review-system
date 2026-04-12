@@ -16,7 +16,7 @@ impl AuthService {
     pub fn new(state: &AppState) -> Self {
         Self {
             user_repo: SqliteUserRepository::new(state.sqlite_pool.clone()),
-            jwt_secret: state.config.jwt_secret.clone(),
+            jwt_secret: state.config.jwt_secret(),
         }
     }
 

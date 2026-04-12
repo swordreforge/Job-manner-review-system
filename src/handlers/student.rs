@@ -1,11 +1,15 @@
-use actix_web::{web, HttpResponse, Responder};
+use actix_web::{web, HttpResponse, Responder, HttpMessage, HttpRequest};
 use crate::models::{StudentQuery, CreateStudentRequest, UpdateStudentRequest};
 use crate::services::StudentService;
 use crate::state::AppState;
 use crate::utils::response::{ApiResponse, ErrorResponse};
-use uuid::Uuid;
+use crate::models::TokenInfo;
 
-/// 查询学生列表
+#[derive(serde::Deserialize)]
+pub struct PathId {
+    pub id: i64,
+}
+
 pub async fn list(
     query: web::Query<StudentQuery>,
     state: web::Data<AppState>,
@@ -32,15 +36,14 @@ pub async fn list(
     }
 }
 
-/// 根据 ID 查询学生
 pub async fn get(
-    path: web::Path<Uuid>,
+    path: web::Path<PathId>,
     state: web::Data<AppState>,
 ) -> impl Responder {
-    let id = path.into_inner();
+    let id = path.id;
     let student_service = StudentService::new(&state);
 
-    match student_service.get_student(&id).await {
+    match student_service.get_student(id).await {
         Ok(student) => HttpResponse::Ok().json(ApiResponse::success(student)),
         Err(e) => {
             log::error!("查询学生失败: {}", e);
@@ -50,14 +53,19 @@ pub async fn get(
     }
 }
 
-/// 创建学生
 pub async fn create(
-    req: web::Json<CreateStudentRequest>,
+    req: HttpRequest,
+    body: web::Json<CreateStudentRequest>,
     state: web::Data<AppState>,
 ) -> impl Responder {
+    let user_id = match req.extensions().get::<TokenInfo>() {
+        Some(token_info) => token_info.user_id.to_string().parse().unwrap_or(1),
+        None => 1,
+    };
+    
     let student_service = StudentService::new(&state);
 
-    match student_service.create_student(req.into_inner()).await {
+    match student_service.create_student(user_id, body.into_inner()).await {
         Ok(student) => HttpResponse::Created().json(ApiResponse::success(student)),
         Err(e) => {
             log::error!("创建学生失败: {}", e);
@@ -67,16 +75,15 @@ pub async fn create(
     }
 }
 
-/// 更新学生
 pub async fn update(
-    path: web::Path<Uuid>,
+    path: web::Path<PathId>,
     req: web::Json<UpdateStudentRequest>,
     state: web::Data<AppState>,
 ) -> impl Responder {
-    let id = path.into_inner();
+    let id = path.id;
     let student_service = StudentService::new(&state);
 
-    match student_service.update_student(&id, req.into_inner()).await {
+    match student_service.update_student(id, req.into_inner()).await {
         Ok(student) => HttpResponse::Ok().json(ApiResponse::success(student)),
         Err(e) => {
             log::error!("更新学生失败: {}", e);
@@ -86,15 +93,14 @@ pub async fn update(
     }
 }
 
-/// 删除学生
 pub async fn delete(
-    path: web::Path<Uuid>,
+    path: web::Path<PathId>,
     state: web::Data<AppState>,
 ) -> impl Responder {
-    let id = path.into_inner();
+    let id = path.id;
     let student_service = StudentService::new(&state);
 
-    match student_service.delete_student(&id).await {
+    match student_service.delete_student(id).await {
         Ok(_) => HttpResponse::Ok().json(ApiResponse::success(serde_json::json!({
             "message": "删除成功"
         }))),

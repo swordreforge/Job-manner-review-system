@@ -78,10 +78,10 @@ pub struct CreateUserRequest {
 /// JWT Claims
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: String,  // user_id
+    pub sub: String, // user_id
     pub username: String,
     pub role: String,
-    pub exp: usize,   // 过期时间
+    pub exp: usize, // 过期时间
 }
 
 /// Token 信息

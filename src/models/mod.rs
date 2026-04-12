@@ -3,8 +3,9 @@
 pub mod student;
 pub mod user;
 
-pub use student::{Student, CreateStudentRequest, UpdateStudentRequest, StudentQuery};
+pub use student::{
+    CreateStudentRequest, Student, StudentQuery, StudentResponse, UpdateStudentRequest,
+};
 pub use user::{
-    User, UserResponse, LoginRequest, LoginResponse, CreateUserRequest,
-    Claims, TokenInfo,
+    Claims, CreateUserRequest, LoginRequest, LoginResponse, TokenInfo, User, UserResponse,
 };

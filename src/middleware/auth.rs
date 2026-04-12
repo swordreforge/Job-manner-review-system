@@ -1,9 +1,42 @@
 use actix_web::{
     dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
-    Error, HttpMessage,
+    Error, HttpMessage, HttpResponse, web,
 };
 use futures_util::future::LocalBoxFuture;
+use serde::Serialize;
 use std::rc::Rc;
+
+/// 错误响应结构
+#[derive(Serialize)]
+struct ErrorResponse {
+    code: u16,
+    message: String,
+    error: String,
+}
+
+/// 自定义认证错误
+#[derive(Debug)]
+pub struct AuthError {
+    message: String,
+}
+
+impl std::fmt::Display for AuthError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
+impl actix_web::ResponseError for AuthError {
+    fn error_response(&self) -> HttpResponse {
+        let error_response = ErrorResponse {
+            code: 401,
+            message: self.message.clone(),
+            error: "Unauthorized".to_string(),
+        };
+
+        HttpResponse::Unauthorized().json(error_response)
+    }
+}
 
 /// 认证中间件
 pub struct AuthMiddleware;
@@ -61,13 +94,16 @@ where
                 .get("Authorization")
                 .and_then(|h| h.to_str().ok());
 
+            log::info!("Auth middleware - Path: {}, Auth header: {:?}", path, auth_header);
+
             if let Some(auth_header) = auth_header {
                 // 验证 Bearer Token 格式
                 if auth_header.starts_with("Bearer ") {
                     let token = &auth_header[7..];
 
                     // 从应用状态获取 JWT 密钥
-                    if let Some(app_state) = req.app_data::<crate::state::AppState>() {
+                    if let Some(app_state_data) = req.app_data::<web::Data<crate::state::AppState>>() {
+                        let app_state = app_state_data.as_ref();
                         use crate::services::AuthService;
                         let auth_service = AuthService::new(app_state);
 
@@ -80,8 +116,9 @@ where
                             }
                             Err(_) => {
                                 // Token 无效,返回 401
-                                let error = actix_web::error::ErrorUnauthorized("Token 无效或已过期");
-                                return Err(error);
+                                return Err(AuthError {
+                                    message: "Token 无效或已过期".to_string(),
+                                }.into());
                             }
                         }
                     }
@@ -89,8 +126,9 @@ where
             }
 
             // 没有 Token 或 Token 格式错误,返回 401
-            let error = actix_web::error::ErrorUnauthorized("未提供认证 Token");
-            Err(error)
+            Err(AuthError {
+                message: "未提供认证 Token".to_string(),
+            }.into())
         })
     }
 }

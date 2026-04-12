@@ -53,7 +53,7 @@ pub fn create_test_state(pool: MySqlPool) -> teacher_api::state::AppState {
         mysql_database: "test".to_string(),
         server_host: "127.0.0.1".to_string(),
         server_port: 8081,
-        jwt_secret: "test-secret-key-for-testing".to_string(),
+        jwt_secret: Some("test-secret-key-for-testing".to_string()),
     };
 
     teacher_api::state::AppState::new(

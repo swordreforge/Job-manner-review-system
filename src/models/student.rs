@@ -1,72 +1,89 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
-use uuid::Uuid;
-use validator::Validate;
 
-/// 学生数据模型
 #[derive(Debug, Clone, Serialize, Deserialize, FromRow)]
 pub struct Student {
-    pub id: Uuid,
-    pub student_no: String,
+    pub id: i64,
+    pub user_id: i64,
     pub name: String,
-    pub gender: Option<String>,
-    pub age: Option<i32>,
-    pub class_name: String,
-    pub phone: Option<String>,
-    pub email: Option<String>,
-    pub address: Option<String>,
-    pub parent_name: Option<String>,
-    pub parent_phone: Option<String>,
-    pub created_at: DateTime<Utc>,
-    pub updated_at: DateTime<Utc>,
+    pub education: Option<String>,
+    pub major: Option<String>,
+    pub graduation_year: Option<i64>,
+    pub skills: Option<String>,
+    pub certificates: Option<String>,
+    pub soft_skills: Option<String>,
+    pub internship: Option<String>,
+    pub projects: Option<String>,
+    pub completeness_score: f64,
+    pub competitiveness_score: f64,
+    pub resume_url: Option<String>,
+    pub suggestions: Option<String>,
+    pub resume_content: Option<String>,
+    pub created_at: i64,
+    pub updated_at: i64,
 }
 
-/// 创建学生请求
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct StudentResponse {
+    pub id: i64,
+    pub name: String,
+    pub education: Option<String>,
+    pub major: Option<String>,
+    pub graduation_year: Option<i64>,
+    pub skills: Option<serde_json::Value>,
+    pub certificates: Option<serde_json::Value>,
+    pub completeness_score: f64,
+    pub competitiveness_score: f64,
+    pub created_at: i64,
+}
+
+impl From<Student> for StudentResponse {
+    fn from(s: Student) -> Self {
+        let skills = s.skills.as_ref().and_then(|v| serde_json::from_str(v).ok());
+        let certificates = s
+            .certificates
+            .as_ref()
+            .and_then(|v| serde_json::from_str(v).ok());
+
+        StudentResponse {
+            id: s.id,
+            name: s.name,
+            education: s.education,
+            major: s.major,
+            graduation_year: s.graduation_year,
+            skills,
+            certificates,
+            completeness_score: s.completeness_score,
+            competitiveness_score: s.competitiveness_score,
+            created_at: s.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
 pub struct CreateStudentRequest {
-    #[validate(length(min = 1, max = 50))]
-    pub student_no: String,
-    #[validate(length(min = 1, max = 50))]
     pub name: String,
-    pub gender: Option<String>,
-    pub age: Option<i32>,
-    #[validate(length(min = 1, max = 50))]
-    pub class_name: String,
-    #[validate(length(max = 20))]
-    pub phone: Option<String>,
-    #[validate(email)]
-    pub email: Option<String>,
-    pub address: Option<String>,
-    pub parent_name: Option<String>,
-    #[validate(length(max = 20))]
-    pub parent_phone: Option<String>,
+    pub education: Option<String>,
+    pub major: Option<String>,
+    pub graduation_year: Option<i64>,
 }
 
-/// 更新学生请求
-#[derive(Debug, Serialize, Deserialize, Validate)]
+#[derive(Debug, Deserialize)]
 pub struct UpdateStudentRequest {
-    #[validate(length(min = 1, max = 50))]
     pub name: Option<String>,
-    pub gender: Option<String>,
-    pub age: Option<i32>,
-    #[validate(length(min = 1, max = 50))]
-    pub class_name: Option<String>,
-    #[validate(length(max = 20))]
-    pub phone: Option<String>,
-    #[validate(email)]
-    pub email: Option<String>,
-    pub address: Option<String>,
-    pub parent_name: Option<String>,
-    #[validate(length(max = 20))]
-    pub parent_phone: Option<String>,
+    pub education: Option<String>,
+    pub major: Option<String>,
+    pub graduation_year: Option<i64>,
+    pub skills: Option<String>,
+    pub certificates: Option<String>,
+    pub soft_skills: Option<String>,
+    pub internship: Option<String>,
+    pub projects: Option<String>,
 }
 
-/// 学生查询参数
 #[derive(Debug, Deserialize)]
 pub struct StudentQuery {
     pub page: Option<u64>,
     pub page_size: Option<u64>,
     pub keyword: Option<String>,
-    pub class_name: Option<String>,
 }

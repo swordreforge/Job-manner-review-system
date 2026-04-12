@@ -1,5 +1,18 @@
 use clap::Parser;
+use rand::Rng;
 use serde::Deserialize;
+
+fn generate_random_secret() -> String {
+    const CHARSET: &[u8] =
+        b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+    let mut rng = rand::thread_rng();
+    (0..16)
+        .map(|_| {
+            let idx = rng.gen_range(0..CHARSET.len());
+            CHARSET[idx] as char
+        })
+        .collect()
+}
 
 #[derive(Debug, Clone, Parser, Deserialize)]
 #[command(name = "teacher-api")]
@@ -39,14 +52,26 @@ pub struct Config {
     #[arg(long, default_value = "8081")]
     pub server_port: u16,
 
-    /// JWT 密钥
-    #[arg(long, default_value = "your-secret-key-change-in-production")]
-    pub jwt_secret: String,
+    /// JWT 密钥（不指定时自动生成16位随机密钥）
+    #[arg(long)]
+    pub jwt_secret: Option<String>,
+}
+
+impl Config {
+    pub fn jwt_secret(&self) -> String {
+        self.jwt_secret.clone().unwrap()
+    }
 }
 
 impl Config {
     pub fn from_args() -> anyhow::Result<Self> {
-        Ok(Config::parse())
+        let mut config = Config::parse();
+        if config.jwt_secret.is_none() {
+            let secret = generate_random_secret();
+            log::info!("自动生成 JWT secret: {}", secret);
+            config.jwt_secret = Some(secret);
+        }
+        Ok(config)
     }
 
     /// 获取 MySQL 数据库连接字符串
