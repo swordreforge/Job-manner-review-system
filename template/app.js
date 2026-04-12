@@ -36,7 +36,6 @@ const elements = {
     // 学生管理元素
     addStudentBtn: document.getElementById('add-student-btn'),
     studentSearch: document.getElementById('student-search'),
-    classFilter: document.getElementById('class-filter'),
     searchBtn: document.getElementById('search-btn'),
     studentsTableBody: document.getElementById('students-table-body'),
     prevPageBtn: document.getElementById('prev-page'),
@@ -199,9 +198,9 @@ async function loadDashboardData() {
             // 更新统计数据
             elements.totalStudents.textContent = state.totalStudents;
 
-            // 提取班级
-            state.classes = [...new Set(state.students.map(s => s.class_name))];
-            elements.totalClasses.textContent = state.classes.length;
+            // 提取专业
+            state.classes = [...new Set(state.students.map(s => s.major).filter(Boolean))];
+            elements.totalClasses.textContent = state.classes.length || state.totalStudents;
 
             // 更新最近学生列表
             updateRecentStudents();
@@ -231,7 +230,7 @@ function updateRecentStudents() {
                 <div class="student-avatar">${student.name.charAt(0)}</div>
                 <div class="student-details">
                     <h4>${student.name}</h4>
-                    <p>${student.student_no} - ${student.class_name}</p>
+                    <p>${student.major || '未填写'} - ${student.education || '未填写'}</p>
                 </div>
             </div>
             <div class="student-actions">
@@ -245,11 +244,9 @@ function updateRecentStudents() {
 async function loadStudents(page = 1) {
     try {
         const keyword = elements.studentSearch.value;
-        const className = elements.classFilter.value;
 
         let url = `/students?page=${page}&page_size=${state.pageSize}`;
         if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
-        if (className) url += `&class_name=${encodeURIComponent(className)}`;
 
         const response = await apiRequest(url);
 
@@ -272,7 +269,7 @@ function updateStudentsTable() {
     if (state.students.length === 0) {
         elements.studentsTableBody.innerHTML = `
             <tr>
-                <td colspan="7" class="loading">暂无学生数据</td>
+                <td colspan="6" class="loading">暂无学生数据</td>
             </tr>
         `;
         return;
@@ -280,12 +277,11 @@ function updateStudentsTable() {
 
     elements.studentsTableBody.innerHTML = state.students.map(student => `
         <tr>
-            <td>${student.student_no}</td>
+            <td>${student.id}</td>
             <td>${student.name}</td>
-            <td>${student.gender || '-'}</td>
-            <td>${student.age || '-'}</td>
-            <td>${student.class_name}</td>
-            <td>${student.phone || '-'}</td>
+            <td>${student.education || '-'}</td>
+            <td>${student.major || '-'}</td>
+            <td>${student.graduation_year || '-'}</td>
             <td>
                 <button class="btn btn-secondary" onclick="viewStudent('${student.id}')">查看</button>
                 <button class="btn btn-secondary" onclick="editStudent('${student.id}')">编辑</button>
@@ -302,14 +298,6 @@ function updatePagination() {
     elements.pageInfo.textContent = `第 ${state.currentPage} / ${totalPages || 1} 页`;
     elements.prevPageBtn.disabled = state.currentPage <= 1;
     elements.nextPageBtn.disabled = state.currentPage >= totalPages;
-
-    // 更新班级过滤器
-    if (state.classes.length > 0) {
-        elements.classFilter.innerHTML = `
-            <option value="">全部班级</option>
-            ${state.classes.map(c => `<option value="${c}">${c}</option>`).join('')}
-        `;
-    }
 }
 
 // 加载系统状态
@@ -388,19 +376,13 @@ function openStudentModal(mode = 'add', studentId = null) {
     elements.modalTitle.textContent = mode === 'add' ? '添加学生' : '编辑学生';
 
     if (mode === 'edit' && studentId) {
-        const student = state.students.find(s => s.id === studentId);
+        const student = state.students.find(s => s.id == studentId);
         if (student) {
             document.getElementById('student-id').value = student.id;
-            document.getElementById('student-no').value = student.student_no;
             document.getElementById('student-name').value = student.name;
-            document.getElementById('student-gender').value = student.gender || '';
-            document.getElementById('student-age').value = student.age || '';
-            document.getElementById('student-class').value = student.class_name;
-            document.getElementById('student-phone').value = student.phone || '';
-            document.getElementById('student-email').value = student.email || '';
-            document.getElementById('student-address').value = student.address || '';
-            document.getElementById('parent-name').value = student.parent_name || '';
-            document.getElementById('parent-phone').value = student.parent_phone || '';
+            document.getElementById('student-education').value = student.education || '';
+            document.getElementById('student-major').value = student.major || '';
+            document.getElementById('student-graduation-year').value = student.graduation_year || '';
         }
     } else {
         elements.studentForm.reset();
@@ -420,16 +402,10 @@ async function saveStudent(event) {
 
     const formData = new FormData(elements.studentForm);
     const studentData = {
-        student_no: formData.get('student_no'),
         name: formData.get('name'),
-        gender: formData.get('gender') || null,
-        age: formData.get('age') ? parseInt(formData.get('age')) : null,
-        class_name: formData.get('class_name'),
-        phone: formData.get('phone') || null,
-        email: formData.get('email') || null,
-        address: formData.get('address') || null,
-        parent_name: formData.get('parent_name') || null,
-        parent_phone: formData.get('parent_phone') || null
+        education: formData.get('education') || null,
+        major: formData.get('major') || null,
+        graduation_year: formData.get('graduation_year') ? parseInt(formData.get('graduation_year')) : null
     };
 
     const studentId = document.getElementById('student-id').value;
@@ -464,7 +440,7 @@ async function saveStudent(event) {
 
 // 查看学生
 function viewStudent(studentId) {
-    const student = state.students.find(s => s.id === studentId);
+    const student = state.students.find(s => s.id == studentId);
     if (student) {
         openStudentModal('edit', studentId);
     }
@@ -592,7 +568,6 @@ function init() {
             loadStudents(1);
         }
     });
-    elements.classFilter.addEventListener('change', () => loadStudents(1));
 
     elements.prevPageBtn.addEventListener('click', () => {
         if (state.currentPage > 1) {

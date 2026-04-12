@@ -79,7 +79,7 @@
                         </div>
                         <div class="stat-info">
                             <h3 id="total-classes">0</h3>
-                            <p>班级数量</p>
+                            <p>专业数量</p>
                         </div>
                     </div>
 
@@ -173,10 +173,7 @@
                 </div>
 
                 <div class="search-bar">
-                    <input type="text" id="student-search" placeholder="搜索学生姓名或学号...">
-                    <select id="class-filter">
-                        <option value="">全部班级</option>
-                    </select>
+                    <input type="text" id="student-search" placeholder="搜索学生姓名...">
                     <button class="btn btn-secondary" id="search-btn">搜索</button>
                 </div>
 
@@ -184,18 +181,17 @@
                     <table class="data-table">
                         <thead>
                             <tr>
-                                <th>学号</th>
+                                <th>ID</th>
                                 <th>姓名</th>
-                                <th>性别</th>
-                                <th>年龄</th>
-                                <th>班级</th>
-                                <th>电话</th>
+                                <th>学历</th>
+                                <th>专业</th>
+                                <th>毕业年份</th>
                                 <th>操作</th>
                             </tr>
                         </thead>
                         <tbody id="students-table-body">
                             <tr>
-                                <td colspan="7" class="loading">加载中...</td>
+                                <td colspan="6" class="loading">加载中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -286,55 +282,30 @@
                 </div>
                 <form id="student-form">
                     <input type="hidden" id="student-id">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="student-no">学号 *</label>
-                            <input type="text" id="student-no" name="student_no" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="student-name">姓名 *</label>
-                            <input type="text" id="student-name" name="name" required>
-                        </div>
+                    <div class="form-group">
+                        <label for="student-name">姓名 *</label>
+                        <input type="text" id="student-name" name="name" required>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="student-gender">性别</label>
-                            <select id="student-gender" name="gender">
+                            <label for="student-education">学历</label>
+                            <select id="student-education" name="education">
                                 <option value="">请选择</option>
-                                <option value="男">男</option>
-                                <option value="女">女</option>
+                                <option value="high_school">高中</option>
+                                <option value="associate">大专</option>
+                                <option value="bachelor">本科</option>
+                                <option value="master">硕士</option>
+                                <option value="doctor">博士</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <label for="student-age">年龄</label>
-                            <input type="number" id="student-age" name="age" min="1" max="100">
+                            <label for="student-major">专业</label>
+                            <input type="text" id="student-major" name="major">
                         </div>
                     </div>
                     <div class="form-group">
-                        <label for="student-class">班级 *</label>
-                        <input type="text" id="student-class" name="class_name" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="student-phone">电话</label>
-                        <input type="tel" id="student-phone" name="phone">
-                    </div>
-                    <div class="form-group">
-                        <label for="student-email">邮箱</label>
-                        <input type="email" id="student-email" name="email">
-                    </div>
-                    <div class="form-group">
-                        <label for="student-address">地址</label>
-                        <input type="text" id="student-address" name="address">
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="parent-name">家长姓名</label>
-                            <input type="text" id="parent-name" name="parent_name">
-                        </div>
-                        <div class="form-group">
-                            <label for="parent-phone">家长电话</label>
-                            <input type="tel" id="parent-phone" name="parent_phone">
-                        </div>
+                        <label for="student-graduation-year">毕业年份</label>
+                        <input type="number" id="student-graduation-year" name="graduation_year" min="2000" max="2100">
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
