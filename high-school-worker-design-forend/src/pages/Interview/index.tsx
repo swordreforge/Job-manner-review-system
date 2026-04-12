@@ -168,8 +168,13 @@ export default function InterviewPage() {
       // 面试相关
       '面是关好': '面试官好',
       '面试关好': '面试官好',
+      '面试观好': '面试官好',
       '魔神': '某人',
       '魔魔': '某某',
+      '男子': '某某',
+      '默默审的': '某某申的',
+      '默默姓的': '某某姓的',
+      '默默名': '某某名',
       '摇解': '了解',
       '摇聘': '应聘',
       '摇求': '要求',
@@ -292,6 +297,7 @@ export default function InterviewPage() {
       '技能': '技能',
       '记能': '技能',
       '机能': '技能',
+      '共生的': '关注的',
       '团队': '团队',
       '团对': '团队',
       '团堆': '团队',
@@ -380,7 +386,31 @@ export default function InterviewPage() {
     // 第二步：模糊匹配（基于编辑距离）
     correctedText = correctWithFuzzyMatch(correctedText, corrections);
 
+    // 第三步：去重处理（清除连续重复的词汇）
+    correctedText = removeDuplicates(correctedText);
+
     return correctedText;
+  };
+
+  // 去除连续重复的词汇
+  const removeDuplicates = (text: string): string => {
+    // 处理连续重复的汉字（2个或更多）
+    // 例如：职位职位职位 → 职位
+    let result = text.replace(/([^\s])\1{2,}/g, '$1');
+    
+    // 处理连续重复的词汇（2个字的词汇重复）
+    // 例如：团队团队 → 团队
+    result = result.replace(/([^\s]{2,})\1/g, '$1');
+    
+    // 处理连续重复的标点符号
+    // 例如：，，， → ，
+    result = result.replace(/([，。！？；：])\1+/g, '$1');
+    
+    // 处理连续重复的空格
+    // 例如：    → （一个空格）
+    result = result.replace(/\s+/g, ' ');
+    
+    return result;
   };
 
   // 计算编辑距离（Levenshtein 距离）
