@@ -373,9 +373,13 @@ function updateSystemStatusUI() {
 // 打开学生模态框
 function openStudentModal(mode = 'add', studentId = null) {
     elements.studentModal.classList.add('active');
-    elements.modalTitle.textContent = mode === 'add' ? '添加学生' : '编辑学生';
-
-    if (mode === 'edit' && studentId) {
+    
+    const form = elements.studentForm;
+    const inputs = form.querySelectorAll('input, select');
+    const saveBtn = form.querySelector('[type="submit"]');
+    
+    if (mode === 'view' && studentId) {
+        elements.modalTitle.textContent = '学生详情';
         const student = state.students.find(s => s.id == studentId);
         if (student) {
             document.getElementById('student-id').value = student.id;
@@ -384,9 +388,26 @@ function openStudentModal(mode = 'add', studentId = null) {
             document.getElementById('student-major').value = student.major || '';
             document.getElementById('student-graduation-year').value = student.graduation_year || '';
         }
+        inputs.forEach(input => input.disabled = true);
+        if (saveBtn) saveBtn.style.display = 'none';
+    } else if (mode === 'edit' && studentId) {
+        elements.modalTitle.textContent = '编辑学生';
+        const student = state.students.find(s => s.id == studentId);
+        if (student) {
+            document.getElementById('student-id').value = student.id;
+            document.getElementById('student-name').value = student.name;
+            document.getElementById('student-education').value = student.education || '';
+            document.getElementById('student-major').value = student.major || '';
+            document.getElementById('student-graduation-year').value = student.graduation_year || '';
+        }
+        inputs.forEach(input => input.disabled = false);
+        if (saveBtn) saveBtn.style.display = '';
     } else {
-        elements.studentForm.reset();
+        elements.modalTitle.textContent = '添加学生';
+        form.reset();
         document.getElementById('student-id').value = '';
+        inputs.forEach(input => input.disabled = false);
+        if (saveBtn) saveBtn.style.display = '';
     }
 }
 
@@ -442,7 +463,7 @@ async function saveStudent(event) {
 function viewStudent(studentId) {
     const student = state.students.find(s => s.id == studentId);
     if (student) {
-        openStudentModal('edit', studentId);
+        openStudentModal('view', studentId);
     }
 }
 
