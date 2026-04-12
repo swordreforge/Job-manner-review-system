@@ -41,13 +41,13 @@ impl AppBuilder {
     /// 构建并启动应用
     pub async fn build_and_run(self) -> anyhow::Result<()> {
         let config = self.config.ok_or_else(|| anyhow::anyhow!("Config not set"))?;
-        
+
         // 创建 SQLite 连接池（用于登录）
         let sqlite_pool = create_sqlite_pool(&config.sqlite_database_url).await?;
         log::info!("SQLite database connected for authentication");
 
         // 创建 MySQL 连接池（用于管理功能）
-        let mysql_pool = create_mysql_pool(&config.mysql_database_url).await?;
+        let mysql_pool = create_mysql_pool(&config.mysql_database_url()).await?;
         log::info!("MySQL database connected for management");
 
         // 创建应用状态

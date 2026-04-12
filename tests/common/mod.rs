@@ -46,7 +46,11 @@ pub fn create_test_state(pool: MySqlPool) -> teacher_api::state::AppState {
 
     let config = teacher_api::config::Config {
         sqlite_database_url: "sqlite::memory:".to_string(),
-        mysql_database_url: "test".to_string(),
+        mysql_host: "localhost".to_string(),
+        mysql_port: 3306,
+        mysql_username: "test".to_string(),
+        mysql_password: "test".to_string(),
+        mysql_database: "test".to_string(),
         server_host: "127.0.0.1".to_string(),
         server_port: 8081,
         jwt_secret: "test-secret-key-for-testing".to_string(),

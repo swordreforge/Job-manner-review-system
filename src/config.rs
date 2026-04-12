@@ -9,9 +9,25 @@ pub struct Config {
     #[arg(long, default_value = "sqlite:auth.db")]
     pub sqlite_database_url: String,
 
-    /// MySQL 数据库连接字符串（用于管理功能）
-    #[arg(long)]
-    pub mysql_database_url: String,
+    /// MySQL 数据库主机地址
+    #[arg(long, default_value = "localhost")]
+    pub mysql_host: String,
+
+    /// MySQL 数据库端口
+    #[arg(long, default_value = "3306")]
+    pub mysql_port: u16,
+
+    /// MySQL 数据库用户名
+    #[arg(long, default_value = "root")]
+    pub mysql_username: String,
+
+    /// MySQL 数据库密码
+    #[arg(long, default_value = "")]
+    pub mysql_password: String,
+
+    /// MySQL 数据库名称
+    #[arg(long, default_value = "career_db")]
+    pub mysql_database: String,
 
     /// 服务器监听地址
     #[arg(long, default_value = "127.0.0.1")]
@@ -29,6 +45,18 @@ pub struct Config {
 impl Config {
     pub fn from_args() -> anyhow::Result<Self> {
         Ok(Config::parse())
+    }
+
+    /// 获取 MySQL 数据库连接字符串
+    pub fn mysql_database_url(&self) -> String {
+        format!(
+            "mysql://{}:{}@{}:{}/{}",
+            self.mysql_username,
+            self.mysql_password,
+            self.mysql_host,
+            self.mysql_port,
+            self.mysql_database
+        )
     }
 
     pub fn server_address(&self) -> String {
