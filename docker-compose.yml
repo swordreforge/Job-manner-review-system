@@ -1,0 +1,127 @@
+version: '3.8'
+
+services:
+  # MySQL 数据库
+  mysql:
+    image: mysql:8.0
+    container_name: career-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456zj
+      MYSQL_DATABASE: career_db
+      MYSQL_USER: career
+      MYSQL_PASSWORD: career123
+      TZ: Asia/Shanghai
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --default-authentication-plugin=mysql_native_password
+    networks:
+      - career-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis 缓存
+  redis:
+    image: redis:7-alpine
+    container_name: career-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    networks:
+      - career-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Whisper 语音识别服务
+  whisper:
+    build:
+      context: ./whisper-20250625
+      dockerfile: Dockerfile
+    container_name: career-whisper
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MODEL_NAME=base
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - whisper-cache:/root/.cache/whisper
+    networks:
+      - career-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 后端 API 服务
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: career-backend
+    restart: unless-stopped
+    ports:
+      - "8088:8088"
+      - "9091:9091"
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./img:/root/img
+      - ./etc:/root/etc
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - career-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./high-school-worker-design-forend
+      dockerfile: Dockerfile
+    container_name: career-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - whisper
+    networks:
+      - career-network
+
+volumes:
+  mysql-data:
+    driver: local
+  redis-data:
+    driver: local
+  whisper-cache:
+    driver: local
+
+networks:
+  career-network:
+    driver: bridge

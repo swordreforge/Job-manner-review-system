@@ -1,0 +1,80 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# 文档
+docs
+README.md
+*.md
+
+# 临时文件
+*.tmp
+*.log
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode
+.idea
+*.iml
+
+# Node
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+career-api
+career-api-win.exe
+
+# 数据库
+*.db
+*.sqlite
+*.sqlite3
+
+# 日志
+*.log
+
+# 操作系统
+.DS_Store
+Thumbs.db
+
+# Whisper 模型缓存（不需要在镜像中）
+whisper-20250625/data/*.pt
+whisper-20250625/data/*.onnx
+
+# 前端构建产物（会在 Dockerfile 中重新构建）
+high-school-worker-design-forend/dist
+high-school-worker-design-forend/test-results
+high-school-worker-design-forend/playwright-report
+
+# 测试
+test/
+tests/
+*.test.ts
+*.spec.ts
+
+# 其他
+.env.local
+.env.*.local
