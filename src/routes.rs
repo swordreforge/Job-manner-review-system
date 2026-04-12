@@ -83,4 +83,19 @@ fn configure_api_v1() -> Scope {
                 // 删除岗位
                 .route("/{id}", web::delete().to(crate::handlers::job::delete)),
         )
+        // 用户路由(需要认证)
+        .service(
+            web::scope("/users")
+                .wrap(crate::middleware::AuthMiddleware)
+                // 创建用户
+                .route("", web::post().to(crate::handlers::user::create))
+                // 用户列表
+                .route("", web::get().to(crate::handlers::user::list))
+                // 用户详情
+                .route("/{id}", web::get().to(crate::handlers::user::get))
+                // 更新用户
+                .route("/{id}", web::put().to(crate::handlers::user::update))
+                // 删除用户
+                .route("/{id}", web::delete().to(crate::handlers::user::delete)),
+        )
 }

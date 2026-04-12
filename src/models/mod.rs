@@ -9,5 +9,6 @@ pub use student::{
     CreateStudentRequest, Student, StudentQuery, StudentResponse, UpdateStudentRequest,
 };
 pub use user::{
-    Claims, CreateUserRequest, LoginRequest, LoginResponse, TokenInfo, User, UserResponse,
+    Claims, CreateMySqlUserRequest, CreateUserRequest, LoginRequest, LoginResponse, MySqlUser,
+    MySqlUserResponse, TokenInfo, UpdateMySqlUserRequest, User, UserResponse,
 };

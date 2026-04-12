@@ -91,3 +91,58 @@ pub struct TokenInfo {
     pub username: String,
     pub role: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, sqlx::FromRow)]
+pub struct MySqlUser {
+    pub id: i64,
+    pub username: String,
+    pub password: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub avatar: Option<String>,
+    pub role: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct MySqlUserResponse {
+    pub id: i64,
+    pub username: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub avatar: Option<String>,
+    pub role: String,
+    pub created_at: i64,
+}
+
+impl From<MySqlUser> for MySqlUserResponse {
+    fn from(user: MySqlUser) -> Self {
+        MySqlUserResponse {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            phone: user.phone,
+            avatar: user.avatar,
+            role: user.role,
+            created_at: user.created_at,
+        }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateMySqlUserRequest {
+    pub username: String,
+    pub password: String,
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub role: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct UpdateMySqlUserRequest {
+    pub email: Option<String>,
+    pub phone: Option<String>,
+    pub role: Option<String>,
+    pub password: Option<String>,
+}
