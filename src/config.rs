@@ -6,6 +6,8 @@ use serde::Deserialize;
 #[command(about = "教师端 API 服务", long_about = None)]
 pub struct Config {
     /// SQLite 数据库连接字符串（用于登录功能）
+    /// 默认在可执行文件同级目录创建 auth.db 文件
+    /// 如需自定义，请使用完整路径，例如：sqlite:/path/to/custom.db
     #[arg(long, default_value = "sqlite:auth.db")]
     pub sqlite_database_url: String,
 

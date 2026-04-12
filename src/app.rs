@@ -2,7 +2,7 @@ use actix_cors::Cors;
 use actix_web::{web, App, HttpServer, middleware::Logger};
 
 use crate::config::Config;
-use crate::db::{create_sqlite_pool, create_mysql_pool};
+use crate::db::{create_sqlite_pool, create_mysql_pool, ensure_database_initialized};
 use crate::state::AppState;
 use crate::routes::configure_routes;
 
@@ -42,9 +42,28 @@ impl AppBuilder {
     pub async fn build_and_run(self) -> anyhow::Result<()> {
         let config = self.config.ok_or_else(|| anyhow::anyhow!("Config not set"))?;
 
+        // 获取当前可执行文件的路径
+        let exe_path = std::env::current_exe()?;
+        let exe_dir = exe_path.parent().unwrap_or_else(|| std::path::Path::new("."));
+
+        // 在可执行文件同级目录创建数据库文件
+        let db_path = exe_dir.join("auth.db");
+
+        // 如果数据库文件不存在，先创建一个空文件
+        if !db_path.exists() {
+            std::fs::File::create(&db_path)?;
+            log::info!("创建数据库文件: {}", db_path.display());
+        }
+
+        let db_url = format!("sqlite:{}", db_path.display());
+        log::info!("数据库文件路径: {}", db_path.display());
+
         // 创建 SQLite 连接池（用于登录）
-        let sqlite_pool = create_sqlite_pool(&config.sqlite_database_url).await?;
+        let sqlite_pool = create_sqlite_pool(&db_url).await?;
         log::info!("SQLite database connected for authentication");
+
+        // 自动初始化数据库（如果需要）
+        ensure_database_initialized(&sqlite_pool).await?;
 
         // 创建 MySQL 连接池（用于管理功能）
         let mysql_pool = create_mysql_pool(&config.mysql_database_url()).await?;
