@@ -9,9 +9,34 @@ pub struct SqliteUserRepository {
     pool: Arc<SqlitePool>,
 }
 
+/// SQLite 专用的用户结构体（ID 为字符串格式）
+#[derive(Debug, Clone, sqlx::FromRow)]
+struct SqliteUserRow {
+    id: String,
+    username: String,
+    password_hash: String,
+    name: String,
+    role: String,
+    created_at: chrono::DateTime<chrono::Utc>,
+    updated_at: chrono::DateTime<chrono::Utc>,
+}
+
 impl SqliteUserRepository {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }
+    }
+
+    /// 将 SQLite 行转换为 User 模型
+    fn row_to_user(row: SqliteUserRow) -> Result<User> {
+        Ok(User {
+            id: Uuid::parse_str(&row.id)?,
+            username: row.username,
+            password_hash: row.password_hash,
+            name: row.name,
+            role: row.role,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+        })
     }
 
     /// 创建用户(密码自动加密)
@@ -44,38 +69,38 @@ impl SqliteUserRepository {
         .await?;
 
         // 查询刚创建的用户
-        let user = sqlx::query_as::<_, User>(
+        let row = sqlx::query_as::<_, SqliteUserRow>(
             "SELECT * FROM users WHERE id = ?"
         )
         .bind(id.to_string())
         .fetch_one(&*self.pool)
         .await?;
 
-        Ok(user)
+        Ok(Self::row_to_user(row)?)
     }
 
     /// 根据 ID 查询用户
     pub async fn find_by_id(&self, id: &Uuid) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
+        let row = sqlx::query_as::<_, SqliteUserRow>(
             "SELECT * FROM users WHERE id = ?"
         )
         .bind(id.to_string())
         .fetch_optional(&*self.pool)
         .await?;
 
-        Ok(user)
+        Ok(row.map(Self::row_to_user).transpose()?)
     }
 
     /// 根据用户名查询用户
     pub async fn find_by_username(&self, username: &str) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
+        let row = sqlx::query_as::<_, SqliteUserRow>(
             "SELECT * FROM users WHERE username = ?"
         )
         .bind(username)
         .fetch_optional(&*self.pool)
         .await?;
 
-        Ok(user)
+        Ok(row.map(Self::row_to_user).transpose()?)
     }
 
     /// 验证用户登录

@@ -5,6 +5,8 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
     cfg
         // 根路径路由 - 返回嵌入的 index.html
         .route("/", web::get().to(crate::embedded::serve_index))
+        // 静态文件路由 - 处理 CSS、JS 等文件
+        .route("/static/{path:.*}", web::get().to(crate::embedded::serve_static))
         // 健康检查路由
         .service(
             web::scope("/health")

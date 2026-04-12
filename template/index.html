@@ -3,10 +3,351 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>教师端界面</title>
+    <title>教师端管理系统</title>
+    <link rel="stylesheet" href="static/styles.css">
 </head>
 <body>
-    <h1>教师端前端界面</h1>
-    <p>静态文件服务已成功配置</p>
+    <div id="app">
+        <!-- 登录页面 -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <div class="login-box">
+                    <h1>教师端管理系统</h1>
+                    <p class="subtitle">学生信息管理与可视化平台</p>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="username">用户名</label>
+                            <input type="text" id="username" name="username" required placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <input type="password" id="password" name="password" required placeholder="请输入密码">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">登录</button>
+                    </form>
+                    <div id="login-error" class="error-message"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主页面 -->
+        <div id="dashboard-page" class="page">
+            <!-- 顶部导航栏 -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h2>教师端管理系统</h2>
+                    </div>
+                    <nav class="nav">
+                        <a href="#" class="nav-item active" data-page="dashboard">首页</a>
+                        <a href="#" class="nav-item" data-page="students">学生管理</a>
+                        <a href="#" class="nav-item" data-page="system">系统状态</a>
+                    </nav>
+                    <div class="user-info">
+                        <span id="current-user">教师</span>
+                        <button id="logout-btn" class="btn btn-logout">退出</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 仪表盘内容 -->
+            <div id="dashboard-content" class="content active">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon student-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-students">0</h3>
+                            <p>学生总数</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon class-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 21h18"></path>
+                                <path d="M5 21V7l8-4 8 4v14"></path>
+                                <path d="M13 11l-2 2h4l-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-classes">0</h3>
+                            <p>班级数量</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon database-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="database-status">连接中</h3>
+                            <p>数据库状态</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon server-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="server-uptime">0h</h3>
+                            <p>运行时间</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="quick-actions">
+                    <h2>快捷操作</h2>
+                    <div class="actions-grid">
+                        <a href="#" class="action-card" data-action="add-student">
+                            <div class="action-icon add-icon">+</div>
+                            <p>添加学生</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="view-all">
+                            <div class="action-icon list-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </div>
+                            <p>查看全部</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="search">
+                            <div class="action-icon search-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="11" cy="11" r="8"></circle>
+                                    <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                                </svg>
+                            </div>
+                            <p>搜索学生</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="backup">
+                            <div class="action-icon backup-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                            </div>
+                            <p>数据备份</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 最近学生 -->
+                <div class="recent-students">
+                    <h2>最近添加的学生</h2>
+                    <div id="recent-students-list" class="students-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学生管理内容 -->
+            <div id="students-content" class="content">
+                <div class="page-header">
+                    <h1>学生管理</h1>
+                    <button class="btn btn-primary" id="add-student-btn">添加学生</button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="student-search" placeholder="搜索学生姓名或学号...">
+                    <select id="class-filter">
+                        <option value="">全部班级</option>
+                    </select>
+                    <button class="btn btn-secondary" id="search-btn">搜索</button>
+                </div>
+
+                <div id="students-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>学号</th>
+                                <th>姓名</th>
+                                <th>性别</th>
+                                <th>年龄</th>
+                                <th>班级</th>
+                                <th>电话</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body">
+                            <tr>
+                                <td colspan="7" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="pagination">
+                        <button class="btn btn-secondary" id="prev-page" disabled>上一页</button>
+                        <span id="page-info">第 1 页</span>
+                        <button class="btn btn-secondary" id="next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统状态内容 -->
+            <div id="system-content" class="content">
+                <div class="page-header">
+                    <h1>系统状态</h1>
+                    <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
+                </div>
+
+                <div class="system-status-grid">
+                    <div class="status-card">
+                        <h3>服务器状态</h3>
+                        <div id="server-status" class="status-value">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">检查中...</span>
+                        </div>
+                    </div>
+
+                    <div class="status-card">
+                        <h3>数据库状态</h3>
+                        <div id="db-status" class="status-value">
+                            <span class="status-indicator"></span>
+                            <span class="status-text">检查中...</span>
+                        </div>
+                    </div>
+
+                    <div class="status-card">
+                        <h3>CPU 使用率</h3>
+                        <div class="status-value" id="cpu-usage">0%</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="cpu-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="status-card">
+                        <h3>内存使用率</h3>
+                        <div class="status-value" id="memory-usage">0%</div>
+                        <div class="progress-bar">
+                            <div class="progress" id="memory-progress" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="status-card large">
+                        <h3>系统信息</h3>
+                        <div id="system-info" class="system-info">
+                            <div class="info-item">
+                                <label>运行时间:</label>
+                                <span id="uptime">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>服务器时间:</label>
+                                <span id="server-time">-</span>
+                            </div>
+                            <div class="info-item">
+                                <label>版本:</label>
+                                <span>1.0.0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="status-card large">
+                        <h3>备份管理</h3>
+                        <div class="backup-actions">
+                            <button class="btn btn-primary" id="backup-btn">立即备份</button>
+                            <button class="btn btn-secondary" id="view-backups-btn">查看备份</button>
+                        </div>
+                        <div id="backups-list" class="backups-list"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学生详情/编辑模态框 -->
+        <div id="student-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">添加学生</h2>
+                    <button class="close-btn" id="close-modal">&times;</button>
+                </div>
+                <form id="student-form">
+                    <input type="hidden" id="student-id">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="student-no">学号 *</label>
+                            <input type="text" id="student-no" name="student_no" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="student-name">姓名 *</label>
+                            <input type="text" id="student-name" name="name" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="student-gender">性别</label>
+                            <select id="student-gender" name="gender">
+                                <option value="">请选择</option>
+                                <option value="男">男</option>
+                                <option value="女">女</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="student-age">年龄</label>
+                            <input type="number" id="student-age" name="age" min="1" max="100">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-class">班级 *</label>
+                        <input type="text" id="student-class" name="class_name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-phone">电话</label>
+                        <input type="tel" id="student-phone" name="phone">
+                    </div>
+                    <div class="form-group">
+                        <label for="student-email">邮箱</label>
+                        <input type="email" id="student-email" name="email">
+                    </div>
+                    <div class="form-group">
+                        <label for="student-address">地址</label>
+                        <input type="text" id="student-address" name="address">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="parent-name">家长姓名</label>
+                            <input type="text" id="parent-name" name="parent_name">
+                        </div>
+                        <div class="form-group">
+                            <label for="parent-phone">家长电话</label>
+                            <input type="tel" id="parent-phone" name="parent_phone">
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 提示消息 -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="static/app.js"></script>
 </body>
 </html>
