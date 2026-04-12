@@ -8,7 +8,12 @@ const state = {
     students: [],
     classes: [],
     systemStatus: null,
-    currentEditStudentId: null
+    currentEditStudentId: null,
+    // 岗位相关
+    currentJobPage: 1,
+    totalJobs: 0,
+    jobs: [],
+    currentEditJobId: null
 };
 
 // API 基础URL
@@ -26,6 +31,7 @@ const elements = {
     contentSections: {
         dashboard: document.getElementById('dashboard-content'),
         students: document.getElementById('students-content'),
+        jobs: document.getElementById('jobs-content'),
         system: document.getElementById('system-content')
     },
     // 仪表盘元素
@@ -83,6 +89,12 @@ async function apiRequest(url, options = {}) {
         headers
     });
 
+    if (response.status === 401) {
+        handleLogout();
+        showToast('登录已过期，请重新登录', 'error');
+        throw new Error('登录已过期');
+    }
+
     const data = await response.json();
 
     if (!response.ok) {
@@ -132,6 +144,9 @@ function switchPage(page) {
             break;
         case 'students':
             loadStudents();
+            break;
+        case 'jobs':
+            loadJobs();
             break;
         case 'system':
             loadSystemStatus();
@@ -698,6 +713,197 @@ function init() {
             loadSystemStatusData();
         }
     }, 30000); // 每30秒刷新一次
+
+    // 岗位管理事件监听
+    document.getElementById('add-job-btn').addEventListener('click', () => openJobModal());
+    document.getElementById('job-search-btn').addEventListener('click', () => loadJobs(1));
+    document.getElementById('job-search').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') loadJobs(1);
+    });
+    document.getElementById('job-prev-page').addEventListener('click', () => {
+        if (state.currentJobPage > 1) loadJobs(state.currentJobPage - 1);
+    });
+    document.getElementById('job-next-page').addEventListener('click', () => {
+        const totalPages = Math.ceil(state.totalJobs / state.pageSize);
+        if (state.currentJobPage < totalPages) loadJobs(state.currentJobPage + 1);
+    });
+    document.getElementById('close-job-detail-modal').addEventListener('click', closeJobDetailModal);
+    document.getElementById('close-job-detail-btn').addEventListener('click', closeJobDetailModal);
+    document.getElementById('edit-from-job-detail-btn').addEventListener('click', () => {
+        if (state.currentEditJobId) {
+            closeJobDetailModal();
+            openJobModal('edit', state.currentEditJobId);
+        }
+    });
+    document.getElementById('close-job-modal').addEventListener('click', closeJobModal);
+    document.getElementById('cancel-job-btn').addEventListener('click', closeJobModal);
+    document.getElementById('job-form').addEventListener('submit', saveJob);
+    document.getElementById('job-detail-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('job-detail-modal')) closeJobDetailModal();
+    });
+    document.getElementById('job-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('job-modal')) closeJobModal();
+    });
+}
+
+// ============ 岗位管理 ============
+
+async function loadJobs(page = 1) {
+    try {
+        const keyword = document.getElementById('job-search').value;
+        let url = `/jobs?page=${page}&page_size=${state.pageSize}`;
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+
+        const response = await apiRequest(url);
+        if (response.code === 200) {
+            state.jobs = response.data.items;
+            state.totalJobs = response.data.total;
+            state.currentJobPage = page;
+            updateJobsTable();
+            updateJobPagination();
+        }
+    } catch (error) {
+        console.error('加载岗位列表失败:', error);
+        showToast('加载岗位列表失败', 'error');
+    }
+}
+
+function updateJobsTable() {
+    const tbody = document.getElementById('jobs-table-body');
+    if (state.jobs.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="loading">暂无岗位数据</td></tr>';
+        return;
+    }
+    tbody.innerHTML = state.jobs.map(job => `
+        <tr>
+            <td>${job.id}</td>
+            <td>${job.name}</td>
+            <td>${job.company || '-'}</td>
+            <td>${job.industry || '-'}</td>
+            <td>${job.location || '-'}</td>
+            <td>${job.salary_range || '-'}</td>
+            <td>
+                <button class="btn btn-secondary" onclick="viewJob('${job.id}')">查看</button>
+                <button class="btn btn-secondary" onclick="editJob('${job.id}')">编辑</button>
+                <button class="btn btn-secondary" style="color: var(--danger-color);" onclick="deleteJob('${job.id}')">删除</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateJobPagination() {
+    const totalPages = Math.ceil(state.totalJobs / state.pageSize) || 1;
+    document.getElementById('job-page-info').textContent = `第 ${state.currentJobPage} / ${totalPages} 页`;
+    document.getElementById('job-prev-page').disabled = state.currentJobPage <= 1;
+    document.getElementById('job-next-page').disabled = state.currentJobPage >= totalPages;
+}
+
+function viewJob(jobId) {
+    const job = state.jobs.find(j => j.id == jobId);
+    if (job) {
+        showJobDetail(job);
+    }
+}
+
+function showJobDetail(job) {
+    document.getElementById('job-detail-name').textContent = job.name || '-';
+    document.getElementById('job-detail-company').textContent = job.company || '-';
+    document.getElementById('job-detail-industry').textContent = job.industry || '-';
+    document.getElementById('job-detail-location').textContent = job.location || '-';
+    document.getElementById('job-detail-salary').textContent = job.salary_range || '-';
+    document.getElementById('job-detail-description').textContent = job.description || '暂无描述';
+    state.currentEditJobId = job.id;
+    document.getElementById('job-detail-modal').classList.add('active');
+}
+
+function closeJobDetailModal() {
+    document.getElementById('job-detail-modal').classList.remove('active');
+}
+
+function openJobModal(mode = 'add', jobId = null) {
+    const modal = document.getElementById('job-modal');
+    const form = document.getElementById('job-form');
+    document.getElementById('job-modal-title').textContent = mode === 'add' ? '添加岗位' : '编辑岗位';
+    form.reset();
+
+    if (mode === 'edit' && jobId) {
+        const job = state.jobs.find(j => j.id == jobId);
+        if (job) {
+            document.getElementById('job-id').value = job.id;
+            document.getElementById('job-name').value = job.name || '';
+            document.getElementById('job-company').value = job.company || '';
+            document.getElementById('job-industry').value = job.industry || '';
+            document.getElementById('job-location').value = job.location || '';
+            document.getElementById('job-salary').value = job.salary_range || '';
+            document.getElementById('job-description').value = job.description || '';
+        }
+    } else {
+        document.getElementById('job-id').value = '';
+    }
+    modal.classList.add('active');
+}
+
+function closeJobModal() {
+    document.getElementById('job-modal').classList.remove('active');
+}
+
+function editJob(jobId) {
+    openJobModal('edit', jobId);
+}
+
+async function saveJob(event) {
+    event.preventDefault();
+    const formData = new FormData(document.getElementById('job-form'));
+    const jobData = {
+        name: formData.get('name'),
+        company: formData.get('company') || null,
+        industry: formData.get('industry') || null,
+        location: formData.get('location') || null,
+        salary_range: formData.get('salary_range') || null,
+        description: formData.get('description') || null,
+        skills: formData.get('skills') || null,
+        certificates: formData.get('certificates') || null,
+        requirements: formData.get('requirements') || null
+    };
+
+    const jobId = document.getElementById('job-id').value;
+
+    try {
+        let response;
+        if (jobId) {
+            response = await apiRequest(`/jobs/${jobId}`, {
+                method: 'PUT',
+                body: JSON.stringify(jobData)
+            });
+        } else {
+            response = await apiRequest('/jobs', {
+                method: 'POST',
+                body: JSON.stringify(jobData)
+            });
+        }
+
+        if (response.code === 200) {
+            showToast(jobId ? '更新成功' : '添加成功');
+            closeJobModal();
+            loadJobs(state.currentJobPage);
+        }
+    } catch (error) {
+        console.error('保存岗位失败:', error);
+        showToast('保存失败: ' + error.message, 'error');
+    }
+}
+
+async function deleteJob(jobId) {
+    if (!confirm('确定要删除这个岗位吗？')) return;
+    try {
+        const response = await apiRequest(`/jobs/${jobId}`, { method: 'DELETE' });
+        if (response.code === 200) {
+            showToast('删除成功');
+            loadJobs(state.currentJobPage);
+        }
+    } catch (error) {
+        showToast('删除失败: ' + error.message, 'error');
+    }
 }
 
 // 页面加载完成后初始化
