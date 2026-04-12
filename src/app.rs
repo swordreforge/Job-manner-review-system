@@ -31,9 +31,9 @@ impl AppBuilder {
         self
     }
 
-    /// 从环境变量加载配置
-    pub fn load_config_from_env(mut self) -> anyhow::Result<Self> {
-        let config = Config::from_env()?;
+    /// 从命令行参数加载配置
+    pub fn load_config_from_args(mut self) -> anyhow::Result<Self> {
+        let config = Config::from_args()?;
         self.config = Some(config);
         Ok(self)
     }
@@ -81,7 +81,7 @@ impl AppBuilder {
 /// 快捷启动函数
 pub async fn run_app() -> anyhow::Result<()> {
     AppBuilder::new()
-        .load_config_from_env()?
+        .load_config_from_args()?
         .build_and_run()
         .await
 }

@@ -1,42 +1,34 @@
+use clap::Parser;
 use serde::Deserialize;
-use std::env;
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Parser, Deserialize)]
+#[command(name = "teacher-api")]
+#[command(about = "教师端 API 服务", long_about = None)]
 pub struct Config {
+    /// SQLite 数据库连接字符串（用于登录功能）
+    #[arg(long, default_value = "sqlite:auth.db")]
     pub sqlite_database_url: String,
+
+    /// MySQL 数据库连接字符串（用于管理功能）
+    #[arg(long)]
     pub mysql_database_url: String,
+
+    /// 服务器监听地址
+    #[arg(long, default_value = "127.0.0.1")]
     pub server_host: String,
+
+    /// 服务器监听端口
+    #[arg(long, default_value = "8081")]
     pub server_port: u16,
+
+    /// JWT 密钥
+    #[arg(long, default_value = "your-secret-key-change-in-production")]
     pub jwt_secret: String,
 }
 
 impl Config {
-    pub fn from_env() -> anyhow::Result<Self> {
-        dotenv::dotenv().ok();
-
-        let sqlite_database_url = env::var("SQLITE_DATABASE_URL")
-            .unwrap_or_else(|_| "sqlite:auth.db".to_string());
-
-        let mysql_database_url = env::var("MYSQL_DATABASE_URL")
-            .map_err(|_| anyhow::anyhow!("MYSQL_DATABASE_URL 环境变量未设置，请在 .env 文件中配置或通过环境变量传递"))?;
-
-        let server_host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-
-        let server_port = env::var("SERVER_PORT")
-            .unwrap_or_else(|_| "8081".to_string())
-            .parse()
-            .map_err(|e| anyhow::anyhow!("Invalid SERVER_PORT: {}", e))?;
-
-        let jwt_secret = env::var("JWT_SECRET")
-            .unwrap_or_else(|_| "your-secret-key-change-in-production".to_string());
-
-        Ok(Config {
-            sqlite_database_url,
-            mysql_database_url,
-            server_host,
-            server_port,
-            jwt_secret,
-        })
+    pub fn from_args() -> anyhow::Result<Self> {
+        Ok(Config::parse())
     }
 
     pub fn server_address(&self) -> String {

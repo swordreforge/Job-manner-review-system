@@ -36,14 +36,27 @@ async fn cleanup_test_data(pool: &MySqlPool) {
 
 /// 创建测试应用状态
 pub fn create_test_state(pool: MySqlPool) -> teacher_api::state::AppState {
+    use sqlx::SqlitePool;
+    use std::sync::Arc;
+
+    // 创建测试用的 SQLite 连接池（内存数据库）
+    let sqlite_pool = SqlitePool::connect("sqlite::memory:")
+        .await
+        .expect("Failed to create test SQLite pool");
+
     let config = teacher_api::config::Config {
-        database_url: "test".to_string(),
+        sqlite_database_url: "sqlite::memory:".to_string(),
+        mysql_database_url: "test".to_string(),
         server_host: "127.0.0.1".to_string(),
         server_port: 8081,
         jwt_secret: "test-secret-key-for-testing".to_string(),
     };
 
-    teacher_api::state::AppState::new(pool, config)
+    teacher_api::state::AppState::new(
+        Arc::new(sqlite_pool),
+        Arc::new(pool),
+        config,
+    )
 }
 
 /// 生成测试学生数据
