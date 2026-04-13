@@ -6,7 +6,7 @@ export default function GlobalBackground() {
   const containerRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
   
-  const isLandingPage = location.pathname === '/';
+  const isLandingPage = location.pathname === '/' || location.pathname === '/welcome';
   const isAuthPage = location.pathname === '/auth';
   const bgClass = isLandingPage ? 'global-background dark' : 'global-background';
 

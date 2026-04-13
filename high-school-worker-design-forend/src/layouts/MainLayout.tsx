@@ -102,7 +102,7 @@ export default function MainLayout() {
       >
         <TabBar.Item
           key="home"
-          title={isStartPage ? "开始" : "首页"}
+          title="首页"
           icon={<HomeOutlined />}
         />
         {tabs.slice(1).map((tab) => (
