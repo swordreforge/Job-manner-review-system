@@ -248,8 +248,21 @@ pub async fn get_table_schema(
 /// 添加字段
 pub async fn add_column(
     state: web::Data<crate::state::AppState>,
-    req: web::Json<AddColumnRequest>,
+    req: Result<web::Json<AddColumnRequest>, actix_web::Error>,
 ) -> impl Responder {
+    // 处理JSON反序列化错误
+    let req = match req {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Failed to deserialize add column request: {}", e);
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "Invalid request format. Please check your JSON data.",
+                "data": null
+            }));
+        }
+    };
+    
     let pool = state.mysql_db();
     
     // 验证表名和字段名
@@ -272,20 +285,26 @@ pub async fn add_column(
     
     // 添加默认值
     if let Some(default) = &req.default_value {
-        alter_sql.push_str(&format!(" DEFAULT '{}'", escape_sql_string(default)));
+        if !default.is_empty() {
+            alter_sql.push_str(&format!(" DEFAULT '{}'", escape_sql_string(default)));
+        }
     }
     
     // 添加注释
     if let Some(comment) = &req.comment {
-        alter_sql.push_str(&format!(" COMMENT '{}'", escape_sql_string(comment)));
+        if !comment.is_empty() {
+            alter_sql.push_str(&format!(" COMMENT '{}'", escape_sql_string(comment)));
+        }
     }
     
-    // 添加位置
+    // 添加插入位置
     if let Some(after) = &req.after_column {
-        alter_sql.push_str(&format!(" AFTER `{}`", after));
-    } else {
-        alter_sql.push_str(" FIRST");
+        if !after.is_empty() {
+            alter_sql.push_str(&format!(" AFTER `{}`", after));
+        }
     }
+    
+    log::info!("Executing SQL: {}", alter_sql);
     
     match sqlx::query(&alter_sql)
         .execute(pool)
@@ -316,8 +335,21 @@ pub async fn add_column(
 /// 修改字段
 pub async fn modify_column(
     state: web::Data<crate::state::AppState>,
-    req: web::Json<ModifyColumnRequest>,
+    req: Result<web::Json<ModifyColumnRequest>, actix_web::Error>,
 ) -> impl Responder {
+    // 处理JSON反序列化错误
+    let req = match req {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Failed to deserialize modify column request: {}", e);
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "Invalid request format. Please check your JSON data.",
+                "data": null
+            }));
+        }
+    };
+    
     let pool = state.mysql_db();
     
     // 验证表名和字段名
@@ -342,13 +374,19 @@ pub async fn modify_column(
     
     // 添加默认值
     if let Some(default) = &req.default_value {
-        alter_sql.push_str(&format!(" DEFAULT '{}'", escape_sql_string(default)));
+        if !default.is_empty() {
+            alter_sql.push_str(&format!(" DEFAULT '{}'", escape_sql_string(default)));
+        }
     }
     
     // 添加注释
     if let Some(comment) = &req.comment {
-        alter_sql.push_str(&format!(" COMMENT '{}'", escape_sql_string(comment)));
+        if !comment.is_empty() {
+            alter_sql.push_str(&format!(" COMMENT '{}'", escape_sql_string(comment)));
+        }
     }
+    
+    log::info!("Executing SQL: {}", alter_sql);
     
     match sqlx::query(&alter_sql)
         .execute(pool)
@@ -380,8 +418,21 @@ pub async fn modify_column(
 /// 删除字段
 pub async fn delete_column(
     state: web::Data<crate::state::AppState>,
-    req: web::Json<DeleteColumnRequest>,
+    req: Result<web::Json<DeleteColumnRequest>, actix_web::Error>,
 ) -> impl Responder {
+    // 处理JSON反序列化错误
+    let req = match req {
+        Ok(r) => r,
+        Err(e) => {
+            log::error!("Failed to deserialize delete column request: {}", e);
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "Invalid request format. Please check your JSON data.",
+                "data": null
+            }));
+        }
+    };
+    
     let pool = state.mysql_db();
     
     // 验证表名和字段名
@@ -397,6 +448,8 @@ pub async fn delete_column(
         "ALTER TABLE `{}` DROP COLUMN `{}`",
         req.table_name, req.column_name
     );
+    
+    log::info!("Executing SQL: {}", alter_sql);
     
     match sqlx::query(&alter_sql)
         .execute(pool)
