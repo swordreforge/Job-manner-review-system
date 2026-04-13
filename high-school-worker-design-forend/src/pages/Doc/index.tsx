@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -10,11 +10,13 @@ import {
   ArrowLeftOutlined,
   ArrowRightOutlined,
   LoadingOutlined,
+  SearchOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
+import DocSearch from '../../components/DocSearch';
 
 type DocConfig = {
   id: string;
@@ -253,8 +255,10 @@ function DocContent() {
 export default function DocPage() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [searchOpen, setSearchOpen] = useState(false);
   const { docs, setDocs, setActiveDocId } = useDocStore();
 
+  // 加载文档配置
   useEffect(() => {
     fetch('/docs/doc-config.json')
       .then(res => res.json())
@@ -266,6 +270,56 @@ export default function DocPage() {
       })
       .catch(console.error);
   }, [setDocs, setActiveDocId]);
+
+  // 键盘快捷键支持
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ctrl+K 或 Cmd+K 打开搜索
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        setSearchOpen(true);
+        return;
+      }
+
+      // / 键打开搜索（当不在输入框中时）
+      if (e.key === '/' && !isEditingContent(e)) {
+        e.preventDefault();
+        setSearchOpen(true);
+        return;
+      }
+
+      // ESC 关闭搜索
+      if (e.key === 'Escape' && searchOpen) {
+        setSearchOpen(false);
+      }
+    };
+
+    function isEditingContent(event: KeyboardEvent): boolean {
+      const element = event.target as HTMLElement;
+      const tagName = element.tagName;
+
+      return (
+        element.isContentEditable ||
+        tagName === 'INPUT' ||
+        tagName === 'SELECT' ||
+        tagName === 'TEXTAREA'
+      );
+    }
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [searchOpen]);
+
+  // 处理搜索结果点击
+  const handleOpenDoc = useCallback((event: CustomEvent) => {
+    const { docId } = event.detail;
+    setActiveDocId(docId);
+  }, [setActiveDocId]);
+
+  useEffect(() => {
+    window.addEventListener('openDoc', handleOpenDoc as EventListener);
+    return () => window.removeEventListener('openDoc', handleOpenDoc as EventListener);
+  }, [handleOpenDoc]);
 
   return (
     <div className="relative flex min-h-[calc(100vh-64px)] flex-col">
@@ -288,6 +342,19 @@ export default function DocPage() {
           />
           <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>
         </div>
+        <motion.button
+          type="button"
+          onClick={() => setSearchOpen(true)}
+          className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+        >
+          <SearchOutlined />
+          <span className="hidden sm:inline">搜索</span>
+          <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-slate-200 rounded text-xs font-mono">
+            Ctrl K
+          </kbd>
+        </motion.button>
       </motion.div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -313,6 +380,9 @@ export default function DocPage() {
           <DocContent />
         </motion.main>
       </div>
+
+      {/* 搜索弹窗 */}
+      <DocSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );
 }

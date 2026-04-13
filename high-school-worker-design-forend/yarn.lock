@@ -3744,6 +3744,11 @@ minimatch@^3.1.5:
   dependencies:
     brace-expansion "^1.1.7"
 
+minisearch@^7.2.0:
+  version "7.2.0"
+  resolved "https://registry.npmmirror.com/minisearch/-/minisearch-7.2.0.tgz"
+  integrity sha512-dqT2XBYUOZOiC5t2HRnwADjhNS2cecp9u+TJRiJ1Qp/f5qjkeT5APcGPjHw+bz89Ms8Jp+cG4AlE+QZ/QnDglg==
+
 ml-array-max@^1.2.4:
   version "1.2.4"
   resolved "https://registry.npmmirror.com/ml-array-max/-/ml-array-max-1.2.4.tgz"
