@@ -210,7 +210,7 @@ func (l *GetRelatedJobsLogic) GetRelatedJobs(req *types.RelatedJobsReq) (*types.
 	}
 
 	// 获取所有职位
-	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "")
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "", "")
 	if err != nil {
 		logx.Errorf("FindAll failed: %v", err)
 		return &types.JobListResultResp{

@@ -143,6 +143,7 @@ type JobListReq struct {
 	PageSize int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
 	Industry string `form:"industry,optional"`
 	Name     string `form:"name,optional"`
+	Category string `form:"category,optional"`
 }
 
 type JobListResp struct {

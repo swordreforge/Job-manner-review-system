@@ -348,6 +348,7 @@ func initTables(dbConfig *DatabaseConfig) error {
 				description TEXT DEFAULT NULL,
 				company VARCHAR(100) DEFAULT NULL,
 				industry VARCHAR(100) DEFAULT NULL,
+				category VARCHAR(20) DEFAULT NULL COMMENT '岗位分类：tech-技术研发, design-产品设计, ops-运营, sales-销售',
 				location VARCHAR(100) DEFAULT NULL,
 				salary_range VARCHAR(100) DEFAULT NULL,
 				skills TEXT DEFAULT NULL,
@@ -359,6 +360,7 @@ func initTables(dbConfig *DatabaseConfig) error {
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
 				KEY idx_industry (industry),
+				KEY idx_category (category),
 				KEY idx_location (location)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},

@@ -34,7 +34,7 @@ export default function JobsPage() {
 
   useEffect(() => {
     void loadJobs();
-  }, []);
+  }, [activeCategory]);
 
   useEffect(() => {
     if (selectedJobId) {
@@ -69,7 +69,7 @@ export default function JobsPage() {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      const response = await jobApi.list({ page: 1, pageSize: 100 });
+      const response = await jobApi.list({ page: 1, pageSize: 100, category: activeCategory });
       if (response.data?.list) {
         setJobs(response.data.list);
       }

@@ -336,8 +336,8 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (*types.JobListResultRes
 		pageSize = 10
 	}
 
-	// 从数据库查询职位列表
-	jobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, req.Industry)
+	// 从数据库查询职位列表，传递 category 参数
+	jobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, req.Industry, req.Category)
 	if err != nil {
 		logx.Errorf("FindAll failed: %v", err)
 		return &types.JobListResultResp{

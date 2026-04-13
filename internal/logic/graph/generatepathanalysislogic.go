@@ -222,7 +222,7 @@ func (l *GeneratePathAnalysisLogic) GeneratePromotionTargets(req *GeneratePromot
 	}
 
 	// 为每个目标岗位创建晋升路径记录
-	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "")
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "", "")
 	if err != nil {
 		logx.Errorf("Failed to get all jobs: %v", err)
 		return &types.ErrorResp{
@@ -388,7 +388,7 @@ func (l *GeneratePathAnalysisLogic) GenerateTransferTargets(req *GenerateTransfe
 		}, nil
 	}
 
-	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "")
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "", "")
 	if err != nil {
 		logx.Errorf("Failed to get all jobs: %v", err)
 		return &types.ErrorResp{

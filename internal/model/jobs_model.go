@@ -18,7 +18,7 @@ type (
 	JobsModel interface {
 		jobsModel
 		withSession(session sqlx.Session) JobsModel
-		FindAll(ctx context.Context, page, pageSize int, industry string) ([]*Jobs, int64, error)
+		FindAll(ctx context.Context, page, pageSize int, industry, category string) ([]*Jobs, int64, error)
 	}
 
 	customJobsModel struct {
@@ -37,8 +37,8 @@ func (m *customJobsModel) withSession(session sqlx.Session) JobsModel {
 	return NewJobsModel(sqlx.NewSqlConnFromSession(session))
 }
 
-// FindAll 分页查询职位列表，支持按industry过滤
-func (m *customJobsModel) FindAll(ctx context.Context, page, pageSize int, industry string) ([]*Jobs, int64, error) {
+// FindAll 分页查询职位列表，支持按industry和category过滤
+func (m *customJobsModel) FindAll(ctx context.Context, page, pageSize int, industry, category string) ([]*Jobs, int64, error) {
 	// 构建查询条件
 	conditions := []string{}
 	args := []interface{}{}
@@ -46,6 +46,11 @@ func (m *customJobsModel) FindAll(ctx context.Context, page, pageSize int, indus
 	if industry != "" {
 		conditions = append(conditions, "`industry` = ?")
 		args = append(args, industry)
+	}
+
+	if category != "" {
+		conditions = append(conditions, "`category` = ?")
+		args = append(args, category)
 	}
 
 	whereClause := ""

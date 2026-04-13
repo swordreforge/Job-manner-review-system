@@ -299,7 +299,7 @@ func (l *MatchStudentJobsLogic) MatchStudentJobs(req *types.MatchListReq) (*type
 	// 注意：这里需要使用JobsModel的FindAll方法
 	// 如果JobsModel没有FindAll方法，需要先添加
 	// 为了简化，我们假设JobsModel有FindAll方法
-	allJobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, "")
+	allJobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, "", "")
 	if err != nil {
 		logx.Errorf("FindAll jobs failed: %v", err)
 		return &types.MatchListResp{
@@ -495,7 +495,7 @@ func (l *GetRecommendedJobsLogic) GetRecommendedJobs(req *types.MatchListReq) (*
 	}
 
 	// 从数据库获取所有职位
-	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "") // 获取更多职位进行推荐
+	allJobs, _, err := l.svcCtx.JobModel.FindAll(l.ctx, 1, 1000, "", "") // 获取更多职位进行推荐
 	if err != nil {
 		logx.Errorf("FindAll jobs failed: %v", err)
 		return &types.MatchListResp{
