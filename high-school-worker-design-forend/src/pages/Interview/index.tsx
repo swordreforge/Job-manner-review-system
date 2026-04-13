@@ -721,8 +721,20 @@ export default function InterviewPage() {
 
   const getModeDescription = (m: 'practice' | 'assessment') => {
     return m === 'practice' 
+      ? '考察硬技能与产出能力：深挖项目经验、技术深度、业务理解、数据分析能力，多轮高压力面试（3-6轮），追问深、反套路，结果导向偏好"狼性"，着装随意氛围平等' 
+      : '考察综合素质与稳定性：考察沟通表达、组织协调、政治素养、公文写作、抗压能力，轮次少周期长（2-3轮，1-2个月），偏结构化与半结构化，程序合规偏好"稳重"，着装正式氛围严肃';
+  };
+
+  const getModeShortDescription = (m: 'practice' | 'assessment') => {
+    return m === 'practice' 
       ? '算法题、项目深挖、系统设计' 
       : '行测、申论、综合素养';
+  };
+
+  const getModeRecommendation = (m: 'practice' | 'assessment') => {
+    return m === 'practice'
+      ? '准备建议：重点准备项目复盘、算法刷题、行业分析，突出数据成果和独立解决问题能力，重视创新能力、学习速度、试错韧性'
+      : '准备建议：准备自我介绍模板、结构化问题库，突出稳定性、组织纪律性、文字功底，提前了解企业最新政策动态，体现集体意识和政治觉悟';
   };
 
   const getScoreColor = (score: number) => {
@@ -808,41 +820,21 @@ export default function InterviewPage() {
               size="large"
             />
             
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <Card 
-                className={mode === 'practice' ? 'glass-effect border-blue-500 shadow-md' : 'glass-effect'}
-                hoverable
-                onClick={() => setMode('practice')}
-              >
-                <div className="text-center">
-                  <div className="text-4xl mb-3">🏢</div>
-                  <div className="font-semibold text-lg mb-2">大厂技术面</div>
-                  <div className="text-gray-500 text-sm">
-                    算法题、项目深挖、系统设计
-                  </div>
-                  <div className="mt-3 text-xs text-gray-400">
-                    适合技术岗位求职者
-                  </div>
-                </div>
-              </Card>
-              
-              <Card 
-                className={mode === 'assessment' ? 'glass-effect border-green-500 shadow-md' : 'glass-effect'}
-                hoverable
-                onClick={() => setMode('assessment')}
-              >
-                <div className="text-center">
-                  <div className="text-4xl mb-3">🏛️</div>
-                  <div className="font-semibold text-lg mb-2">国企综合面</div>
-                  <div className="text-gray-500 text-sm">
-                    行测、申论、综合素养
-                  </div>
-                  <div className="mt-3 text-xs text-gray-400">
-                    适合国企求职者
-                  </div>
-                </div>
-              </Card>
-            </div>
+            <Card 
+              className={mode === 'practice' ? 'glass-effect border-blue-500 shadow-md' : 'glass-effect border-green-500 shadow-md'}
+            >
+              <div className="text-center">
+                                <div className="text-4xl mb-3">{mode === 'practice' ? '🏢' : '🏛️'}</div>
+                                <div className="font-semibold text-lg mb-2">
+                                  {mode === 'practice' ? '大厂技术面' : '国企综合面'}
+                                </div>
+                                <div className="text-gray-600 mb-3 text-left">
+                                  {getModeDescription(mode)}
+                                </div>
+                                <div className="text-sm text-gray-700 text-left bg-blue-50 p-3 rounded-lg">
+                                  💡 {getModeRecommendation(mode)}
+                                </div>
+                              </div>            </Card>
             
             <Button 
               type="primary" 
@@ -1090,7 +1082,7 @@ export default function InterviewPage() {
                         <Tag color={item.mode === 'practice' ? 'blue' : 'green'}>
                           {getModeLabel(item.mode)}
                         </Tag>
-                        <span>{getModeDescription(item.mode)}</span>
+                        <span>{getModeShortDescription(item.mode)}</span>
                         {isCancelled && (
                           <Tag color="default">已取消</Tag>
                         )}

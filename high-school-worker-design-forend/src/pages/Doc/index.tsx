@@ -1,18 +1,20 @@
 import { useState, useEffect } from 'react';
 import { create } from 'zustand';
+import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import {
   FolderOutlined,
   FolderOpenOutlined,
   FileTextOutlined,
   RightOutlined,
-  MenuOutlined,
   ArrowLeftOutlined,
   ArrowRightOutlined,
   LoadingOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
+import LaserGradient from '../../components/LaserGradient';
+import LaserRay from '../../components/LaserRay';
 
 type DocConfig = {
   id: string;
@@ -249,6 +251,7 @@ function DocContent() {
 }
 
 export default function DocPage() {
+  const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { docs, setDocs, setActiveDocId } = useDocStore();
 
@@ -266,6 +269,10 @@ export default function DocPage() {
 
   return (
     <div className="relative flex min-h-[calc(100vh-64px)] flex-col">
+      {/* 镭射效果背景 */}
+      <LaserGradient />
+      <LaserRay />
+
       <motion.div
         className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3"
         initial={{ opacity: 0, y: -20 }}
@@ -275,8 +282,8 @@ export default function DocPage() {
         <div className="flex items-center gap-3">
           <Button
             type="text"
-            icon={<MenuOutlined />}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
+            icon={<ArrowLeftOutlined />}
+            onClick={() => navigate(-1)}
             className="lg:hidden"
           />
           <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>

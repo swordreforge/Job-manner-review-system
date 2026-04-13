@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
 import { ReadOutlined, RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
@@ -113,6 +113,10 @@ const comments = [
 export default function Landing() {
   const navigate = useNavigate();
   const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
+  const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
+  const [previewImageUrl, setPreviewImageUrl] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [percent, setPercent] = useState(0);
 
   const showPrevFeature = () => {
     setHoveredFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
@@ -122,8 +126,170 @@ export default function Landing() {
     setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
   };
 
+  const handleImageClick = () => {
+    setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
+    setImagePreviewOpen(true);
+  };
+
+  // 品牌展示动画（纯展示，不等待资源）
+  useEffect(() => {
+    const DISPLAY_DURATION = 800; // 显示时长（毫秒）
+    let startTime: number | null = null;
+    let animationId: number | null = null;
+
+    const updateProgress = (timestamp: number) => {
+      if (!startTime) {
+        startTime = timestamp;
+        animationId = requestAnimationFrame(updateProgress);
+        return;
+      }
+
+      const elapsed = timestamp - startTime;
+      let progress = Math.min(1, elapsed / DISPLAY_DURATION);
+      let currentPercent = progress * 100;
+
+      if (currentPercent >= 99.8) {
+        setPercent(100);
+        setTimeout(() => setLoading(false), 100);
+        return;
+      }
+
+      setPercent(Math.floor(currentPercent));
+      animationId = requestAnimationFrame(updateProgress);
+    };
+
+    animationId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, []);
+
   return (
-    <div className="min-h-screen text-white" style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}>
+    <>
+      {/* 加载动画 */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: [0.2, 0.9, 0.4, 1.1] }}
+            className="fixed inset-0 z-[200] flex items-center justify-center"
+            style={{
+              background: 'radial-gradient(circle at 30% 10%, #0f1222, #03050b)',
+              backdropFilter: 'blur(2px)',
+            }}
+          >
+            <div className="text-center relative w-[280px] h-[280px] flex flex-col items-center justify-center">
+              {/* 多环动画区 */}
+              <div className="relative w-[200px] h-[200px] mb-8 flex items-center justify-center">
+                <div
+                  className="absolute w-[180px] h-[180px] rounded-full border-2 border-transparent"
+                  style={{
+                    borderTopColor: '#3b82f6',
+                    borderRightColor: '#8b5cf6',
+                    animation: 'spin 1.4s linear infinite',
+                    filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.5))',
+                  }}
+                />
+                <div
+                  className="absolute w-[140px] h-[140px] rounded-full border-2 border-transparent"
+                  style={{
+                    borderBottomColor: '#06b6d4',
+                    borderLeftColor: '#c084fc',
+                    animation: 'spinReverse 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite',
+                    filter: 'drop-shadow(0 0 5px rgba(6,182,212,0.6))',
+                  }}
+                />
+                <div
+                  className="absolute w-[100px] h-[100px] rounded-full border-2 border-transparent opacity-80"
+                  style={{
+                    borderTopColor: '#f472b6',
+                    borderLeftColor: '#a78bfa',
+                    animation: 'spin 2.2s linear infinite',
+                    filter: 'drop-shadow(0 0 4px rgba(244,114,182,0.4))',
+                  }}
+                />
+                {/* 中心脉冲点 */}
+                <motion.div
+                  className="absolute w-6 h-6 rounded-full"
+                  style={{
+                    background: 'linear-gradient(135deg, #3b82f6, #c084fc)',
+                    boxShadow: '0 0 15px #8b5cf6',
+                  }}
+                  animate={{
+                    scale: [0.8, 1.2, 0.8],
+                    opacity: [0.6, 1, 0.6],
+                  }}
+                  transition={{
+                    duration: 1.5,
+                    repeat: Infinity,
+                    ease: 'easeOut',
+                  }}
+                />
+              </div>
+
+              {/* 百分比显示 */}
+              <div className="relative z-10 font-bold text-[3.2rem] tracking-wider mt-5" style={{
+                background: 'linear-gradient(135deg, #fff, #a0c4ff)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                fontFeatureSettings: '"tnum"',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {percent}
+                <span className="text-[2rem]">%</span>
+              </div>
+
+              {/* 加载文本 */}
+              <div className="mt-3 text-xs tracking-[0.2em] uppercase font-medium text-[#9ca3cf] bg-white/5 backdrop-blur-sm px-4 py-1.5 rounded-full inline-block">
+                加载中...
+              </div>
+
+              {/* 底部装饰光晕 */}
+              <motion.div
+                className="absolute w-[300px] h-[300px] rounded-full -z-10"
+                style={{
+                  background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0) 70%)',
+                }}
+                animate={{
+                  opacity: [0.4, 0.8],
+                  scale: [1, 1.1],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  repeatType: 'reverse',
+                }}
+              />
+
+              {/* 动画样式 */}
+              <style>{`
+                @keyframes spin {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(360deg); }
+                }
+                @keyframes spinReverse {
+                  0% { transform: rotate(0deg); }
+                  100% { transform: rotate(-360deg); }
+                }
+              `}</style>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 主内容 */}
+      <AnimatePresence mode="wait">
+        {!loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.9, ease: [0.23, 1, 0.32, 1] }}
+            className="min-h-screen text-white"
+            style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}
+          >
       {/* Floating Get Started Button */}
       <motion.div
         initial={{ x: 100, opacity: 0 }}
@@ -309,16 +475,17 @@ export default function Landing() {
                   <motion.img
                     src={features[hoveredFeatureIndex].imageUrl}
                     alt={features[hoveredFeatureIndex].title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover cursor-pointer"
                     whileHover={{ scale: 1.05 }}
                     transition={{ duration: 0.3 }}
+                    onClick={handleImageClick}
                   />
                   {/* 功能信息覆盖层 */}
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{ duration: 0.3, delay: 0.2 }}
-                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6"
+                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6 pointer-events-none"
                   >
                     <div>
                       <h3 className="text-2xl font-semibold text-white mb-2">{features[hoveredFeatureIndex].title}</h3>
@@ -764,7 +931,8 @@ export default function Landing() {
                   >
                     立即开始 →
                   </Button>
-                </motion.div>      </motion.div>
+                </motion.div>
+              </motion.div>
 
       {/* Footer */}
       <motion.div
@@ -775,7 +943,47 @@ export default function Landing() {
       >
         <p>© 2026 职业规划助手. All rights reserved.</p>
       </motion.div>
-    </div>
+      </motion.div>
+      )}
+      </AnimatePresence>
+
+      {/* 图片预览模态框 */}
+      <AnimatePresence>
+        {imagePreviewOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+            onClick={() => setImagePreviewOpen(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="relative max-w-7xl max-h-[90vh] w-full mx-auto p-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <motion.button
+                onClick={() => setImagePreviewOpen(false)}
+                className="absolute -top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+              >
+                ✕
+              </motion.button>
+              <img
+                src={previewImageUrl}
+                alt="预览"
+                className="w-full h-full object-contain rounded-lg shadow-2xl"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 

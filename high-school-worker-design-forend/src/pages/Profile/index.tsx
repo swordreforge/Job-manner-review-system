@@ -140,7 +140,7 @@ export default function ProfilePage() {
   const calculateCompleteness = (student: Student | null): number => {
     if (!student) return 0;
     let score = 0;
-    const totalFields = 7;
+    const totalFields = 8;
     
     if (student.name) score++;
     if (student.education) score++;
@@ -149,6 +149,7 @@ export default function ProfilePage() {
     if (student.skills && student.skills.length > 0) score++;
     if (student.certificates && student.certificates.length > 0) score++;
     if (student.internship && student.internship.length > 0) score++;
+    if (student.projects && student.projects.length > 0) score++;
     
     return Math.round((score / totalFields) * 100);
   };
@@ -162,6 +163,7 @@ export default function ProfilePage() {
       { key: 'skills', label: '技能信息', completed: !!student?.skills?.length, targetSection: 'skills' },
       { key: 'certificates', label: '证书信息', completed: !!student?.certificates?.length, targetSection: 'certificates' },
       { key: 'internship', label: '实习经历', completed: !!student?.internship?.length, targetSection: 'internship' },
+      { key: 'projects', label: '项目经验', completed: !!student?.projects?.length, targetSection: 'projects' },
     ];
   };
 
