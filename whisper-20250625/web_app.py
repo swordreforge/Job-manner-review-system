@@ -2,20 +2,20 @@
 # -*- coding: utf-8 -*-
 """
 FastAPI 网页端语音识别应用
-支持音频文件上传和语音识别，自动繁简体转换
+支持音频文件上传和语音识别，使用讯飞星火语音识别服务
 """
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-import whisper
-import opencc
 import uvicorn
 import os
-import torch
 from typing import Optional
 import logging
+
+# 导入讯飞星火客户端
+from xunfei_client import XunfeiASRClient
 
 # 配置日志
 logging.basicConfig(level=logging.INFO)
@@ -24,8 +24,8 @@ logger = logging.getLogger(__name__)
 # 创建 FastAPI 应用
 app = FastAPI(
     title="中文语音识别 API",
-    description="基于 Whisper 的中文语音识别服务，支持繁简体转换",
-    version="1.0.0"
+    description="基于讯飞星火的中文语音识别服务",
+    version="2.0.0"
 )
 
 # 添加 CORS 中间件
@@ -37,10 +37,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 全局变量
-model = None
-converter = None
-model_name = "base"
+# 讯飞星火配置（从环境变量读取）
+XUNFEI_APP_ID = os.getenv("XUNFEI_APP_ID", "d2aa42c9")
+XUNFEI_API_KEY = os.getenv("XUNFEI_API_KEY", "95556aefd492e5942df045678c0302f5")
+XUNFEI_API_SECRET = os.getenv("XUNFEI_API_SECRET", "NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh")
+
+# 创建讯飞星火客户端
+xunfei_client = XunfeiASRClient(
+    app_id=XUNFEI_APP_ID,
+    api_key=XUNFEI_API_KEY,
+    api_secret=XUNFEI_API_SECRET
+)
 
 # 创建静态文件目录
 static_dir = os.path.join(os.path.dirname(__file__), "static")
@@ -53,16 +60,10 @@ if os.path.exists(static_dir):
 
 @app.on_event("startup")
 async def startup_event():
-    """应用启动时加载模型"""
-    global model, converter
-    try:
-        logger.info(f"正在加载 Whisper 模型: {model_name}...")
-        model = whisper.load_model(model_name)
-        converter = opencc.OpenCC('t2s')
-        logger.info("模型加载完成！")
-    except Exception as e:
-        logger.error(f"模型加载失败: {str(e)}")
-        raise
+    """应用启动时初始化"""
+    logger.info("讯飞星火语音识别服务启动中...")
+    logger.info(f"APP ID: {XUNFEI_APP_ID}")
+    logger.info("服务初始化完成！")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -225,27 +226,6 @@ async def root():
                 transform: none;
             }
             
-            .model-select {
-                margin-bottom: 20px;
-                text-align: center;
-            }
-            
-            .model-select label {
-                color: #333;
-                font-size: 1.1em;
-                margin-right: 10px;
-            }
-            
-            .model-select select {
-                padding: 8px 15px;
-                border: 2px solid #667eea;
-                border-radius: 8px;
-                font-size: 1em;
-                color: #333;
-                background: white;
-                cursor: pointer;
-            }
-            
             .result-area {
                 margin-top: 30px;
                 display: none;
@@ -356,17 +336,6 @@ async def root():
         <div class="container">
             <h1>🎙️ 中文语音识别</h1>
             
-            <div class="model-select">
-                <label for="model">选择模型：</label>
-                <select id="model" onchange="changeModel()">
-                    <option value="base">Base (平衡)</option>
-                    <option value="small">Small (高精度)</option>
-                    <option value="medium">Medium (更高精度)</option>
-                    <option value="large">Large (最高精度)</option>
-                    <option value="large-v3-turbo">Large-v3-turbo (高速高精度)</option>
-                </select>
-            </div>
-            
             <div class="record-area">
                 <div class="record-icon">🎙️</div>
                 <div class="record-text">点击按钮开始录音</div>
@@ -374,7 +343,7 @@ async def root():
                     <button class="record-btn" id="recordBtn" onclick="toggleRecording()">
                         <span id="recordBtnText">开始录音</span>
                     </button>
-                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()" style="display: none;">
+                    <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
                         或上传文件
                     </button>
                     <input type="file" id="fileInput" accept="audio/*" onchange="handleFileSelect(event)">
@@ -383,7 +352,7 @@ async def root():
                     <span class="timer-icon">⏱️</span>
                     <span id="timerDisplay">00:00</span>
                 </div>
-                <div class="record-hint">支持录音或上传音频文件</div>
+                <div class="record-hint">支持录音或上传音频文件（讯飞星火语音识别）</div>
             </div>
             
             <div class="result-area" id="resultArea">
@@ -493,12 +462,10 @@ async def root():
                 const formData = new FormData();
                 formData.append('file', audioBlob, 'recording.wav');
                 
-                const modelName = document.getElementById('model').value;
-                
                 try {
                     showStatus('正在上传并识别...', 'loading');
                     
-                    const response = await fetch(`/transcribe?model=${modelName}`, {
+                    const response = await fetch(`/transcribe`, {
                         method: 'POST',
                         body: formData
                     });
@@ -532,12 +499,10 @@ async def root():
             }
             
             async function uploadFile(formData) {
-                const modelName = document.getElementById('model').value;
-                
                 try {
                     showStatus('正在上传并识别...', 'loading');
                     
-                    const response = await fetch(`/transcribe?model=${modelName}`, {
+                    const response = await fetch(`/transcribe`, {
                         method: 'POST',
                         body: formData
                     });
@@ -566,30 +531,6 @@ async def root():
                 resultArea.classList.remove('show');
                 hideStatus();
             }
-            
-            async function changeModel() {
-                const modelName = document.getElementById('model').value;
-                try {
-                    const response = await fetch('/change-model', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ model: modelName })
-                    });
-                    
-                    if (response.ok) {
-                        showStatus(`模型已切换为 ${modelName}`, 'success');
-                        setTimeout(() => hideStatus(), 2000);
-                    } else {
-                        const error = await response.json();
-                        throw new Error(error.detail || '切换模型失败');
-                    }
-                } catch (error) {
-                    console.error('Error:', error);
-                    showStatus(`错误: ${error.message}`, 'error');
-                }
-            }
         </script>
     </body>
     </html>
@@ -600,49 +541,53 @@ async def root():
 @app.post("/transcribe")
 async def transcribe_audio(
     file: UploadFile = File(...),
-    model_name: Optional[str] = "base"
+    model_name: Optional[str] = "xunfei"
 ):
-    """识别上传的音频文件"""
+    """
+    识别上传的音频文件
+
+    Args:
+        file: 音频文件
+        model_name: 模型名称（保留参数以兼容，实际使用讯飞星火）
+
+    Returns:
+        识别结果
+    """
     try:
-        # 验证模型名称
-        valid_models = ["base", "small", "medium", "large", "large-v3-turbo"]
-        if model_name not in valid_models:
-            raise HTTPException(status_code=400, detail=f"无效的模型名称。可用模型: {', '.join(valid_models)}")
-        
-        # 如果模型名称改变，重新加载模型
-        global model
-        if model_name != model_name or model is None:
-            logger.info(f"切换到模型: {model_name}")
-            model = whisper.load_model(model_name)
-        
-        # 保存临时文件
-        temp_path = os.path.join(static_dir, f"temp_{file.filename}")
-        with open(temp_path, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
-        
-        # 使用 Whisper 识别
-        result = model.transcribe(
-            temp_path,
-            language='zh',
-            fp16=False
-        )
-        
-        # 转换为简体中文
-        text = converter.convert(result['text'].strip())
-        
-        # 删除临时文件
-        try:
-            os.remove(temp_path)
-        except:
-            pass
-        
+        # 读取音频数据
+        audio_data = await file.read()
+
+        # 检查音频数据是否为空
+        if not audio_data:
+            raise HTTPException(status_code=400, detail="音频数据为空")
+
+        # 检查音频数据大小（限制 60 秒）
+        max_size = 60 * 16000 * 2  # 60秒 * 16000Hz * 2字节（16bit）
+        if len(audio_data) > max_size:
+            raise HTTPException(
+                status_code=400,
+                detail=f"音频过长，最大支持 60 秒（当前 {len(audio_data) / (16000 * 2):.1f} 秒）"
+            )
+
+        logger.info(f"开始识别音频: {file.filename}, 大小: {len(audio_data)} 字节")
+
+        # 调用讯飞星火识别
+        text = xunfei_client.transcribe_audio_sync(audio_data)
+
+        # 检查识别结果
+        if not text or not text.strip():
+            raise HTTPException(status_code=400, detail="未识别到有效语音内容")
+
+        logger.info(f"识别成功: {text[:50]}...")
+
         return JSONResponse(content={
-            "text": text,
-            "language": result.get('language', 'zh'),
-            "model": model_name
+            "text": text.strip(),
+            "language": "zh_cn",
+            "model": "xunfei-slm"
         })
-        
+
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"识别错误: {str(e)}")
         raise HTTPException(status_code=500, detail=f"识别失败: {str(e)}")
@@ -650,38 +595,48 @@ async def transcribe_audio(
 
 @app.post("/change-model")
 async def change_model(request: dict):
-    """切换模型"""
-    global model
+    """
+    切换模型（保留接口以兼容，讯飞星火不支持切换模型）
+
+    Args:
+        request: 请求参数
+
+    Returns:
+        成功消息
+    """
     try:
-        new_model = request.get('model', 'base')
-        valid_models = ["base", "small", "medium", "large", "large-v3-turbo"]
-        
-        if new_model not in valid_models:
-            raise HTTPException(
-                status_code=400, 
-                detail=f"无效的模型名称。可用模型: {', '.join(valid_models)}"
-            )
-        
-        logger.info(f"正在切换模型: {new_model}")
-        model = whisper.load_model(new_model)
-        
+        new_model = request.get('model', 'xunfei')
+
+        if new_model != 'xunfei':
+            logger.warning(f"尝试切换到模型 {new_model}，但讯飞星火不支持模型切换")
+            return JSONResponse(content={
+                "message": "讯飞星火不支持模型切换，使用默认模型",
+                "model": "xunfei-slm"
+            })
+
         return JSONResponse(content={
-            "message": f"模型已切换为 {new_model}",
-            "model": new_model
+            "message": "使用讯飞星火语音识别模型",
+            "model": "xunfei-slm"
         })
-        
+
     except Exception as e:
         logger.error(f"切换模型错误: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"切换模型失败: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"操作失败: {str(e)}")
 
 
 @app.get("/health")
 async def health_check():
-    """健康检查"""
+    """
+    健康检查
+
+    Returns:
+        服务状态
+    """
     return JSONResponse(content={
         "status": "ok",
-        "model": model_name,
-        "model_loaded": model is not None
+        "model": "xunfei-slm",
+        "model_loaded": True,
+        "app_id": XUNFEI_APP_ID
     })
 
 
@@ -690,6 +645,6 @@ if __name__ == "__main__":
         "web_app:app",
         host="0.0.0.0",
         port=8000,
-        reload=True,
+        reload=False,  # 生产环境关闭热重载
         log_level="info"
     )
