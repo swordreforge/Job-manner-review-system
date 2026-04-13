@@ -25,9 +25,9 @@ def test_auth_url_generation():
 def test_client_initialization():
     """测试客户端初始化"""
     # 使用环境变量中的配置
-    app_id = os.getenv("XUNFEI_APP_ID", "d2aa42c9")
-    api_key = os.getenv("XUNFEI_API_KEY", "95556aefd492e5942df045678c0302f5")
-    api_secret = os.getenv("XUNFEI_API_SECRET", "NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh")
+    app_id = os.getenv("XUNFEI_APP_ID", "your_app_id_here")
+    api_key = os.getenv("XUNFEI_API_KEY", "your_api_key_here")
+    api_secret = os.getenv("XUNFEI_API_SECRET", "your_api_secret_here")
 
     client = XunfeiASRClient(app_id, api_key, api_secret)
 
@@ -44,9 +44,9 @@ def test_client_initialization():
 def test_audio_transcription_mock():
     """测试音频识别（模拟）"""
     client = XunfeiASRClient(
-        app_id="d2aa42c9",
-        api_key="95556aefd492e5942df045678c0302f5",
-        api_secret="NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh"
+        app_id="your_app_id_here",
+        api_key="your_api_key_here",
+        api_secret="your_api_secret_here"
     )
 
     # 创建模拟音频数据（10秒的静音）
@@ -60,9 +60,9 @@ def test_audio_transcription_mock():
 def test_empty_audio():
     """测试空音频处理"""
     client = XunfeiASRClient(
-        app_id="d2aa42c9",
-        api_key="95556aefd492e5942df045678c0302f5",
-        api_secret="NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh"
+        app_id="your_app_id_here",
+        api_key="your_api_key_here",
+        api_secret="your_api_secret_here"
     )
 
     # 测试空音频
@@ -75,9 +75,9 @@ def test_empty_audio():
 def test_large_audio():
     """测试大音频文件处理"""
     client = XunfeiASRClient(
-        app_id="d2aa42c9",
-        api_key="95556aefd492e5942df045678c0302f5",
-        api_secret="NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh"
+        app_id="your_app_id_here",
+        api_key="your_api_key_here",
+        api_secret="your_api_secret_here"
     )
 
     # 测试刚好 60 秒的音频

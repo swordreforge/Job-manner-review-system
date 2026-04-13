@@ -4,6 +4,7 @@
 讯飞星火鉴权调试脚本
 """
 
+import os
 import hmac
 import base64
 import hashlib
@@ -12,9 +13,9 @@ from datetime import datetime
 from urllib.parse import quote
 
 # 讯飞配置
-APP_ID = "d2aa42c9"
-API_KEY = "95556aefd492e5942df045678c0302f5"
-API_SECRET = "NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh"
+APP_ID = os.getenv("XUNFEI_APP_ID", "your_app_id_here")
+API_KEY = os.getenv("XUNFEI_API_KEY", "your_api_key_here")
+API_SECRET = os.getenv("XUNFEI_API_SECRET", "your_api_secret_here")
 
 def generate_auth_url():
     """生成鉴权 URL"""

@@ -39,9 +39,9 @@ app.add_middleware(
 )
 
 # 讯飞星火配置（从环境变量读取）
-XUNFEI_APP_ID = os.getenv("XUNFEI_APP_ID", "d2aa42c9")
-XUNFEI_API_KEY = os.getenv("XUNFEI_API_KEY", "95556aefd492e5942df045678c0302f5")
-XUNFEI_API_SECRET = os.getenv("XUNFEI_API_SECRET", "NzM4NWNiYjg4MGU3OGQ0MTYxMzcyZDFh")
+XUNFEI_APP_ID = os.getenv("XUNFEI_APP_ID", "??????")
+XUNFEI_API_KEY = os.getenv("XUNFEI_API_KEY", "?????????")
+XUNFEI_API_SECRET = os.getenv("XUNFEI_API_SECRET", "??????????")
 
 # 创建讯飞星火客户端
 xunfei_client = XunfeiASRClient(

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List, Select } from 'antd';
+import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
@@ -26,7 +26,6 @@ export default function InterviewPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [transcribing, setTranscribing] = useState(false);
-  const [whisperModel, setWhisperModel] = useState('base');
   // 录音相关引用
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -478,7 +477,7 @@ export default function InterviewPage() {
     formData.append('file', audioBlob, 'recording.webm');
     
     try {
-      const response = await fetch(`http://localhost:8000/transcribe?model=${whisperModel}`, {
+      const response = await fetch(`http://localhost:8000/transcribe?model=base`, {
         method: 'POST',
         body: formData
       });
@@ -981,19 +980,6 @@ export default function InterviewPage() {
                       🎤 开始录音
                     </Button>
                   )}
-                  
-                  {/* 模型选择器 */}
-                  <Select
-                    value={whisperModel}
-                    onChange={setWhisperModel}
-                    disabled={isRecording}
-                    className="w-[150px]"
-                    options={[
-                      { value: 'base', label: 'Base (快)' },
-                      { value: 'small', label: 'Small (准)' },
-                      { value: 'medium', label: 'Medium (更准)' },
-                    ]}
-                  />
                   
                   <div className="flex-1 text-center text-sm text-gray-500">
                     {isRecording ? (
