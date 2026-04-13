@@ -1740,7 +1740,6 @@ function displayTableDetail(data) {
             <h2>表: ${data.table_name}</h2>
             <div class="header-actions">
                 <button class="btn btn-primary" onclick="openAddColumnModal()">添加字段</button>
-                <button class="btn btn-primary" onclick="loadTableData()">查看数据</button>
             </div>
         </div>
         

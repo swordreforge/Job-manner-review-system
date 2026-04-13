@@ -121,6 +121,26 @@ label {
     font-size: 0.9rem;
 }
 
+/* Checkbox标签样式 */
+label.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    margin-bottom: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+label.checkbox-label input[type="checkbox"] {
+    width: auto;
+    cursor: pointer;
+}
+
+label.checkbox-label span {
+    cursor: pointer;
+}
+
 input,
 select {
     width: 100%;
