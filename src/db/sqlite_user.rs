@@ -77,7 +77,7 @@ impl SqliteUserRepository {
         .fetch_one(&*self.pool)
         .await?;
 
-        Ok(Self::row_to_user(row)?)
+        Self::row_to_user(row)
     }
 
     /// 根据 ID 查询用户
@@ -89,7 +89,7 @@ impl SqliteUserRepository {
         .fetch_optional(&*self.pool)
         .await?;
 
-        Ok(row.map(Self::row_to_user).transpose()?)
+        row.map(Self::row_to_user).transpose()
     }
 
     /// 根据用户名查询用户
@@ -101,16 +101,15 @@ impl SqliteUserRepository {
         .fetch_optional(&*self.pool)
         .await?;
 
-        Ok(row.map(Self::row_to_user).transpose()?)
+        row.map(Self::row_to_user).transpose()
     }
 
     /// 验证用户登录
     pub async fn verify_credentials(&self, username: &str, password: &str) -> Result<Option<UserResponse>> {
-        if let Some(user) = self.find_by_username(username).await? {
-            if user.verify_password(password)? {
+        if let Some(user) = self.find_by_username(username).await?
+            && user.verify_password(password)? {
                 return Ok(Some(user.into()));
             }
-        }
         Ok(None)
     }
 

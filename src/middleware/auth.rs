@@ -98,9 +98,7 @@ where
 
             if let Some(auth_header) = auth_header {
                 // 验证 Bearer Token 格式
-                if auth_header.starts_with("Bearer ") {
-                    let token = &auth_header[7..];
-
+                if let Some(token) = auth_header.strip_prefix("Bearer ") {
                     // 从应用状态获取 JWT 密钥
                     if let Some(app_state_data) = req.app_data::<web::Data<crate::state::AppState>>() {
                         let app_state = app_state_data.as_ref();

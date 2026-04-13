@@ -32,8 +32,7 @@ pub async fn refresh_token(
         .and_then(|h| h.to_str().ok());
 
     if let Some(auth_header) = auth_header {
-        if auth_header.starts_with("Bearer ") {
-            let token = &auth_header[7..];
+        if let Some(token) = auth_header.strip_prefix("Bearer ") {
             let auth_service = AuthService::new(&state);
 
             match auth_service.refresh_token(token) {
