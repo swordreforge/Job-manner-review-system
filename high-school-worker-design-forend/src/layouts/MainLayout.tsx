@@ -1,11 +1,17 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, RocketOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, RocketOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
+import { Modal } from 'antd';
+import { useTaskStore } from '../stores';
+import { useState, useEffect } from 'react';
 
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { hasActiveTask, taskDescription, setActiveTask } = useTaskStore();
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [isModalVisible, setIsModalVisible] = useState(false);
 
   const isStudentPage = location.pathname.startsWith('/student');
   const shouldFixTabBar = !isStudentPage;
@@ -47,16 +53,39 @@ export default function MainLayout() {
 
   const activeTab = getActiveTab();
 
+  // 监听任务状态变化，用于调试
+  useEffect(() => {
+    console.log('[MainLayout] Task state:', { hasActiveTask, taskDescription });
+  }, [hasActiveTask, taskDescription]);
+
   const handleTabChange = (key: string) => {
     const tab = tabs.find(t => t.key === key);
     if (tab) {
-      // 首页跳转到 /start
-      if (tab.key === 'home') {
-        navigate('/start');
+      const targetPath = tab.key === 'home' ? '/start' : tab.path;
+
+      // 如果有活跃任务，显示确认对话框
+      if (hasActiveTask) {
+        setPendingNavigation(targetPath);
+        setIsModalVisible(true);
       } else {
-        navigate(tab.path);
+        navigate(targetPath);
       }
     }
+  };
+
+  const handleConfirmNavigation = () => {
+    setIsModalVisible(false);
+    // 重置任务状态，避免切换到其他页面后仍然提示
+    setActiveTask(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+      setPendingNavigation(null);
+    }
+  };
+
+  const handleCancelNavigation = () => {
+    setIsModalVisible(false);
+    setPendingNavigation(null);
   };
 
   return (
@@ -71,15 +100,38 @@ export default function MainLayout() {
         onChange={handleTabChange}
         className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
       >
-        <TabBar.Item 
-          key="home" 
-          title={isStartPage ? "开始" : "首页"} 
-          icon={<HomeOutlined />} 
+        <TabBar.Item
+          key="home"
+          title={isStartPage ? "开始" : "首页"}
+          icon={<HomeOutlined />}
         />
         {tabs.slice(1).map((tab) => (
           <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
         ))}
       </TabBar>
+      <Modal
+        title={
+          <div className="flex items-center gap-2">
+            <ExclamationCircleOutlined className="text-yellow-500" />
+            <span>确认切换页面</span>
+          </div>
+        }
+        open={isModalVisible}
+        onOk={handleConfirmNavigation}
+        onCancel={handleCancelNavigation}
+        okText="确定切换"
+        cancelText="取消"
+        okButtonProps={{ danger: true }}
+      >
+        <div className="py-2">
+          <p className="text-base text-gray-700">
+            当前有任务正在执行中：<span className="font-semibold text-gray-900">{taskDescription || '简历上传或解析'}</span>
+          </p>
+          <p className="mt-2 text-sm text-gray-600">
+            切换页面可能会导致任务中断，是否确认要继续切换？
+          </p>
+        </div>
+      </Modal>
     </div>
   );
 }

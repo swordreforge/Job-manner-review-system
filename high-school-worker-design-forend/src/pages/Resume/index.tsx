@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
 import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { studentApi } from '../../api';
 import type { Student, ResumeHistoryRecord } from '../../types';
+import { useTaskStore } from '../../stores';
 
 export default function ResumePage() {
   type ApiErrorLike = {
@@ -49,6 +50,14 @@ export default function ResumePage() {
   // 历史记录相关状态
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyList, setHistoryList] = useState<ResumeHistoryRecord[]>([]);
+
+  // 任务状态管理
+  const { setActiveTask, hasActiveTask } = useTaskStore();
+
+  // 监听任务状态变化，用于调试
+  useEffect(() => {
+    console.log('[Resume] Task state changed:', { hasActiveTask });
+  }, [hasActiveTask]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyTotal, setHistoryTotal] = useState(0);
   const [historyPage, setHistoryPage] = useState(1);
@@ -146,8 +155,8 @@ export default function ResumePage() {
     });
   };
 
-  // 处理文件上传
-  const handleUpload = async () => {
+  // 处理文件加入队列
+  const handleAddToQueue = async () => {
     if (fileList.length === 0) {
       message.warning('请先选择简历文件');
       return;
@@ -186,6 +195,15 @@ export default function ResumePage() {
 
     setFileQueue(queue);
     setShowQueue(true);
+    message.success('文件已加入队列');
+  };
+
+  // 处理文件上传（开始解析）
+  const handleUpload = async () => {
+    if (fileQueue.length === 0) {
+      message.warning('请先加入文件到队列');
+      return;
+    }
     void handleUploadQueue();
   };
 
@@ -193,6 +211,7 @@ export default function ResumePage() {
   const handleUploadQueue = async () => {
     setIsUploadingQueue(true);
     setCurrentUploadingIndex(0);
+    setActiveTask(true, '简历上传和解析中');
 
     // 逐个处理队列中的文件
     for (let i = 0; i < fileQueue.length; i++) {
@@ -209,6 +228,7 @@ export default function ResumePage() {
 
     setIsUploadingQueue(false);
     setCurrentUploadingIndex(-1);
+    setActiveTask(false);
 
     // 检查是否有成功解析的文件
     const firstSuccess = fileQueue.find((item) => item.status === 'success');
@@ -278,6 +298,7 @@ export default function ResumePage() {
       if (apiErr.response?.status === 401) {
         errorMsg = '请先登录后再上传简历';
         message.error(errorMsg);
+        setActiveTask(false);
         setTimeout(() => {
           window.location.href = '/auth';
         }, 1500);
@@ -303,6 +324,7 @@ export default function ResumePage() {
 
   // 重置队列
   const resetQueue = () => {
+    setActiveTask(false);
     setFileQueue([]);
     setFileList([]);
     setShowQueue(false);
@@ -402,6 +424,25 @@ export default function ResumePage() {
                       renderItem={(item, index) => (
                         <List.Item
                           key={item.uid}
+                          className="cursor-pointer hover:bg-gray-50"
+                          onClick={() => {
+                            if (item.status === 'success' && item.result) {
+                              // 创建临时的详情记录用于显示
+                              const tempDetail: ResumeHistoryRecord = {
+                                id: Date.now(), // 使用时间戳作为临时ID
+                                resumeFileName: item.file.name,
+                                createdAt: Math.floor(Date.now() / 1000),
+                                completenessScore: item.result.completeness || 0,
+                                competitivenessScore: item.result.competitiveness || 0,
+                                suggestions: item.result.suggestions || [],
+                                parsedProfile: item.result,
+                              };
+                              setDetailRecord(tempDetail);
+                              setDetailVisible(true);
+                            } else if (item.status === 'failed') {
+                              message.error(`解析失败：${item.error || '未知错误'}`);
+                            }
+                          }}
                           actions={[
                             !isUploadingQueue && (
                               <Button
@@ -409,7 +450,10 @@ export default function ResumePage() {
                                 type="text"
                                 danger
                                 icon={<DeleteOutlined />}
-                                onClick={() => removeFileFromQueue(item.uid)}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  removeFileFromQueue(item.uid);
+                                }}
                               />
                             ),
                           ].filter(Boolean)}
@@ -470,6 +514,11 @@ export default function ResumePage() {
                                     完整度：{item.result.completeness || 0}分 | 竞争力：{item.result.competitiveness || 0}分
                                   </span>
                                 )}
+                                {item.status === 'success' && (
+                                  <span className="text-blue-500 text-xs ml-2">
+                                    点击查看详情
+                                  </span>
+                                )}
                               </div>
                             }
                           />
@@ -489,11 +538,11 @@ export default function ResumePage() {
                   <Button
                     type="primary"
                     className="px-8"
-                    onClick={handleUpload}
-                    loading={uploading || parsing}
+                    onClick={fileQueue.length > 0 ? handleUpload : handleAddToQueue}
+                    loading={isUploadingQueue}
                     disabled={fileList.length === 0}
                   >
-                    {parsing ? 'AI 解析中...' : uploading ? '上传中...' : '开始解析'}
+                    {isUploadingQueue ? '解析中...' : fileQueue.length > 0 ? '开始解析' : '加入队列'}
                   </Button>
                 </div>
               </Card>

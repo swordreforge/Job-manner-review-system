@@ -117,3 +117,15 @@ export const useUIStore = create<UIState>((set) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
   setTrack: (track) => set({ track }),
 }));
+
+interface TaskState {
+  hasActiveTask: boolean;
+  taskDescription: string;
+  setActiveTask: (active: boolean, description?: string) => void;
+}
+
+export const useTaskStore = create<TaskState>((set) => ({
+  hasActiveTask: false,
+  taskDescription: '',
+  setActiveTask: (active, description = '') => set({ hasActiveTask: active, taskDescription: description }),
+}));
