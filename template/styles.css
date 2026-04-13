@@ -414,10 +414,63 @@ textarea {
     background: var(--bg-card);
     border-radius: 1rem;
     padding: 1.5rem;
+    margin-bottom: 2rem;
 }
 
 .backup-section h3 {
     margin-bottom: 1rem;
+}
+
+/* 账号管理区域 */
+.account-section {
+    background: var(--bg-card);
+    border-radius: 1rem;
+    padding: 1.5rem;
+}
+
+.account-section h3 {
+    margin-bottom: 1.5rem;
+}
+
+.account-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.account-card {
+    background: var(--bg-dark);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border-color);
+}
+
+.account-card h4 {
+    margin-bottom: 1.25rem;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.account-card .form-group {
+    margin-bottom: 1rem;
+}
+
+.account-card .form-group label {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.account-card input {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.account-card input:focus {
+    border-color: var(--primary-color);
+}
+
+.account-card button {
+    width: 100%;
 }
     display: flex;
     align-items: center;

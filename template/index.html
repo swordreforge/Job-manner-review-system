@@ -401,6 +401,49 @@
                     </div>
                     <div id="backups-list" class="backups-list"></div>
                 </div>
+
+                <div class="account-section">
+                    <h3>账号管理</h3>
+                    <div class="account-cards">
+                        <div class="account-card">
+                            <h4>修改密码</h4>
+                            <form id="change-password-form">
+                                <div class="form-group">
+                                    <label for="old-password">当前密码</label>
+                                    <input type="password" id="old-password" name="old_password" required placeholder="请输入当前密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">新密码</label>
+                                    <input type="password" id="new-password" name="new_password" required placeholder="请输入新密码（至少6位）" minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">确认新密码</label>
+                                    <input type="password" id="confirm-password" name="confirm_password" required placeholder="请再次输入新密码" minlength="6">
+                                </div>
+                                <button type="submit" class="btn btn-primary">修改密码</button>
+                            </form>
+                        </div>
+
+                        <div class="account-card">
+                            <h4>修改用户名</h4>
+                            <form id="change-username-form">
+                                <div class="form-group">
+                                    <label for="username-password">当前密码</label>
+                                    <input type="password" id="username-password" name="password" required placeholder="请输入当前密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-username">新用户名</label>
+                                    <input type="text" id="new-username" name="new_username" required placeholder="请输入新用户名" minlength="1" maxlength="50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-username">确认新用户名</label>
+                                    <input type="text" id="confirm-username" name="confirm_username" required placeholder="请再次输入新用户名" minlength="1" maxlength="50">
+                                </div>
+                                <button type="submit" class="btn btn-primary">修改用户名</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

@@ -1014,6 +1014,102 @@ async function deleteBackup(filename) {
     }
 }
 
+// 修改密码
+async function changePassword(event) {
+    event.preventDefault();
+
+    const oldPassword = document.getElementById('old-password').value;
+    const newPassword = document.getElementById('new-password').value;
+    const confirmPassword = document.getElementById('confirm-password').value;
+
+    // 验证新密码
+    if (newPassword.length < 6) {
+        showToast('新密码至少需要6位', 'error');
+        return;
+    }
+
+    if (newPassword !== confirmPassword) {
+        showToast('两次输入的密码不一致', 'error');
+        return;
+    }
+
+    if (oldPassword === newPassword) {
+        showToast('新密码不能与当前密码相同', 'error');
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/auth/change-password', {
+            method: 'POST',
+            body: JSON.stringify({
+                old_password: oldPassword,
+                new_password: newPassword
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('密码修改成功，请重新登录');
+            // 清空表单
+            document.getElementById('change-password-form').reset();
+            // 退出登录
+            setTimeout(() => {
+                handleLogout();
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('修改密码失败:', error);
+        showToast('修改密码失败: ' + error.message, 'error');
+    }
+}
+
+// 修改用户名
+async function changeUsername(event) {
+    event.preventDefault();
+
+    const password = document.getElementById('username-password').value;
+    const newUsername = document.getElementById('new-username').value.trim();
+    const confirmUsername = document.getElementById('confirm-username').value.trim();
+
+    // 验证新用户名
+    if (newUsername.length < 1 || newUsername.length > 50) {
+        showToast('用户名长度必须在1-50位之间', 'error');
+        return;
+    }
+
+    if (newUsername !== confirmUsername) {
+        showToast('两次输入的用户名不一致', 'error');
+        return;
+    }
+
+    if (state.user && state.user.username === newUsername) {
+        showToast('新用户名不能与当前用户名相同', 'error');
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/auth/change-username', {
+            method: 'POST',
+            body: JSON.stringify({
+                password: password,
+                new_username: newUsername
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('用户名修改成功，请重新登录');
+            // 清空表单
+            document.getElementById('change-username-form').reset();
+            // 退出登录
+            setTimeout(() => {
+                handleLogout();
+            }, 2000);
+        }
+    } catch (error) {
+        console.error('修改用户名失败:', error);
+        showToast('修改用户名失败: ' + error.message, 'error');
+    }
+}
+
 // 快捷操作处理
 function handleQuickAction(action) {
     switch (action) {
@@ -1083,6 +1179,10 @@ function init() {
     elements.refreshStatusBtn.addEventListener('click', loadSystemStatus);
     elements.backupBtn.addEventListener('click', backupData);
     elements.viewBackupsBtn.addEventListener('click', loadBackups);
+
+    // 账号管理事件监听
+    document.getElementById('change-password-form').addEventListener('submit', changePassword);
+    document.getElementById('change-username-form').addEventListener('submit', changeUsername);
 
     elements.closeModalBtn.addEventListener('click', closeStudentModal);
     elements.cancelBtn.addEventListener('click', closeStudentModal);
