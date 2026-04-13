@@ -74,6 +74,11 @@ fn configure_api_v1() -> Scope {
                     "/backups",
                     web::get().to(crate::handlers::ops::list_backups),
                 )
+                // 上传备份文件
+                .route(
+                    "/backups/upload",
+                    web::post().to(crate::handlers::ops::upload_backup),
+                )
                 // 下载备份文件
                 .route(
                     "/backups/{filename}",

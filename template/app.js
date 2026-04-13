@@ -1014,6 +1014,56 @@ async function deleteBackup(filename) {
     }
 }
 
+// 上传备份文件
+async function uploadBackup() {
+    // 创建文件选择器
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.sql';
+    input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            return;
+        }
+
+        // 验证文件扩展名
+        if (!file.name.toLowerCase().endsWith('.sql')) {
+            showToast('只能上传 .sql 文件', 'error');
+            return;
+        }
+
+        try {
+            showToast('正在上传备份文件...', 'warning');
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${API_BASE}/ops/backups/upload?backup_dir=.`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.token}`
+                },
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.code === 200) {
+                showToast('备份文件上传成功');
+                loadBackups(); // 重新加载备份列表
+            } else {
+                throw new Error(data.message || '上传失败');
+            }
+        } catch (error) {
+            console.error('上传失败:', error);
+            showToast('上传失败: ' + error.message, 'error');
+        }
+    };
+
+    // 触发文件选择
+    input.click();
+}
+
 // 修改密码
 async function changePassword(event) {
     event.preventDefault();
@@ -1179,6 +1229,7 @@ function init() {
     elements.refreshStatusBtn.addEventListener('click', loadSystemStatus);
     elements.backupBtn.addEventListener('click', backupData);
     elements.viewBackupsBtn.addEventListener('click', loadBackups);
+    document.getElementById('upload-backup-btn').addEventListener('click', uploadBackup);
 
     // 账号管理事件监听
     document.getElementById('change-password-form').addEventListener('submit', changePassword);

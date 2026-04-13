@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::sync::Mutex;
 use sysinfo::{System, Disks, ProcessesToUpdate};
 use once_cell::sync::Lazy;
+use futures_util::StreamExt;
 
 static SYSTEM: Lazy<Mutex<System>> = Lazy::new(|| Mutex::new(System::new_all()));
 
@@ -280,4 +281,127 @@ pub async fn delete_backup(
             }))
         }
     }
+}
+
+/// 上传备份文件接口
+pub async fn upload_backup(
+    mut payload: actix_multipart::Multipart,
+    query: web::Query<ListBackupsRequest>,
+) -> impl Responder {
+    let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
+    
+    // 创建备份目录
+    if let Err(e) = std::fs::create_dir_all(backup_dir) {
+        log::error!("Failed to create backup directory: {}", e);
+        return HttpResponse::InternalServerError().json(serde_json::json!({
+            "code": 500,
+            "message": format!("Failed to create backup directory: {}", e),
+            "data": null
+        }));
+    }
+
+    let mut uploaded_filename = String::new();
+    let mut file_size: u64 = 0;
+
+    // 处理multipart上传
+    while let Some(field_result) = payload.next().await {
+        match field_result {
+            Ok(mut field) => {
+                let content_disposition = field.content_disposition();
+                let filename = match content_disposition {
+                    Some(cd) => cd.get_filename()
+                        .map(|f| f.to_string())
+                        .unwrap_or_else(|| {
+                            // 如果没有文件名，生成一个
+                            let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+                            format!("uploaded_backup_{}.sql", timestamp)
+                        }),
+                    None => {
+                        // 如果没有content disposition，生成一个文件名
+                        let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S");
+                        format!("uploaded_backup_{}.sql", timestamp)
+                    }
+                };
+
+                // 验证文件扩展名
+                if !filename.to_lowercase().ends_with(".sql") {
+                    return HttpResponse::BadRequest().json(serde_json::json!({
+                        "code": 400,
+                        "message": "Only .sql files are allowed",
+                        "data": null
+                    }));
+                }
+
+                uploaded_filename = filename.clone();
+                let filepath = format!("{}/{}", backup_dir, filename);
+
+                // 创建文件
+                let mut file = match std::fs::File::create(&filepath) {
+                    Ok(f) => f,
+                    Err(e) => {
+                        log::error!("Failed to create file: {}", e);
+                        return HttpResponse::InternalServerError().json(serde_json::json!({
+                            "code": 500,
+                            "message": format!("Failed to create file: {}", e),
+                            "data": null
+                        }));
+                    }
+                };
+
+                // 写入文件内容
+                file_size = 0;
+                while let Some(chunk_result) = field.next().await {
+                    match chunk_result {
+                        Ok(bytes) => {
+                            file_size += bytes.len() as u64;
+                            if let Err(e) = std::io::Write::write_all(&mut file, &bytes) {
+                                log::error!("Failed to write to file: {}", e);
+                                return HttpResponse::InternalServerError().json(serde_json::json!({
+                                    "code": 500,
+                                    "message": format!("Failed to write to file: {}", e),
+                                    "data": null
+                                }));
+                            }
+                        }
+                        Err(e) => {
+                            log::error!("Error reading chunk: {}", e);
+                            return HttpResponse::InternalServerError().json(serde_json::json!({
+                                "code": 500,
+                                "message": format!("Error reading chunk: {}", e),
+                                "data": null
+                            }));
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("Error reading multipart field: {}", e);
+                return HttpResponse::BadRequest().json(serde_json::json!({
+                    "code": 400,
+                    "message": format!("Error reading multipart field: {}", e),
+                    "data": null
+                }));
+            }
+        }
+    }
+
+    if uploaded_filename.is_empty() {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "No file uploaded",
+            "data": null
+        }));
+    }
+
+    log::info!("Backup file uploaded successfully: {}", uploaded_filename);
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "code": 200,
+        "message": "Backup file uploaded successfully",
+        "data": {
+            "filename": uploaded_filename,
+            "file_size": file_size,
+            "uploaded_at": chrono::Utc::now().timestamp()
+        }
+    }))
 }
