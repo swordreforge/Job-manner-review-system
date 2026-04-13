@@ -44,6 +44,7 @@
                         <a href="#" class="nav-item" data-page="students">学生管理</a>
                         <a href="#" class="nav-item" data-page="jobs">岗位管理</a>
                         <a href="#" class="nav-item" data-page="users">用户管理</a>
+                        <a href="#" class="nav-item" data-page="schema">数据管理</a>
                         <a href="#" class="nav-item" data-page="system">系统状态</a>
                     </nav>
                     <div class="user-info">
@@ -273,6 +274,35 @@
                         <button class="btn btn-secondary" id="user-prev-page" disabled>上一页</button>
                         <span id="user-page-info">第 1 页</span>
                         <button class="btn btn-secondary" id="user-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据管理内容 -->
+            <div id="schema-content" class="content">
+                <div class="page-header">
+                    <h1>数据管理</h1>
+                    <div class="header-right">
+                        <button class="btn btn-primary" id="refresh-tables-btn">刷新表列表</button>
+                    </div>
+                </div>
+
+                <div class="schema-layout">
+                    <!-- 表列表 -->
+                    <div class="schema-sidebar">
+                        <h3>数据表</h3>
+                        <div id="tables-list" class="tables-list">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+
+                    <!-- 表结构详情 -->
+                    <div class="schema-main">
+                        <div id="table-detail">
+                            <div class="placeholder">
+                                <p>请选择一个表查看结构</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -713,6 +743,118 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-job-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 添加字段模态框 -->
+        <div id="add-column-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>添加字段</h2>
+                    <button class="close-btn" id="close-add-column-modal">&times;</button>
+                </div>
+                <form id="add-column-form">
+                    <input type="hidden" id="add-column-table-name">
+                    <div class="form-group">
+                        <label for="add-column-name">字段名 *</label>
+                        <input type="text" id="add-column-name" name="column_name" required placeholder="例如: age">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-type">字段类型 *</label>
+                        <select id="add-column-type" name="column_type" required>
+                            <option value="VARCHAR(255)">VARCHAR(255)</option>
+                            <option value="TEXT">TEXT</option>
+                            <option value="INT">INT</option>
+                            <option value="BIGINT">BIGINT</option>
+                            <option value="FLOAT">FLOAT</option>
+                            <option value="DOUBLE">DOUBLE</option>
+                            <option value="DECIMAL(10,2)">DECIMAL(10,2)</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="add-column-nullable" name="is_nullable">
+                            允许为空
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-default">默认值</label>
+                        <input type="text" id="add-column-default" name="default_value" placeholder="例如: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-comment">注释</label>
+                        <input type="text" id="add-column-comment" name="comment" placeholder="字段说明">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-after">插入位置</label>
+                        <select id="add-column-after" name="after_column">
+                            <option value="">插入到开头</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-add-column">取消</button>
+                        <button type="submit" class="btn btn-primary">添加</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 修改字段模态框 -->
+        <div id="modify-column-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>修改字段</h2>
+                    <button class="close-btn" id="close-modify-column-modal">&times;</button>
+                </div>
+                <form id="modify-column-form">
+                    <input type="hidden" id="modify-column-table-name">
+                    <input type="hidden" id="modify-column-old-name">
+                    <div class="form-group">
+                        <label for="modify-column-name">字段名</label>
+                        <input type="text" id="modify-column-name" name="new_column_name" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-type">字段类型</label>
+                        <select id="modify-column-type" name="column_type">
+                            <option value="">保持不变</option>
+                            <option value="VARCHAR(255)">VARCHAR(255)</option>
+                            <option value="TEXT">TEXT</option>
+                            <option value="INT">INT</option>
+                            <option value="BIGINT">BIGINT</option>
+                            <option value="FLOAT">FLOAT</option>
+                            <option value="DOUBLE">DOUBLE</option>
+                            <option value="DECIMAL(10,2)">DECIMAL(10,2)</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>
+                            <input type="checkbox" id="modify-column-nullable" name="is_nullable">
+                            允许为空
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-default">默认值</label>
+                        <input type="text" id="modify-column-default" name="default_value" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-comment">注释</label>
+                        <input type="text" id="modify-column-comment" name="comment" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-modify-column">取消</button>
                         <button type="submit" class="btn btn-primary">保存</button>
                     </div>
                 </form>

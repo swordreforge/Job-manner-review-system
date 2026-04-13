@@ -120,4 +120,21 @@ fn configure_api_v1() -> Scope {
                 // 删除用户
                 .route("/{id}", web::delete().to(crate::handlers::user::delete)),
         )
+        // 数据管理路由(需要认证)
+        .service(
+            web::scope("/schema")
+                .wrap(crate::middleware::AuthMiddleware)
+                // 获取所有表
+                .route("/tables", web::get().to(crate::handlers::schema::list_tables))
+                // 获取表结构
+                .route("/tables/{table_name}", web::get().to(crate::handlers::schema::get_table_schema))
+                // 添加字段
+                .route("/columns", web::post().to(crate::handlers::schema::add_column))
+                // 修改字段
+                .route("/columns", web::put().to(crate::handlers::schema::modify_column))
+                // 删除字段
+                .route("/columns", web::delete().to(crate::handlers::schema::delete_column))
+                // 执行自定义SQL
+                .route("/execute", web::post().to(crate::handlers::schema::execute_sql)),
+        )
 }

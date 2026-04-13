@@ -19,6 +19,10 @@ const state = {
     totalUsers: 0,
     users: [],
     currentEditUserId: null,
+    // 数据管理相关
+    tables: [],
+    currentTable: null,
+    currentColumns: [],
     // 图表实例
     cpuChart: null,
     memoryChart: null,
@@ -50,6 +54,7 @@ const elements = {
         students: document.getElementById('students-content'),
         jobs: document.getElementById('jobs-content'),
         users: document.getElementById('users-content'),
+        schema: document.getElementById('schema-content'),
         system: document.getElementById('system-content')
     },
     // 仪表盘元素
@@ -159,6 +164,9 @@ function switchPage(page) {
             break;
         case 'users':
             loadUsers();
+            break;
+        case 'schema':
+            loadSchemaTables();
             break;
         case 'system':
             loadSystemStatus();
@@ -1477,6 +1485,21 @@ document.getElementById('user-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('user-modal')) closeUserModal();
 });
 
+    // 数据管理事件监听
+    document.getElementById('refresh-tables-btn').addEventListener('click', loadSchemaTables);
+    document.getElementById('close-add-column-modal').addEventListener('click', closeAddColumnModal);
+    document.getElementById('cancel-add-column').addEventListener('click', closeAddColumnModal);
+    document.getElementById('add-column-form').addEventListener('submit', addColumn);
+    document.getElementById('add-column-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('add-column-modal')) closeAddColumnModal();
+    });
+    document.getElementById('close-modify-column-modal').addEventListener('click', closeModifyColumnModal);
+    document.getElementById('cancel-modify-column').addEventListener('click', closeModifyColumnModal);
+    document.getElementById('modify-column-form').addEventListener('submit', modifyColumn);
+    document.getElementById('modify-column-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('modify-column-modal')) closeModifyColumnModal();
+    });
+
 async function loadUsers(page = 1) {
     try {
         const url = `/users?page=${page}&page_size=${state.pageSize}`;
@@ -1613,6 +1636,240 @@ async function deleteUser(userId) {
         }
     } catch (error) {
         showToast('删除失败: ' + error.message, 'error');
+    }
+}
+
+// 数据管理相关函数
+async function loadSchemaTables() {
+    try {
+        const response = await apiRequest('/schema/tables');
+        if (response.code === 200) {
+            state.tables = response.data.items;
+            updateTablesList();
+        }
+    } catch (error) {
+        console.error('加载表列表失败:', error);
+        showToast('加载表列表失败', 'error');
+    }
+}
+
+function updateTablesList() {
+    const tablesList = document.getElementById('tables-list');
+    if (state.tables.length === 0) {
+        tablesList.innerHTML = '<div class="loading">暂无数据表</div>';
+        return;
+    }
+
+    tablesList.innerHTML = state.tables.map(table => `
+        <div class="table-item ${state.currentTable === table.table_name ? 'active' : ''}" 
+             onclick="selectTable('${table.table_name}')">
+            <div class="table-name">${table.table_name}</div>
+            <div class="table-meta">
+                <span>${table.row_count || 0} 行</span>
+                <span>${table.engine || 'Unknown'}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+async function selectTable(tableName) {
+    state.currentTable = tableName;
+    updateTablesList();
+
+    try {
+        const response = await apiRequest(`/schema/tables/${tableName}`);
+        if (response.code === 200) {
+            state.currentColumns = response.data.columns;
+            displayTableDetail(response.data);
+        }
+    } catch (error) {
+        console.error('加载表结构失败:', error);
+        showToast('加载表结构失败', 'error');
+    }
+}
+
+function displayTableDetail(data) {
+    const tableDetail = document.getElementById('table-detail');
+    
+    const columnsHtml = data.columns.map(col => `
+        <tr>
+            <td>${col.column_name}</td>
+            <td>${col.data_type}</td>
+            <td>${col.is_nullable}</td>
+            <td>${col.column_key}</td>
+            <td>${col.column_default || '-'}</td>
+            <td>${col.column_comment || '-'}</td>
+            <td>
+                <button class="btn btn-secondary btn-sm" onclick="openModifyColumnModal('${col.column_name}')" title="修改">
+                    编辑
+                </button>
+                <button class="btn btn-secondary btn-sm" style="color: var(--danger-color);" 
+                        onclick="deleteColumn('${col.column_name}')" title="删除">
+                    删除
+                </button>
+            </td>
+        </tr>
+    `).join('');
+
+    tableDetail.innerHTML = `
+        <div class="table-detail-header">
+            <h2>表: ${data.table_name}</h2>
+            <button class="btn btn-primary" onclick="openAddColumnModal()">添加字段</button>
+        </div>
+        
+        <div class="table-columns-section">
+            <h3>字段列表</h3>
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>字段名</th>
+                        <th>类型</th>
+                        <th>允许NULL</th>
+                        <th>键</th>
+                        <th>默认值</th>
+                        <th>注释</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${columnsHtml}
+                </tbody>
+            </table>
+        </div>
+
+        <div class="table-create-section">
+            <h3>CREATE语句</h3>
+            <pre class="sql-code">${data.create_statement || ''}</pre>
+        </div>
+    `;
+}
+
+function openAddColumnModal() {
+    const modal = document.getElementById('add-column-modal');
+    const tableNameInput = document.getElementById('add-column-table-name');
+    const afterSelect = document.getElementById('add-column-after');
+    
+    tableNameInput.value = state.currentTable;
+    
+    // 填充插入位置选项
+    afterSelect.innerHTML = '<option value="">插入到开头</option>' + 
+        state.currentColumns.map(col => 
+            `<option value="${col.column_name}">在 ${col.column_name} 之后</option>`
+        ).join('');
+    
+    modal.classList.add('active');
+}
+
+function closeAddColumnModal() {
+    document.getElementById('add-column-modal').classList.remove('active');
+    document.getElementById('add-column-form').reset();
+}
+
+async function addColumn(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const columnData = {
+        table_name: formData.get('table_name'),
+        column_name: formData.get('column_name'),
+        column_type: formData.get('column_type'),
+        is_nullable: formData.get('is_nullable') === 'on',
+        default_value: formData.get('default_value') || null,
+        comment: formData.get('comment') || null,
+        after_column: formData.get('after_column') || null
+    };
+
+    try {
+        const response = await apiRequest('/schema/columns', {
+            method: 'POST',
+            body: JSON.stringify(columnData)
+        });
+
+        if (response.code === 200) {
+            showToast('字段添加成功');
+            closeAddColumnModal();
+            selectTable(state.currentTable);
+        }
+    } catch (error) {
+        console.error('添加字段失败:', error);
+        showToast('添加字段失败: ' + error.message, 'error');
+    }
+}
+
+function openModifyColumnModal(columnName) {
+    const modal = document.getElementById('modify-column-modal');
+    const column = state.currentColumns.find(c => c.column_name === columnName);
+    
+    if (!column) return;
+
+    document.getElementById('modify-column-table-name').value = state.currentTable;
+    document.getElementById('modify-column-old-name').value = columnName;
+    document.getElementById('modify-column-name').value = '';
+    document.getElementById('modify-column-type').value = '';
+    document.getElementById('modify-column-nullable').checked = column.is_nullable === 'YES';
+    document.getElementById('modify-column-default').value = column.column_default || '';
+    document.getElementById('modify-column-comment').value = column.column_comment || '';
+    
+    modal.classList.add('active');
+}
+
+function closeModifyColumnModal() {
+    document.getElementById('modify-column-modal').classList.remove('active');
+    document.getElementById('modify-column-form').reset();
+}
+
+async function modifyColumn(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const columnData = {
+        table_name: formData.get('table_name'),
+        old_column_name: formData.get('old_column_name'),
+        new_column_name: formData.get('new_column_name') || null,
+        column_type: formData.get('column_type') || null,
+        is_nullable: formData.get('is_nullable') === 'on',
+        default_value: formData.get('default_value') || null,
+        comment: formData.get('comment') || null
+    };
+
+    try {
+        const response = await apiRequest('/schema/columns', {
+            method: 'PUT',
+            body: JSON.stringify(columnData)
+        });
+
+        if (response.code === 200) {
+            showToast('字段修改成功');
+            closeModifyColumnModal();
+            selectTable(state.currentTable);
+        }
+    } catch (error) {
+        console.error('修改字段失败:', error);
+        showToast('修改字段失败: ' + error.message, 'error');
+    }
+}
+
+async function deleteColumn(columnName) {
+    if (!confirm(`确定要删除字段 "${columnName}" 吗？此操作不可逆！`)) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/schema/columns', {
+            method: 'DELETE',
+            body: JSON.stringify({
+                table_name: state.currentTable,
+                column_name: columnName
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('字段删除成功');
+            selectTable(state.currentTable);
+        }
+    } catch (error) {
+        console.error('删除字段失败:', error);
+        showToast('删除字段失败: ' + error.message, 'error');
     }
 }
 
