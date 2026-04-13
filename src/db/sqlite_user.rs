@@ -43,7 +43,7 @@ impl SqliteUserRepository {
     /// 创建用户(密码自动加密)
     pub async fn create(&self, req: CreateUserRequest) -> Result<User> {
         // 检查用户名是否已存在
-        if let Some(_) = self.find_by_username(&req.username).await? {
+        if self.find_by_username(&req.username).await?.is_some() {
             return Err(anyhow::anyhow!("用户名已存在"));
         }
 
