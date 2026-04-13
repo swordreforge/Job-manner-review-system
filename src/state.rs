@@ -19,6 +19,7 @@ impl AppState {
     }
 
     /// 获取 SQLite 连接池（用于登录功能）
+    #[allow(dead_code)]
     pub fn sqlite_db(&self) -> &SqlitePool {
         &self.sqlite_pool
     }
@@ -29,6 +30,7 @@ impl AppState {
     }
 
     /// 获取配置
+    #[allow(dead_code)]
     pub fn config(&self) -> &crate::config::Config {
         &self.config
     }

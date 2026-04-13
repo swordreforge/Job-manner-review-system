@@ -51,6 +51,7 @@ impl JobService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn count_jobs(&self) -> Result<u64> {
         Ok(self.job_repo.count().await? as u64)
     }

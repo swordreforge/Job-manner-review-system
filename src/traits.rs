@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use sqlx::MySqlPool;
 
 /// 数据库访问trait
+#[allow(dead_code)]
 #[async_trait]
 pub trait Database {
     async fn get_pool(&self) -> &MySqlPool;
@@ -9,6 +10,7 @@ pub trait Database {
 }
 
 /// 学生服务trait
+#[allow(dead_code)]
 #[async_trait]
 pub trait StudentService: Send + Sync {
     async fn list(&self, page: u32, page_size: u32) -> anyhow::Result<Vec<Student>>;
@@ -18,6 +20,7 @@ pub trait StudentService: Send + Sync {
 }
 
 /// 测试服务trait
+#[allow(dead_code)]
 #[async_trait]
 pub trait TestService: Send + Sync {
     async fn list(&self, page: u32, page_size: u32) -> anyhow::Result<Vec<TestRecord>>;
@@ -25,6 +28,7 @@ pub trait TestService: Send + Sync {
 }
 
 /// 认证服务trait
+#[allow(dead_code)]
 #[async_trait]
 pub trait AuthService: Send + Sync {
     async fn login(&self, username: &str, password: &str) -> anyhow::Result<AuthToken>;
@@ -32,6 +36,7 @@ pub trait AuthService: Send + Sync {
 }
 
 /// 运维服务trait
+#[allow(dead_code)]
 #[async_trait]
 pub trait OpsService: Send + Sync {
     async fn get_status(&self) -> anyhow::Result<SystemStatus>;
@@ -41,6 +46,7 @@ pub trait OpsService: Send + Sync {
 
 // 数据结构定义
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct Student {
     pub id: String,
@@ -50,6 +56,7 @@ pub struct Student {
     pub created_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct UpdateStudent {
     pub name: Option<String>,
@@ -57,6 +64,7 @@ pub struct UpdateStudent {
     pub email: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct TestRecord {
     pub id: String,
@@ -66,6 +74,7 @@ pub struct TestRecord {
     pub completed_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct AuthToken {
     pub token: String,
@@ -74,6 +83,7 @@ pub struct AuthToken {
     pub expires_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct SystemStatus {
     pub server: String,
@@ -83,6 +93,7 @@ pub struct SystemStatus {
     pub uptime: u64,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct BackupInfo {
     pub backup_id: String,

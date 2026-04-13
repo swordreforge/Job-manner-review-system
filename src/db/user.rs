@@ -5,10 +5,12 @@ use uuid::Uuid;
 use anyhow::Result;
 
 /// 用户数据访问层
+#[allow(dead_code)]
 pub struct UserRepository {
     pool: Arc<MySqlPool>,
 }
 
+#[allow(dead_code)]
 impl UserRepository {
     pub fn new(pool: Arc<MySqlPool>) -> Self {
         Self { pool }

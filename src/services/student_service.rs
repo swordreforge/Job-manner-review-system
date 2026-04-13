@@ -51,6 +51,7 @@ impl StudentService {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn count_students(&self) -> Result<u64> {
         Ok(self.student_repo.count().await? as u64)
     }

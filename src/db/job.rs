@@ -181,6 +181,7 @@ impl JobRepository {
         Ok(result.rows_affected() > 0)
     }
 
+    #[allow(dead_code)]
     pub async fn count(&self) -> Result<i64> {
         let result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM jobs")
             .fetch_one(&*self.pool)

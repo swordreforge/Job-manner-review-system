@@ -26,6 +26,7 @@ impl AppBuilder {
     }
 
     /// 设置配置
+    #[allow(dead_code)]
     pub fn with_config(mut self, config: Config) -> Self {
         self.config = Some(config);
         self

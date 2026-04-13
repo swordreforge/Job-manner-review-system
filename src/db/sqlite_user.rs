@@ -21,6 +21,7 @@ struct SqliteUserRow {
     updated_at: chrono::DateTime<chrono::Utc>,
 }
 
+#[allow(dead_code)]
 impl SqliteUserRepository {
     pub fn new(pool: Arc<SqlitePool>) -> Self {
         Self { pool }

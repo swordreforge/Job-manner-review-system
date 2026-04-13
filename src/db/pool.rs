@@ -26,6 +26,7 @@ pub async fn create_sqlite_pool(database_url: &str) -> anyhow::Result<SqlitePool
 }
 
 /// 兼容性函数：创建连接池（默认为 MySQL）
+#[allow(dead_code)]
 #[deprecated(note = "请使用 create_mysql_pool 或 create_sqlite_pool 替代")]
 pub async fn create_pool(database_url: &str) -> anyhow::Result<MySqlPool> {
     create_mysql_pool(database_url).await
