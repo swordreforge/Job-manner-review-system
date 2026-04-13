@@ -1,4 +1,4 @@
-use actix_web::{HttpResponse, Responder};
+use actix_web::{web, HttpRequest, HttpResponse, Responder};
 use serde::Serialize;
 use std::sync::Mutex;
 use sysinfo::{System, Disks, ProcessesToUpdate};
@@ -20,6 +20,29 @@ pub struct SystemStatus {
     disk_used: u64,
     disk_usage: f32,
     process_count: usize,
+}
+
+/// 备份请求参数
+#[derive(serde::Deserialize)]
+pub struct BackupRequest {
+    /// 备份文件输出目录（可选，默认为当前目录）
+    pub output_dir: Option<String>,
+}
+
+/// 恢复请求参数
+#[derive(serde::Deserialize)]
+pub struct RestoreRequest {
+    /// 备份文件名
+    pub filename: String,
+    /// 备份文件目录（可选，默认为当前目录）
+    pub backup_dir: Option<String>,
+}
+
+/// 列出备份文件请求参数
+#[derive(serde::Deserialize)]
+pub struct ListBackupsRequest {
+    /// 备份文件目录（可选，默认为当前目录）
+    pub backup_dir: Option<String>,
 }
 
 pub async fn status() -> impl Responder {
@@ -74,24 +97,187 @@ pub async fn status() -> impl Responder {
     }))
 }
 
-pub async fn backup() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "code": 200,
-        "message": "success",
-        "data": {
-            "backup_id": "placeholder_backup_id",
-            "filename": "backup.sql",
-            "created_at": chrono::Utc::now()
+/// 数据库备份接口
+pub async fn backup(
+    state: web::Data<crate::state::AppState>,
+    req: web::Json<BackupRequest>,
+) -> impl Responder {
+    let output_dir = req.output_dir.as_deref().unwrap_or(".");
+
+    match state.backup_database(output_dir).await {
+        Ok(backup_path) => {
+            let path = std::path::Path::new(&backup_path);
+            let filename = path.file_name()
+                .and_then(|s| s.to_str())
+                .unwrap_or("backup.sql")
+                .to_string();
+            
+            let metadata = std::fs::metadata(&backup_path);
+            let file_size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+            let created_at = metadata
+                .ok()
+                .and_then(|m| m.created().ok())
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs() as i64);
+
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Database backup completed successfully",
+                "data": {
+                    "backup_id": uuid::Uuid::new_v4().to_string(),
+                    "filename": filename,
+                    "file_path": backup_path,
+                    "file_size": file_size,
+                    "created_at": created_at
+                }
+            }))
         }
-    }))
+        Err(e) => {
+            log::error!("Backup failed: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Backup failed: {}", e),
+                "data": null
+            }))
+        }
+    }
 }
 
-pub async fn list_backups() -> impl Responder {
-    HttpResponse::Ok().json(serde_json::json!({
-        "code": 200,
-        "message": "success",
-        "data": {
-            "items": []
+/// 数据库恢复接口
+pub async fn restore(
+    state: web::Data<crate::state::AppState>,
+    req: web::Json<RestoreRequest>,
+) -> impl Responder {
+    let backup_dir = req.backup_dir.as_deref().unwrap_or(".");
+    let backup_file = format!("{}/{}", backup_dir, req.filename);
+
+    match state.restore_database(&backup_file).await {
+        Ok(_) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Database restored successfully",
+                "data": {
+                    "filename": req.filename,
+                    "restored_at": chrono::Utc::now().timestamp()
+                }
+            }))
         }
-    }))
+        Err(e) => {
+            log::error!("Restore failed: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Restore failed: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 列出备份文件接口
+pub async fn list_backups(
+    state: web::Data<crate::state::AppState>,
+    query: web::Query<ListBackupsRequest>,
+) -> impl Responder {
+    let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
+
+    match state.list_backups(backup_dir) {
+        Ok(backups) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "success",
+                "data": {
+                    "items": backups,
+                    "total": backups.len()
+                }
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to list backups: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to list backups: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 下载备份文件接口
+pub async fn download_backup(
+    req: HttpRequest,
+    query: web::Query<ListBackupsRequest>,
+    filename: web::Path<String>,
+) -> impl Responder {
+    let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
+    let backup_file = format!("{}/{}", backup_dir, filename.into_inner());
+
+    let path = std::path::Path::new(&backup_file);
+    
+    if !path.exists() {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "code": 404,
+            "message": "Backup file not found",
+            "data": null
+        }));
+    }
+
+    match actix_files::NamedFile::open(path) {
+        Ok(file) => {
+            file.set_content_type(mime_guess::mime::APPLICATION_OCTET_STREAM)
+                .disable_content_disposition()
+                .into_response(&req)
+        }
+        Err(e) => {
+            log::error!("Failed to open backup file: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": "Failed to open backup file",
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 删除备份文件接口
+pub async fn delete_backup(
+    query: web::Query<ListBackupsRequest>,
+    filename: web::Path<String>,
+) -> impl Responder {
+    let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
+    let filename_value = filename.into_inner();
+    let backup_file = format!("{}/{}", backup_dir, filename_value);
+
+    let path = std::path::Path::new(&backup_file);
+    
+    // 检查文件是否存在
+    if !path.exists() {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "code": 404,
+            "message": "Backup file not found",
+            "data": null
+        }));
+    }
+
+    // 删除文件
+    match std::fs::remove_file(path) {
+        Ok(_) => {
+            log::info!("Backup file deleted successfully: {}", backup_file);
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Backup file deleted successfully",
+                "data": {
+                    "filename": filename_value,
+                    "deleted_at": chrono::Utc::now().timestamp()
+                }
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to delete backup file: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to delete backup file: {}", e),
+                "data": null
+            }))
+        }
+    }
 }

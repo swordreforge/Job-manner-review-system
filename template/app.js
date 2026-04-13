@@ -861,7 +861,8 @@ async function deleteStudent(studentId) {
 async function backupData() {
     try {
         const response = await apiRequest('/ops/backup', {
-            method: 'POST'
+            method: 'POST',
+            body: JSON.stringify({ output_dir: '.' })
         });
 
         if (response.code === 200) {
@@ -877,7 +878,7 @@ async function backupData() {
 // 加载备份列表
 async function loadBackups() {
     try {
-        const response = await apiRequest('/ops/backups');
+        const response = await apiRequest('/ops/backups?backup_dir=.');
 
         if (response.code === 200) {
             const backups = response.data.items || [];
@@ -889,14 +890,127 @@ async function loadBackups() {
 
             elements.backupsList.innerHTML = backups.map(backup => `
                 <div class="backup-item">
-                    <span>${backup.filename}</span>
-                    <span>${new Date(backup.created_at).toLocaleString('zh-CN')}</span>
+                    <div class="backup-info">
+                        <span class="backup-name">${backup.filename}</span>
+                        <span class="backup-size">${formatBytes(backup.file_size)}</span>
+                        <span class="backup-date">${new Date(backup.created_at * 1000).toLocaleString('zh-CN')}</span>
+                    </div>
+                    <div class="backup-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="downloadBackup('${backup.filename}')" title="下载">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                        </button>
+                        <button class="btn btn-primary btn-sm" onclick="restoreBackup('${backup.filename}')" title="恢复">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                            </svg>
+                        </button>
+                        <button class="btn btn-secondary btn-sm" style="color: var(--danger-color);" onclick="deleteBackup('${backup.filename}')" title="删除">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
             `).join('');
         }
     } catch (error) {
         console.error('加载备份列表失败:', error);
         showToast('加载备份列表失败', 'error');
+    }
+}
+
+// 下载备份文件
+function downloadBackup(filename) {
+    try {
+        const token = state.token;
+        const downloadUrl = `/api/v1/ops/backups/${filename}?backup_dir=.`;
+        
+        // 创建临时链接下载
+        const link = document.createElement('a');
+        link.href = downloadUrl;
+        link.download = filename;
+        
+        // 添加 token 到 header
+        fetch(downloadUrl, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                return response.blob();
+            }
+            throw new Error('下载失败');
+        })
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            link.href = url;
+            link.click();
+            window.URL.revokeObjectURL(url);
+            showToast('下载成功');
+        })
+        .catch(error => {
+            console.error('下载失败:', error);
+            showToast('下载失败: ' + error.message, 'error');
+        });
+    } catch (error) {
+        console.error('下载失败:', error);
+        showToast('下载失败: ' + error.message, 'error');
+    }
+}
+
+// 恢复数据库
+async function restoreBackup(filename) {
+    if (!confirm(`确定要恢复数据库吗？\n\n恢复操作将覆盖当前数据库，此操作不可逆！\n\n备份文件: ${filename}`)) {
+        return;
+    }
+
+    try {
+        showToast('正在恢复数据库...', 'warning');
+        
+        const response = await apiRequest('/ops/restore', {
+            method: 'POST',
+            body: JSON.stringify({
+                filename: filename,
+                backup_dir: '.'
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('数据库恢复成功');
+            // 刷新数据
+            loadDashboardData();
+        }
+    } catch (error) {
+        console.error('恢复失败:', error);
+        showToast('恢复失败: ' + error.message, 'error');
+    }
+}
+
+// 删除备份文件
+async function deleteBackup(filename) {
+    if (!confirm(`确定要删除备份文件吗？\n\n${filename}\n\n删除后无法恢复！`)) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/ops/backups/${filename}?backup_dir=.`, {
+            method: 'DELETE'
+        });
+
+        if (response.code === 200) {
+            showToast('删除成功');
+            loadBackups(); // 重新加载备份列表
+        }
+    } catch (error) {
+        console.error('删除失败:', error);
+        showToast('删除失败: ' + error.message, 'error');
     }
 }
 

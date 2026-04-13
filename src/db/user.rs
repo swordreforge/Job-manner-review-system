@@ -82,10 +82,11 @@ impl UserRepository {
 
     /// 验证用户登录
     pub async fn verify_credentials(&self, username: &str, password: &str) -> Result<Option<UserResponse>> {
-        if let Some(user) = self.find_by_username(username).await?
-            && user.verify_password(password)? {
+        if let Some(user) = self.find_by_username(username).await? {
+            if user.verify_password(password)? {
                 return Ok(Some(user.into()));
             }
+        }
         Ok(None)
     }
 

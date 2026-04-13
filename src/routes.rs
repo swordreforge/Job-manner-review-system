@@ -62,10 +62,22 @@ fn configure_api_v1() -> Scope {
                 .route("/status", web::get().to(crate::handlers::ops::status))
                 // 数据库备份
                 .route("/backup", web::post().to(crate::handlers::ops::backup))
+                // 数据库恢复
+                .route("/restore", web::post().to(crate::handlers::ops::restore))
                 // 备份列表
                 .route(
                     "/backups",
                     web::get().to(crate::handlers::ops::list_backups),
+                )
+                // 下载备份文件
+                .route(
+                    "/backups/{filename}",
+                    web::get().to(crate::handlers::ops::download_backup),
+                )
+                // 删除备份文件
+                .route(
+                    "/backups/{filename}",
+                    web::delete().to(crate::handlers::ops::delete_backup),
                 ),
         )
         // 岗位路由(需要认证)

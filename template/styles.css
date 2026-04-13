@@ -786,18 +786,61 @@ textarea {
 }
 
 .backups-list {
-    max-height: 200px;
+    max-height: 400px;
     overflow-y: auto;
 }
 
 .backup-item {
-    padding: 0.75rem;
+    padding: 1rem;
     background: var(--bg-dark);
     border-radius: 0.5rem;
     margin-bottom: 0.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: all 0.3s ease;
+}
+
+.backup-item:hover {
+    background: var(--bg-hover);
+    transform: translateX(2px);
+}
+
+.backup-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 1;
+}
+
+.backup-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.backup-size {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.backup-date {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.backup-item .backup-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.btn-sm {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+}
+
+.btn-sm svg {
+    display: block;
 }
 
 /* 模态框 */
