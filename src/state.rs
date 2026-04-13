@@ -38,6 +38,7 @@ impl AppState {
     }
 
     /// 获取 MySQL 数据库配置信息
+    #[allow(dead_code)]
     pub fn get_mysql_config(&self) -> (&str, u16, &str, &str, &str) {
         (
             self.config.mysql_host.as_str(),
@@ -49,13 +50,13 @@ impl AppState {
     }
 
     /// 执行数据库备份
-    /// 
+    ///
     /// # 参数
     /// - `output_dir`: 备份文件输出目录
-    /// 
+    ///
     /// # 返回
     /// - 备份文件的完整路径
-    /// 
+    ///
     /// # 平台支持
     /// - Linux/macOS: 完全支持
     /// - Windows: 不支持，返回错误提示用户使用其他工具
@@ -67,20 +68,24 @@ impl AppState {
                 "数据库备份功能在 Windows 平台上不可用。\n\
                  请使用以下替代方案：\n\
                  1. 使用 MySQL Workbench 手动导出数据库\n\
-                 2. 使用命令行工具: mysqldump -h {} -P {} -u {} -p {} > backup.sql\n\
+                 2. 使用命令行工具: mysqldump -h {} -P {} -u {} -p {} > {}\n\
                  3. 使用备份-db.sh 脚本（在 Linux/macOS 上运行）",
                 self.config.mysql_host,
                 self.config.mysql_port,
                 self.config.mysql_username,
-                self.config.mysql_database
+                self.config.mysql_database,
+                format!("{}/backup.sql", output_dir)
             );
         }
 
-        let (host, port, user, password, db_name) = self.get_mysql_config();
+        // 平台检查：非 Windows 平台执行备份
+        #[cfg(not(target_os = "windows"))]
+        {
+            let (host, port, user, password, db_name) = self.get_mysql_config();
 
-        // 创建备份目录
-        std::fs::create_dir_all(output_dir)
-            .context("Failed to create backup directory")?;
+            // 创建备份目录
+            std::fs::create_dir_all(output_dir)
+                .context("Failed to create backup directory")?;
 
         // 生成备份文件名
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
@@ -229,6 +234,7 @@ impl AppState {
             .context("Failed to write backup file")?;
 
         Ok(output_path)
+        } // End of #[cfg(not(target_os = "windows"))]
     }
 
     /// 执行数据库恢复
@@ -257,7 +263,10 @@ impl AppState {
             );
         }
 
-        let (host, port, user, password, db_name) = self.get_mysql_config();
+        // 平台检查：非 Windows 平台执行恢复
+        #[cfg(not(target_os = "windows"))]
+        {
+            let (host, port, user, password, db_name) = self.get_mysql_config();
 
         // 检查备份文件是否存在
         if !Path::new(backup_file).exists() {
@@ -308,6 +317,7 @@ impl AppState {
         }
 
         Ok(())
+        } // End of #[cfg(not(target_os = "windows"))]
     }
 
     /// 列出所有备份文件
