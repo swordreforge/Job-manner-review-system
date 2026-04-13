@@ -634,11 +634,19 @@ textarea {
 
 .student-details h4 {
     margin-bottom: 0.25rem;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .student-details p {
     color: var(--text-secondary);
     font-size: 0.85rem;
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .student-actions {
@@ -704,6 +712,10 @@ textarea {
     font-weight: 600;
     color: var(--text-secondary);
     border-bottom: 2px solid var(--border-color);
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .data-table td {
@@ -713,6 +725,19 @@ textarea {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.data-table td:not(:last-child),
+.data-table th:not(:last-child) {
+    max-width: 200px;
+}
+
+/* 操作列不省略 */
+.data-table td:last-child,
+.data-table th:last-child {
+    max-width: none;
+    white-space: normal;
+    text-overflow: inherit;
 }
 
 .data-table tbody tr {
@@ -1381,4 +1406,45 @@ textarea {
 .null-value {
     color: var(--text-secondary);
     font-style: italic;
+}
+
+/* 通用的文本省略类 */
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-ellipsis-sm {
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-ellipsis-md {
+    max-width: 250px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.text-ellipsis-lg {
+    max-width: 400px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 表格行省略 */
+.table-row-ellipsis td {
+    white-space: nowrap;
+}
+
+/* 表格单元格强制省略 */
+.table-cell-ellipsis {
+    max-width: 300px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
