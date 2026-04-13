@@ -112,21 +112,6 @@
                             <p>数据库状态</p>
                         </div>
                     </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon server-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
-                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
-                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
-                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
-                            </svg>
-                        </div>
-                        <div class="stat-info">
-                            <h3 id="server-uptime">0h</h3>
-                            <p>运行时间</p>
-                        </div>
-                    </div>
                 </div>
 
                 <!-- 快捷操作 -->
@@ -234,6 +219,7 @@
                                 <th>岗位名称</th>
                                 <th>公司</th>
                                 <th>行业</th>
+                                <th>种类</th>
                                 <th>地点</th>
                                 <th>薪资</th>
                                 <th>操作</th>
@@ -241,7 +227,7 @@
                         </thead>
                         <tbody id="jobs-table-body">
                             <tr>
-                                <td colspan="7" class="loading">加载中...</td>
+                                <td colspan="8" class="loading">加载中...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -574,6 +560,10 @@
                                 <span id="job-detail-industry">-</span>
                             </div>
                             <div class="detail-item">
+                                <label>种类</label>
+                                <span id="job-detail-category">-</span>
+                            </div>
+                            <div class="detail-item">
                                 <label>地点</label>
                                 <span id="job-detail-location">-</span>
                             </div>
@@ -616,6 +606,16 @@
                         <div class="form-group">
                             <label for="job-industry">行业</label>
                             <input type="text" id="job-industry" name="industry">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="job-category">种类</label>
+                            <input type="text" id="job-category" name="category">
+                        </div>
+                        <div class="form-group">
+                            <label for="job-location">地点</label>
+                            <input type="text" id="job-location" name="location">
                         </div>
                     </div>
                     <div class="form-row">

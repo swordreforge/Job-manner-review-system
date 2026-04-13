@@ -18,17 +18,18 @@ impl JobRepository {
         sqlx::query(
             r#"
             INSERT INTO jobs (
-                name, description, company, industry, location, salary_range,
+                name, description, company, industry, category, location, salary_range,
                 skills, certificates, soft_skills, requirements, growth_potential,
                 created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#
         )
         .bind(&req.name)
         .bind(&req.description)
         .bind(&req.company)
         .bind(&req.industry)
+        .bind(&req.category)
         .bind(&req.location)
         .bind(&req.salary_range)
         .bind(&req.skills)
@@ -67,7 +68,7 @@ impl JobRepository {
         let offset = (page - 1) * page_size;
 
         let base_select = "SELECT * FROM jobs";
-        
+
         let mut sql = base_select.to_string();
         let mut count_sql = "SELECT COUNT(*) as count FROM jobs".to_string();
 
@@ -82,6 +83,16 @@ impl JobRepository {
                 format!(" AND industry = '{}'", industry)
             } else {
                 format!(" WHERE industry = '{}'", industry)
+            };
+            sql.push_str(&and_clause);
+            count_sql.push_str(&and_clause);
+        }
+
+        if let Some(category) = &query.category {
+            let and_clause = if sql.contains(" WHERE ") {
+                format!(" AND category = '{}'", category)
+            } else {
+                format!(" WHERE category = '{}'", category)
             };
             sql.push_str(&and_clause);
             count_sql.push_str(&and_clause);
@@ -116,6 +127,9 @@ impl JobRepository {
         }
         if let Some(industry) = &req.industry {
             updates.push(("industry", industry.clone()));
+        }
+        if let Some(category) = &req.category {
+            updates.push(("category", category.clone()));
         }
         if let Some(location) = &req.location {
             updates.push(("location", location.clone()));

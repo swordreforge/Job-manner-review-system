@@ -495,6 +495,12 @@ function updateSystemStatusUI() {
     document.getElementById('server-status-text').textContent = status.server === 'running' ? '运行中' : '已停止';
     document.getElementById('db-status-text').textContent = status.database === 'connected' ? '已连接' : '未连接';
 
+    // 更新首页的数据库状态
+    const databaseStatusEl = document.getElementById('database-status');
+    if (databaseStatusEl) {
+        databaseStatusEl.textContent = status.database === 'connected' ? '已连接' : '未连接';
+    }
+
     const uptimeSeconds = status.uptime || 0;
     const hours = Math.floor(uptimeSeconds / 3600);
     const minutes = Math.floor((uptimeSeconds % 3600) / 60);
@@ -957,7 +963,7 @@ async function loadJobs(page = 1) {
 function updateJobsTable() {
     const tbody = document.getElementById('jobs-table-body');
     if (state.jobs.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" class="loading">暂无岗位数据</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" class="loading">暂无岗位数据</td></tr>';
         return;
     }
     tbody.innerHTML = state.jobs.map(job => `
@@ -966,6 +972,7 @@ function updateJobsTable() {
             <td>${job.name}</td>
             <td>${job.company || '-'}</td>
             <td>${job.industry || '-'}</td>
+            <td>${job.category || '-'}</td>
             <td>${job.location || '-'}</td>
             <td>${job.salary_range || '-'}</td>
             <td>
@@ -995,6 +1002,7 @@ function showJobDetail(job) {
     document.getElementById('job-detail-name').textContent = job.name || '-';
     document.getElementById('job-detail-company').textContent = job.company || '-';
     document.getElementById('job-detail-industry').textContent = job.industry || '-';
+    document.getElementById('job-detail-category').textContent = job.category || '-';
     document.getElementById('job-detail-location').textContent = job.location || '-';
     document.getElementById('job-detail-salary').textContent = job.salary_range || '-';
     document.getElementById('job-detail-description').textContent = job.description || '暂无描述';
@@ -1019,6 +1027,7 @@ function openJobModal(mode = 'add', jobId = null) {
             document.getElementById('job-name').value = job.name || '';
             document.getElementById('job-company').value = job.company || '';
             document.getElementById('job-industry').value = job.industry || '';
+            document.getElementById('job-category').value = job.category || '';
             document.getElementById('job-location').value = job.location || '';
             document.getElementById('job-salary').value = job.salary_range || '';
             document.getElementById('job-description').value = job.description || '';
@@ -1044,6 +1053,7 @@ async function saveJob(event) {
         name: formData.get('name'),
         company: formData.get('company') || null,
         industry: formData.get('industry') || null,
+        category: formData.get('category') || null,
         location: formData.get('location') || null,
         salary_range: formData.get('salary_range') || null,
         description: formData.get('description') || null,
