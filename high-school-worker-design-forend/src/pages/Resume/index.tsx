@@ -367,9 +367,6 @@ export default function ResumePage() {
                       >
                         查看优化建议
                       </Button>,
-                      <Button key="compare" onClick={() => message.info('双版本对比功能开发中')}>
-                        双版本对比
-                      </Button>,
                       <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
                         重新上传
                       </Button>,

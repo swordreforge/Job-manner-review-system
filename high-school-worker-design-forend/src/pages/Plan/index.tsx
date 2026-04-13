@@ -23,6 +23,7 @@ interface ReportItem {
   status: string;
   createdAt: number;
   content?: string;
+  type: 'bigtech' | 'gov' | 'unknown';
 }
 
 export default function PlanPage() {
@@ -40,7 +41,7 @@ export default function PlanPage() {
   const [selectedReportId, setSelectedReportId] = useState<number | null>(null);
   const [loadingReports, setLoadingReports] = useState(false);
   const [sortBy, setSortBy] = useState<'desc' | 'asc'>('desc');
-  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => {
     fetchStudentData();
@@ -90,12 +91,16 @@ export default function PlanPage() {
       const reportsData = await reportApi.getMe();
       if (reportsData && reportsData.data && reportsData.data.list) {
         const reportList = reportsData.data.list.map((r: any) => {
-          // 处理标题格式
+          // 处理标题格式并识别类型
           let displayTitle = r.title || `职业规划报告 #${r.id}`;
+          let reportType: 'bigtech' | 'gov' | 'unknown' = 'unknown';
+          
           if (displayTitle.includes('- full')) {
             displayTitle = displayTitle.replace('- full', '(大厂)');
+            reportType = 'bigtech';
           } else if (displayTitle.includes('- gap')) {
             displayTitle = displayTitle.replace('- gap', '(国企)');
+            reportType = 'gov';
           }
           
           return {
@@ -104,6 +109,7 @@ export default function PlanPage() {
             status: r.status,
             createdAt: r.createdAt,
             content: r.content,
+            type: reportType,
           };
         });
         setReports(reportList);
@@ -143,9 +149,13 @@ export default function PlanPage() {
   const getFilteredAndSortedReports = () => {
     let filtered = [...reports];
 
-    // 按状态筛选
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(report => report.status === filterStatus);
+    // 按类型筛选
+    if (filterType !== 'all') {
+      if (filterType === 'bigtech') {
+        filtered = filtered.filter(report => report.type === 'bigtech');
+      } else if (filterType === 'gov') {
+        filtered = filtered.filter(report => report.type === 'gov');
+      }
     }
 
     // 按时间排序
@@ -162,8 +172,8 @@ export default function PlanPage() {
     setSortBy(order);
   };
 
-  const handleFilterChange = (status: string) => {
-    setFilterStatus(status);
+  const handleTypeChange = (type: string) => {
+    setFilterType(type);
   };
 
   const handleGenerateReport = async () => {
@@ -249,7 +259,7 @@ export default function PlanPage() {
           loading={generating}
           className="ml-4"
         >
-          {generating ? '生成中...' : '重新生成'}
+          {generating ? '生成中...' : '生成'}
         </Button>
       </div>
 
@@ -314,15 +324,14 @@ export default function PlanPage() {
 
                 {/* 筛选下拉菜单 */}
                 <Select
-                  value={filterStatus}
-                  onChange={handleFilterChange}
+                  value={filterType}
+                  onChange={handleTypeChange}
                   size="small"
                   style={{ width: 90 }}
                   options={[
                     { label: '全部', value: 'all' },
-                    { label: '已完成', value: 'completed' },
-                    { label: '草稿', value: 'draft' },
-                    { label: '失败', value: 'failed' },
+                    { label: '国企', value: 'gov' },
+                    { label: '大厂', value: 'bigtech' },
                   ]}
                 />
               </Space>
@@ -378,9 +387,9 @@ export default function PlanPage() {
               ) : (
                 <Empty
                   description={
-                    filterStatus === 'all'
+                    filterType === 'all'
                       ? '暂无历史记录'
-                      : `暂无${filterStatus === 'completed' ? '已完成' : filterStatus === 'draft' ? '草稿' : '失败'}的报告`
+                      : `暂无${filterType === 'bigtech' ? '大厂' : '国企'}的报告`
                   }
                   image={Empty.PRESENTED_IMAGE_SIMPLE}
                 />

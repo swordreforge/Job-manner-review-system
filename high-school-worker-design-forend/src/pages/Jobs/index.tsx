@@ -30,7 +30,7 @@ export default function JobsPage() {
   const [activeTab, setActiveTab] = useState('graph');
   const [activeCategory, setActiveCategory] = useState('tech');
 
-  const popularJobs = ['前端工程师', 'Java 开发', '产品经理'];
+  const popularJobs = ['Golang后端开发工程师 (技术)', '高级Java开发工程师', '产品经理'];
 
   useEffect(() => {
     void loadJobs();
