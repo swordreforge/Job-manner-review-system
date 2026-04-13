@@ -167,6 +167,27 @@ impl SqliteUserRepository {
         Ok(result.rows_affected() > 0)
     }
 
+    /// 更新用户名
+    pub async fn update_username(&self, id: &Uuid, new_username: &str) -> Result<bool> {
+        // 检查新用户名是否已被使用
+        if let Some(existing_user) = self.find_by_username(new_username).await? {
+            if existing_user.id != *id {
+                return Err(anyhow::anyhow!("用户名已被使用"));
+            }
+        }
+
+        let result = sqlx::query(
+            "UPDATE users SET username = ?, updated_at = ? WHERE id = ?"
+        )
+        .bind(new_username)
+        .bind(chrono::Utc::now())
+        .bind(id.to_string())
+        .execute(&*self.pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
     /// 删除用户
     pub async fn delete(&self, id: &Uuid) -> Result<bool> {
         let result = sqlx::query("DELETE FROM users WHERE id = ?")

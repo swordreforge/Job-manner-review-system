@@ -146,3 +146,17 @@ pub struct UpdateMySqlUserRequest {
     pub role: Option<String>,
     pub password: Option<String>,
 }
+
+/// 修改密码请求
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct ChangePasswordRequest {
+    pub old_password: String,
+    pub new_password: String,
+}
+
+/// 修改用户名请求
+#[derive(Debug, Serialize, Deserialize, Validate)]
+pub struct ChangeUsernameRequest {
+    pub password: String, // 需要验证当前密码
+    pub new_username: String,
+}

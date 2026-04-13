@@ -30,6 +30,15 @@ fn configure_api_v1() -> Scope {
                     web::post().to(crate::handlers::auth::refresh_token),
                 ),
         )
+        // 认证路由(需要认证中间件) - 用户管理自己的信息
+        .service(
+            web::scope("/auth")
+                .wrap(crate::middleware::AuthMiddleware)
+                // 修改密码接口
+                .route("/change-password", web::post().to(crate::handlers::auth::change_password))
+                // 修改用户名接口
+                .route("/change-username", web::post().to(crate::handlers::auth::change_username)),
+        )
         // 学生数据路由(需要认证)
         .service(
             web::scope("/students")
