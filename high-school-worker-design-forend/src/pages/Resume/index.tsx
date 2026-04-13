@@ -17,6 +17,16 @@ export default function ResumePage() {
     message?: string;
   };
 
+  // 文件队列状态类型
+  type FileQueueItem = {
+    uid: string;
+    file: File;
+    status: 'waiting' | 'uploading' | 'success' | 'failed';
+    progress: number;
+    error?: string;
+    result?: Student;
+  };
+
   const [fileList, setFileList] = useState<UploadFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [parsing, setParsing] = useState(false);
@@ -24,6 +34,12 @@ export default function ResumePage() {
   const [progress, setProgress] = useState(0);
   const [profile, setProfile] = useState<Student | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 文件队列相关状态
+  const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
+  const [isUploadingQueue, setIsUploadingQueue] = useState(false);
+  const [currentUploadingIndex, setCurrentUploadingIndex] = useState(-1);
+  const [showQueue, setShowQueue] = useState(false);
 
   // 历史记录相关状态
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -132,64 +148,120 @@ export default function ResumePage() {
       return;
     }
 
-    const file = fileList[0].originFileObj;
-    if (!file) {
-      message.error('文件读取失败');
-      return;
-    }
-
-    // 验证文件格式
-    const fileName = file.name.toLowerCase();
-    if (!fileName.endsWith('.pdf') && !fileName.endsWith('.docx')) {
-      message.error('只支持 PDF 和 DOCX 格式的文件');
-      return;
-    }
-
-    // 验证文件大小（10MB）
+    // 验证所有文件
+    const invalidFiles: string[] = [];
     const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      message.error('文件大小不能超过 10MB');
-      return;
-    }
 
-    setUploading(true);
-    setProgress(0);
-    setError(null);
-
-    try {
-      // 1. 文件转 base64
-      setProgress(20);
-      const base64Content = await fileToBase64(file);
-      setProgress(40);
-
-      // 2. 调用 API
-      setParsing(true);
-      const response = await studentApi.uploadResume({
-        fileContent: base64Content,
-        fileName: file.name,
-      });
-
-      setProgress(100);
-
-      // 3. 处理响应
-      if (!response) {
-        setError('服务器未返回响应，请重试');
-        message.error('服务器未返回响应，请重试');
+    fileList.forEach((fileItem) => {
+      const file = fileItem.originFileObj;
+      if (!file) {
         return;
       }
 
-      if (response.code === 0) {
-        setProfile(response.data);
-        setParsed(true);
-        message.success('简历解析完成');
+      const fileName = file.name.toLowerCase();
+      if (!fileName.endsWith('.pdf') && !fileName.endsWith('.docx')) {
+        invalidFiles.push(`${file.name}：只支持 PDF 和 DOCX 格式`);
+      } else if (file.size > maxSize) {
+        invalidFiles.push(`${file.name}：文件大小不能超过 10MB`);
+      }
+    });
+
+    if (invalidFiles.length > 0) {
+      message.error(invalidFiles[0]);
+      return;
+    }
+
+    // 创建文件队列
+    const queue: FileQueueItem[] = fileList.map((fileItem) => ({
+      uid: fileItem.uid,
+      file: fileItem.originFileObj!,
+      status: 'waiting',
+      progress: 0,
+    }));
+
+    setFileQueue(queue);
+    setShowQueue(true);
+    void handleUploadQueue();
+  };
+
+  // 处理队列上传
+  const handleUploadQueue = async () => {
+    setIsUploadingQueue(true);
+    setCurrentUploadingIndex(0);
+
+    // 逐个处理队列中的文件
+    for (let i = 0; i < fileQueue.length; i++) {
+      setCurrentUploadingIndex(i);
+      await processFileInQueue(i);
+
+      // 如果上一个文件失败，可以选择继续或停止
+      const currentStatus = fileQueue[i]?.status;
+      if (currentStatus === 'failed') {
+        // 继续处理下一个文件
+        continue;
+      }
+    }
+
+    setIsUploadingQueue(false);
+    setCurrentUploadingIndex(-1);
+
+    // 检查是否有成功解析的文件
+    const firstSuccess = fileQueue.find((item) => item.status === 'success');
+    if (firstSuccess?.result) {
+      setProfile(firstSuccess.result);
+      setParsed(true);
+    }
+  };
+
+  // 处理单个文件上传
+  const processFileInQueue = async (index: number) => {
+    const item = fileQueue[index];
+    if (!item) return;
+
+    try {
+      // 更新状态为上传中
+      setFileQueue((prev) =>
+        prev.map((queueItem, idx) =>
+          idx === index ? { ...queueItem, status: 'uploading', progress: 0 } : queueItem
+        )
+      );
+
+      // 文件转 base64
+      setFileQueue((prev) =>
+        prev.map((queueItem, idx) =>
+          idx === index ? { ...queueItem, progress: 20 } : queueItem
+        )
+      );
+      const base64Content = await fileToBase64(item.file);
+
+      // 上传到后端
+      setFileQueue((prev) =>
+        prev.map((queueItem, idx) =>
+          idx === index ? { ...queueItem, progress: 40 } : queueItem
+        )
+      );
+
+      const response = await studentApi.uploadResume({
+        fileContent: base64Content,
+        fileName: item.file.name,
+      });
+
+      // 处理响应
+      if (response && response.code === 0) {
+        setFileQueue((prev) =>
+          prev.map((queueItem, idx) =>
+            idx === index
+              ? { ...queueItem, status: 'success', progress: 100, result: response.data }
+              : queueItem
+          )
+        );
+        message.success(`${item.file.name} 解析完成`);
       } else {
-        setError(response.msg || '解析失败，请重试');
-        message.error(response.msg || '解析失败，请重试');
+        throw new Error(response?.msg || '解析失败');
       }
     } catch (err: unknown) {
       const apiErr = err as ApiErrorLike;
-      console.error('Upload error:', err);
-      let errorMsg = '上传失败，请检查网络连接';
+      let errorMsg = '上传失败';
 
       if (apiErr.response?.data) {
         errorMsg = apiErr.response.data.msg || apiErr.response.data.message || errorMsg;
@@ -204,16 +276,33 @@ export default function ResumePage() {
         setTimeout(() => {
           window.location.href = '/auth';
         }, 1500);
-        setError(errorMsg);
+        setIsUploadingQueue(false);
         return;
       }
 
-      setError(errorMsg);
-      message.error(errorMsg);
-    } finally {
-      setUploading(false);
-      setParsing(false);
+      setFileQueue((prev) =>
+        prev.map((queueItem, idx) =>
+          idx === index
+            ? { ...queueItem, status: 'failed', progress: 0, error: errorMsg }
+            : queueItem
+        )
+      );
+      message.error(`${item.file.name} ${errorMsg}`);
     }
+  };
+
+  // 从队列中移除文件
+  const removeFileFromQueue = (uid: string) => {
+    setFileQueue((prev) => prev.filter((item) => item.uid !== uid));
+  };
+
+  // 重置队列
+  const resetQueue = () => {
+    setFileQueue([]);
+    setFileList([]);
+    setShowQueue(false);
+    setIsUploadingQueue(false);
+    setCurrentUploadingIndex(-1);
   };
 
   // 重新上传
@@ -223,6 +312,7 @@ export default function ResumePage() {
     setProfile(null);
     setProgress(0);
     setError(null);
+    resetQueue();
   };
 
   // 转换学历枚举值到中文
@@ -268,7 +358,7 @@ export default function ResumePage() {
                   onChange={({ fileList }) => setFileList(fileList)}
                   beforeUpload={() => false}
                   accept=".pdf,.docx"
-                  maxCount={1}
+                  multiple
                   onRemove={() => setError(null)}
                   className="[&.ant-upload-wrapper_.ant-upload-drag]:border-2! [&.ant-upload-wrapper_.ant-upload-drag]:border-dashed! [&.ant-upload-wrapper_.ant-upload-drag]:border-slate-300! [&.ant-upload-wrapper_.ant-upload-drag]:bg-slate-50!"
                 >
@@ -276,7 +366,7 @@ export default function ResumePage() {
                     <InboxOutlined className="text-5xl text-blue-500" />
                   </p>
                   <p className="ant-upload-text text-base font-medium">点击上传，或将文件拖拽到此处</p>
-                  <p className="ant-upload-hint mt-2">支持 PDF、DOCX 格式，文件大小不超过 10MB</p>
+                  <p className="ant-upload-hint mt-2">支持 PDF、DOCX 格式，文件大小不超过 10MB，可批量上传</p>
                 </Upload.Dragger>
 
                 {progress > 0 && progress < 100 && (
@@ -286,6 +376,102 @@ export default function ResumePage() {
                     className="mt-4"
                     format={() => parsing ? 'AI 解析中...' : '上传中...'}
                   />
+                )}
+
+                {/* 队列文件列表 */}
+                {fileQueue.length > 0 && (
+                  <div className="mt-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-sm font-medium text-gray-700">
+                        上传队列 ({fileQueue.filter((item) => item.status === 'success').length}/{fileQueue.length})
+                      </span>
+                      {!isUploadingQueue && (
+                        <Button size="small" type="link" onClick={resetQueue}>
+                          清空队列
+                        </Button>
+                      )}
+                    </div>
+                    <List
+                      size="small"
+                      dataSource={fileQueue}
+                      renderItem={(item, index) => (
+                        <List.Item
+                          key={item.uid}
+                          actions={[
+                            !isUploadingQueue && (
+                              <Button
+                                size="small"
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={() => removeFileFromQueue(item.uid)}
+                              />
+                            ),
+                          ].filter(Boolean)}
+                        >
+                          <List.Item.Meta
+                            avatar={
+                              <FileTextOutlined
+                                className={
+                                  item.status === 'success'
+                                    ? 'text-green-500'
+                                    : item.status === 'failed'
+                                    ? 'text-red-500'
+                                    : item.status === 'uploading'
+                                    ? 'text-blue-500'
+                                    : 'text-gray-400'
+                                }
+                              />
+                            }
+                            title={
+                              <span className="text-sm">
+                                {item.file.name}
+                                {item.status === 'uploading' && currentUploadingIndex === index && (
+                                  <Tag color="blue" className="ml-2">
+                                    上传中
+                                  </Tag>
+                                )}
+                                {item.status === 'success' && (
+                                  <Tag color="success" className="ml-2">
+                                    成功
+                                  </Tag>
+                                )}
+                                {item.status === 'failed' && (
+                                  <Tag color="error" className="ml-2">
+                                    失败
+                                  </Tag>
+                                )}
+                                {item.status === 'waiting' && (
+                                  <Tag className="ml-2">
+                                    等待中
+                                  </Tag>
+                                )}
+                              </span>
+                            }
+                            description={
+                              <div className="w-full">
+                                {item.status === 'uploading' && (
+                                  <Progress
+                                    percent={item.progress}
+                                    size="small"
+                                    showInfo={false}
+                                  />
+                                )}
+                                {item.status === 'failed' && item.error && (
+                                  <span className="text-red-500 text-xs">{item.error}</span>
+                                )}
+                                {item.status === 'success' && item.result && (
+                                  <span className="text-green-600 text-xs">
+                                    完整度：{item.result.completeness || 0}分 | 竞争力：{item.result.competitiveness || 0}分
+                                  </span>
+                                )}
+                              </div>
+                            }
+                          />
+                        </List.Item>
+                      )}
+                    />
+                  </div>
                 )}
 
                 {error && (
