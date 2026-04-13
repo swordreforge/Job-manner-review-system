@@ -130,9 +130,10 @@ function showToast(message, type = 'success') {
 
 // 转义HTML特殊字符
 function escapeHtml(text) {
-    if (!text) return '';
+    if (text === null || text === undefined) return '';
+    const str = String(text);
     const div = document.createElement('div');
-    div.textContent = text;
+    div.textContent = str;
     return div.innerHTML;
 }
 
@@ -283,10 +284,10 @@ function updateRecentStudents() {
     elements.recentStudentsList.innerHTML = recentStudents.map(student => `
         <div class="student-item">
             <div class="student-info">
-                <div class="student-avatar">${student.name.charAt(0)}</div>
+                <div class="student-avatar">${escapeHtml(student.name.charAt(0))}</div>
                 <div class="student-details">
-                    <h4>${student.name}</h4>
-                    <p>${student.major || '未填写'} - ${student.education || '未填写'}</p>
+                    <h4>${escapeHtml(student.name)}</h4>
+                    <p>${escapeHtml(student.major || '未填写')} - ${escapeHtml(student.education || '未填写')}</p>
                 </div>
             </div>
             <div class="student-actions">
@@ -811,7 +812,7 @@ function showStudentDetail(student) {
     const skillsEl = document.getElementById('detail-skills');
     if (student.skills && student.skills.length > 0) {
         skillsEl.innerHTML = student.skills.map(s => 
-            `<span class="tag">${s.name || s}</span>`
+            `<span class="tag">${escapeHtml(s.name || s)}</span>`
         ).join('');
     } else {
         skillsEl.textContent = '暂无';
@@ -820,7 +821,7 @@ function showStudentDetail(student) {
     const certsEl = document.getElementById('detail-certificates');
     if (student.certificates && student.certificates.length > 0) {
         certsEl.innerHTML = student.certificates.map(c => 
-            `<span class="tag">${c.name || c} ${c.level ? '(' + c.level + ')' : ''}</span>`
+            `<span class="tag">${escapeHtml(c.name || c)} ${c.level ? '(' + escapeHtml(c.level) + ')' : ''}</span>`
         ).join('');
     } else {
         certsEl.textContent = '暂无';
@@ -1982,8 +1983,14 @@ function displayTableData(data) {
     const rowsHtml = data.items.map(row => {
         const cellsHtml = columns.map(col => {
             const value = row[col];
-            const displayValue = value === null ? '<span class="null-value">NULL</span>' : 
-                               (typeof value === 'object' ? JSON.stringify(value) : value);
+            let displayValue;
+            if (value === null) {
+                displayValue = '<span class="null-value">NULL</span>';
+            } else if (typeof value === 'object') {
+                displayValue = escapeHtml(JSON.stringify(value));
+            } else {
+                displayValue = escapeHtml(String(value));
+            }
             const titleValue = value === null ? 'NULL' : 
                              (typeof value === 'object' ? JSON.stringify(value) : String(value));
             return `<td title="${escapeHtml(titleValue)}">${displayValue}</td>`;
