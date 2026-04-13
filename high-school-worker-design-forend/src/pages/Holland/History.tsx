@@ -86,12 +86,20 @@ export default function HollandHistoryPage() {
               </svg>
             </div>
             <p className="text-gray-600 mb-4">暂无测试记录</p>
-            <button
-              onClick={() => navigate('/holland')}
-              className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              开始测试
-            </button>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => navigate('/holland')}
+                className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+              >
+                开始测试
+              </button>
+              <button
+                onClick={() => navigate(-1)}
+                className="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                返回上级
+              </button>
+            </div>
           </div>
         ) : (
           <div className="space-y-4">
@@ -163,12 +171,18 @@ export default function HollandHistoryPage() {
 
         {/* 开始新测试按钮 */}
         {history.length > 0 && (
-          <div className="mt-6">
+          <div className="mt-6 grid grid-cols-2 gap-4">
             <button
               onClick={() => navigate('/holland')}
-              className="w-full px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
             >
               开始新测试
+            </button>
+            <button
+              onClick={() => navigate(-1)}
+              className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+            >
+              返回上级
             </button>
           </div>
         )}

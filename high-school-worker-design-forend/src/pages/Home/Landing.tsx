@@ -107,10 +107,10 @@ export default function Landing() {
             type="primary"
             size="large"
             icon={<RightOutlined />}
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/doc')}
             className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-12 px-6 rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
           >
-            Get Started
+            文档
           </Button>
         </motion.div>
       </motion.div>
@@ -730,7 +730,7 @@ export default function Landing() {
         transition={{ duration: 0.6 }}
         className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
       >
-        <p>© 2024 职业规划助手. All rights reserved.</p>
+        <p>© 2026 职业规划助手. All rights reserved.</p>
       </motion.div>
     </div>
   );

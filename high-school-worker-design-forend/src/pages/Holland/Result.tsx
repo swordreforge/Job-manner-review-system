@@ -175,7 +175,7 @@ export default function HollandResultPage() {
 
         {/* 操作按钮 */}
         <div className="bg-white rounded-xl p-6 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={handleRetest}
               className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
@@ -192,7 +192,13 @@ export default function HollandResultPage() {
               onClick={handleGenerateReport}
               className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
             >
-              生成职业规划
+              去生成职业规划
+            </button>
+            <button
+              onClick={() => navigate('/start')}
+              className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+            >
+              返回首页
             </button>
           </div>
         </div>
