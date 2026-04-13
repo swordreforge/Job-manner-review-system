@@ -11,6 +11,8 @@ import {
   ArrowRightOutlined,
   LoadingOutlined,
   SearchOutlined,
+  MenuOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -162,7 +164,7 @@ function MarkdownHeading({ level, children }: { level: number; children: React.R
   );
 }
 
-function DocContent() {
+function DocContent({ onCloseToc }: { onCloseToc?: () => void }) {
   const { docs, activeDocId, setActiveDocId, docContents, setDocContent } = useDocStore();
 
   const flattenDocs = (items: DocConfig[]): DocConfig[] => {
@@ -251,6 +253,20 @@ function DocContent() {
         )}
       </div>
 
+      {/* 移动端目录抽屉 */}
+      <AnimatePresence>
+        {content && onCloseToc && (
+          <TableOfContents
+            content={content}
+            isMobile={true}
+            onClose={onCloseToc}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
+  );
+}
+
       <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 bg-slate-50">
         <motion.button
           type="button"
@@ -294,7 +310,8 @@ export default function DocPage() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
-  const { docs, setDocs, setActiveDocId } = useDocStore();
+  const [tocOpen, setTocOpen] = useState(false);
+  const { docs, setDocs, setActiveDocId, activeDocId, docContents } = useDocStore();
 
   // 加载文档配置
   useEffect(() => {
@@ -393,6 +410,18 @@ export default function DocPage() {
             Ctrl K
           </kbd>
         </motion.button>
+        {activeDocId && docContents[activeDocId] && (
+          <motion.button
+            type="button"
+            onClick={() => setTocOpen(true)}
+            className="xl:hidden flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <MenuOutlined />
+            <span>目录</span>
+          </motion.button>
+        )}
       </motion.div>
 
       <div className="flex flex-1 overflow-hidden">
@@ -415,7 +444,7 @@ export default function DocPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <DocContent />
+          <DocContent onCloseToc={() => setTocOpen(false)} />
         </motion.main>
       </div>
 
