@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { Form, Input, Button, Card, Tabs, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../api';
 import { useAuthStore } from '../../stores';
@@ -331,6 +331,14 @@ export default function AuthPage() {
   return (
     <div className="auth-container">
       <Card className="auth-card">
+        <Button
+          type="text"
+          icon={<HomeOutlined />}
+          onClick={() => navigate('/welcome')}
+          className="auth-home-button"
+        >
+          返回首页
+        </Button>
         <div className="auth-header">
           <h1 className="auth-title">职业规划助手</h1>
           <p className="auth-subtitle">AI 驱动的职业发展解决方案</p>
