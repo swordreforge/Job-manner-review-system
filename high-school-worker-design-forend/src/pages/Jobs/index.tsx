@@ -141,6 +141,23 @@ export default function JobsPage() {
     }
   };
 
+  const handleResetView = () => {
+  if (chartRef.current) {
+    const chart = chartRef.current.getEchartsInstance();
+    chart.dispatchAction({
+      type: 'restore',
+    });
+    chart.setOption({
+      series: [
+        {
+          zoom: 1.2,
+          center: ['50%', '50%'],
+        },
+      ],
+    });
+  }
+};
+
   const handleGenerateAllPaths = async () => {
     if (!selectedJobId) {
       message.warning('请先选择一个岗位');
@@ -365,6 +382,10 @@ export default function JobsPage() {
           draggable: true,
           center: ['50%', '50%'],
           zoom: 1.2,
+          scaleLimit: {
+            min: 0.5,
+            max: 3,
+          },
           label: {
             show: true,
             position: 'bottom',
@@ -546,16 +567,24 @@ export default function JobsPage() {
             <Card className="min-h-170 w-full [&_.ant-card-body]:flex [&_.ant-card-body]:h-full [&_.ant-card-body]:flex-col">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-medium">发展路径图谱</h3>
-                <Button
-                  type="primary"
-                  icon={<ReloadOutlined />}
-                  loading={pathsLoading}
-                  onClick={() => {
-                    void handleGenerateAllPaths();
-                  }}
-                >
-                  AI智能分析
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    icon={<ReloadOutlined />}
+                    onClick={handleResetView}
+                  >
+                    重置视图
+                  </Button>
+                  <Button
+                    type="primary"
+                    icon={<ReloadOutlined />}
+                    loading={pathsLoading}
+                    onClick={() => {
+                      void handleGenerateAllPaths();
+                    }}
+                  >
+                    AI智能分析
+                  </Button>
+                </div>
               </div>
               <Tabs
                 className="flex-1 flex flex-col"
