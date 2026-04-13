@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { create } from 'zustand';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
 import DocSearch from '../../components/DocSearch';
+import TableOfContents from '../../components/TableOfContents';
 
 type DocConfig = {
   id: string;
@@ -144,6 +145,23 @@ function DocTree({ items, level = 0 }: { items: DocConfig[]; level?: number }) {
   );
 }
 
+// 自定义 Markdown 渲染器，为标题添加 ID
+function MarkdownHeading({ level, children }: { level: number; children: React.ReactNode }) {
+  const text = typeof children === 'string' ? children : '';
+  const id = text
+    .toLowerCase()
+    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+
+  return (
+    <Tag id={id} className={`scroll-mt-20 ${level === 1 ? 'text-3xl font-bold' : level === 2 ? 'text-2xl font-semibold' : level === 3 ? 'text-xl font-medium' : 'text-lg font-medium'}`}>
+      {children}
+    </Tag>
+  );
+}
+
 function DocContent() {
   const { docs, activeDocId, setActiveDocId, docContents, setDocContent } = useDocStore();
 
@@ -201,18 +219,38 @@ function DocContent() {
       transition={{ duration: 0.4, type: 'spring', stiffness: 200, damping: 20 }}
       className="flex flex-col h-full"
     >
-      <div className="flex-1 overflow-y-auto px-6 py-4">
-        {loading ? (
-          <div className="flex items-center justify-center h-32 text-slate-400">
-            <LoadingOutlined className="mr-2 text-xl" />
-            <span>加载中...</span>
-          </div>
-        ) : content ? (
-          <div className="prose prose-slate max-w-none">
-            <ReactMarkdown>{content}</ReactMarkdown>
-          </div>
-        ) : null}
+      <div className="flex flex-1 overflow-hidden">
+        {/* 主要内容区域 */}
+        <div className="flex-1 overflow-y-auto px-6 py-4">
+          {loading ? (
+            <div className="flex items-center justify-center h-32 text-slate-400">
+              <LoadingOutlined className="mr-2 text-xl" />
+              <span>加载中...</span>
+            </div>
+          ) : content ? (
+            <div className="prose prose-slate max-w-3xl">
+              <ReactMarkdown
+                components={{
+                  h1: ({ children }) => <MarkdownHeading level={1}>{children}</MarkdownHeading>,
+                  h2: ({ children }) => <MarkdownHeading level={2}>{children}</MarkdownHeading>,
+                  h3: ({ children }) => <MarkdownHeading level={3}>{children}</MarkdownHeading>,
+                  h4: ({ children }) => <MarkdownHeading level={4}>{children}</MarkdownHeading>,
+                  h5: ({ children }) => <MarkdownHeading level={5}>{children}</MarkdownHeading>,
+                  h6: ({ children }) => <MarkdownHeading level={6}>{children}</MarkdownHeading>,
+                }}
+              >
+                {content}
+              </ReactMarkdown>
+            </div>
+          ) : null}
+        </div>
+
+        {/* 右侧目录 */}
+        {content && (
+          <TableOfContents content={content} />
+        )}
       </div>
+
       <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 bg-slate-50">
         <motion.button
           type="button"
