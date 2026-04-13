@@ -74,7 +74,7 @@ export default function MainLayout() {
         <TabBar.Item 
           key="home" 
           title={isStartPage ? "开始" : "首页"} 
-          icon={<RocketOutlined />} 
+          icon={<HomeOutlined />} 
         />
         {tabs.slice(1).map((tab) => (
           <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
