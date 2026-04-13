@@ -561,6 +561,235 @@ func NewUploadResumeLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Uplo
 	}
 }
 
+// 合并策略函数
+
+// calculateCompletenessFromMergedData 基于合并后的数据计算完整度
+func calculateCompletenessFromMergedData(
+	skills []types.StudentSkill,
+	certificates []types.StudentCert,
+	internships []types.Internship,
+	projects []types.Project,
+	name string,
+	education string,
+	major string,
+) float64 {
+	score := 0.0
+	total := 7.0
+
+	if name != "" {
+		score += 1
+	}
+	if education != "" {
+		score += 1
+	}
+	if major != "" {
+		score += 1
+	}
+	if len(skills) > 0 {
+		score += 1
+	}
+	if len(certificates) > 0 {
+		score += 1
+	}
+	if len(internships) > 0 {
+		score += 1
+	}
+	if len(projects) > 0 {
+		score += 1
+	}
+
+	return score / total * 100
+}
+
+// calculateCompetitivenessFromMergedData 基于合并后的数据计算竞争力
+func calculateCompetitivenessFromMergedData(
+	skills []types.StudentSkill,
+	certificates []types.StudentCert,
+	internships []types.Internship,
+	projects []types.Project,
+) float64 {
+	score := 50.0
+
+	if len(skills) > 5 {
+		score += 10
+	}
+	if len(certificates) > 3 {
+		score += 10
+	}
+	if len(internships) > 1 {
+		score += 15
+	}
+	if len(projects) > 2 {
+		score += 15
+	}
+
+	return score
+}
+
+// mergeSkills 合并技能列表，去重并保留更高的掌握程度
+func mergeSkills(existing []types.StudentSkill, newSkills []types.StudentSkill) []types.StudentSkill {
+	skillMap := make(map[string]types.StudentSkill)
+
+	// 添加现有技能
+	for _, skill := range existing {
+		skillMap[skill.Name] = skill
+	}
+
+	// 合并新技能（保留更高的掌握程度）
+	for _, skill := range newSkills {
+		if existingSkill, ok := skillMap[skill.Name]; ok {
+			// 保留更高的评分
+			if skill.Level > existingSkill.Level {
+				skillMap[skill.Name] = skill
+			} else if skill.Years > existingSkill.Years {
+				// 如果评分相同，保留更长的年限
+				updatedSkill := existingSkill
+				updatedSkill.Years = skill.Years
+				skillMap[skill.Name] = updatedSkill
+			}
+		} else {
+			skillMap[skill.Name] = skill
+		}
+	}
+
+	// 转换为切片
+	result := make([]types.StudentSkill, 0, len(skillMap))
+	for _, skill := range skillMap {
+		result = append(result, skill)
+	}
+
+	return result
+}
+
+// mergeCertificates 合并证书列表，去重（使用"名称+等级"作为唯一标识）
+func mergeCertificates(existing []types.StudentCert, newCerts []types.StudentCert) []types.StudentCert {
+	certMap := make(map[string]types.StudentCert)
+
+	// 添加现有证书
+	for _, cert := range existing {
+		key := fmt.Sprintf("%s-%s", cert.Name, cert.Level)
+		certMap[key] = cert
+	}
+
+	// 添加新证书
+	for _, cert := range newCerts {
+		key := fmt.Sprintf("%s-%s", cert.Name, cert.Level)
+		if _, ok := certMap[key]; !ok {
+			certMap[key] = cert
+		}
+	}
+
+	// 转换为切片
+	result := make([]types.StudentCert, 0, len(certMap))
+	for _, cert := range certMap {
+		result = append(result, cert)
+	}
+
+	return result
+}
+
+// mergeInternships 合并实习经历（基于公司名称和职位去重）
+func mergeInternships(existing []types.Internship, newInternships []types.Internship) []types.Internship {
+	internshipMap := make(map[string]types.Internship)
+
+	// 添加现有实习经历
+	for _, internship := range existing {
+		key := fmt.Sprintf("%s-%s", internship.Company, internship.Position)
+		internshipMap[key] = internship
+	}
+
+	// 添加新实习经历
+	for _, internship := range newInternships {
+		key := fmt.Sprintf("%s-%s", internship.Company, internship.Position)
+		if existingIntern, ok := internshipMap[key]; ok {
+			// 如果描述更长，使用更详细的描述
+			if len(internship.Description) > len(existingIntern.Description) {
+				internshipMap[key] = internship
+			}
+		} else {
+			internshipMap[key] = internship
+		}
+	}
+
+	// 转换为切片
+	result := make([]types.Internship, 0, len(internshipMap))
+	for _, internship := range internshipMap {
+		result = append(result, internship)
+	}
+
+	return result
+}
+
+// mergeProjects 合并项目经历（基于项目名称去重）
+func mergeProjects(existing []types.Project, newProjects []types.Project) []types.Project {
+	projectMap := make(map[string]types.Project)
+
+	// 添加现有项目经历
+	for _, project := range existing {
+		projectMap[project.Name] = project
+	}
+
+	// 添加新项目经历
+	for _, project := range newProjects {
+		if existingProject, ok := projectMap[project.Name]; ok {
+			// 如果描述更长，使用更详细的描述
+			if len(project.Description) > len(existingProject.Description) {
+				projectMap[project.Name] = project
+			} else if len(project.Technologies) > 0 {
+				// 合并技术栈（去重）
+				techMap := make(map[string]bool)
+				for _, tech := range existingProject.Technologies {
+					techMap[tech] = true
+				}
+				for _, tech := range project.Technologies {
+					techMap[tech] = true
+				}
+				mergedTechs := make([]string, 0, len(techMap))
+				for tech := range techMap {
+					mergedTechs = append(mergedTechs, tech)
+				}
+				// 创建更新的项目
+				updatedProject := existingProject
+				updatedProject.Technologies = mergedTechs
+				projectMap[project.Name] = updatedProject
+			}
+		} else {
+			projectMap[project.Name] = project
+		}
+	}
+
+	// 转换为切片
+	result := make([]types.Project, 0, len(projectMap))
+	for _, project := range projectMap {
+		result = append(result, project)
+	}
+
+	return result
+}
+
+// mergeSuggestions 合并优化建议（去重）
+func mergeSuggestions(existing []string, newSuggestions []string) []string {
+	suggestionMap := make(map[string]bool)
+
+	// 添加现有建议
+	for _, suggestion := range existing {
+		suggestionMap[suggestion] = true
+	}
+
+	// 添加新建议
+	for _, suggestion := range newSuggestions {
+		suggestionMap[suggestion] = true
+	}
+
+	// 转换为切片
+	result := make([]string, 0, len(suggestionMap))
+	for suggestion := range suggestionMap {
+		result = append(result, suggestion)
+	}
+
+	return result
+}
+
 func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.StudentResp, error) {
 	// 1. 验证参数
 	if req.FileContent == "" || req.FileName == "" {
@@ -701,21 +930,82 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.Stu
 	student, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
 	var studentId int64
 	if err == nil {
-		// 更新现有记录
+		// 更新现有记录 - 使用智能合并策略
+
+		// 反序列化现有数据
+		var existingSkills []types.StudentSkill
+		var existingCertificates []types.StudentCert
+		var existingSoftSkills types.SoftSkills
+		var existingInternship []types.Internship
+		var existingProjects []types.Project
+		var existingSuggestions []string
+
+		if student.Skills.Valid {
+			json.Unmarshal([]byte(student.Skills.String), &existingSkills)
+		}
+		if student.Certificates.Valid {
+			json.Unmarshal([]byte(student.Certificates.String), &existingCertificates)
+		}
+		if student.SoftSkills.Valid {
+			json.Unmarshal([]byte(student.SoftSkills.String), &existingSoftSkills)
+		}
+		if student.Internship.Valid {
+			json.Unmarshal([]byte(student.Internship.String), &existingInternship)
+		}
+		if student.Projects.Valid {
+			json.Unmarshal([]byte(student.Projects.String), &existingProjects)
+		}
+		if student.Suggestions.Valid {
+			json.Unmarshal([]byte(student.Suggestions.String), &existingSuggestions)
+		}
+
+		// 智能合并：姓名、学历、专业、毕业年份使用AI解析结果（假设是最新的）
 		student.Name = profile.Name
 		student.Education = sql.NullString{String: profile.Education, Valid: profile.Education != ""}
 		student.Major = sql.NullString{String: profile.Major, Valid: profile.Major != ""}
 		student.GraduationYear = sql.NullInt64{Int64: int64(profile.GraduationYear), Valid: profile.GraduationYear > 0}
-		student.Skills = sql.NullString{String: string(skillsJSON), Valid: len(profile.Skills) > 0}
-		student.Certificates = sql.NullString{String: string(certificatesJSON), Valid: len(profile.Certificates) > 0}
-		student.SoftSkills = sql.NullString{String: string(softSkillsJSON), Valid: true}
-		student.Internship = sql.NullString{String: string(internshipJSON), Valid: len(profile.Internship) > 0}
-		student.Projects = sql.NullString{String: string(projectsJSON), Valid: len(profile.Projects) > 0}
-		student.CompletenessScore = profile.Completeness
-		student.CompetitivenessScore = profile.Competitiveness
-		student.Suggestions = sql.NullString{String: string(suggestionsJSON), Valid: len(profile.Suggestions) > 0}
+
+		// 智能合并：技能列表（合并去重，保留更高的掌握程度）
+		mergedSkills := mergeSkills(existingSkills, profile.Skills)
+		mergedSkillsJSON, _ := json.Marshal(mergedSkills)
+		student.Skills = sql.NullString{String: string(mergedSkillsJSON), Valid: len(mergedSkills) > 0}
+
+		// 智能合并：证书列表（合并去重）
+		mergedCertificates := mergeCertificates(existingCertificates, profile.Certificates)
+		mergedCertificatesJSON, _ := json.Marshal(mergedCertificates)
+		student.Certificates = sql.NullString{String: string(mergedCertificatesJSON), Valid: len(mergedCertificates) > 0}
+
+		// 保留：软技能（主观性强，保留用户手动填写）
+		student.SoftSkills = student.SoftSkills
+
+		// 智能合并：实习经历（合并去重）
+		mergedInternship := mergeInternships(existingInternship, profile.Internship)
+		mergedInternshipJSON, _ := json.Marshal(mergedInternship)
+		student.Internship = sql.NullString{String: string(mergedInternshipJSON), Valid: len(mergedInternship) > 0}
+
+		// 智能合并：项目经历（合并去重）
+		mergedProjects := mergeProjects(existingProjects, profile.Projects)
+		mergedProjectsJSON, _ := json.Marshal(mergedProjects)
+		student.Projects = sql.NullString{String: string(mergedProjectsJSON), Valid: len(mergedProjects) > 0}
+
+		// 智能合并：优化建议（去重）
+		mergedSuggestions := mergeSuggestions(existingSuggestions, profile.Suggestions)
+		mergedSuggestionsJSON, _ := json.Marshal(mergedSuggestions)
+		student.Suggestions = sql.NullString{String: string(mergedSuggestionsJSON), Valid: len(mergedSuggestions) > 0}
+
+		// 更新简历内容
 		student.ResumeContent = sql.NullString{String: resumeText, Valid: resumeText != ""}
+
+		// 重新计算完整度和竞争力（基于合并后的数据）
+		mergedCompleteness := calculateCompletenessFromMergedData(mergedSkills, mergedCertificates, mergedInternship, mergedProjects, student.Name, student.Education.String, student.Major.String)
+		mergedCompetitiveness := calculateCompetitivenessFromMergedData(mergedSkills, mergedCertificates, mergedInternship, mergedProjects)
+		student.CompletenessScore = mergedCompleteness
+		student.CompetitivenessScore = mergedCompetitiveness
+
 		student.UpdatedAt = time.Now().Unix()
+
+		logx.Infof("Merged profile for user %d: %d skills, %d certificates, %d internships, %d projects",
+			userId, len(mergedSkills), len(mergedCertificates), len(mergedInternship), len(mergedProjects))
 
 		err = l.svcCtx.StudentModel.Update(l.ctx, student)
 		if err != nil {
@@ -726,6 +1016,16 @@ func (l *UploadResumeLogic) UploadResume(req *types.ResumeUploadReq) (*types.Stu
 			}, nil
 		}
 		studentId = student.Id
+
+		// 更新返回的profile为合并后的数据
+		profile.Skills = mergedSkills
+		profile.Certificates = mergedCertificates
+		profile.SoftSkills = existingSoftSkills // 保留现有的软技能
+		profile.Internship = mergedInternship
+		profile.Projects = mergedProjects
+		profile.Suggestions = mergedSuggestions
+		profile.Completeness = mergedCompleteness
+		profile.Competitiveness = mergedCompetitiveness
 	} else {
 		// 创建新记录
 		newStudent := &model.Students{

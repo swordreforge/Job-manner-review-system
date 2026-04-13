@@ -273,6 +273,23 @@ export default function ResumePage() {
 
       // 处理响应
       if (response && response.code === 0) {
+        const result = response.data;
+        const skillsCount = result.skills?.length || 0;
+        const certsCount = result.certificates?.length || 0;
+        const internshipCount = result.internship?.length || 0;
+        const projectsCount = result.projects?.length || 0;
+
+        // 构建合并摘要消息
+        const summaryParts = [];
+        if (skillsCount > 0) summaryParts.push(`${skillsCount}个技能`);
+        if (certsCount > 0) summaryParts.push(`${certsCount}个证书`);
+        if (internshipCount > 0) summaryParts.push(`${internshipCount}段实习经历`);
+        if (projectsCount > 0) summaryParts.push(`${projectsCount}个项目经历`);
+
+        const summaryMsg = summaryParts.length > 0
+          ? `${item.file.name} 解析完成（${summaryParts.join('、')}）`
+          : `${item.file.name} 解析完成`;
+
         setFileQueue((prev) =>
           prev.map((queueItem, idx) =>
             idx === index
@@ -280,7 +297,7 @@ export default function ResumePage() {
               : queueItem
           )
         );
-        message.success(`${item.file.name} 解析完成`);
+        message.success(summaryMsg);
       } else {
         throw new Error(response?.msg || '解析失败');
       }
