@@ -1,7 +1,7 @@
 use actix_web::{HttpResponse, Responder};
 use serde::Serialize;
 use std::sync::Mutex;
-use sysinfo::{System, Disks};
+use sysinfo::{System, Disks, ProcessesToUpdate};
 use once_cell::sync::Lazy;
 
 static SYSTEM: Lazy<Mutex<System>> = Lazy::new(|| Mutex::new(System::new_all()));
@@ -19,12 +19,14 @@ pub struct SystemStatus {
     disk_total: u64,
     disk_used: u64,
     disk_usage: f32,
+    process_count: usize,
 }
 
 pub async fn status() -> impl Responder {
     let mut sys = SYSTEM.lock().unwrap();
     sys.refresh_cpu_usage();
     sys.refresh_memory();
+    sys.refresh_processes(ProcessesToUpdate::All, true);
 
     let memory_used = sys.used_memory();
     let memory_total = sys.total_memory();
@@ -48,6 +50,7 @@ pub async fn status() -> impl Responder {
 
     let uptime = System::uptime();
     let server_time = chrono::Utc::now().timestamp();
+    let process_count = sys.processes().len();
 
     let status = SystemStatus {
         server: "running".to_string(),
@@ -61,6 +64,7 @@ pub async fn status() -> impl Responder {
         disk_total,
         disk_used,
         disk_usage,
+        process_count,
     };
 
     HttpResponse::Ok().json(serde_json::json!({

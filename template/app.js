@@ -23,10 +23,12 @@ const state = {
     cpuChart: null,
     memoryChart: null,
     diskChart: null,
+    processChart: null,
     // 图表数据历史
     cpuHistory: [],
     memoryHistory: [],
     diskHistory: [],
+    processHistory: [],
     // 历史数据时间戳
     chartLabels: []
 };
@@ -472,6 +474,82 @@ function initCharts() {
         },
         options: baseOptions
     });
+
+    // 进程数量图表配置
+    const processOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+            intersect: false,
+            mode: 'index'
+        },
+        plugins: {
+            legend: { display: false },
+            tooltip: {
+                backgroundColor: 'rgba(30, 41, 59, 0.95)',
+                titleColor: '#f8fafc',
+                bodyColor: '#94a3b8',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+                padding: 12,
+                displayColors: false,
+                callbacks: {
+                    label: (ctx) => `${ctx.dataset.label}: ${ctx.parsed.y}`
+                }
+            }
+        },
+        scales: {
+            x: {
+                display: false
+            },
+            y: {
+                min: 0,
+                grid: {
+                    color: 'rgba(255,255,255,0.05)',
+                    drawBorder: false
+                },
+                ticks: {
+                    color: 'rgba(255,255,255,0.4)',
+                    font: { size: 10 },
+                    maxTicksLimit: 5
+                }
+            }
+        },
+        elements: {
+            line: {
+                borderWidth: 2,
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone'
+            },
+            point: {
+                radius: 0,
+                hoverRadius: 5,
+                hoverBorderWidth: 2,
+                hoverBackgroundColor: '#fff'
+            }
+        }
+    };
+
+    const processCtx = document.getElementById('processChart').getContext('2d');
+    const processGradient = processCtx.createLinearGradient(0, 0, 0, 180);
+    processGradient.addColorStop(0, 'rgba(239, 68, 68, 0.4)');
+    processGradient.addColorStop(1, 'rgba(239, 68, 68, 0)');
+
+    state.processChart = new Chart(processCtx, {
+        type: 'line',
+        data: {
+            labels: [],
+            datasets: [{
+                label: '进程',
+                data: [],
+                borderColor: '#ef4444',
+                backgroundColor: processGradient,
+                fill: true,
+                pointBackgroundColor: '#ef4444'
+            }]
+        },
+        options: processOptions
+    });
 }
 
 async function loadSystemStatusData() {
@@ -514,6 +592,10 @@ function updateSystemStatusUI() {
     document.getElementById('memory-info').textContent = `${formatBytes(status.memory_used || 0)} / ${formatBytes(status.memory_total || 0)}`;
     document.getElementById('disk-info').textContent = `${formatBytes(status.disk_used || 0)} / ${formatBytes(status.disk_total || 0)}`;
 
+    const processCount = status.process_count || 0;
+    document.getElementById('process-count-stat').textContent = processCount;
+    document.getElementById('process-info').textContent = `${processCount} 个进程`;
+
     fetchUsersCount();
 
     const now = new Date().toLocaleTimeString('zh-CN', { hour12: false });
@@ -521,6 +603,7 @@ function updateSystemStatusUI() {
     state.cpuHistory.push(cpuValue);
     state.memoryHistory.push(memoryValue);
     state.diskHistory.push(diskValue);
+    state.processHistory.push(processCount);
     state.chartLabels.push(now);
 
     const maxPoints = 20;
@@ -528,6 +611,7 @@ function updateSystemStatusUI() {
         state.cpuHistory.shift();
         state.memoryHistory.shift();
         state.diskHistory.shift();
+        state.processHistory.shift();
         state.chartLabels.shift();
     }
 
@@ -545,6 +629,11 @@ function updateSystemStatusUI() {
         state.diskChart.data.labels = state.chartLabels;
         state.diskChart.data.datasets[0].data = state.diskHistory;
         state.diskChart.update('none');
+    }
+    if (state.processChart) {
+        state.processChart.data.labels = state.chartLabels;
+        state.processChart.data.datasets[0].data = state.processHistory;
+        state.processChart.update('none');
     }
 
     const serverTime = new Date(status.server_time * 1000);

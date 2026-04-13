@@ -1,5 +1,5 @@
 use crate::db::JobRepository;
-use crate::models::{Job, CreateJobRequest, UpdateJobRequest, JobQuery, JobResponse};
+use crate::models::{CreateJobRequest, UpdateJobRequest, JobQuery, JobResponse};
 use crate::state::AppState;
 use anyhow::Result;
 

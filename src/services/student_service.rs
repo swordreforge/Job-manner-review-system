@@ -1,5 +1,5 @@
 use crate::db::StudentRepository;
-use crate::models::{Student, CreateStudentRequest, UpdateStudentRequest, StudentQuery, StudentResponse};
+use crate::models::{CreateStudentRequest, UpdateStudentRequest, StudentQuery, StudentResponse};
 use crate::state::AppState;
 use anyhow::Result;
 

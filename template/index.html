@@ -342,6 +342,21 @@
                             <p>用户总数</p>
                         </div>
                     </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="process-count-stat">-</h3>
+                            <p>进程数量</p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="charts-grid">
@@ -367,6 +382,14 @@
                             <canvas id="diskChart"></canvas>
                         </div>
                         <div class="chart-value" id="disk-info">-</div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>进程数量</h3>
+                        <div class="chart-container">
+                            <canvas id="processChart"></canvas>
+                        </div>
+                        <div class="chart-value" id="process-info">-</div>
                     </div>
                 </div>
 
