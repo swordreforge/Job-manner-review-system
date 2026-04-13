@@ -19,25 +19,21 @@ pub fn configure_routes(cfg: &mut web::ServiceConfig) {
 /// API v1路由配置
 fn configure_api_v1() -> Scope {
     web::scope("/api/v1")
-        // 认证路由(不需要认证中间件)
+        // 认证路由
         .service(
             web::scope("/auth")
-                // 登录接口
+                // 登录接口（不需要认证）
                 .route("/login", web::post().to(crate::handlers::auth::login))
-                // 刷新 Token 接口
-                .route(
-                    "/refresh",
-                    web::post().to(crate::handlers::auth::refresh_token),
-                ),
-        )
-        // 认证路由(需要认证中间件) - 用户管理自己的信息
-        .service(
-            web::scope("/auth")
-                .wrap(crate::middleware::AuthMiddleware)
-                // 修改密码接口
-                .route("/change-password", web::post().to(crate::handlers::auth::change_password))
-                // 修改用户名接口
-                .route("/change-username", web::post().to(crate::handlers::auth::change_username)),
+                // 刷新 Token 接口（不需要认证）
+                .route("/refresh", web::post().to(crate::handlers::auth::refresh_token))
+                // 修改密码接口（需要认证）
+                .route("/change-password", web::post().to(
+                    crate::handlers::auth::change_password
+                ).wrap(crate::middleware::AuthMiddleware))
+                // 修改用户名接口（需要认证）
+                .route("/change-username", web::post().to(
+                    crate::handlers::auth::change_username
+                ).wrap(crate::middleware::AuthMiddleware)),
         )
         // 学生数据路由(需要认证)
         .service(
