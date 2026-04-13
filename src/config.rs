@@ -46,11 +46,11 @@ pub struct Config {
 
     /// 服务器监听地址
     #[arg(long, default_value = "127.0.0.1")]
-    pub server_host: String,
+    pub host: String,
 
     /// 服务器监听端口
     #[arg(long, default_value = "8081")]
-    pub server_port: u16,
+    pub port: u16,
 
     /// JWT 密钥（不指定时自动生成16位随机密钥）
     #[arg(long)]
@@ -87,6 +87,6 @@ impl Config {
     }
 
     pub fn server_address(&self) -> String {
-        format!("{}:{}", self.server_host, self.server_port)
+        format!("{}:{}", self.host, self.port)
     }
 }
