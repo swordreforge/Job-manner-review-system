@@ -571,8 +571,8 @@ async def transcribe_audio(
 
         logger.info(f"开始识别音频: {file.filename}, 大小: {len(audio_data)} 字节")
 
-        # 调用讯飞星火识别
-        text = xunfei_client.transcribe_audio_sync(audio_data)
+        # 直接调用异步方法（在 FastAPI 事件循环中）
+        text = await xunfei_client.transcribe_audio(audio_data)
 
         # 检查识别结果
         if not text or not text.strip():
