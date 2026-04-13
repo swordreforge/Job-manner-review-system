@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import os
+import subprocess
 from typing import Optional
 import logging
 
@@ -56,6 +57,82 @@ os.makedirs(static_dir, exist_ok=True)
 # 挂载静态文件目录
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
+
+
+async def convert_to_pcm(audio_data: bytes, filename: str) -> bytes:
+    """
+    将音频转换为 PCM 格式（16bit, 16kHz, 单声道）
+
+    Args:
+        audio_data: 原始音频数据
+        filename: 文件名（用于判断格式）
+
+    Returns:
+        PCM 格式的音频数据
+    """
+    # 检查是否已经是 PCM 格式
+    if filename.endswith('.pcm') or filename.endswith('.raw'):
+        return audio_data
+
+    # 保存临时文件
+    temp_input = os.path.join(static_dir, f"temp_input_{os.urandom(8).hex()}")
+    temp_output = os.path.join(static_dir, f"temp_output_{os.urandom(8).hex()}.pcm")
+
+    try:
+        # 写入临时输入文件
+        with open(temp_input, "wb") as f:
+            f.write(audio_data)
+
+        # 使用 ffmpeg 转换为 PCM 格式
+        # -f s16le: 16bit 小端格式
+        # -ar 16000: 采样率 16kHz
+        # -ac 1: 单声道
+        cmd = [
+            "ffmpeg",
+            "-y",  # 覆盖输出文件
+            "-i", temp_input,
+            "-f", "s16le",
+            "-ar", "16000",
+            "-ac", "1",
+            temp_output
+        ]
+
+        logger.info(f"转换音频格式: {' '.join(cmd)}")
+
+        result = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=30
+        )
+
+        if result.returncode != 0:
+            logger.error(f"ffmpeg 转换失败: {result.stderr}")
+            # 如果转换失败，返回原始数据（可能已经是 PCM 格式）
+            return audio_data
+
+        # 读取转换后的 PCM 数据
+        with open(temp_output, "rb") as f:
+            pcm_data = f.read()
+
+        logger.info(f"音频转换成功: {len(audio_data)} -> {len(pcm_data)} 字节")
+        return pcm_data
+
+    except subprocess.TimeoutExpired:
+        logger.error("音频转换超时")
+        return audio_data
+    except Exception as e:
+        logger.error(f"音频转换失败: {str(e)}")
+        return audio_data
+    finally:
+        # 清理临时文件
+        try:
+            if os.path.exists(temp_input):
+                os.remove(temp_input)
+            if os.path.exists(temp_output):
+                os.remove(temp_output)
+        except:
+            pass
 
 
 @app.on_event("startup")
@@ -570,6 +647,9 @@ async def transcribe_audio(
             )
 
         logger.info(f"开始识别音频: {file.filename}, 大小: {len(audio_data)} 字节")
+
+        # 如果音频不是 PCM 格式，需要转换
+        audio_data = await convert_to_pcm(audio_data, file.filename)
 
         # 直接调用异步方法（在 FastAPI 事件循环中）
         text = await xunfei_client.transcribe_audio(audio_data)
