@@ -1822,10 +1822,21 @@ async function addColumn(event) {
         column_name: formData.get('column_name'),
         column_type: formData.get('column_type'),
         is_nullable: formData.get('is_nullable') === 'on',
-        default_value: formData.get('default_value') || null,
-        comment: formData.get('comment') || null,
-        after_column: formData.get('after_column') || null
+        default_value: formData.get('default_value'),
+        comment: formData.get('comment'),
+        after_column: formData.get('after_column')
     };
+    
+    // 只在字段有值时才包含在请求中
+    if (!columnData.default_value) {
+        delete columnData.default_value;
+    }
+    if (!columnData.comment) {
+        delete columnData.comment;
+    }
+    if (!columnData.after_column) {
+        delete columnData.after_column;
+    }
 
     try {
         const response = await apiRequest('/schema/columns', {
@@ -1873,12 +1884,26 @@ async function modifyColumn(event) {
     const columnData = {
         table_name: formData.get('table_name'),
         old_column_name: formData.get('old_column_name'),
-        new_column_name: formData.get('new_column_name') || null,
-        column_type: formData.get('column_type') || null,
+        new_column_name: formData.get('new_column_name'),
+        column_type: formData.get('column_type'),
         is_nullable: formData.get('is_nullable') === 'on',
-        default_value: formData.get('default_value') || null,
-        comment: formData.get('comment') || null
+        default_value: formData.get('default_value'),
+        comment: formData.get('comment')
     };
+    
+    // 只在字段有值时才包含在请求中
+    if (!columnData.new_column_name) {
+        delete columnData.new_column_name;
+    }
+    if (!columnData.column_type) {
+        delete columnData.column_type;
+    }
+    if (!columnData.default_value) {
+        delete columnData.default_value;
+    }
+    if (!columnData.comment) {
+        delete columnData.comment;
+    }
 
     try {
         const response = await apiRequest('/schema/columns', {

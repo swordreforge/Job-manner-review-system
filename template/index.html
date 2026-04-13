@@ -757,7 +757,7 @@
                     <button class="close-btn" id="close-add-column-modal">&times;</button>
                 </div>
                 <form id="add-column-form">
-                    <input type="hidden" id="add-column-table-name">
+                    <input type="hidden" id="add-column-table-name" name="table_name">
                     <div class="form-group">
                         <label for="add-column-name">字段名 *</label>
                         <input type="text" id="add-column-name" name="column_name" required placeholder="例如: age">
@@ -815,8 +815,8 @@
                     <button class="close-btn" id="close-modify-column-modal">&times;</button>
                 </div>
                 <form id="modify-column-form">
-                    <input type="hidden" id="modify-column-table-name">
-                    <input type="hidden" id="modify-column-old-name">
+                    <input type="hidden" id="modify-column-table-name" name="table_name">
+                    <input type="hidden" id="modify-column-old-name" name="old_column_name">
                     <div class="form-group">
                         <label for="modify-column-name">字段名</label>
                         <input type="text" id="modify-column-name" name="new_column_name" placeholder="留空则不修改">
