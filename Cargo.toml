@@ -1,12 +1,12 @@
 [package]
 name = "teacher-api"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
 actix-web = "4.9"
 actix-cors = "0.7"
-actix-files = "0.6"
+#actix-files = "0.6"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 tokio = { version = "1.0", features = ["full"] }
@@ -16,12 +16,12 @@ uuid = { version = "1.0", features = ["v4", "serde"] }
 env_logger = "0.11"
 log = "0.4"
 anyhow = "1.0"
-dotenv = "0.15"
+#dotenv = "0.15"
 clap = { version = "4.5", features = ["derive"] }
 validator = { version = "0.18", features = ["derive"] }
 async-trait = "0.1"
 rust-embed = "8.5"
-mime_guess = "2.0"
+#mime_guess = "2.0"
 jsonwebtoken = "9.3"
 bcrypt = "0.15"
 rand = "0.8"
@@ -32,3 +32,23 @@ once_cell = "1.21.4"
 [dev-dependencies]
 serial_test = "3.1"
 fake = { version = "2.9", features = ["uuid", "chrono"] }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+rpath = false
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
+debug = false
+strip = true
+debug-assertions = false
+incremental = false
+
+[profile.release.package."*"]
+opt-level = "z"
+codegen-units = 1
+strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false
