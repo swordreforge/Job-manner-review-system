@@ -135,6 +135,14 @@ fn configure_api_v1() -> Scope {
                 // 删除字段
                 .route("/columns", web::delete().to(crate::handlers::schema::delete_column))
                 // 执行自定义SQL
-                .route("/execute", web::post().to(crate::handlers::schema::execute_sql)),
+                .route("/execute", web::post().to(crate::handlers::schema::execute_sql))
+                // 查询表数据
+                .route("/tables/{table_name}/data", web::get().to(crate::handlers::schema::query_table_data))
+                // 插入数据
+                .route("/data", web::post().to(crate::handlers::schema::insert_data))
+                // 更新数据
+                .route("/data", web::put().to(crate::handlers::schema::update_data))
+                // 删除数据
+                .route("/data", web::delete().to(crate::handlers::schema::delete_data)),
         )
 }

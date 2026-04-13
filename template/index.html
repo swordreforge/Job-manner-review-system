@@ -861,6 +861,40 @@
             </div>
         </div>
 
+        <!-- 插入数据模态框 -->
+        <div id="insert-data-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>插入数据</h2>
+                    <button class="close-btn" id="close-insert-data-modal">&times;</button>
+                </div>
+                <form id="insert-data-form">
+                    <div id="insert-data-fields"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-insert-data">取消</button>
+                        <button type="submit" class="btn btn-primary">插入</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 编辑数据模态框 -->
+        <div id="edit-data-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>编辑数据</h2>
+                    <button class="close-btn" id="close-edit-data-modal">&times;</button>
+                </div>
+                <form id="edit-data-form">
+                    <div id="edit-data-fields"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-data">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
         <!-- 提示消息 -->
         <div id="toast" class="toast"></div>
     </div>

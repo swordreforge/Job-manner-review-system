@@ -1500,6 +1500,21 @@ document.getElementById('user-modal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('modify-column-modal')) closeModifyColumnModal();
     });
 
+    // 插入/编辑数据模态框事件监听
+    document.getElementById('close-insert-data-modal').addEventListener('click', closeInsertDataModal);
+    document.getElementById('cancel-insert-data').addEventListener('click', closeInsertDataModal);
+    document.getElementById('insert-data-form').addEventListener('submit', insertData);
+    document.getElementById('insert-data-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('insert-data-modal')) closeInsertDataModal();
+    });
+    
+    document.getElementById('close-edit-data-modal').addEventListener('click', closeEditDataModal);
+    document.getElementById('cancel-edit-data').addEventListener('click', closeEditDataModal);
+    document.getElementById('edit-data-form').addEventListener('submit', updateData);
+    document.getElementById('edit-data-modal').addEventListener('click', (e) => {
+        if (e.target === document.getElementById('edit-data-modal')) closeEditDataModal();
+    });
+
 async function loadUsers(page = 1) {
     try {
         const url = `/users?page=${page}&page_size=${state.pageSize}`;
@@ -1714,32 +1729,57 @@ function displayTableDetail(data) {
     tableDetail.innerHTML = `
         <div class="table-detail-header">
             <h2>表: ${data.table_name}</h2>
-            <button class="btn btn-primary" onclick="openAddColumnModal()">添加字段</button>
+            <div class="header-actions">
+                <button class="btn btn-primary" onclick="openAddColumnModal()">添加字段</button>
+                <button class="btn btn-primary" onclick="loadTableData()">查看数据</button>
+            </div>
         </div>
         
-        <div class="table-columns-section">
-            <h3>字段列表</h3>
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>字段名</th>
-                        <th>类型</th>
-                        <th>允许NULL</th>
-                        <th>键</th>
-                        <th>默认值</th>
-                        <th>注释</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${columnsHtml}
-                </tbody>
-            </table>
+        <div class="table-tabs">
+            <button class="tab-btn active" onclick="switchTab('structure')">表结构</button>
+            <button class="tab-btn" onclick="switchTab('data')">数据查看</button>
         </div>
+        
+        <div id="tab-structure" class="tab-content active">
+            <div class="table-columns-section">
+                <h3>字段列表</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>字段名</th>
+                            <th>类型</th>
+                            <th>允许NULL</th>
+                            <th>键</th>
+                            <th>默认值</th>
+                            <th>注释</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${columnsHtml}
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="table-create-section">
-            <h3>CREATE语句</h3>
-            <pre class="sql-code">${data.create_statement || ''}</pre>
+            <div class="table-create-section">
+                <h3>CREATE语句</h3>
+                <pre class="sql-code">${data.create_statement || ''}</pre>
+            </div>
+        </div>
+        
+        <div id="tab-data" class="tab-content">
+            <div class="data-toolbar">
+                <div class="data-filters">
+                    <input type="text" id="data-where" placeholder="WHERE条件 (可选)" style="width: 300px;">
+                    <button class="btn btn-secondary" onclick="loadTableData()">查询</button>
+                </div>
+                <button class="btn btn-primary" onclick="openInsertDataModal()">插入数据</button>
+            </div>
+            <div id="table-data-container">
+                <div class="placeholder">
+                    <p>点击"查看数据"按钮加载表数据</p>
+                </div>
+            </div>
         </div>
     `;
 }
@@ -1870,6 +1910,313 @@ async function deleteColumn(columnName) {
     } catch (error) {
         console.error('删除字段失败:', error);
         showToast('删除字段失败: ' + error.message, 'error');
+    }
+}
+
+// 选项卡切换
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+    });
+    
+    event.target.classList.add('active');
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    if (tabName === 'data') {
+        loadTableData();
+    }
+}
+
+// 加载表数据
+async function loadTableData() {
+    if (!state.currentTable) return;
+    
+    const whereClause = document.getElementById('data-where')?.value || '';
+    
+    try {
+        const params = new URLSearchParams({
+            page: '1',
+            page_size: '20'
+        });
+        
+        if (whereClause) {
+            params.append('where_clause', whereClause);
+        }
+        
+        const response = await apiRequest(`/schema/tables/${state.currentTable}/data?${params}`);
+        
+        if (response.code === 200) {
+            displayTableData(response.data);
+        }
+    } catch (error) {
+        console.error('加载表数据失败:', error);
+        showToast('加载表数据失败: ' + error.message, 'error');
+    }
+}
+
+// 显示表数据
+function displayTableData(data) {
+    const container = document.getElementById('table-data-container');
+    
+    if (data.items.length === 0) {
+        container.innerHTML = '<div class="placeholder">暂无数据</div>';
+        return;
+    }
+    
+    // 获取所有列名
+    const columns = Object.keys(data.items[0]);
+    
+    const headersHtml = columns.map(col => `<th>${col}</th>`).join('');
+    
+    const rowsHtml = data.items.map(row => {
+        const cellsHtml = columns.map(col => {
+            const value = row[col];
+            const displayValue = value === null ? '<span class="null-value">NULL</span>' : 
+                               (typeof value === 'object' ? JSON.stringify(value) : value);
+            return `<td>${displayValue}</td>`;
+        }).join('');
+        
+        // 获取第一列的值作为标识
+        const firstColumnValue = columns[0] ? row[columns[0]] : '';
+        
+        return `
+            <tr>
+                ${cellsHtml}
+                <td>
+                    <button class="btn btn-secondary btn-sm" onclick='openEditDataModal(${JSON.stringify(row)})' title="编辑">
+                        编辑
+                    </button>
+                    <button class="btn btn-secondary btn-sm" style="color: var(--danger-color);" 
+                            onclick="deleteRowData('${columns[0]}', '${firstColumnValue}')" title="删除">
+                        删除
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+    
+    container.innerHTML = `
+        <div class="data-summary">
+            <span>共 ${data.total} 条记录</span>
+            <span>第 ${data.page} / ${data.total_pages} 页</span>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    ${headersHtml}
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${rowsHtml}
+            </tbody>
+        </table>
+        <div class="data-pagination">
+            <button class="btn btn-secondary" onclick="changeDataPage(${data.page - 1})" ${data.page <= 1 ? 'disabled' : ''}>上一页</button>
+            <button class="btn btn-secondary" onclick="changeDataPage(${data.page + 1})" ${data.page >= data.total_pages ? 'disabled' : ''}>下一页</button>
+        </div>
+    `;
+}
+
+// 切换数据页码
+function changeDataPage(page) {
+    if (page < 1) return;
+    
+    const whereClause = document.getElementById('data-where')?.value || '';
+    
+    try {
+        const params = new URLSearchParams({
+            page: page.toString(),
+            page_size: '20'
+        });
+        
+        if (whereClause) {
+            params.append('where_clause', whereClause);
+        }
+        
+        apiRequest(`/schema/tables/${state.currentTable}/data?${params}`)
+            .then(response => {
+                if (response.code === 200) {
+                    displayTableData(response.data);
+                }
+            })
+            .catch(error => {
+                console.error('加载表数据失败:', error);
+                showToast('加载表数据失败: ' + error.message, 'error');
+            });
+    } catch (error) {
+        console.error('加载表数据失败:', error);
+        showToast('加载表数据失败: ' + error.message, 'error');
+    }
+}
+
+// 打开插入数据模态框
+function openInsertDataModal() {
+    if (!state.currentColumns || state.currentColumns.length === 0) {
+        showToast('请先选择一个表', 'error');
+        return;
+    }
+    
+    const modal = document.getElementById('insert-data-modal');
+    const form = document.getElementById('insert-data-form');
+    
+    // 清空表单
+    form.innerHTML = '';
+    
+    // 为每个字段创建输入框
+    state.currentColumns.forEach(col => {
+        const fieldHtml = `
+            <div class="form-group">
+                <label for="insert-${col.column_name}">${col.column_name} (${col.data_type})</label>
+                <input type="text" id="insert-${col.column_name}" name="${col.column_name}" 
+                       placeholder="${col.column_default || ''}" ${col.column_key === 'PRI' ? 'required' : ''}>
+            </div>
+        `;
+        form.innerHTML += fieldHtml;
+    });
+    
+    modal.classList.add('active');
+}
+
+// 关闭插入数据模态框
+function closeInsertDataModal() {
+    document.getElementById('insert-data-modal').classList.remove('active');
+}
+
+// 插入数据
+async function insertData(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = {};
+    
+    for (let [key, value] of formData.entries()) {
+        if (value.trim()) {
+            data[key] = value;
+        }
+    }
+    
+    try {
+        const response = await apiRequest('/schema/data', {
+            method: 'POST',
+            body: JSON.stringify({
+                table_name: state.currentTable,
+                data: data
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('数据插入成功');
+            closeInsertDataModal();
+            loadTableData();
+        }
+    } catch (error) {
+        console.error('插入数据失败:', error);
+        showToast('插入数据失败: ' + error.message, 'error');
+    }
+}
+
+// 打开编辑数据模态框
+function openEditDataModal(rowData) {
+    const modal = document.getElementById('edit-data-modal');
+    const form = document.getElementById('edit-data-form');
+    
+    // 清空表单
+    form.innerHTML = '';
+    
+    // 为每个字段创建输入框
+    state.currentColumns.forEach(col => {
+        const value = rowData[col.column_name] !== null ? rowData[col.column_name] : '';
+        const fieldHtml = `
+            <div class="form-group">
+                <label for="edit-${col.column_name}">${col.column_name} (${col.data_type})</label>
+                <input type="text" id="edit-${col.column_name}" name="${col.column_name}" 
+                       value="${value}" ${col.column_key === 'PRI' ? 'disabled' : ''}>
+                ${col.column_key === 'PRI' ? `<input type="hidden" name="${col.column_name}" value="${value}">` : ''}
+            </div>
+        `;
+        form.innerHTML += fieldHtml;
+    });
+    
+    modal.classList.add('active');
+}
+
+// 关闭编辑数据模态框
+function closeEditDataModal() {
+    document.getElementById('edit-data-modal').classList.remove('active');
+}
+
+// 更新数据
+async function updateData(event) {
+    event.preventDefault();
+    
+    const formData = new FormData(event.target);
+    const data = {};
+    let primaryKeyColumn = '';
+    let primaryKeyValue = '';
+    
+    for (let [key, value] of formData.entries()) {
+        if (state.currentColumns.find(c => c.column_name === key && c.column_key === 'PRI')) {
+            primaryKeyColumn = key;
+            primaryKeyValue = value;
+        } else if (value.trim()) {
+            data[key] = value;
+        }
+    }
+    
+    if (!primaryKeyColumn || !primaryKeyValue) {
+        showToast('无法确定主键，无法更新数据', 'error');
+        return;
+    }
+    
+    try {
+        const response = await apiRequest('/schema/data', {
+            method: 'PUT',
+            body: JSON.stringify({
+                table_name: state.currentTable,
+                where_column: primaryKeyColumn,
+                where_value: primaryKeyValue,
+                data: data
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('数据更新成功');
+            closeEditDataModal();
+            loadTableData();
+        }
+    } catch (error) {
+        console.error('更新数据失败:', error);
+        showToast('更新数据失败: ' + error.message, 'error');
+    }
+}
+
+// 删除数据
+async function deleteRowData(columnName, columnValue) {
+    if (!confirm(`确定要删除这条记录吗？此操作不可逆！`)) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest('/schema/data', {
+            method: 'DELETE',
+            body: JSON.stringify({
+                table_name: state.currentTable,
+                where_column: columnName,
+                where_value: columnValue
+            })
+        });
+
+        if (response.code === 200) {
+            showToast('数据删除成功');
+            loadTableData();
+        }
+    } catch (error) {
+        console.error('删除数据失败:', error);
+        showToast('删除数据失败: ' + error.message, 'error');
     }
 }
 

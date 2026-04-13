@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse, Responder};
 use serde::{Deserialize, Serialize};
-use sqlx::Row;
+use serde_json::json;
+use sqlx::{Row, Column};
 
 /// 表信息
 #[derive(Debug, Clone, Serialize)]
@@ -484,4 +485,448 @@ fn is_valid_identifier(name: &str) -> bool {
 /// 转义SQL字符串
 fn escape_sql_string(s: &str) -> String {
     s.replace('\'', "''")
+}
+
+/// 查询表数据请求
+#[derive(Debug, Deserialize)]
+pub struct QueryTableDataRequest {
+    pub page: Option<u64>,
+    pub page_size: Option<u64>,
+    pub order_by: Option<String>,
+    pub order_direction: Option<String>,
+    pub where_clause: Option<String>,
+}
+
+/// 查询表数据
+pub async fn query_table_data(
+    state: web::Data<crate::state::AppState>,
+    table_name: web::Path<String>,
+    query: web::Query<QueryTableDataRequest>,
+) -> impl Responder {
+    let pool = state.mysql_db();
+    let table_name = table_name.into_inner();
+    
+    // 验证表名
+    if !is_valid_identifier(&table_name) {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Invalid table name",
+            "data": null
+        }));
+    }
+    
+    let page = query.page.unwrap_or(1);
+    let page_size = query.page_size.unwrap_or(10);
+    let offset = (page - 1) * page_size;
+    
+    // 构建WHERE子句
+    let where_clause = if let Some(clause) = &query.where_clause {
+        if clause.trim().is_empty() {
+            String::new()
+        } else {
+            format!("WHERE {}", clause)
+        }
+    } else {
+        String::new()
+    };
+    
+    // 构建ORDER BY子句
+    let order_clause = if let Some(column) = &query.order_by {
+        if is_valid_identifier(column) {
+            let direction = query.order_direction.as_ref()
+                .map(|d| d.as_str())
+                .unwrap_or("ASC");
+            format!("ORDER BY {} {}", column, direction)
+        } else {
+            String::new()
+        }
+    } else {
+        String::new()
+    };
+    
+    // 构建COUNT查询
+    let count_query = format!(
+        "SELECT COUNT(*) as total FROM `{}` {}",
+        table_name, where_clause
+    );
+    
+    // 构建数据查询
+    let data_query = format!(
+        "SELECT * FROM `{}` {} {} LIMIT {} OFFSET {}",
+        table_name, where_clause, order_clause, page_size, offset
+    );
+    
+    // 执行COUNT查询
+    let total = match sqlx::query(&count_query)
+        .fetch_one(pool)
+        .await
+    {
+        Ok(row) => {
+            row.get::<i64, _>("total")
+        }
+        Err(e) => {
+            log::error!("Failed to count rows: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to count rows: {}", e),
+                "data": null
+            }));
+        }
+    };
+    
+    // 执行数据查询
+    match sqlx::query(&data_query)
+        .fetch_all(pool)
+        .await
+    {
+        Ok(rows) => {
+            let mut data = Vec::new();
+            for row in rows {
+                let mut row_data = serde_json::Map::new();
+                
+                // 获取所有列的名称
+                let columns: Vec<String> = row.columns()
+                    .iter()
+                    .map(|col| col.name().to_string())
+                    .collect();
+                
+                // 为每列获取值
+                for col_name in &columns {
+                    // 尝试多种类型获取值
+                    let value: Option<String> = 
+                        // 首先尝试作为字符串获取
+                        row.try_get::<String, _>(col_name.as_str())
+                            .ok()
+                            .or_else(|| {
+                                // 尝试作为整数获取
+                                row.try_get::<i64, _>(col_name.as_str())
+                                    .ok()
+                                    .map(|v| v.to_string())
+                            })
+                            .or_else(|| {
+                                // 尝试作为浮点数获取
+                                row.try_get::<f64, _>(col_name.as_str())
+                                    .ok()
+                                    .map(|v| v.to_string())
+                            })
+                            .or_else(|| {
+                                // 尝试作为布尔值获取
+                                row.try_get::<bool, _>(col_name.as_str())
+                                    .ok()
+                                    .map(|v| v.to_string())
+                            });
+                    
+                    row_data.insert(col_name.clone(), json!(value));
+                }
+                
+                data.push(serde_json::Value::Object(row_data));
+            }
+            
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "success",
+                "data": {
+                    "items": data,
+                    "total": total,
+                    "page": page,
+                    "page_size": page_size,
+                    "total_pages": ((total + page_size as i64 - 1) / page_size as i64) as u64
+                }
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to query table data: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to query table data: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 插入数据请求
+#[derive(Debug, Deserialize)]
+pub struct InsertDataRequest {
+    pub table_name: String,
+    pub data: serde_json::Value,
+}
+
+/// 插入数据
+pub async fn insert_data(
+    state: web::Data<crate::state::AppState>,
+    req: web::Json<InsertDataRequest>,
+) -> impl Responder {
+    let pool = state.mysql_db();
+    
+    // 验证表名
+    if !is_valid_identifier(&req.table_name) {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Invalid table name",
+            "data": null
+        }));
+    }
+    
+    // 验证数据
+    if let Some(data_map) = req.data.as_object() {
+        if data_map.is_empty() {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "Data cannot be empty",
+                "data": null
+            }));
+        }
+        
+        // 获取表结构以获取列名
+        let columns_query = format!(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = '{}'",
+            req.table_name
+        );
+        
+        let table_columns: Vec<String> = match sqlx::query(&columns_query)
+            .fetch_all(pool)
+            .await
+        {
+            Ok(rows) => {
+                rows.iter()
+                    .filter_map(|row| row.try_get::<String, _>("COLUMN_NAME").ok())
+                    .collect()
+            }
+            Err(e) => {
+                log::error!("Failed to get table columns: {}", e);
+                return HttpResponse::InternalServerError().json(serde_json::json!({
+                    "code": 500,
+                    "message": format!("Failed to get table columns: {}", e),
+                    "data": null
+                }));
+            }
+        };
+        
+        // 验证列名并构建INSERT语句
+        let mut valid_columns = Vec::new();
+        let mut valid_values = Vec::new();
+        
+        for (key, value) in data_map {
+            if table_columns.contains(&key) && is_valid_identifier(&key) {
+                valid_columns.push(format!("`{}`", key));
+                
+                // 转义值
+                let value_str = match value {
+                    serde_json::Value::String(s) => format!("'{}'", escape_sql_string(s)),
+                    serde_json::Value::Number(n) => n.to_string(),
+                    serde_json::Value::Bool(b) => if *b { "1".to_string() } else { "0".to_string() },
+                    serde_json::Value::Null => "NULL".to_string(),
+                    _ => {
+                        log::warn!("Unsupported value type for column: {}", key);
+                        continue;
+                    }
+                };
+                valid_values.push(value_str);
+            }
+        }
+        
+        if valid_columns.is_empty() {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "No valid columns found in data",
+                "data": null
+            }));
+        }
+        
+        let insert_sql = format!(
+            "INSERT INTO `{}` ({}) VALUES ({})",
+            req.table_name,
+            valid_columns.join(", "),
+            valid_values.join(", ")
+        );
+        
+        match sqlx::query(&insert_sql)
+            .execute(pool)
+            .await
+        {
+            Ok(result) => {
+                log::info!("Inserted {} rows into table '{}'", result.rows_affected(), req.table_name);
+                HttpResponse::Ok().json(serde_json::json!({
+                    "code": 200,
+                    "message": "Data inserted successfully",
+                    "data": {
+                        "rows_affected": result.rows_affected()
+                    }
+                }))
+            }
+            Err(e) => {
+                log::error!("Failed to insert data: {}", e);
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "code": 500,
+                    "message": format!("Failed to insert data: {}", e),
+                    "data": null
+                }))
+            }
+        }
+    } else {
+        HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Data must be an object",
+            "data": null
+        }))
+    }
+}
+
+/// 更新数据请求
+#[derive(Debug, Deserialize)]
+pub struct UpdateDataRequest {
+    pub table_name: String,
+    pub where_column: String,
+    pub where_value: String,
+    pub data: serde_json::Value,
+}
+
+/// 更新数据
+pub async fn update_data(
+    state: web::Data<crate::state::AppState>,
+    req: web::Json<UpdateDataRequest>,
+) -> impl Responder {
+    let pool = state.mysql_db();
+    
+    // 验证表名和where列名
+    if !is_valid_identifier(&req.table_name) || !is_valid_identifier(&req.where_column) {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Invalid table name or where column name",
+            "data": null
+        }));
+    }
+    
+    // 验证数据
+    if let Some(data_map) = req.data.as_object() {
+        if data_map.is_empty() {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "Data cannot be empty",
+                "data": null
+            }));
+        }
+        
+        // 构建SET子句
+        let mut set_clauses = Vec::new();
+        
+        for (key, value) in data_map {
+            if is_valid_identifier(&key) {
+                let value_str = match value {
+                    serde_json::Value::String(s) => format!("'{}'", escape_sql_string(s)),
+                    serde_json::Value::Number(n) => n.to_string(),
+                    serde_json::Value::Bool(b) => if *b { "1".to_string() } else { "0".to_string() },
+                    serde_json::Value::Null => "NULL".to_string(),
+                    _ => {
+                        log::warn!("Unsupported value type for column: {}", key);
+                        continue;
+                    }
+                };
+                set_clauses.push(format!("`{}` = {}", key, value_str));
+            }
+        }
+        
+        if set_clauses.is_empty() {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "No valid columns found in data",
+                "data": null
+            }));
+        }
+        
+        let update_sql = format!(
+            "UPDATE `{}` SET {} WHERE `{}` = '{}'",
+            req.table_name,
+            set_clauses.join(", "),
+            req.where_column,
+            escape_sql_string(&req.where_value)
+        );
+        
+        match sqlx::query(&update_sql)
+            .execute(pool)
+            .await
+        {
+            Ok(result) => {
+                log::info!("Updated {} rows in table '{}'", result.rows_affected(), req.table_name);
+                HttpResponse::Ok().json(serde_json::json!({
+                    "code": 200,
+                    "message": "Data updated successfully",
+                    "data": {
+                        "rows_affected": result.rows_affected()
+                    }
+                }))
+            }
+            Err(e) => {
+                log::error!("Failed to update data: {}", e);
+                HttpResponse::InternalServerError().json(serde_json::json!({
+                    "code": 500,
+                    "message": format!("Failed to update data: {}", e),
+                    "data": null
+                }))
+            }
+        }
+    } else {
+        HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Data must be an object",
+            "data": null
+        }))
+    }
+}
+
+/// 删除数据请求
+#[derive(Debug, Deserialize)]
+pub struct DeleteDataRequest {
+    pub table_name: String,
+    pub where_column: String,
+    pub where_value: String,
+}
+
+/// 删除数据
+pub async fn delete_data(
+    state: web::Data<crate::state::AppState>,
+    req: web::Json<DeleteDataRequest>,
+) -> impl Responder {
+    let pool = state.mysql_db();
+    
+    // 验证表名和where列名
+    if !is_valid_identifier(&req.table_name) || !is_valid_identifier(&req.where_column) {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": "Invalid table name or where column name",
+            "data": null
+        }));
+    }
+    
+    let delete_sql = format!(
+        "DELETE FROM `{}` WHERE `{}` = '{}'",
+        req.table_name,
+        req.where_column,
+        escape_sql_string(&req.where_value)
+    );
+    
+    match sqlx::query(&delete_sql)
+        .execute(pool)
+        .await
+    {
+        Ok(result) => {
+            log::info!("Deleted {} rows from table '{}'", result.rows_affected(), req.table_name);
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Data deleted successfully",
+                "data": {
+                    "rows_affected": result.rows_affected()
+                }
+            }))
+        }
+        Err(e) => {
+            log::error!("Failed to delete data: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to delete data: {}", e),
+                "data": null
+            }))
+        }
+    }
 }
