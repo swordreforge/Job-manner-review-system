@@ -267,45 +267,6 @@ function DocContent({ onCloseToc }: { onCloseToc?: () => void }) {
   );
 }
 
-      <div className="flex items-center justify-between border-t border-slate-200 px-6 py-3 bg-slate-50">
-        <motion.button
-          type="button"
-          onClick={() => prevDoc && setActiveDocId(prevDoc.id)}
-          disabled={!prevDoc}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-            prevDoc
-              ? 'text-slate-700 hover:bg-slate-100'
-              : 'text-slate-300 cursor-not-allowed'
-          }`}
-          whileHover={prevDoc ? { scale: 1.02 } : {}}
-          whileTap={prevDoc ? { scale: 0.98 } : {}}
-        >
-          <ArrowLeftOutlined />
-          <span>{prevDoc?.name || '已是第一篇'}</span>
-        </motion.button>
-        <span className="text-sm text-slate-400">
-          {currentIndex + 1} / {allDocs.length}
-        </span>
-        <motion.button
-          type="button"
-          onClick={() => nextDoc && setActiveDocId(nextDoc.id)}
-          disabled={!nextDoc}
-          className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-            nextDoc
-              ? 'text-slate-700 hover:bg-slate-100'
-              : 'text-slate-300 cursor-not-allowed'
-          }`}
-          whileHover={nextDoc ? { scale: 1.02 } : {}}
-          whileTap={nextDoc ? { scale: 0.98 } : {}}
-        >
-          <span>{nextDoc?.name || '已是最后一篇'}</span>
-          <ArrowRightOutlined />
-        </motion.button>
-      </div>
-    </motion.div>
-  );
-}
-
 export default function DocPage() {
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(true);
