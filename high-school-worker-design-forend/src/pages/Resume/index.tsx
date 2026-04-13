@@ -41,6 +41,11 @@ export default function ResumePage() {
   const [currentUploadingIndex, setCurrentUploadingIndex] = useState(-1);
   const [showQueue, setShowQueue] = useState(false);
 
+  // PDF预览相关状态
+  const [previewVisible, setPreviewVisible] = useState(false);
+  const [previewFileName, setPreviewFileName] = useState('');
+  const [previewFileUrl, setPreviewFileUrl] = useState('');
+
   // 历史记录相关状态
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyList, setHistoryList] = useState<ResumeHistoryRecord[]>([]);
@@ -501,16 +506,12 @@ export default function ResumePage() {
                     className="px-0!"
                     icon={<FileTextOutlined />}
                     onClick={() => {
-                      const link = document.createElement('a');
-                      link.href = '/examples/黑白设计通用国际贸易财务会计专业简历.pdf';
-                      link.download = '黑白设计通用国际贸易财务会计专业简历.pdf';
-                      document.body.appendChild(link);
-                      link.click();
-                      document.body.removeChild(link);
-                      message.success('模板下载成功');
+                      setPreviewFileName('黑白设计通用国际贸易财务会计专业简历.pdf');
+                      setPreviewFileUrl('/examples/黑白设计通用国际贸易财务会计专业简历.pdf');
+                      setPreviewVisible(true);
                     }}
                   >
-                    下载模板.pdf
+                    预览模板.pdf
                   </Button>
                   <Button
                     type="link"
@@ -981,6 +982,49 @@ export default function ResumePage() {
           </div>
         )}
       </Drawer>
+
+      {/* PDF预览模态框 */}
+      <Modal
+        title={
+          <Space>
+            <FileTextOutlined />
+            简历模板预览
+          </Space>
+        }
+        open={previewVisible}
+        onCancel={() => setPreviewVisible(false)}
+        width="80%"
+        style={{ maxWidth: '1200px' }}
+        footer={[
+          <Button key="close" onClick={() => setPreviewVisible(false)}>
+            关闭
+          </Button>,
+          <Button
+            key="download"
+            type="primary"
+            icon={<FileTextOutlined />}
+            onClick={() => {
+              const link = document.createElement('a');
+              link.href = previewFileUrl;
+              link.download = previewFileName;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              message.success('下载成功');
+            }}
+          >
+            下载模板
+          </Button>,
+        ]}
+      >
+        <div className="h-[70vh]">
+          <iframe
+            src={previewFileUrl}
+            title={previewFileName}
+            className="w-full h-full border-0"
+          />
+        </div>
+      </Modal>
       </div>
     </div>
   );
