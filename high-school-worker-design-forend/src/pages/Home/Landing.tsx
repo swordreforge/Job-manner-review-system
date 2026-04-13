@@ -1,12 +1,55 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RocketOutlined, RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
+import { ReadOutlined, RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
+
+// 自定义博士帽 SVG 组件
+const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* 帽顶（方形） */}
+    <path d="M3 10L12 5L21 10L12 15L3 10Z" />
+
+    {/* 帽身（圆柱形底部） */}
+    <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
+    <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
+  </svg>
+);
+
+// 自定义文档 SVG 组件
+const DocumentIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    {/* 文档主体 */}
+    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" />
+    {/* 折角 */}
+    <path d="M14 2V8H20" />
+    {/* 文档内容线条 */}
+    <path d="M8 12H16" />
+    <path d="M8 16H16" />
+  </svg>
+);
 
 const features = [
   {
@@ -106,7 +149,7 @@ export default function Landing() {
           <Button
             type="primary"
             size="large"
-            icon={<RightOutlined />}
+            icon={<DocumentIcon className="w-5 h-5" />}
             onClick={() => navigate('/doc')}
             className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-12 px-6 rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
           >
@@ -167,7 +210,7 @@ export default function Landing() {
             }}
             className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-8 shadow-lg shadow-orange-500/30"
           >
-            <RocketOutlined className="text-5xl text-white" />
+            <GraduationCapIcon className="w-16 h-16 text-white" />
           </motion.div>
 
           <motion.h1
@@ -715,7 +758,7 @@ export default function Landing() {
                   <Button
                     type="primary"
                     size="large"
-                    icon={<RocketOutlined />}
+                    icon={<GraduationCapIcon className="w-5 h-5" />}
                     onClick={() => navigate('/auth')}
                     className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
                   >
