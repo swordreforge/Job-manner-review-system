@@ -709,6 +709,10 @@ textarea {
 .data-table td {
     padding: 1rem;
     border-bottom: 1px solid var(--border-color);
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .data-table tbody tr {

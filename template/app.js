@@ -128,6 +128,14 @@ function showToast(message, type = 'success') {
     }, 3000);
 }
 
+// 转义HTML特殊字符
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // 页面切换
 function switchPage(page) {
     // 更新导航状态
@@ -325,11 +333,11 @@ function updateStudentsTable() {
 
     elements.studentsTableBody.innerHTML = state.students.map(student => `
         <tr>
-            <td>${student.id}</td>
-            <td>${student.name}</td>
-            <td>${student.education || '-'}</td>
-            <td>${student.major || '-'}</td>
-            <td>${student.graduation_year || '-'}</td>
+            <td title="${escapeHtml(String(student.id))}">${student.id}</td>
+            <td title="${escapeHtml(student.name)}">${student.name}</td>
+            <td title="${escapeHtml(student.education || '-')}">${student.education || '-'}</td>
+            <td title="${escapeHtml(student.major || '-')}">${student.major || '-'}</td>
+            <td title="${escapeHtml(String(student.graduation_year || '-'))}">${student.graduation_year || '-'}</td>
             <td>
                 <button class="btn btn-secondary" onclick="viewStudent('${student.id}')">查看</button>
                 <button class="btn btn-secondary" onclick="editStudent('${student.id}')">编辑</button>
@@ -1330,13 +1338,13 @@ function updateJobsTable() {
     }
     tbody.innerHTML = state.jobs.map(job => `
         <tr>
-            <td>${job.id}</td>
-            <td>${job.name}</td>
-            <td>${job.company || '-'}</td>
-            <td>${job.industry || '-'}</td>
-            <td>${job.category || '-'}</td>
-            <td>${job.location || '-'}</td>
-            <td>${job.salary_range || '-'}</td>
+            <td title="${escapeHtml(String(job.id))}">${job.id}</td>
+            <td title="${escapeHtml(job.name)}">${job.name}</td>
+            <td title="${escapeHtml(job.company || '-')}">${job.company || '-'}</td>
+            <td title="${escapeHtml(job.industry || '-')}">${job.industry || '-'}</td>
+            <td title="${escapeHtml(job.category || '-')}">${job.category || '-'}</td>
+            <td title="${escapeHtml(job.location || '-')}">${job.location || '-'}</td>
+            <td title="${escapeHtml(job.salary_range || '-')}">${job.salary_range || '-'}</td>
             <td>
                 <button class="btn btn-secondary" onclick="viewJob('${job.id}')">查看</button>
                 <button class="btn btn-secondary" onclick="editJob('${job.id}')">编辑</button>
@@ -1540,11 +1548,11 @@ function updateUsersTable() {
     }
     tbody.innerHTML = state.users.map(user => `
         <tr>
-            <td>${user.id}</td>
-            <td>${user.username}</td>
-            <td>${user.email || '-'}</td>
-            <td>${user.phone || '-'}</td>
-            <td>${getRoleName(user.role)}</td>
+            <td title="${escapeHtml(String(user.id))}">${user.id}</td>
+            <td title="${escapeHtml(user.username)}">${user.username}</td>
+            <td title="${escapeHtml(user.email || '-')}">${user.email || '-'}</td>
+            <td title="${escapeHtml(user.phone || '-')}">${user.phone || '-'}</td>
+            <td title="${escapeHtml(getRoleName(user.role))}">${getRoleName(user.role)}</td>
             <td>
                 <button class="btn btn-secondary" onclick="editUser('${user.id}')">编辑</button>
                 <button class="btn btn-secondary" style="color: var(--danger-color);" onclick="deleteUser('${user.id}')">删除</button>
@@ -1708,12 +1716,12 @@ function displayTableDetail(data) {
     
     const columnsHtml = data.columns.map(col => `
         <tr>
-            <td>${col.column_name}</td>
-            <td>${col.data_type}</td>
-            <td>${col.is_nullable}</td>
-            <td>${col.column_key}</td>
-            <td>${col.column_default || '-'}</td>
-            <td>${col.column_comment || '-'}</td>
+            <td title="${escapeHtml(col.column_name)}">${col.column_name}</td>
+            <td title="${escapeHtml(col.data_type)}">${col.data_type}</td>
+            <td title="${escapeHtml(col.is_nullable)}">${col.is_nullable}</td>
+            <td title="${escapeHtml(col.column_key)}">${col.column_key}</td>
+            <td title="${escapeHtml(col.column_default || '-')}">${col.column_default || '-'}</td>
+            <td title="${escapeHtml(col.column_comment || '-')}">${col.column_comment || '-'}</td>
             <td>
                 <button class="btn btn-secondary btn-sm" onclick="openModifyColumnModal('${col.column_name}')" title="修改">
                     编辑
@@ -1969,14 +1977,16 @@ function displayTableData(data) {
     // 获取所有列名
     const columns = Object.keys(data.items[0]);
     
-    const headersHtml = columns.map(col => `<th>${col}</th>`).join('');
+    const headersHtml = columns.map(col => `<th title="${escapeHtml(col)}">${col}</th>`).join('');
     
     const rowsHtml = data.items.map(row => {
         const cellsHtml = columns.map(col => {
             const value = row[col];
             const displayValue = value === null ? '<span class="null-value">NULL</span>' : 
                                (typeof value === 'object' ? JSON.stringify(value) : value);
-            return `<td>${displayValue}</td>`;
+            const titleValue = value === null ? 'NULL' : 
+                             (typeof value === 'object' ? JSON.stringify(value) : String(value));
+            return `<td title="${escapeHtml(titleValue)}">${displayValue}</td>`;
         }).join('');
         
         // 获取第一列的值作为标识
