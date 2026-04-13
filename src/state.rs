@@ -55,7 +55,27 @@ impl AppState {
     /// 
     /// # 返回
     /// - 备份文件的完整路径
+    /// 
+    /// # 平台支持
+    /// - Linux/macOS: 完全支持
+    /// - Windows: 不支持，返回错误提示用户使用其他工具
     pub async fn backup_database(&self, output_dir: &str) -> Result<String> {
+        // 平台检查：Windows 不支持备份
+        #[cfg(target_os = "windows")]
+        {
+            anyhow::bail!(
+                "数据库备份功能在 Windows 平台上不可用。\n\
+                 请使用以下替代方案：\n\
+                 1. 使用 MySQL Workbench 手动导出数据库\n\
+                 2. 使用命令行工具: mysqldump -h {} -P {} -u {} -p {} > backup.sql\n\
+                 3. 使用备份-db.sh 脚本（在 Linux/macOS 上运行）",
+                self.config.mysql_host,
+                self.config.mysql_port,
+                self.config.mysql_username,
+                self.config.mysql_database
+            );
+        }
+
         let (host, port, user, password, db_name) = self.get_mysql_config();
 
         // 创建备份目录
@@ -215,7 +235,28 @@ impl AppState {
     /// 
     /// # 参数
     /// - `backup_file`: 备份文件的路径
+    /// 
+    /// # 平台支持
+    /// - Linux/macOS: 完全支持
+    /// - Windows: 不支持，返回错误提示用户使用其他工具
     pub async fn restore_database(&self, backup_file: &str) -> Result<()> {
+        // 平台检查：Windows 不支持恢复
+        #[cfg(target_os = "windows")]
+        {
+            anyhow::bail!(
+                "数据库恢复功能在 Windows 平台上不可用。\n\
+                 请使用以下替代方案：\n\
+                 1. 使用 MySQL Workbench 手动导入数据库\n\
+                 2. 使用命令行工具: mysql -h {} -P {} -u {} -p {} < {}\n\
+                 3. 使用备份-db.sh 脚本（在 Linux/macOS 上运行）",
+                self.config.mysql_host,
+                self.config.mysql_port,
+                self.config.mysql_username,
+                self.config.mysql_database,
+                backup_file
+            );
+        }
+
         let (host, port, user, password, db_name) = self.get_mysql_config();
 
         // 检查备份文件是否存在

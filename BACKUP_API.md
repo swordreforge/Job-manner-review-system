@@ -6,6 +6,33 @@
 
 数据库备份恢复功能使用 `mysqldump`/`mariadb-dump` 和 `mysql` 命令来执行备份和恢复操作。所有备份文件以 `.sql` 格式存储在指定的目录中。
 
+## 平台支持
+
+| 功能 | Linux | macOS | Windows |
+|------|-------|-------|---------|
+| 创建备份 | ✅ | ✅ | ❌ |
+| 恢复数据库 | ✅ | ✅ | ❌ |
+| 列出备份 | ✅ | ✅ | ✅ |
+| 下载备份 | ✅ | ✅ | ✅ |
+| 删除备份 | ✅ | ✅ | ✅ |
+
+**Windows 限制：**
+- 备份和恢复功能在 Windows 上不可用
+- 会返回友好的错误提示，建议使用其他工具
+- 查看和删除备份功能仍然可用
+
+**Windows 替代方案：**
+1. 使用 MySQL Workbench 手动导出/导入数据库
+2. 使用命令行工具：
+   ```bash
+   # 备份
+   mysqldump -h localhost -P 3306 -u root -p career_db > backup.sql
+   
+   # 恢复
+   mysql -h localhost -P 3306 -u root -p career_db < backup.sql
+   ```
+3. 在 Linux/macOS 环境中使用 `backup-db.sh` 脚本
+
 ## API 端点
 
 ### 1. 创建备份
