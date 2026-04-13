@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userApi } from '../../api';
 import { useAuthStore } from '../../stores';
+import LaserGradient from '../../components/LaserGradient';
+import LaserRay from '../../components/LaserRay';
 import './Auth.css';
 
 interface PasswordStrengthResult {
@@ -456,6 +458,10 @@ export default function AuthPage() {
 
   return (
     <div className="auth-container">
+      {/* 镭射效果背景 */}
+      <LaserGradient />
+      <LaserRay />
+      
       <motion.div
         initial={{ opacity: 0, scale: 0.9, y: 20 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
