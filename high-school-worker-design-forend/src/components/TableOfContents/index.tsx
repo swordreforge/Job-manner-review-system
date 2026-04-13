@@ -24,6 +24,7 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
     const matches = Array.from(content.matchAll(headingRegex));
     const extractedHeadings = matches.map((match) => {
       const text = match[2].trim();
+      // 使用与 MarkdownHeading 相同的 ID 生成逻辑
       const id = text
         .toLowerCase()
         .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
@@ -90,7 +91,7 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.2 }}
-        className="fixed inset-0 z-50 bg-black/50"
+        className="fixed inset-0 z-40 bg-black/50"
         onClick={onClose}
       >
         <motion.div
@@ -119,7 +120,11 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
                 <motion.button
                   key={heading.id}
                   type="button"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    // 立即更新 activeId 状态
+                    setActiveId(heading.id);
                     const element = document.getElementById(heading.id);
                     if (element) {
                       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -128,7 +133,7 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
                     }
                   }}
                   className={`
-                    block w-full text-left text-sm py-2 px-3 rounded-lg transition-colors
+                    block w-full text-left text-sm py-2 px-3 rounded-lg transition-colors cursor-pointer
                     ${activeId === heading.id
                       ? 'bg-orange-50 text-orange-700 font-medium'
                       : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'
@@ -166,7 +171,11 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
             <motion.button
               key={heading.id}
               type="button"
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                // 立即更新 activeId 状态
+                setActiveId(heading.id);
                 const element = document.getElementById(heading.id);
                 if (element) {
                   element.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -174,7 +183,7 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
                 }
               }}
               className={`
-                block w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors
+                block w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors cursor-pointer
                 ${activeId === heading.id
                   ? 'bg-orange-50 text-orange-700 font-medium'
                   : 'text-slate-600 hover:bg-slate-50 hover:text-slate-800'

@@ -149,7 +149,18 @@ function DocTree({ items, level = 0 }: { items: DocConfig[]; level?: number }) {
 
 // 自定义 Markdown 渲染器，为标题添加 ID
 function MarkdownHeading({ level, children }: { level: number; children: React.ReactNode }) {
-  const text = typeof children === 'string' ? children : '';
+  // 改进文本提取逻辑，处理更复杂的 children 结构
+  const extractText = (node: React.ReactNode): string => {
+    if (typeof node === 'string') return node;
+    if (typeof node === 'number') return String(node);
+    if (Array.isArray(node)) return node.map(extractText).join('');
+    if (node && typeof node === 'object' && 'props' in node) {
+      return extractText((node as any).props.children);
+    }
+    return '';
+  };
+
+  const text = extractText(children);
   const id = text
     .toLowerCase()
     .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
@@ -164,7 +175,7 @@ function MarkdownHeading({ level, children }: { level: number; children: React.R
   );
 }
 
-function DocContent({ onCloseToc }: { onCloseToc?: () => void }) {
+function DocContent() {
   const { docs, activeDocId, setActiveDocId, docContents, setDocContent } = useDocStore();
 
   const flattenDocs = (items: DocConfig[]): DocConfig[] => {
@@ -252,17 +263,6 @@ function DocContent({ onCloseToc }: { onCloseToc?: () => void }) {
           <TableOfContents content={content} />
         )}
       </div>
-
-      {/* 移动端目录抽屉 */}
-      <AnimatePresence>
-        {content && onCloseToc && (
-          <TableOfContents
-            content={content}
-            isMobile={true}
-            onClose={onCloseToc}
-          />
-        )}
-      </AnimatePresence>
     </motion.div>
   );
 }
@@ -405,9 +405,20 @@ export default function DocPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <DocContent onCloseToc={() => setTocOpen(false)} />
+          <DocContent />
         </motion.main>
       </div>
+
+      {/* 移动端目录抽屉 */}
+      <AnimatePresence>
+        {tocOpen && activeDocId && docContents[activeDocId] && (
+          <TableOfContents
+            content={docContents[activeDocId]}
+            isMobile={true}
+            onClose={() => setTocOpen(false)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* 搜索弹窗 */}
       <DocSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
