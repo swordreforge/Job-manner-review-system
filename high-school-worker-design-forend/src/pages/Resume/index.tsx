@@ -495,12 +495,38 @@ export default function ResumePage() {
 
               <Card className="mt-4" size="small">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <span className="text-gray-500">示例文档：</span>
-                  <Button type="link" className="px-0!" onClick={() => message.info('示例简历.pdf 下载功能开发中')}>
-                    尝试解析示例简历.pdf
+                  <span className="text-gray-500">示例模板：</span>
+                  <Button
+                    type="link"
+                    className="px-0!"
+                    icon={<FileTextOutlined />}
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = '/examples/黑白设计通用国际贸易财务会计专业简历.pdf';
+                      link.download = '黑白设计通用国际贸易财务会计专业简历.pdf';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      message.success('模板下载成功');
+                    }}
+                  >
+                    下载模板.pdf
                   </Button>
-                  <Button type="link" className="px-0!" onClick={() => message.info('示例简历.docx 下载功能开发中')}>
-                    尝试解析示例简历.docx
+                  <Button
+                    type="link"
+                    className="px-0!"
+                    icon={<FileTextOutlined />}
+                    onClick={() => {
+                      const link = document.createElement('a');
+                      link.href = '/examples/黑白设计通用国际贸易财务会计专业简历.docx';
+                      link.download = '黑白设计通用国际贸易财务会计专业简历.docx';
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                      message.success('模板下载成功');
+                    }}
+                  >
+                    下载模板.docx
                   </Button>
                 </div>
               </Card>
