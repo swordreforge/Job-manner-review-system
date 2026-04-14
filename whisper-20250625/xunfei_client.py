@@ -147,7 +147,7 @@ class XunfeiASRClient:
                         "language": "zh_cn",
                         "accent": "mandarin",
                         "eos": 6000,
-                        "dwa": "wpgs",
+                        "dwa": "pgs",
                         "result": {
                             "encoding": "utf8",
                             "compress": "raw",
