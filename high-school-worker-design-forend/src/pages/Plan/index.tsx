@@ -117,10 +117,13 @@ export default function PlanPage() {
         if (reportList.length > 0 && !selectedReportId) {
           setSelectedReportId(reportList[0].id);
         }
+        return reportList;
       }
+      return [];
     } catch (error) {
       console.error('获取报告列表失败:', error);
       message.error('获取报告列表失败');
+      return [];
     } finally {
       setLoadingReports(false);
     }
@@ -240,20 +243,45 @@ export default function PlanPage() {
           const isSelectedReport = selectedReportId === reportId;
           await reportApi.delete(reportId);
           message.success('删除成功');
-          // 重新加载报告列表
-          await loadReports();
 
-          // 如果删除的是当前选中的报告，且还有其他报告，则自动选择第一个
+          // 先清空右侧显示，避免显示旧数据
+          setHasReport(false);
+          setSkills([]);
+          setTimeline([]);
+          setCompleteness(0);
+          setCompetitiveness(0);
+
+          // 重新加载报告列表并获取最新的列表数据
+          const updatedReports = await loadReports();
+
+          // 如果删除的是当前选中的报告，需要更新选中状态
           if (isSelectedReport) {
-            if (getFilteredAndSortedReports().length > 0) {
-              setSelectedReportId(getFilteredAndSortedReports()[0].id);
+            const remainingReports = getFilteredAndSortedReports();
+            if (remainingReports.length > 0) {
+              // 还有其他报告，自动选择第一条，并立即加载其内容
+              const newSelectedId = remainingReports[0].id;
+              const newSelectedReport = updatedReports.find(r => r.id === newSelectedId);
+              setSelectedReportId(newSelectedId);
+              if (newSelectedReport && newSelectedReport.content) {
+                loadReportContent(newSelectedReport);
+              } else {
+                // 如果新报告没有内容，保持空状态
+                setHasReport(false);
+              }
             } else {
-              // 如果没有报告了，清空详情显示
-              setHasReport(false);
-              setSkills([]);
-              setTimeline([]);
-              setCompleteness(0);
-              setCompetitiveness(0);
+              // 没有报告了，清空选中状态
+              setSelectedReportId(null);
+            }
+          } else {
+            // 如果删除的不是当前选中的报告，重新加载当前选中报告的内容以确保同步
+            if (selectedReportId) {
+              const currentReport = updatedReports.find(r => r.id === selectedReportId);
+              if (currentReport && currentReport.content) {
+                loadReportContent(currentReport);
+              } else {
+                // 如果找不到选中的报告或没有内容，保持空状态
+                setHasReport(false);
+              }
             }
           }
         } catch (error) {
