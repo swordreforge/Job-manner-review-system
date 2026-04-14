@@ -104,22 +104,37 @@ impl AppState {
             "mysqldump"
         };
 
-        // 构建命令
-        let mut cmd = tokio::process::Command::new(dump_cmd);
-        cmd.arg("-h")
-            .arg(host)
-            .arg("-P")
-            .arg(port.to_string())
-            .arg("-u")
-            .arg(user)
-            .arg(format!("-p{}", password))
-            .arg(db_name);
+        // 检查密码
+        if password.is_empty() {
+            anyhow::bail!("Database password is not configured");
+        }
 
-        // 执行命令并获取输出
-        let output = cmd
-            .output()
-            .await
-            .context("Failed to execute mysqldump command")?;
+        // 构建命令
+        let output = if cfg!(target_os = "windows") {
+            let backup_cmd = format!(
+                "\"{}\" -h {} -P {} -u {} -p{} --default-character-set=utf8mb4 {}",
+                dump_cmd, host, port, user, password, db_name
+            );
+            tokio::process::Command::new("cmd")
+                .args(["/C", &backup_cmd])
+                .output()
+                .await
+                .context("Failed to execute mysqldump command")?
+        } else {
+            let mut cmd = tokio::process::Command::new(dump_cmd);
+            cmd.arg("-h")
+                .arg(host)
+                .arg("-P")
+                .arg(port.to_string())
+                .arg("-u")
+                .arg(user)
+                .arg(format!("-p{}", password))
+                .arg("--default-character-set=utf8mb4")
+                .arg(db_name);
+            cmd.output()
+                .await
+                .context("Failed to execute mysqldump command")?
+        };
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
