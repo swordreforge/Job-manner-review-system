@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { ReadOutlined, RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
+import { RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
@@ -108,7 +108,48 @@ const comments = [
   { id: 6, user: '陈同学', avatar: '🧑‍💻', text: '一站式服务太方便了，再也不用到处找资源', color: '#DDA0DD' },
   { id: 7, user: '赵总', avatar: '👨‍💼', text: '推荐给团队新人，反馈都很好', color: '#98D8C8' },
   { id: 8, user: '孙同学', avatar: '👩‍🎨', text: '界面设计很赞，用户体验一流', color: '#F7DC6F' },
+  { id: 9, user: '李大漂亮', avatar: '💁‍♀️', text: 'AI模拟面试的压力面太真实了，紧张得我手心出汗！', color: '#FF9F43' },
+  { id: 10, user: '代码狂魔', avatar: '👨‍💻', text: '深色模式好评！非常适合我们这些半夜熬夜改简历的', color: '#54A0FF' },
+  { id: 11, user: 'HR张姐', avatar: '👩‍💼', text: '这上面生成的简历排版很符合大厂ATS系统标准，看着舒服', color: '#10AC84' },
+  { id: 12, user: '迷茫的应届生', avatar: '🥺', text: '做完性格测试终于知道自己适合什么岗位了，不再像无头苍蝇', color: '#FF9FF3' },
+  { id: 13, user: '周硕', avatar: '🧑‍🔬', text: '岗位匹配度分析得十分精准，省去了大量海投的无用功', color: '#00D2D3' },
+  { id: 14, user: '吴产品', avatar: '🤵', text: '转行求职必备神器！帮我把以前的经验完美包装成了产品方向', color: '#F368E0' },
+  { id: 15, user: '郑同学', avatar: '🧑‍🔧', text: '原本平平无奇的项目经验被AI润色后瞬间高大上了，刚拿了SP！', color: '#F5CD79' },
+  { id: 16, user: '运营小七', avatar: '🧚‍♀️', text: '每天睡前必刷一下行业动态，内容推荐做得太懂我了', color: '#786FA6' },
+  { id: 17, user: '老林', avatar: '👴', text: '35岁职场危机？用这个重新做了一次赛道规划，豁然开朗！', color: '#E15F41' },
+  { id: 18, user: '考研党小赵', avatar: '📚', text: '秋招春招的时间线梳理得明明白白，简直是保姆级求职攻略', color: '#778BEB' },
+  { id: 19, user: '大牛哥', avatar: '🦸‍♂️', text: '薪资预测功能特别靠谱，今天跟HR谈薪的时候非常有底气！', color: '#CF6A87' },
+  { id: 20, user: '实习生小猫', avatar: '🐱', text: '第一次找实习全靠这里的面经汇总，顺利上岸腾讯啦~', color: '#F3A683' },
+  { id: 21, user: '海归小吴', avatar: '✈️', text: '留学生求职的时间差总算被填平了，名企校招信息更新得飞快', color: '#63CDDA' },
+  { id: 22, user: '设计喵', avatar: '🎨', text: '不但能改文字，简历的视觉排版也能自动搞定，强推！', color: '#EA8685' },
+  { id: 23, user: '测试老王', avatar: '🕵️‍♂️', text: '试用过市面上好几款，这家的大模型响应速度是最快的，不卡顿', color: '#F8A5C2' },
 ];
+
+const BARRAGE_TRACK_COUNT = 7;
+const BARRAGE_TRACK_HEIGHT = 48;
+const BARRAGE_TOP_OFFSET = 24;
+const BARRAGE_SCHEDULER_TICK_MS = 2000;
+const BARRAGE_MIN_GAP_MS = 50;
+
+type CommentItem = (typeof comments)[number];
+
+type ActiveBarrage = {
+  instanceId: number;
+  comment: CommentItem;
+  track: number;
+  duration: number; // 👈 新增：每条弹幕专属的动画时长
+};
+
+const commentById = new Map(comments.map((item) => [item.id, item]));
+
+const shuffleArray = <T,>(items: T[]) => {
+  const cloned = [...items];
+  for (let i = cloned.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
+  }
+  return cloned;
+};
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -117,6 +158,11 @@ export default function Landing() {
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
+  const [activeBarrages, setActiveBarrages] = useState<ActiveBarrage[]>([]);
+  const barrageQueueRef = useRef<number[]>([]);
+  const occupiedTracksRef = useRef<Set<number>>(new Set());
+  const lastSpawnAtRef = useRef(0);
+  const barrageInstanceIdRef = useRef(1);
 
   const showPrevFeature = () => {
     setHoveredFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
@@ -145,8 +191,8 @@ export default function Landing() {
       }
 
       const elapsed = timestamp - startTime;
-      let progress = Math.min(1, elapsed / DISPLAY_DURATION);
-      let currentPercent = progress * 100;
+      const progress = Math.min(1, elapsed / DISPLAY_DURATION);
+      const currentPercent = progress * 100;
 
       if (currentPercent >= 99.8) {
         setPercent(100);
@@ -162,6 +208,86 @@ export default function Landing() {
 
     return () => {
       if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  useEffect(() => {
+    // 💡 新增：用一个 Set 来存储所有的 setTimeout ID，方便随时掐断它们
+    const timeoutIds = new Set<number>();
+
+    const spawnBarrage = () => {
+      // 💡 修复 1：如果页面在后台（用户切到了其他标签页），直接不执行发射逻辑
+      if (document.hidden) return;
+
+      const availableTracks = Array.from({ length: BARRAGE_TRACK_COUNT }, (_, index) => index)
+          .filter((track) => !occupiedTracksRef.current.has(track));
+
+      if (availableTracks.length === 0) return;
+
+      const now = Date.now();
+      if (now - lastSpawnAtRef.current < BARRAGE_MIN_GAP_MS) return;
+
+      if (barrageQueueRef.current.length === 0) {
+        barrageQueueRef.current = shuffleArray(comments.map((item) => item.id));
+      }
+
+      const nextCommentId = barrageQueueRef.current.shift();
+      if (typeof nextCommentId !== 'number') return;
+
+      const comment = commentById.get(nextCommentId);
+      if (!comment) return;
+
+      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+
+      const estimatedWidth = 100 + (comment.text.length + comment.user.length) * 16;
+      const containerWidth = Math.min(window.innerWidth, 1152);
+      const SPEED = 120;
+      const duration = (containerWidth + estimatedWidth) / SPEED;
+      const clearTimeMs = ((estimatedWidth + 80) / SPEED) * 1000;
+
+      const instanceId = barrageInstanceIdRef.current;
+      barrageInstanceIdRef.current += 1;
+      lastSpawnAtRef.current = now;
+
+      occupiedTracksRef.current.add(track);
+      setActiveBarrages((prev) => [...prev, { instanceId, comment, track, duration }]);
+
+      // 💡 修改：把 timeout 存起来
+      const timeoutId = window.setTimeout(() => {
+        occupiedTracksRef.current.delete(track);
+        timeoutIds.delete(timeoutId); // 执行完了就从 Set 里删掉
+      }, clearTimeMs);
+      timeoutIds.add(timeoutId);
+    };
+
+    spawnBarrage();
+    const intervalId = window.setInterval(spawnBarrage, BARRAGE_SCHEDULER_TICK_MS);
+
+    // ==========================================
+    // 💡 核心修复 2：监听页面的可见性变化
+    // ==========================================
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // 用户切走时：清空屏幕上的弹幕、清空被占用的轨道、掐断所有正在倒计时的 setTimeout
+        setActiveBarrages([]);
+        occupiedTracksRef.current.clear();
+        timeoutIds.forEach(id => window.clearTimeout(id));
+        timeoutIds.clear();
+      } else {
+        // 用户切回来时：重置上次发射时间，防止瞬间连发
+        lastSpawnAtRef.current = Date.now();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      // 卸载组件时的终极清理
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      timeoutIds.forEach(id => window.clearTimeout(id));
+      // occupiedTracksRef.current.clear();
+      // barrageQueueRef.current = [];
+      // lastSpawnAtRef.current = 0;
     };
   }, []);
 
@@ -854,32 +980,36 @@ export default function Landing() {
 
         {/* 弹幕区域 */}
         <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
-          {/* 弹幕轨道 - 每条弹幕独立的垂直轨道 */}
-          <div className="absolute inset-0 py-6">
-            {comments.map((comment, idx) => (
-              <motion.div
-                key={comment.id}
-                className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
-                style={{
-                  top: `${idx * 40}px`,
-                  backgroundColor: `${comment.color}20`,
-                  borderColor: `${comment.color}40`,
-                }}
-                initial={{ x: '100%' }}
-                animate={{ x: '-150%' }}
-                transition={{
-                  duration: 20,
-                  repeat: Infinity,
-                  ease: 'linear',
-                  delay: idx * 2.5,
-                }}
-              >
-                <span className="text-lg">{comment.avatar}</span>
-                <span className="text-sm font-semibold" style={{ color: comment.color }}>{comment.user}:</span>
-                <span className="text-sm text-gray-300">{comment.text}</span>
-              </motion.div>
+          <div className="absolute inset-0 pointer-events-none">
+            {activeBarrages.map((item) => (
+                <motion.div
+                    key={item.instanceId}
+                    className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
+                    style={{
+                      top: `${BARRAGE_TOP_OFFSET + item.track * BARRAGE_TRACK_HEIGHT}px`,
+                      left: '100%',
+                      backgroundColor: `${item.comment.color}20`,
+                      borderColor: `${item.comment.color}40`,
+                    }}
+                    initial={{ x: 0 }}
+                    animate={{ x: 'calc(-100vw - 140%)' }}
+                    transition={{
+                      duration: item.duration, // 👈 核心修改：使用刚刚动态计算好的专属时长
+                      ease: 'linear',
+                    }}
+                    onAnimationComplete={() => {
+                      // ✨ 核心修复：动画彻底结束（20秒后）飞出屏幕外时，仅仅销毁自身的 DOM。
+                      // 不要在这里释放轨道，因为轨道早在上面 setTimeout 时就已经释放了。
+                      setActiveBarrages((prev) => prev.filter((barrage) => barrage.instanceId !== item.instanceId));
+                    }}
+                >
+                  <span className="text-lg">{item.comment.avatar}</span>
+                  <span className="text-sm font-semibold" style={{ color: item.comment.color }}>{item.comment.user}:</span>
+                  <span className="text-sm text-gray-300">{item.comment.text}</span>
+                </motion.div>
             ))}
           </div>
+          {/* ...装饰性元素... */}
 
           {/* 装饰性元素 */}
           <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
