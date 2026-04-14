@@ -344,10 +344,10 @@ export default function PlanPage() {
       )}
 
       {student && (
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-4">
           {/* 左侧历史记录列表面板 */}
           <Card
-            className="w-80"
+            className="w-full"
             title={
               <div className="flex items-center justify-between">
                 <span className="font-medium">历史记录 ({getFilteredAndSortedReports().length})</span>
@@ -474,7 +474,7 @@ export default function PlanPage() {
           </Card>
 
           {/* 右侧详情展示 */}
-          <Card className="flex-1" title={reports.find(r => r.id === selectedReportId)?.title || '职业规划详情'}>
+          <Card className="w-full" title={reports.find(r => r.id === selectedReportId)?.title || '职业规划详情'}>
             {generating && (
               <div className="py-8 flex flex-col items-center">
                 <Spin size="large" tip="生成中..." />
