@@ -279,6 +279,7 @@ impl AppState {
             .arg(user)
             .arg(format!("-p{}", password))
             .arg("--default-character-set=utf8mb4")
+            .arg("--binary-mode=1")
             .arg(db_name);
 
         // 写入备份内容到 stdin
