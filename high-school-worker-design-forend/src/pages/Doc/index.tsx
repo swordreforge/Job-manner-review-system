@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { create } from 'zustand';
 import { useNavigate } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -8,11 +8,9 @@ import {
   FileTextOutlined,
   RightOutlined,
   ArrowLeftOutlined,
-  ArrowRightOutlined,
   LoadingOutlined,
   SearchOutlined,
   MenuOutlined,
-  CloseOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -166,17 +164,20 @@ function MarkdownHeading({ level, children }: { level: number; children: React.R
     .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
     .replace(/^-+|-+$/g, '');
 
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 
-  return (
-    <Tag id={id} className={`scroll-mt-20 ${level === 1 ? 'text-3xl font-bold' : level === 2 ? 'text-2xl font-semibold' : level === 3 ? 'text-xl font-medium' : 'text-lg font-medium'}`}>
-      {children}
-    </Tag>
+  return React.createElement(
+    Tag,
+    {
+      id,
+      className: `scroll-mt-20 ${level === 1 ? 'text-3xl font-bold' : level === 2 ? 'text-2xl font-semibold' : level === 3 ? 'text-xl font-medium' : 'text-lg font-medium'}`
+    },
+    children
   );
 }
 
 function DocContent() {
-  const { docs, activeDocId, setActiveDocId, docContents, setDocContent } = useDocStore();
+  const { docs, activeDocId, docContents, setDocContent } = useDocStore();
 
   const flattenDocs = (items: DocConfig[]): DocConfig[] => {
     const result: DocConfig[] = [];
@@ -203,9 +204,7 @@ function DocContent() {
   }, [activeDocId]);
 
   const allDocs = flattenDocs(docs);
-  const currentIndex = allDocs.findIndex(d => d.id === activeDocId);
-  const prevDoc = currentIndex > 0 ? allDocs[currentIndex - 1] : null;
-  const nextDoc = currentIndex < allDocs.length - 1 ? allDocs[currentIndex + 1] : null;
+  allDocs.findIndex(d => d.id === activeDocId);
 
   const content = activeDocId ? docContents[activeDocId] : null;
   const loading = activeDocId && !content;
@@ -269,7 +268,7 @@ function DocContent() {
 
 export default function DocPage() {
   const navigate = useNavigate();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen] = useState(true);
   const [searchOpen, setSearchOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
   const { docs, setDocs, setActiveDocId, activeDocId, docContents } = useDocStore();

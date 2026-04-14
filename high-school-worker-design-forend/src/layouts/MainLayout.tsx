@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, RocketOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
 import { useTaskStore } from '../stores';
@@ -23,9 +23,6 @@ export default function MainLayout() {
     { key: 'jobs', title: '岗位', icon: <BankOutlined />, path: '/jobs' },
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
-
-  // 处理 /start 路由，显示为首页
-  const isStartPage = location.pathname === '/start';
 
   // 根据当前路由计算应该高亮的标签
   const getActiveTab = () => {

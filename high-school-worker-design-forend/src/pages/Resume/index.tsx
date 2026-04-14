@@ -29,8 +29,7 @@ export default function ResumePage() {
   };
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [parsing, setParsing] = useState(false);
+  const [parsing] = useState(false);
   const [parsed, setParsed] = useState(false);
   const [progress, setProgress] = useState(0);
   const [profile, setProfile] = useState<Student | null>(null);
@@ -40,7 +39,7 @@ export default function ResumePage() {
   const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
   const [isUploadingQueue, setIsUploadingQueue] = useState(false);
   const [currentUploadingIndex, setCurrentUploadingIndex] = useState(-1);
-  const [showQueue, setShowQueue] = useState(false);
+  const [, setShowQueue] = useState(false);
 
   // PDF预览相关状态
   const [previewVisible, setPreviewVisible] = useState(false);
@@ -453,6 +452,7 @@ export default function ResumePage() {
                                 competitivenessScore: item.result.competitiveness || 0,
                                 suggestions: item.result.suggestions || [],
                                 parsedProfile: item.result,
+                                resumeContent: '', // 临时记录，没有原始内容
                               };
                               setDetailRecord(tempDetail);
                               setDetailVisible(true);

@@ -207,8 +207,7 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
 
 // 辅助函数：为 Markdown 内容添加标题 ID
 export function addHeadingIds(content: string): string {
-  return content.replace(/^(#{1,6})\s+(.+)$/gm, (match, hashes, text) => {
-    const level = hashes.length;
+  return content.replace(/^(#{1,6})\s+(.+)$/gm, (_match, hashes, text) => {
     const id = text
       .toLowerCase()
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
