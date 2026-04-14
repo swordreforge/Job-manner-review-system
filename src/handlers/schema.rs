@@ -24,6 +24,8 @@ pub struct ColumnInfo {
     pub extra: String,
     pub column_comment: Option<String>,
     pub ordinal_position: u32,
+    pub referenced_table: Option<String>,
+    pub referenced_column: Option<String>,
 }
 
 /// 添加字段请求
@@ -85,7 +87,7 @@ pub async fn list_tables(state: web::Data<crate::state::AppState>) -> impl Respo
                 let table_name: String = row.get("table_name");
                 let table_comment: Option<String> = row.get("table_comment");
                 let engine: Option<String> = row.get("engine");
-                let created_time: Option<chrono::NaiveDateTime> = row.get("created_time");
+                let created_time: Option<String> = row.try_get("created_time").ok();
                 
                 // 查询表的行数
                 let count_query = format!("SELECT COUNT(*) as count FROM `{}`", table_name);
@@ -102,7 +104,7 @@ pub async fn list_tables(state: web::Data<crate::state::AppState>) -> impl Respo
                     table_comment,
                     engine,
                     row_count,
-                    created_time: created_time.map(|dt| dt.format("%Y-%m-%d %H:%M:%S").to_string()),
+                    created_time,
                 });
             }
             
@@ -200,17 +202,66 @@ pub async fn get_table_schema(
     {
         Ok(rows) => {
             let columns: Vec<ColumnInfo> = rows.iter().map(|row| {
+                let get_string = |col: &str| -> String {
+                    row.try_get::<String, _>(col).unwrap_or_else(|_| {
+                        row.try_get::<Vec<u8>, _>(col)
+                            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                            .unwrap_or_default()
+                    })
+                };
+
                 ColumnInfo {
-                    column_name: row.get("column_name"),
-                    data_type: row.get("data_type"),
-                    is_nullable: row.get("is_nullable"),
-                    column_key: row.get("column_key"),
-                    column_default: row.get("column_default"),
-                    extra: row.get("extra"),
-                    column_comment: row.get("column_comment"),
-                    ordinal_position: row.get("ordinal_position"),
+                    column_name: get_string("column_name"),
+                    data_type: get_string("data_type"),
+                    is_nullable: get_string("is_nullable"),
+                    column_key: get_string("column_key"),
+                    column_default: row.try_get::<String, _>("column_default").ok().or_else(|| {
+                        row.try_get::<Vec<u8>, _>("column_default")
+                            .map(|b| String::from_utf8_lossy(&b).into_owned())
+                            .ok()
+                    }),
+                    extra: get_string("extra"),
+                    column_comment: row.try_get::<String, _>("column_comment").ok().or_else(|| {
+                        row.try_get::<Vec<u8>, _>("column_comment")
+                            .map(|b| String::from_utf8_lossy(&b).into_owned())
+                            .ok()
+                    }),
+                    ordinal_position: row.try_get("ordinal_position").unwrap_or(0),
+                    referenced_table: None,
+                    referenced_column: None,
                 }
             }).collect();
+            
+            let mut columns_with_fk = columns;
+            
+            let fk_query = r#"
+                SELECT 
+                    COLUMN_NAME as column_name,
+                    REFERENCED_TABLE_NAME as referenced_table,
+                    REFERENCED_COLUMN_NAME as referenced_column
+                FROM information_schema.KEY_COLUMN_USAGE
+                WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ?
+                AND REFERENCED_TABLE_NAME IS NOT NULL
+            "#;
+            
+            if let Ok(fk_rows) = sqlx::query(fk_query)
+                .bind(&table_name)
+                .fetch_all(pool)
+                .await
+            {
+                for fk_row in fk_rows {
+                    let col_name: String = fk_row.try_get("column_name").unwrap_or_default();
+                    let ref_table: Option<String> = fk_row.try_get("referenced_table").ok();
+                    let ref_col: Option<String> = fk_row.try_get("referenced_column").ok();
+                    
+                    if let Some(col) = columns_with_fk.iter_mut().find(|c| c.column_name == col_name) {
+                        col.referenced_table = ref_table;
+                        col.referenced_column = ref_col;
+                    }
+                }
+            }
+            
+            let columns = columns_with_fk;
             
             // 获取表的CREATE语句
             let create_table_query = format!("SHOW CREATE TABLE `{}`", table_name);
@@ -219,7 +270,9 @@ pub async fn get_table_schema(
                 .await
             {
                 Ok(row) => {
-                    row.get::<String, _>("Create Table")
+                    // SHOW CREATE TABLE 返回两列：Table (index 0) 和 Create Table (index 1)
+                    // 使用索引访问避免列名包含空格导致的 ColumnNotFound 错误
+                    row.try_get::<String, _>(1).unwrap_or_else(|_| String::new())
                 }
                 Err(_) => String::new(),
             };
