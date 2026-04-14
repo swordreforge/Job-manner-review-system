@@ -61,31 +61,11 @@ impl AppState {
     /// - Linux/macOS: 完全支持
     /// - Windows: 不支持，返回错误提示用户使用其他工具
     pub async fn backup_database(&self, output_dir: &str) -> Result<String> {
-        // 平台检查：Windows 不支持备份
-        #[cfg(target_os = "windows")]
-        {
-            anyhow::bail!(
-                "数据库备份功能在 Windows 平台上不可用。\n\
-                 请使用以下替代方案：\n\
-                 1. 使用 MySQL Workbench 手动导出数据库\n\
-                 2. 使用命令行工具: mysqldump -h {} -P {} -u {} -p {} > {}\n\
-                 3. 使用备份-db.sh 脚本（在 Linux/macOS 上运行）",
-                self.config.mysql_host,
-                self.config.mysql_port,
-                self.config.mysql_username,
-                self.config.mysql_database,
-                format!("{}/backup.sql", output_dir)
-            );
-        }
+        let (host, port, user, password, db_name) = self.get_mysql_config();
 
-        // 平台检查：非 Windows 平台执行备份
-        #[cfg(not(target_os = "windows"))]
-        {
-            let (host, port, user, password, db_name) = self.get_mysql_config();
-
-            // 创建备份目录
-            std::fs::create_dir_all(output_dir)
-                .context("Failed to create backup directory")?;
+        // 创建备份目录
+        std::fs::create_dir_all(output_dir)
+            .context("Failed to create backup directory")?;
 
         // 生成备份文件名
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
@@ -97,17 +77,24 @@ impl AppState {
             anyhow::bail!("Database password is not configured");
         }
 
-        // 使用 mysqldump 或 mariadb-dump
-        let dump_cmd = if std::path::Path::new("/usr/bin/mariadb-dump").exists() {
+        // 检查 mysqldump 是否存在
+        let dump_cmd = if cfg!(target_os = "windows") {
+            if std::path::Path::new("mysqldump.exe").exists() || std::process::Command::new("where").arg("mysqldump").output().map(|o| o.status.success()).unwrap_or(false) {
+                "mysqldump"
+            } else {
+                anyhow::bail!(
+                    "未找到 mysqldump 命令。\n\
+                     请确保 MySQL bin 目录在 PATH 中，或使用以下方式之一：\n\
+                     1. 添加 MySQL bin 目录到系统 PATH\n\
+                     2. 使用完整路径调用 mysqldump\n\
+                     3. 使用 MySQL Workbench 手动导出"
+                );
+            }
+        } else if std::path::Path::new("/usr/bin/mariadb-dump").exists() {
             "mariadb-dump"
         } else {
             "mysqldump"
         };
-
-        // 检查密码
-        if password.is_empty() {
-            anyhow::bail!("Database password is not configured");
-        }
 
         // 构建命令
         let output = if cfg!(target_os = "windows") {
@@ -249,7 +236,6 @@ impl AppState {
             .context("Failed to write backup file")?;
 
         Ok(output_path)
-        } // End of #[cfg(not(target_os = "windows"))]
     }
 
     /// 执行数据库恢复
