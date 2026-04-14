@@ -79,7 +79,8 @@ impl AppState {
 
         // 检查 mysqldump 是否存在
         let dump_cmd = if cfg!(target_os = "windows") {
-            if std::path::Path::new("mysqldump.exe").exists() || std::process::Command::new("where").arg("mysqldump").output().map(|o| o.status.success()).unwrap_or(false) {
+            // Windows平台检测mysqldump.exe
+            if std::process::Command::new("where").arg("mysqldump").output().map(|o| o.status.success()).unwrap_or(false) {
                 "mysqldump"
             } else {
                 anyhow::bail!(
@@ -97,17 +98,7 @@ impl AppState {
         };
 
         // 构建命令
-        let output = if cfg!(target_os = "windows") {
-            let backup_cmd = format!(
-                "\"{}\" -h {} -P {} -u {} -p{} --default-character-set=utf8mb4 {}",
-                dump_cmd, host, port, user, password, db_name
-            );
-            tokio::process::Command::new("cmd")
-                .args(["/C", &backup_cmd])
-                .output()
-                .await
-                .context("Failed to execute mysqldump command")?
-        } else {
+        let output = {
             let mut cmd = tokio::process::Command::new(dump_cmd);
             cmd.arg("-h")
                 .arg(host)
@@ -245,29 +236,9 @@ impl AppState {
     /// 
     /// # 平台支持
     /// - Linux/macOS: 完全支持
-    /// - Windows: 不支持，返回错误提示用户使用其他工具
+    /// - Windows: 完全支持
     pub async fn restore_database(&self, backup_file: &str) -> Result<()> {
-        // 平台检查：Windows 不支持恢复
-        #[cfg(target_os = "windows")]
-        {
-            anyhow::bail!(
-                "数据库恢复功能在 Windows 平台上不可用。\n\
-                 请使用以下替代方案：\n\
-                 1. 使用 MySQL Workbench 手动导入数据库\n\
-                 2. 使用命令行工具: mysql -h {} -P {} -u {} -p {} < {}\n\
-                 3. 使用备份-db.sh 脚本（在 Linux/macOS 上运行）",
-                self.config.mysql_host,
-                self.config.mysql_port,
-                self.config.mysql_username,
-                self.config.mysql_database,
-                backup_file
-            );
-        }
-
-        // 平台检查：非 Windows 平台执行恢复
-        #[cfg(not(target_os = "windows"))]
-        {
-            let (host, port, user, password, db_name) = self.get_mysql_config();
+        let (host, port, user, password, db_name) = self.get_mysql_config();
 
         // 检查备份文件是否存在
         if !Path::new(backup_file).exists() {
@@ -279,9 +250,25 @@ impl AppState {
             anyhow::bail!("Database password is not configured");
         }
 
+        // 检查 mysql 命令是否存在
+        if cfg!(target_os = "windows") {
+            if !std::process::Command::new("where").arg("mysql").output().map(|o| o.status.success()).unwrap_or(false) {
+                anyhow::bail!(
+                    "未找到 mysql 命令。\n\
+                     请确保 MySQL bin 目录在 PATH 中。"
+                );
+            }
+        }
+
         // 使用 mysql 命令恢复数据库
         let backup_content = std::fs::read_to_string(backup_file)
             .context("Failed to read backup file")?;
+
+        // 在备份内容前添加字符集设置
+        let restored_content = format!(
+            "SET NAMES utf8mb4;\nSET CHARACTER SET utf8mb4;\n{}",
+            backup_content
+        );
 
         let mut cmd = tokio::process::Command::new("mysql");
         cmd.arg("-h")
@@ -291,6 +278,7 @@ impl AppState {
             .arg("-u")
             .arg(user)
             .arg(format!("-p{}", password))
+            .arg("--default-character-set=utf8mb4")
             .arg(db_name);
 
         // 写入备份内容到 stdin
@@ -303,7 +291,7 @@ impl AppState {
 
         if let Some(mut stdin) = child.stdin.take() {
             use tokio::io::AsyncWriteExt;
-            stdin.write_all(backup_content.as_bytes()).await
+            stdin.write_all(restored_content.as_bytes()).await
                 .context("Failed to write backup content to mysql")?;
             drop(stdin);
         }
@@ -318,7 +306,6 @@ impl AppState {
         }
 
         Ok(())
-        } // End of #[cfg(not(target_os = "windows"))]
     }
 
     /// 列出所有备份文件
