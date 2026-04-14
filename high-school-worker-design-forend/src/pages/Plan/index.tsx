@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Segmented, Card, Progress, Timeline, Button, Spin, Empty, message, Dropdown, Select, Space } from 'antd';
-import { ReloadOutlined, SyncOutlined, SortAscendingOutlined, SortDescendingOutlined } from '@ant-design/icons';
+import { Segmented, Card, Progress, Timeline, Button, Spin, Empty, message, Dropdown, Select, Space, Modal } from 'antd';
+import { ReloadOutlined, SyncOutlined, SortAscendingOutlined, SortDescendingOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useUIStore } from '../../stores';
 import { studentApi, reportApi } from '../../api';
 import type { Student } from '../../types';
@@ -225,6 +225,45 @@ export default function PlanPage() {
     }
   };
 
+  const handleDeleteReport = async (reportId: number, event: React.MouseEvent) => {
+    // 阻止事件冒泡，避免触发选中报告
+    event.stopPropagation();
+
+    Modal.confirm({
+      title: '确认删除',
+      content: '确定要删除这条历史记录吗？删除后无法恢复。',
+      okText: '删除',
+      okType: 'danger',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          const isSelectedReport = selectedReportId === reportId;
+          await reportApi.delete(reportId);
+          message.success('删除成功');
+          // 重新加载报告列表
+          await loadReports();
+
+          // 如果删除的是当前选中的报告，且还有其他报告，则自动选择第一个
+          if (isSelectedReport) {
+            if (getFilteredAndSortedReports().length > 0) {
+              setSelectedReportId(getFilteredAndSortedReports()[0].id);
+            } else {
+              // 如果没有报告了，清空详情显示
+              setHasReport(false);
+              setSkills([]);
+              setTimeline([]);
+              setCompleteness(0);
+              setCompetitiveness(0);
+            }
+          }
+        } catch (error) {
+          console.error('删除报告失败:', error);
+          message.error('删除失败');
+        }
+      },
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case '已掌握': return '#52c41a';
@@ -365,9 +404,18 @@ export default function PlanPage() {
                     >
                       <div className="flex justify-between items-start">
                         <div className="font-medium flex-1 text-sm">{report.title}</div>
-                        <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">
-                          {report.status}
-                        </span>
+                        <Space size="small">
+                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">
+                            {report.status}
+                          </span>
+                          <Button
+                            type="text"
+                            size="small"
+                            icon={<DeleteOutlined />}
+                            onClick={(e) => handleDeleteReport(report.id, e)}
+                            className="text-gray-400 hover:text-red-500"
+                          />
+                        </Space>
                       </div>
                       <div className="text-gray-500 text-xs mt-1">
                         {new Date(report.createdAt * 1000).toLocaleString('zh-CN')}

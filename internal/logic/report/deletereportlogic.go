@@ -27,8 +27,18 @@ func NewDeleteReportLogic(ctx context.Context, svcCtx *svc.ServiceContext) *Dele
 	}
 }
 
-func (l *DeleteReportLogic) DeleteReport() (resp *types.ReportResp, err error) {
-	// todo: add your logic here and delete this line
+func (l *DeleteReportLogic) DeleteReport(id int64) (*types.ReportResp, error) {
+	err := l.svcCtx.ReportModel.Delete(l.ctx, id)
+	if err != nil {
+		logx.Errorf("Delete failed: %v", err)
+		return &types.ReportResp{
+			Code: 500,
+			Msg:  "failed to delete report",
+		}, nil
+	}
 
-	return
+	return &types.ReportResp{
+		Code: 0,
+		Msg:  "deleted successfully",
+	}, nil
 }
