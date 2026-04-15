@@ -97,7 +97,7 @@ export default function BarrageCanvas({
     updateSize();
     window.addEventListener('resize', updateSize);
     
-    const spawnBarrage = (containerWidth: number) => {
+    const spawnBarrage = (containerWidth: number, initMode = false) => {
       if (document.hidden) return;
       
       const availableTracks = Array.from({ length: trackCount }, (_, i) => i)
@@ -106,8 +106,17 @@ export default function BarrageCanvas({
       if (availableTracks.length === 0) return;
       
       const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
-      spawnBarrageToTrack(containerWidth, [track]);
+      const startX = initMode ? Math.random() * containerWidth : undefined;
+      spawnBarrageToTrack(containerWidth, [track], startX);
     };
+    
+    const initBarrages = (containerWidth: number) => {
+      for (let i = 0; i < trackCount; i++) {
+        spawnBarrage(containerWidth, true);
+      }
+    };
+    
+    initBarrages(canvas.width);
     
     const spawnBarrageToTrack = (containerWidth: number, tracks: number[], startX?: number) => {
       if (document.hidden) return;
