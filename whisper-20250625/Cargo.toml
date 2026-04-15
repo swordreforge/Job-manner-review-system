@@ -1,0 +1,78 @@
+[package]
+name = "xunfei-asr-server"
+version = "2.0.0"
+edition = "2021"
+description = "讯飞星火语音识别服务 - Rust 单二进制版本"
+authors = ["iFlow CLI"]
+
+[dependencies]
+# Web 服务器
+tokio = { version = "1.35", features = ["full"] }
+axum = { version = "0.7", features = ["multipart"] }
+#tower = "0.4"
+tower-http = { version = "0.5", features = ["fs", "cors", "trace"] }
+futures-util = "0.3"
+
+# WebSocket 支持
+tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
+url = "2.5"
+
+# HTTP 客户端
+#reqwest = { version = "0.11", features = ["json"] }
+
+# 序列化/反序列化
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# 时间处理
+chrono = "0.4"
+
+# HMAC-SHA256 签名
+hmac = "0.12"
+sha2 = "0.10"
+base64 = "0.21"
+percent-encoding = "2.3"
+
+# 日志
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# 环境变量
+dotenv = "0.15"
+
+# 命令行参数
+clap = { version = "4.4", features = ["derive"] }
+
+# 多部分表单
+#multipart = { version = "0.18", features = ["server"] }
+
+# 错误处理
+anyhow = "1.0"
+thiserror = "1.0"
+
+# 嵌入静态文件
+#rust-embed = "8.0"
+mime_guess = "2.0"
+
+# UUID 生成
+uuid = { version = "1.6", features = ["v4"] }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+rpath = false
+codegen-units = 1
+panic = "abort"
+overflow-checks = false
+debug = false
+strip = true
+debug-assertions = false
+incremental = false
+
+[profile.release.package."*"]
+opt-level = "z"
+codegen-units = 1
+strip = true
+debug = false
+debug-assertions = false
+overflow-checks = false

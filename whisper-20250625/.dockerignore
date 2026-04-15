@@ -1,0 +1,55 @@
+# Rust 构建产物
+/target/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+
+# 数据
+data/
+*.pcm
+*.tmp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Git
+.git/
+.gitignore
+
+# 文档
+README.md
+README_RUST.md
+QUICKSTART.md
+CHANGELOG.md
+*.md
+
+# 脚本
+*.sh
+!docker-entrypoint.sh
+
+# 配置
+.env
+.env.example
+.flake8
+.pre-commit-config.yaml
+pyproject.toml
+setup.cfg
+
+# 测试
+tests/
+test_*.py
+
+# 其他
+.DS_Store
+*.log

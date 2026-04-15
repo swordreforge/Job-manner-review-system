@@ -1269,6 +1269,28 @@
     "@tailwindcss/oxide" "4.2.2"
     tailwindcss "4.2.2"
 
+"@tauri-apps/cli-linux-x64-gnu@2.10.1":
+  version "2.10.1"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli-linux-x64-gnu/-/cli-linux-x64-gnu-2.10.1.tgz"
+  integrity sha512-2/12bEzsJS9fAKybxgicCDFxYD1WEI9kO+tlDwX5znWG2GwMBaiWcmhGlZ8fi+DMe9CXlcVarMTYc0L3REIRxw==
+
+"@tauri-apps/cli@^2.10.1":
+  version "2.10.1"
+  resolved "https://registry.npmmirror.com/@tauri-apps/cli/-/cli-2.10.1.tgz"
+  integrity sha512-jQNGF/5quwORdZSSLtTluyKQ+o6SMa/AUICfhf4egCGFdMHqWssApVgYSbg+jmrZoc8e1DscNvjTnXtlHLS11g==
+  optionalDependencies:
+    "@tauri-apps/cli-darwin-arm64" "2.10.1"
+    "@tauri-apps/cli-darwin-x64" "2.10.1"
+    "@tauri-apps/cli-linux-arm-gnueabihf" "2.10.1"
+    "@tauri-apps/cli-linux-arm64-gnu" "2.10.1"
+    "@tauri-apps/cli-linux-arm64-musl" "2.10.1"
+    "@tauri-apps/cli-linux-riscv64-gnu" "2.10.1"
+    "@tauri-apps/cli-linux-x64-gnu" "2.10.1"
+    "@tauri-apps/cli-linux-x64-musl" "2.10.1"
+    "@tauri-apps/cli-win32-arm64-msvc" "2.10.1"
+    "@tauri-apps/cli-win32-ia32-msvc" "2.10.1"
+    "@tauri-apps/cli-win32-x64-msvc" "2.10.1"
+
 "@tybys/wasm-util@^0.10.1":
   version "0.10.1"
   resolved "https://registry.npmmirror.com/@tybys/wasm-util/-/wasm-util-0.10.1.tgz"

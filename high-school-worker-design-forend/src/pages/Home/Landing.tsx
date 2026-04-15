@@ -29,28 +29,6 @@ const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
   </svg>
 );
 
-// 自定义文档 SVG 组件
-const DocumentIcon = ({ className = "" }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    {/* 文档主体 */}
-    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" />
-    {/* 折角 */}
-    <path d="M14 2V8H20" />
-    {/* 文档内容线条 */}
-    <path d="M8 12H16" />
-    <path d="M8 16H16" />
-  </svg>
-);
-
 const features = [
   {
     title: 'AI智能分析',
@@ -413,42 +391,76 @@ export default function Landing() {
             className="min-h-screen text-white"
             style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}
           >
-      {/* Floating Get Started Button */}
+      {/* 顶部工具栏 */}
       <motion.div
-        initial={{ x: 100, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ type: "spring", damping: 20, stiffness: 100, delay: 1 }}
-        className="fixed top-6 right-6 z-50"
+        initial={{ y: -100, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
+        className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10"
       >
-        <motion.div
-          whileHover={{ 
-            scale: 1.08,
-            boxShadow: [
-              "0 10px 30px rgba(251, 146, 60, 0.3)",
-              "0 15px 40px rgba(251, 146, 60, 0.4)",
-              "0 15px 40px rgba(251, 146, 60, 0.4)"
-            ]
-          }}
-          whileTap={{ scale: 0.98 }}
-          transition={{
-            boxShadow: { duration: 0.4 },
-            scale: { type: "spring", stiffness: 400 }
-          }}
-        >
-          <Button
-            type="primary"
-            size="large"
-            icon={<DocumentIcon className="w-5 h-5" />}
-            onClick={() => navigate('/doc')}
-            className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-12 px-6 rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => navigate('/welcome')}
           >
-            文档
-          </Button>
-        </motion.div>
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+              <GraduationCapIcon className="w-6 h-6 text-white" />
+            </div>
+            <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+              职业规划助手
+            </span>
+          </motion.div>
+
+          <div className="flex items-center gap-4">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/doc')}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300"
+            >
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                />
+              </svg>
+              <span className="font-medium">文档</span>
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/auth')}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 border-0 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+            >
+              <svg
+                className="w-5 h-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                />
+              </svg>
+              <span className="font-medium">登录/注册</span>
+            </motion.button>
+          </div>
+        </div>
       </motion.div>
 
       {/* Hero Section */}
-      <div className="relative px-6 py-20 text-center overflow-hidden">
+      <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
         {/* 镭射效果背景 */}
         <LaserGradient />
         <LaserRay />
@@ -497,16 +509,16 @@ export default function Landing() {
               stiffness: 200,
               duration: 0.8
             }}
-            className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-8 shadow-lg shadow-orange-500/30"
+            className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
           >
-            <GraduationCapIcon className="w-16 h-16 text-white" />
+            <GraduationCapIcon className="w-20 h-20 text-white" />
           </motion.div>
 
           <motion.h1
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-5xl md:text-6xl font-bold mb-6"
+            className="text-6xl md:text-7xl font-bold mb-12"
           >
             职业规划<span className="text-orange-400">助手</span>
           </motion.h1>
@@ -515,7 +527,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-xl text-gray-400 max-w-2xl mx-auto mb-8 leading-relaxed"
+            className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
           >
             AI驱动的职业发展解决方案，助你找到理想工作
             <br />
@@ -526,7 +538,7 @@ export default function Landing() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center"
+            className="flex flex-col sm:flex-row gap-10 justify-center"
           >
             <motion.div
               whileHover={{ scale: 1.05 }}
@@ -538,7 +550,7 @@ export default function Landing() {
                 size="large"
                 icon={<RightOutlined />}
                 onClick={() => navigate('/auth')}
-                className="bg-orange-500 border-orange-500 hover:bg-orange-600 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                className="bg-orange-500 border-orange-500 hover:bg-orange-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
               >
                 立即开始
               </Button>
@@ -553,7 +565,7 @@ export default function Landing() {
                 onClick={() => {
                   document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="border-gray-600 text-white hover:bg-gray-800 h-14 px-10 text-lg rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+                className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
               >
                 了解更多
               </Button>
