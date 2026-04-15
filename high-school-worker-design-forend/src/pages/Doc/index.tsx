@@ -1,23 +1,20 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { create } from 'zustand';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
 import {
-  FolderOutlined,
-  FolderOpenOutlined,
   FileTextOutlined,
   RightOutlined,
-  ArrowLeftOutlined,
   LoadingOutlined,
   SearchOutlined,
   MenuOutlined,
+  HomeOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
 import DocSearch from '../../components/DocSearch';
-import TableOfContents from '../../components/TableOfContents';
 
 type DocConfig = {
   id: string;
@@ -26,6 +23,7 @@ type DocConfig = {
   path?: string;
   expanded?: boolean;
   children?: DocConfig[];
+  category?: string;
 };
 
 interface DocStore {
@@ -35,7 +33,6 @@ interface DocStore {
   setActiveDocId: (id: string) => void;
   setDocs: (docs: DocConfig[]) => void;
   setDocContent: (id: string, content: string) => void;
-  toggleFolder: (id: string) => void;
 }
 
 const useDocStore = create<DocStore>((set) => ({
@@ -48,138 +45,144 @@ const useDocStore = create<DocStore>((set) => ({
     set((state) => ({
       docContents: { ...state.docContents, [id]: content },
     })),
-  toggleFolder: (id) =>
-    set((state) => ({
-      docs: toggleFolderInTree(state.docs, id),
-    })),
 }));
 
-function toggleFolderInTree(items: DocConfig[], id: string): DocConfig[] {
-  return items.map((item) => {
-    if (item.id === id && item.type === 'folder') {
-      return { ...item, expanded: !item.expanded };
-    }
-    if (item.children) {
-      return { ...item, children: toggleFolderInTree(item.children, id) };
-    }
-    return item;
-  });
+interface Tab {
+  id: string;
+  title: string;
+  docIds: string[];
 }
 
-function DocTree({ items, level = 0 }: { items: DocConfig[]; level?: number }) {
-  const { activeDocId, setActiveDocId, toggleFolder } = useDocStore();
+const tabs: Tab[] = [
+  { id: 'guide', title: '使用指南', docIds: ['welcome', 'quick-start', 'holland-test', 'resume-guide', 'plan-guide', 'interview-guide'] },
+  { id: 'faq', title: '常见问题', docIds: ['faq'] },
+];
 
-  return (
-    <motion.ul
-      className={level > 0 ? 'ml-4' : ''}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.3, delay: level * 0.1 }}
-    >
-      {items.map((item, idx) => (
-        <motion.li
-          key={item.id}
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.3, delay: idx * 0.05 + level * 0.1 }}
-        >
-          {item.type === 'folder' ? (
-            <>
-              <motion.button
-                type="button"
-                onClick={() => toggleFolder(item.id)}
-                className="flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm text-slate-700"
-                whileHover={{ scale: 1.02, backgroundColor: 'rgba(249, 115, 22, 0.1)' }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ duration: 0.15 }}
-              >
-                {item.expanded ? (
-                  <FolderOpenOutlined className="text-orange-500" />
-                ) : (
-                  <FolderOutlined className="text-orange-500" />
-                )}
-                <span className="flex-1 font-medium">{item.name}</span>
-                <motion.div
-                  animate={{ rotate: item.expanded ? 90 : 0 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <RightOutlined className="text-xs text-slate-400" />
-                </motion.div>
-              </motion.button>
-              <AnimatePresence>
-                {item.expanded && item.children && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                  >
-                    <DocTree items={item.children} level={level + 1} />
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </>
-          ) : (
-            <motion.button
-              type="button"
-              onClick={() => setActiveDocId(item.id)}
-              className={`flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm ${
-                activeDocId === item.id
-                  ? 'bg-orange-50 text-orange-700 font-medium'
-                  : 'text-slate-600'
-              }`}
-              whileHover={{ scale: 1.02, backgroundColor: 'rgba(249, 115, 22, 0.1)' }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.15 }}
-            >
-              <FileTextOutlined
-                className={activeDocId === item.id ? 'text-orange-500' : 'text-slate-400'}
-              />
-              <span>{item.name}</span>
-            </motion.button>
-          )}
-        </motion.li>
-      ))}
-    </motion.ul>
-  );
+interface Heading {
+  level: number;
+  text: string;
+  id: string;
 }
 
-// 自定义 Markdown 渲染器，为标题添加 ID
-function MarkdownHeading({ level, children }: { level: number; children: React.ReactNode }) {
-  // 改进文本提取逻辑，处理更复杂的 children 结构
-  const extractText = (node: React.ReactNode): string => {
-    if (typeof node === 'string') return node;
-    if (typeof node === 'number') return String(node);
-    if (Array.isArray(node)) return node.map(extractText).join('');
-    if (node && typeof node === 'object' && 'props' in node) {
-      return extractText((node as any).props.children);
+function extractHeadings(content: string): Heading[] {
+  const headings: Heading[] = [];
+  const lines = content.split('\n');
+  
+  for (const line of lines) {
+    const match = line.match(/^(#{1,6})\s+(.+)$/);
+    if (match) {
+      const level = match[1].length;
+      const text = match[2].trim();
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+      headings.push({ level, text, id });
     }
-    return '';
-  };
+  }
+  
+  return headings;
+}
 
-  const text = extractText(children);
-  const id = text
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-
+function MarkdownHeading({ level, children, id }: { level: number; children: React.ReactNode; id?: string }) {
   const Tag = `h${level}` as 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
+  const levelClasses = {
+    1: 'text-3xl font-bold mb-6',
+    2: 'text-2xl font-semibold mb-4 mt-8',
+    3: 'text-xl font-medium mb-3 mt-6',
+    4: 'text-lg font-medium mb-2 mt-4',
+    5: 'text-base font-medium mb-2 mt-3',
+    6: 'text-sm font-medium mb-2 mt-2',
+  };
 
   return React.createElement(
     Tag,
     {
       id,
-      className: `scroll-mt-20 ${level === 1 ? 'text-3xl font-bold' : level === 2 ? 'text-2xl font-semibold' : level === 3 ? 'text-xl font-medium' : 'text-lg font-medium'}`
+      className: `scroll-mt-20 text-gray-800 ${levelClasses[level as keyof typeof levelClasses] || ''}`
     },
     children
   );
 }
 
-function DocContent() {
-  const { docs, activeDocId, docContents, setDocContent } = useDocStore();
+function DocContent({ content }: { content: string }) {
+  const headings = useMemo(() => extractHeadings(content), [content]);
 
-  const flattenDocs = (items: DocConfig[]): DocConfig[] => {
+  const scrollToHeading = (id: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 h-full">
+      <div className="flex-1 overflow-y-auto px-6 py-4">
+        <div className="prose prose-slate max-w-none">
+          <ReactMarkdown
+            components={{
+              h1: ({ children }) => {
+                const text = String(children);
+                const id = text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+                return <MarkdownHeading level={1} id={id}>{children}</MarkdownHeading>;
+              },
+              h2: ({ children }) => {
+                const text = String(children);
+                const id = text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+                return <MarkdownHeading level={2} id={id}>{children}</MarkdownHeading>;
+              },
+              h3: ({ children }) => {
+                const text = String(children);
+                const id = text.toLowerCase().replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '');
+                return <MarkdownHeading level={3} id={id}>{children}</MarkdownHeading>;
+              },
+              h4: ({ children }) => <MarkdownHeading level={4}>{children}</MarkdownHeading>,
+              h5: ({ children }) => <MarkdownHeading level={5}>{children}</MarkdownHeading>,
+              h6: ({ children }) => <MarkdownHeading level={6}>{children}</MarkdownHeading>,
+            }}
+          >
+            {content}
+          </ReactMarkdown>
+        </div>
+      </div>
+
+      {headings.length > 0 && (
+        <aside className="hidden lg:block w-64 flex-shrink-0">
+          <div className="sticky top-4 p-4 bg-gray-50 rounded-xl border border-gray-200">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">目录</h4>
+            <nav className="space-y-1">
+              {headings.filter(h => h.level <= 3).map((heading, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => scrollToHeading(heading.id)}
+                  className={`block w-full text-left text-sm py-1 px-2 rounded transition-colors hover:bg-gray-200 ${
+                    heading.level === 1 ? 'font-medium text-gray-800' :
+                    heading.level === 2 ? 'text-gray-600 pl-4' :
+                    'text-gray-500 pl-8'
+                  }`}
+                >
+                  {heading.text}
+                </button>
+              ))}
+            </nav>
+          </div>
+        </aside>
+      )}
+    </div>
+  );
+}
+
+export default function DocPage() {
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [tocOpen, setTocOpen] = useState(false);
+  const { docs, setDocs, setActiveDocId, activeDocId, docContents, setDocContent } = useDocStore();
+
+  const activeTabId = searchParams.get('tab') || 'guide';
+  const activeDocParam = searchParams.get('doc');
+
+  const flattenDocs = useCallback((items: DocConfig[]): DocConfig[] => {
     const result: DocConfig[] = [];
     for (const item of items) {
       if (item.type === 'file' && item.path) {
@@ -190,120 +193,70 @@ function DocContent() {
       }
     }
     return result;
-  };
+  }, []);
+
+  const allDocs = useMemo(() => flattenDocs(docs), [docs, flattenDocs]);
+
+  const currentTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+  const currentTabDocs = allDocs.filter(d => currentTab.docIds.includes(d.id));
+
+  useEffect(() => {
+    fetch('/docs/doc-config.json')
+      .then(res => res.json())
+      .then(config => {
+        setDocs(config.docs || []);
+      })
+      .catch(console.error);
+  }, [setDocs]);
+
+  useEffect(() => {
+    if (activeDocParam && allDocs.length > 0) {
+      const doc = allDocs.find(d => d.id === activeDocParam);
+      if (doc) {
+        setActiveDocId(doc.id);
+      }
+    } else if (currentTabDocs.length > 0 && !activeDocId) {
+      setActiveDocId(currentTabDocs[0].id);
+    }
+  }, [activeDocParam, allDocs, currentTabDocs, activeDocId, setActiveDocId]);
 
   useEffect(() => {
     if (!activeDocId) return;
-    const doc = flattenDocs(docs).find(d => d.id === activeDocId);
+    const doc = allDocs.find(d => d.id === activeDocId);
     if (!doc?.path || docContents[activeDocId]) return;
 
     fetch(doc.path)
       .then(res => res.text())
       .then(content => setDocContent(activeDocId, content))
       .catch(console.error);
-  }, [activeDocId]);
+  }, [activeDocId, allDocs, docContents, setDocContent]);
 
-  const allDocs = flattenDocs(docs);
-  allDocs.findIndex(d => d.id === activeDocId);
+  const handleTabChange = (tabId: string) => {
+    const newTab = tabs.find(t => t.id === tabId);
+    if (newTab && newTab.docIds.length > 0) {
+      setSearchParams({ tab: tabId, doc: newTab.docIds[0] });
+      setActiveDocId(newTab.docIds[0]);
+    }
+  };
+
+  const handleDocSelect = (docId: string) => {
+    setSearchParams({ tab: activeTabId, doc: docId });
+    setActiveDocId(docId);
+  };
 
   const content = activeDocId ? docContents[activeDocId] : null;
   const loading = activeDocId && !content;
 
-  if (!activeDocId) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="flex h-full items-center justify-center text-slate-400"
-      >
-        <div className="text-center">
-          <FileTextOutlined className="mb-3 text-4xl" />
-          <p>选择左侧文档查看内容</p>
-        </div>
-      </motion.div>
-    );
-  }
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, type: 'spring', stiffness: 200, damping: 20 }}
-      className="flex flex-col h-full"
-    >
-      <div className="flex flex-1 overflow-hidden">
-        {/* 主要内容区域 */}
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          {loading ? (
-            <div className="flex items-center justify-center h-32 text-slate-400">
-              <LoadingOutlined className="mr-2 text-xl" />
-              <span>加载中...</span>
-            </div>
-          ) : content ? (
-            <div className="prose prose-slate max-w-3xl">
-              <ReactMarkdown
-                components={{
-                  h1: ({ children }) => <MarkdownHeading level={1}>{children}</MarkdownHeading>,
-                  h2: ({ children }) => <MarkdownHeading level={2}>{children}</MarkdownHeading>,
-                  h3: ({ children }) => <MarkdownHeading level={3}>{children}</MarkdownHeading>,
-                  h4: ({ children }) => <MarkdownHeading level={4}>{children}</MarkdownHeading>,
-                  h5: ({ children }) => <MarkdownHeading level={5}>{children}</MarkdownHeading>,
-                  h6: ({ children }) => <MarkdownHeading level={6}>{children}</MarkdownHeading>,
-                }}
-              >
-                {content}
-              </ReactMarkdown>
-            </div>
-          ) : null}
-        </div>
-
-        {/* 右侧目录 */}
-        {content && (
-          <TableOfContents content={content} />
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-export default function DocPage() {
-  const navigate = useNavigate();
-  const [sidebarOpen] = useState(true);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const [tocOpen, setTocOpen] = useState(false);
-  const { docs, setDocs, setActiveDocId, activeDocId, docContents } = useDocStore();
-
-  // 加载文档配置
-  useEffect(() => {
-    fetch('/docs/doc-config.json')
-      .then(res => res.json())
-      .then(config => {
-        setDocs(config.docs || []);
-        if (config.docs?.[0]?.children?.[0]) {
-          setActiveDocId(config.docs[0].children[0].id);
-        }
-      })
-      .catch(console.error);
-  }, [setDocs, setActiveDocId]);
-
-  // 键盘快捷键支持
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Ctrl+K 或 Cmd+K 打开搜索
       if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
         e.preventDefault();
         setSearchOpen(true);
-        return;
       }
-
-      // / 键打开搜索（当不在输入框中时）
       if (e.key === '/' && !isEditingContent(e)) {
         e.preventDefault();
         setSearchOpen(true);
-        return;
       }
-
-      // ESC 关闭搜索
       if (e.key === 'Escape' && searchOpen) {
         setSearchOpen(false);
       }
@@ -311,90 +264,122 @@ export default function DocPage() {
 
     function isEditingContent(event: KeyboardEvent): boolean {
       const element = event.target as HTMLElement;
-      const tagName = element.tagName;
-
-      return (
-        element.isContentEditable ||
-        tagName === 'INPUT' ||
-        tagName === 'SELECT' ||
-        tagName === 'TEXTAREA'
-      );
+      return element.isContentEditable || ['INPUT', 'SELECT', 'TEXTAREA'].includes(element.tagName);
     }
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchOpen]);
 
-  // 处理搜索结果点击
-  const handleOpenDoc = useCallback((event: CustomEvent) => {
-    const { docId } = event.detail;
-    setActiveDocId(docId);
-  }, [setActiveDocId]);
-
-  useEffect(() => {
-    window.addEventListener('openDoc', handleOpenDoc as EventListener);
-    return () => window.removeEventListener('openDoc', handleOpenDoc as EventListener);
-  }, [handleOpenDoc]);
-
   return (
     <div className="relative flex min-h-[calc(100vh-64px)] flex-col">
-      {/* 镭射效果背景 */}
       <LaserGradient />
       <LaserRay />
 
       <motion.div
-        className="flex items-center justify-between border-b border-slate-200 bg-white px-4 py-3"
+        className="flex flex-col lg:flex-row items-start lg:items-center justify-between border-b border-slate-200 bg-white px-4 py-3 gap-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, type: 'spring', stiffness: 200 }}
       >
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <Button
             type="text"
-            icon={<ArrowLeftOutlined />}
-            onClick={() => navigate(-1)}
-            className="lg:hidden"
+            icon={<HomeOutlined />}
+            onClick={() => navigate('/start')}
+            className="text-gray-600 hover:text-orange-500"
           />
           <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>
         </div>
-        <motion.button
-          type="button"
-          onClick={() => setSearchOpen(true)}
-          className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-        >
-          <SearchOutlined />
-          <span className="hidden sm:inline">搜索</span>
-          <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-slate-200 rounded text-xs font-mono">
-            Ctrl K
-          </kbd>
-        </motion.button>
-        {activeDocId && docContents[activeDocId] && (
+
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
+                  activeTabId === tab.id
+                    ? 'bg-white text-orange-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                {tab.title}
+              </button>
+            ))}
+          </div>
+
           <motion.button
             type="button"
-            onClick={() => setTocOpen(true)}
-            className="xl:hidden flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            onClick={() => setSearchOpen(true)}
+            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
-            <MenuOutlined />
-            <span>目录</span>
+            <SearchOutlined />
+            <span className="hidden sm:inline">搜索</span>
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-slate-200 rounded text-xs font-mono">
+              Ctrl K
+            </kbd>
           </motion.button>
-        )}
+
+          {content && (
+            <motion.button
+              type="button"
+              onClick={() => setTocOpen(true)}
+              className="lg:hidden flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <MenuOutlined />
+              <span>目录</span>
+            </motion.button>
+          )}
+        </div>
       </motion.div>
 
       <div className="flex flex-1 overflow-hidden">
         <motion.aside
-          className={`w-64 flex-shrink-0 overflow-y-auto border-r border-slate-200 bg-slate-50 p-4 ${
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0 lg:w-0 lg:p-0 lg:opacity-0'
-          }`}
+          className="w-full lg:w-64 flex-shrink-0 overflow-y-auto border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50 p-4"
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className={sidebarOpen ? '' : 'hidden lg:block'}>
-            <DocTree items={docs} />
+          <div className="sm:hidden mb-4 flex gap-2">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => handleTabChange(tab.id)}
+                className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  activeTabId === tab.id
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white text-gray-600 border border-gray-200'
+                }`}
+              >
+                {tab.title}
+              </button>
+            ))}
+          </div>
+
+          <div className="space-y-1">
+            {currentTabDocs.map((doc) => (
+              <motion.button
+                key={doc.id}
+                type="button"
+                onClick={() => handleDocSelect(doc.id)}
+                className={`w-full flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-all ${
+                  activeDocId === doc.id
+                    ? 'bg-orange-50 text-orange-700 font-medium border-l-2 border-orange-500'
+                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
+                }`}
+                whileHover={{ x: 4 }}
+                transition={{ duration: 0.15 }}
+              >
+                <FileTextOutlined className={activeDocId === doc.id ? 'text-orange-500' : 'text-slate-400'} />
+                <span className="flex-1">{doc.name}</span>
+                {activeDocId === doc.id && <RightOutlined className="text-xs text-orange-400" />}
+              </motion.button>
+            ))}
           </div>
         </motion.aside>
 
@@ -404,22 +389,75 @@ export default function DocPage() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <DocContent />
+          {!activeDocId ? (
+            <div className="flex h-full items-center justify-center text-slate-400">
+              <div className="text-center">
+                <FileTextOutlined className="mb-3 text-4xl" />
+                <p>选择一个文档开始阅读</p>
+              </div>
+            </div>
+          ) : loading ? (
+            <div className="flex items-center justify-center h-32 text-slate-400">
+              <LoadingOutlined className="mr-2 text-xl" />
+              <span>加载中...</span>
+            </div>
+          ) : content ? (
+            <DocContent content={content} />
+          ) : null}
         </motion.main>
       </div>
 
-      {/* 移动端目录抽屉 */}
       <AnimatePresence>
-        {tocOpen && activeDocId && docContents[activeDocId] && (
-          <TableOfContents
-            content={docContents[activeDocId]}
-            isMobile={true}
-            onClose={() => setTocOpen(false)}
-          />
+        {tocOpen && content && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
+            onClick={() => setTocOpen(false)}
+          >
+            <motion.div
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+              className="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                <h3 className="font-semibold">目录</h3>
+                <button onClick={() => setTocOpen(false)} className="text-gray-500 hover:text-gray-700">
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 overflow-y-auto max-h-[calc(100vh-64px)]">
+                <nav className="space-y-1">
+                  {extractHeadings(content).filter(h => h.level <= 3).map((heading, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        const element = document.getElementById(heading.id);
+                        if (element) {
+                          element.scrollIntoView({ behavior: 'smooth' });
+                          setTocOpen(false);
+                        }
+                      }}
+                      className={`block w-full text-left text-sm py-1.5 px-2 rounded hover:bg-gray-100 ${
+                        heading.level === 1 ? 'font-medium' :
+                        heading.level === 2 ? 'pl-4 text-gray-600' :
+                        'pl-8 text-gray-500'
+                      }`}
+                    >
+                      {heading.text}
+                    </button>
+                  ))}
+                </nav>
+              </div>
+            </motion.div>
+          </motion.div>
         )}
       </AnimatePresence>
 
-      {/* 搜索弹窗 */}
       <DocSearch isOpen={searchOpen} onClose={() => setSearchOpen(false)} />
     </div>
   );

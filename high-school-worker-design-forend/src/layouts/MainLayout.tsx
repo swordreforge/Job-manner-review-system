@@ -14,8 +14,8 @@ interface DocLink {
 }
 
 const docLinks: DocLink[] = [
-  { title: '使用指南', icon: <BookOutlined />, path: '/doc?tab=guide' },
-  { title: '常见问题', icon: <QuestionCircleOutlined />, path: '/doc?tab=faq' },
+  { title: '使用指南', icon: <BookOutlined />, path: '/doc?tab=guide&doc=welcome' },
+  { title: '常见问题', icon: <QuestionCircleOutlined />, path: '/doc?tab=faq&doc=faq' },
   { title: '职业探索', icon: <CompassOutlined />, path: '/holland' },
   { title: '面试技巧', icon: <ReadOutlined />, path: '/interview' },
 ];
