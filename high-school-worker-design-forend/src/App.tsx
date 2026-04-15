@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalBackground from './components/GlobalBackground';
+import { useAuthStore } from './stores';
 
 const Landing = lazy(() => import('./pages/Home/Landing'));
 const HomePage = lazy(() => import('./pages/Home'));
@@ -27,6 +28,26 @@ function RouteLoadingFallback() {
   );
 }
 
+function RootRedirect() {
+  const { isAuthenticated, isAuthChecked, initialize } = useAuthStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  if (!isAuthChecked) {
+    return (
+      <div className="flex min-h-screen items-center justify-center text-gray-400">
+        加载中...
+      </div>
+    );
+  }
+
+  return <Navigate to={isAuthenticated ? '/start' : '/welcome'} replace />;
+}
+
+import { useEffect } from 'react';
+
 export default function App() {
   return (
     <>
@@ -36,7 +57,7 @@ export default function App() {
           <Route path="/auth" element={<AuthPage />} />
           <Route path="/welcome" element={<Landing />} />
           <Route path="/" element={<MainLayout />}>
-            <Route index element={<Navigate to="/welcome" replace />} />
+            <Route index element={<RootRedirect />} />
             <Route path="start" element={<HomePage />} />
             <Route
               path="plan"

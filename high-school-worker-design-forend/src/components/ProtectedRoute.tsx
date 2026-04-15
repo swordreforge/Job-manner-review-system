@@ -16,13 +16,11 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   }, [initialize]);
 
   useEffect(() => {
-    // 只有在认证状态已检查后才决定是否跳转
     if (isAuthChecked && !isAuthenticated) {
-      navigate('/auth', { replace: true, state: { from: location } });
+      navigate('/welcome', { replace: true, state: { from: location } });
     }
   }, [isAuthenticated, isAuthChecked, navigate, location]);
 
-  // 如果还没有检查认证状态，显示加载状态
   if (!isAuthChecked) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -31,7 +29,6 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
     );
   }
 
-  // 如果已检查但未认证，返回null（等待跳转）
   if (!isAuthenticated) {
     return null;
   }

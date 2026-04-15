@@ -8,6 +8,7 @@ import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
 import BarrageCanvas from '../../components/BarrageCanvas';
+import { useAuthStore } from '../../stores';
 
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
   <svg
@@ -120,6 +121,7 @@ const FEATURE_ROTATE_INTERVAL_MS = 5000;
 
 export default function Landing() {
   const navigate = useNavigate();
+  const { isAuthenticated, isAuthChecked, initialize } = useAuthStore();
   const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
   const [isFeatureAutoPlay, setIsFeatureAutoPlay] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
@@ -133,6 +135,24 @@ export default function Landing() {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (isAuthChecked && isAuthenticated) {
+      navigate('/start', { replace: true });
+    }
+  }, [isAuthenticated, isAuthChecked, navigate]);
+
+  if (!isAuthChecked || (isAuthChecked && isAuthenticated)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-gray-400">加载中...</div>
+      </div>
+    );
+  }
 
   const handleShakeClick = () => {
     if (isShaking) return;
