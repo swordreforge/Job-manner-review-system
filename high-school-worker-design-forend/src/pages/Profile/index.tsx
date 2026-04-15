@@ -83,7 +83,7 @@ export default function ProfilePage() {
   const handleLogout = () => {
     logout();
     message.success('已退出登录');
-    navigate('/auth');
+    navigate('/welcome');
   };
 
   const handleEditStudent = () => {

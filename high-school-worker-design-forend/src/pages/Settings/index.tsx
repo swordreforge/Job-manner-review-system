@@ -461,7 +461,7 @@ export default function SettingsPage() {
       if (response.code === 0) {
         message.success('密码修改成功，请重新登录');
         logout();
-        navigate('/auth');
+        navigate('/welcome');
       } else {
         message.error(response.msg || '修改失败');
       }
@@ -479,7 +479,7 @@ export default function SettingsPage() {
       if (response.code === 0) {
         message.success('账号已注销');
         logout();
-        navigate('/auth');
+        navigate('/welcome');
       } else {
         message.error(response.msg || '注销失败');
       }
