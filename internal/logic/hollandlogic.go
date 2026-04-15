@@ -105,14 +105,50 @@ func (l *SubmitHollandTestLogic) SubmitHollandTest(req *types.SubmitHollandTestR
 	scoresJSON, _ := json.Marshal(scores)
 	suitableJobsJSON, _ := json.Marshal(suitableJobs)
 
-	// 获取学生ID
+	// 获取学生ID，如果不存在则自动创建
 	student, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
 	if err != nil {
-		logx.Errorf("FindOneByUserId failed: %v", err)
-		return &types.SubmitHollandTestResp{
-			Code: errors.CodeInternalError,
-			Msg:  "student profile not found",
-		}, nil
+		logx.Infof("Student profile not found for user %d, creating default profile", userId)
+		
+		// 创建默认学生资料
+		defaultStudent := &model.Students{
+			UserId:               userId,
+			Name:                 "未命名学生",
+			Education:            sql.NullString{Valid: false},
+			Major:                sql.NullString{Valid: false},
+			GraduationYear:       sql.NullInt64{Valid: false},
+			Skills:               sql.NullString{Valid: false},
+			Certificates:         sql.NullString{Valid: false},
+			SoftSkills:           sql.NullString{Valid: false},
+			Internship:           sql.NullString{Valid: false},
+			Projects:             sql.NullString{Valid: false},
+			CompletenessScore:    0.0,
+			CompetitivenessScore: 50.0,
+			CreatedAt:            time.Now().Unix(),
+			UpdatedAt:            time.Now().Unix(),
+		}
+		
+		result, err := l.svcCtx.StudentModel.Insert(l.ctx, defaultStudent)
+		if err != nil {
+			logx.Errorf("Failed to create default student profile: %v", err)
+			return &types.SubmitHollandTestResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to create student profile",
+			}, nil
+		}
+		
+		studentId, err := result.LastInsertId()
+		if err != nil {
+			logx.Errorf("Failed to get student id: %v", err)
+			return &types.SubmitHollandTestResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to get student id",
+			}, nil
+		}
+		
+		student = defaultStudent
+		student.Id = studentId
+		logx.Infof("Created default student profile for user %d, student_id: %d", userId, studentId)
 	}
 
 	// 保存测试结果
@@ -267,10 +303,15 @@ func (l *GetHollandHistoryLogic) GetHollandHistory(req *types.GetHollandHistoryR
 	// 查询学生信息
 	student, err := l.svcCtx.StudentModel.FindOneByUserId(l.ctx, userId)
 	if err != nil {
-		logx.Errorf("FindOneByUserId failed: %v", err)
+		logx.Infof("Student profile not found for user %d, returning empty history", userId)
+		// 如果学生资料不存在，返回空列表
 		return &types.GetHollandHistoryResp{
-			Code: errors.CodeInternalError,
-			Msg:  "student profile not found",
+			Code: errors.CodeSuccess,
+			Msg:  "success",
+			Data: &types.HollandHistoryData{
+				Total: 0,
+				List:  []types.HollandResult{},
+			},
 		}, nil
 	}
 
