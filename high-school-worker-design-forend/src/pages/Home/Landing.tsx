@@ -637,13 +637,13 @@ export default function Landing() {
                                 scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
                               }}
                               transition={{ duration: 0.35, ease: 'easeOut' }}
-                            >
-                              <button
-                                type="button"
-                                aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
-                                onClick={() => handleGalleryCardClick(idx)}
-                                className="absolute inset-0"
                               >
+                                <button
+                                  type="button"
+                                  aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
+                                  onClick={() => handleGalleryCardClick(idx)}
+                                  className="absolute inset-0 rounded-2xl md:rounded-3xl overflow-hidden"
+                                >
                                 <img
                                   src={item.imageUrl}
                                   alt={item.title}
