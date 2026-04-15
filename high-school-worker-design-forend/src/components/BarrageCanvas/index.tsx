@@ -167,6 +167,7 @@ export default function BarrageCanvas({
           item.active = false;
           poolRef.current.push(item);
           occupiedTracksRef.current.delete(item.track);
+          spawnBarrage(containerWidth);
         }
       }
       
