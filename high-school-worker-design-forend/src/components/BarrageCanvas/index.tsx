@@ -105,6 +105,14 @@ export default function BarrageCanvas({
       
       if (availableTracks.length === 0) return;
       
+      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      spawnBarrageToTrack(containerWidth, [track]);
+    };
+    
+    const spawnBarrageToTrack = (containerWidth: number, tracks: number[]) => {
+      if (document.hidden) return;
+      if (tracks.length === 0) return;
+      
       if (queueRef.current.length === 0) {
         queueRef.current = shuffleArray(comments.map((item) => item.id));
       }
@@ -115,7 +123,7 @@ export default function BarrageCanvas({
       const comment = comments.find((c) => c.id === nextId);
       if (!comment) return;
       
-      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      const track = tracks[0];
       
       let item = poolRef.current.pop();
       if (!item) {
@@ -168,8 +176,12 @@ export default function BarrageCanvas({
           poolRef.current.push(item);
           occupiedTracksRef.current.delete(item.track);
           spawnBarrage(containerWidth);
-        } else if (item.x < containerWidth * 0.5 && item.x > containerWidth * 0.48) {
-          spawnBarrage(containerWidth);
+        } else if (item.x < containerWidth * 0.5) {
+          const allTracks = Array.from({ length: trackCount }, (_, i) => i);
+          const availableTracks = allTracks.filter(t => !occupiedTracksRef.current.has(t));
+          if (availableTracks.length > 0) {
+            spawnBarrageToTrack(containerWidth, availableTracks);
+          }
         }
       }
       
