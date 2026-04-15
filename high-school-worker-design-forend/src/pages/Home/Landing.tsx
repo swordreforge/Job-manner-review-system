@@ -278,6 +278,30 @@ export default function Landing() {
 
   return (
     <>
+      {/* 彩虹流动动画 */}
+      <style>{`
+        @keyframes rainbow-flow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .rainbow-text {
+          background: linear-gradient(
+            90deg,
+            #ff6b6b,
+            #feca57,
+            #48dbfb,
+            #1dd1a1,
+            #ff9ff3,
+            #ff6b6b
+          );
+          background-size: 200% 100%;
+          -webkit-background-clip: text;
+          background-clip: text;
+          -webkit-text-fill-color: transparent;
+          animation: rainbow-flow 3s ease infinite;
+        }
+      `}</style>
       {/* 加载动画 */}
       <AnimatePresence>
         {loading && (
@@ -529,7 +553,7 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-6xl md:text-7xl font-bold mb-12"
           >
-你的私人<span className="text-orange-400">AI</span><br /><span className="text-orange-400">职业规划</span>助手
+你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
           </motion.h1>
 
           <motion.p
