@@ -109,7 +109,7 @@ export default function BarrageCanvas({
       spawnBarrageToTrack(containerWidth, [track]);
     };
     
-    const spawnBarrageToTrack = (containerWidth: number, tracks: number[]) => {
+    const spawnBarrageToTrack = (containerWidth: number, tracks: number[], startX?: number) => {
       if (document.hidden) return;
       if (tracks.length === 0) return;
       
@@ -124,13 +124,14 @@ export default function BarrageCanvas({
       if (!comment) return;
       
       const track = tracks[0];
+      const xOffset = startX !== undefined ? startX : Math.random() * containerWidth * 0.3;
       
       let item = poolRef.current.pop();
       if (!item) {
         item = {
           id: Date.now(),
           comment,
-          x: containerWidth,
+          x: containerWidth + xOffset,
           track,
           width: 0,
           active: true,
@@ -138,7 +139,7 @@ export default function BarrageCanvas({
       } else {
         item.id = Date.now();
         item.comment = comment;
-        item.x = containerWidth;
+        item.x = containerWidth + xOffset;
         item.track = track;
         item.active = true;
       }
