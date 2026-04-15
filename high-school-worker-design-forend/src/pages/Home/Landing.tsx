@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
+import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -129,7 +129,8 @@ const BARRAGE_TRACK_COUNT = 7;
 const BARRAGE_TRACK_HEIGHT = 48;
 const BARRAGE_TOP_OFFSET = 24;
 const BARRAGE_SCHEDULER_TICK_MS = 2000;
-const BARRAGE_MIN_GAP_MS = 50;
+const BARRAGE_MIN_GAP_MS = 10;
+const FEATURE_ROTATE_INTERVAL_MS = 5000;
 
 type CommentItem = (typeof comments)[number];
 
@@ -154,15 +155,23 @@ const shuffleArray = <T,>(items: T[]) => {
 export default function Landing() {
   const navigate = useNavigate();
   const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
+  const [isFeatureAutoPlay, setIsFeatureAutoPlay] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
+  const [featureAutoPlayProgress, setFeatureAutoPlayProgress] = useState(0);
   const [activeBarrages, setActiveBarrages] = useState<ActiveBarrage[]>([]);
   const barrageQueueRef = useRef<number[]>([]);
   const occupiedTracksRef = useRef<Set<number>>(new Set());
   const lastSpawnAtRef = useRef(0);
   const barrageInstanceIdRef = useRef(1);
+  const galleryViewportRef = useRef<HTMLDivElement>(null);
+  const dragStartXRef = useRef<number | null>(null);
+  const draggedRef = useRef(false);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDraggingGallery, setIsDraggingGallery] = useState(false);
 
   const showPrevFeature = () => {
     setHoveredFeatureIndex((prev) => (prev - 1 + features.length) % features.length);
@@ -172,9 +181,119 @@ export default function Landing() {
     setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
   };
 
+  const handleFeatureDotClick = (nextIndex: number) => {
+    if (nextIndex === hoveredFeatureIndex) return;
+    setHoveredFeatureIndex(nextIndex);
+  };
+
   const handleImageClick = () => {
     setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
     setImagePreviewOpen(true);
+  };
+
+  const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
+  const resolvedViewportWidth = viewportWidth > 0 ? viewportWidth : fallbackViewportWidth;
+  const isMobileGallery = resolvedViewportWidth < 768;
+  const cardGap = isMobileGallery ? 12 : 20;
+  const cardWidth = resolvedViewportWidth * (isMobileGallery ? 0.88 : 0.72);
+  const trackBaseOffset = (resolvedViewportWidth - cardWidth) / 2;
+  const trackX = trackBaseOffset - hoveredFeatureIndex * (cardWidth + cardGap) + dragOffset;
+
+  useEffect(() => {
+    if (!isFeatureAutoPlay) {
+      setFeatureAutoPlayProgress(0);
+      return;
+    }
+
+    const startAt = performance.now();
+    let rafId = 0;
+
+    const updateProgress = (now: number) => {
+      const elapsed = now - startAt;
+      setFeatureAutoPlayProgress(Math.min(elapsed / FEATURE_ROTATE_INTERVAL_MS, 1));
+      rafId = window.requestAnimationFrame(updateProgress);
+    };
+
+    rafId = window.requestAnimationFrame(updateProgress);
+    const autoPlayTimer = window.setTimeout(() => {
+      setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
+    }, FEATURE_ROTATE_INTERVAL_MS);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(autoPlayTimer);
+    };
+  }, [isFeatureAutoPlay, hoveredFeatureIndex]);
+
+  useEffect(() => {
+    const viewport = galleryViewportRef.current;
+    if (!viewport) return;
+
+    const updateViewportWidth = () => {
+      setViewportWidth(viewport.clientWidth);
+    };
+
+    updateViewportWidth();
+    const observer = new ResizeObserver(updateViewportWidth);
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [loading]);
+
+  const finalizeGalleryDrag = () => {
+    if (!isDraggingGallery) return;
+
+    const threshold = Math.max(40, cardWidth * 0.14);
+    if (dragOffset <= -threshold) {
+      showNextFeature();
+    } else if (dragOffset >= threshold) {
+      showPrevFeature();
+    }
+
+    setDragOffset(0);
+    dragStartXRef.current = null;
+    setIsDraggingGallery(false);
+    window.setTimeout(() => {
+      draggedRef.current = false;
+    }, 0);
+  };
+
+  const handleGalleryPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragStartXRef.current = event.clientX;
+    draggedRef.current = false;
+    setIsDraggingGallery(true);
+    setDragOffset(0);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleGalleryPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingGallery || dragStartXRef.current === null) return;
+
+    const delta = event.clientX - dragStartXRef.current;
+    if (Math.abs(delta) > 6) {
+      draggedRef.current = true;
+    }
+    setDragOffset(delta);
+  };
+
+  const handleGalleryCardClick = (index: number) => {
+    if (draggedRef.current) return;
+    if (index === hoveredFeatureIndex) {
+      handleImageClick();
+      return;
+    }
+    setHoveredFeatureIndex(index);
+  };
+
+  const handleGalleryKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      showPrevFeature();
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      showNextFeature();
+    }
   };
 
   // 品牌展示动画（纯展示，不等待资源）
@@ -563,7 +682,7 @@ export default function Landing() {
       </div>
 
       {/* Features Section */}
-      <div id="features" className="px-6 py-16 max-w-6xl mx-auto">
+      <div id="features" className="px-6 py-16 w-full">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -583,79 +702,113 @@ export default function Landing() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="mb-12"
         >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 p-8 backdrop-blur-sm">
-            {/* 单张大图展示 */}
-            <div className="relative h-64 md:h-80 w-full overflow-hidden rounded-xl">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={hoveredFeatureIndex}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0"
+          <>
+            <div className="relative rounded-none border border-transparent bg-transparent p-2 md:p-4">
+              <div className="relative">
+                <div
+                  ref={galleryViewportRef}
+                  tabIndex={0}
+                  role="region"
+                  aria-label="核心功能轮播"
+                  onKeyDown={handleGalleryKeyDown}
+                  onPointerDown={handleGalleryPointerDown}
+                  onPointerMove={handleGalleryPointerMove}
+                  onPointerUp={finalizeGalleryDrag}
+                  onPointerCancel={finalizeGalleryDrag}
+                  className={`overflow-hidden select-none ${isDraggingGallery ? 'cursor-grabbing' : 'cursor-grab'}`}
                 >
-                  <motion.img
-                    src={features[hoveredFeatureIndex].imageUrl}
-                    alt={features[hoveredFeatureIndex].title}
-                    className="w-full h-full object-cover cursor-pointer"
-                    whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                    onClick={handleImageClick}
-                  />
-                  {/* 功能信息覆盖层 */}
                   <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6 pointer-events-none"
+                    className="flex"
+                    style={{
+                      gap: `${cardGap}px`,
+                    }}
+                    animate={{ x: trackX }}
+                    transition={isDraggingGallery
+                      ? { duration: 0 }
+                      : { type: 'spring', stiffness: 100, damping: 34, mass: 1.2 }}
                   >
-                    <div>
-                      <h3 className="text-2xl font-semibold text-white mb-2">{features[hoveredFeatureIndex].title}</h3>
-                      <p className="text-base text-gray-300">{features[hoveredFeatureIndex].desc}</p>
-                    </div>
+                    {features.map((item, idx) => {
+                      const isActive = idx === hoveredFeatureIndex;
+                      return (
+                        <motion.article
+                          key={item.title}
+                          style={{ width: cardWidth, minWidth: cardWidth }}
+                          className="relative h-[30rem] md:h-[42rem] shrink-0 overflow-hidden rounded-2xl md:rounded-3xl border border-white/15 bg-[#11131a]"
+                          animate={{
+                            opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
+                            scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
+                          }}
+                          transition={{ duration: 0.35, ease: 'easeOut' }}
+                        >
+                          <button
+                            type="button"
+                            aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
+                            onClick={() => handleGalleryCardClick(idx)}
+                            className="absolute inset-0"
+                          >
+                            <img
+                              src={item.imageUrl}
+                              alt={item.title}
+                              className="h-full w-full object-cover"
+                              draggable={false}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                            <div className="absolute bottom-4 left-4 right-4 text-left">
+                              <h3 className="text-2xl md:text-4xl font-semibold tracking-tight">{item.title}</h3>
+                              <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">{item.desc}</p>
+                            </div>
+                          </button>
+                        </motion.article>
+                      );
+                    })}
                   </motion.div>
-                </motion.div>
-              </AnimatePresence>
+                </div>
 
-              <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none">
+              </div>
+            </div>
+
+            {/* 独立轮换控制胶囊 */}
+            <div className="mt-5 flex justify-center">
+              <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-white/45 bg-white/15 px-6 py-2 backdrop-blur-md">
+                <div className="flex items-center gap-2">
+                  {features.map((_, idx) => (
+                    <motion.button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleFeatureDotClick(idx)}
+                      className={`h-2.5 rounded-full transition-all duration-300 ${
+                        idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-white/30' : 'w-2.5 bg-white/60'
+                      }`}
+                      whileHover={{ scale: 1.2 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      {idx === hoveredFeatureIndex ? (
+                        <span
+                          className="absolute inset-y-0 left-0 rounded-full bg-white/95"
+                          style={{ width: `${Math.max(0, Math.min(featureAutoPlayProgress, 1)) * 100}%` }}
+                        />
+                      ) : null}
+                    </motion.button>
+                  ))}
+                </div>
+
                 <motion.button
                   type="button"
-                  aria-label="上一张"
-                  onClick={showPrevFeature}
-                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-                  whileHover={{ scale: 1.08 }}
+                  aria-label={isFeatureAutoPlay ? '关闭自动轮换' : '开启自动轮换'}
+                  onClick={() => setIsFeatureAutoPlay((prev) => !prev)}
+                  className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
+                    isFeatureAutoPlay
+                      ? 'bg-white/35 border-white/90 text-white'
+                      : 'bg-white/20 border-white/60 text-white/90'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <LeftOutlined />
-                </motion.button>
-                <motion.button
-                  type="button"
-                  aria-label="下一张"
-                  onClick={showNextFeature}
-                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <RightOutlined />
+                  {isFeatureAutoPlay ? <PauseOutlined /> : <CaretRightOutlined />}
                 </motion.button>
               </div>
             </div>
-            {/* 图片指示器 */}
-            <div className="flex justify-center gap-2 mt-4">
-              {features.map((_, idx) => (
-                <motion.button
-                  key={idx}
-                  onClick={() => setHoveredFeatureIndex(idx)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    idx === hoveredFeatureIndex ? 'bg-orange-400 w-6' : 'bg-gray-600'
-                  }`}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                />
-              ))}
-            </div>
-          </div>
+          </>
         </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
