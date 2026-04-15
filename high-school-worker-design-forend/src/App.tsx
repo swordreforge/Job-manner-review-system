@@ -1,86 +1,128 @@
+import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
-import Landing from './pages/Home/Landing';
-import HomePage from './pages/Home';
-import PlanPage from './pages/Plan';
-import ResumePage from './pages/Resume';
-import ProfilePage from './pages/Profile';
-import SettingsPage from './pages/Settings';
-import StudentPage from './pages/Student';
-import JobsPage from './pages/Jobs';
-import AuthPage from './pages/Auth';
-import HollandTestPage from './pages/Holland';
-import HollandResultPage from './pages/Holland/Result';
-import HollandHistoryPage from './pages/Holland/History';
-import InterviewPage from './pages/Interview';
-import DocPage from './pages/Doc';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalBackground from './components/GlobalBackground';
+
+const Landing = lazy(() => import('./pages/Home/Landing'));
+const HomePage = lazy(() => import('./pages/Home'));
+const PlanPage = lazy(() => import('./pages/Plan'));
+const ResumePage = lazy(() => import('./pages/Resume'));
+const ProfilePage = lazy(() => import('./pages/Profile'));
+const SettingsPage = lazy(() => import('./pages/Settings'));
+const StudentPage = lazy(() => import('./pages/Student'));
+const JobsPage = lazy(() => import('./pages/Jobs'));
+const AuthPage = lazy(() => import('./pages/Auth'));
+const HollandTestPage = lazy(() => import('./pages/Holland'));
+const HollandResultPage = lazy(() => import('./pages/Holland/Result'));
+const HollandHistoryPage = lazy(() => import('./pages/Holland/History'));
+const InterviewPage = lazy(() => import('./pages/Interview'));
+const DocPage = lazy(() => import('./pages/Doc'));
+
+function RouteLoadingFallback() {
+  return (
+    <div className="flex min-h-screen items-center justify-center text-gray-400">
+      页面加载中...
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <>
       <GlobalBackground />
-      <Routes>
-      <Route path="/auth" element={<AuthPage />} />
-      <Route path="/welcome" element={<Landing />} />
-      <Route path="/" element={<MainLayout />}>
-        <Route index element={<Navigate to="/welcome" replace />} />
-        <Route path="start" element={<HomePage />} />
-        <Route path="plan" element={
-          <ProtectedRoute>
-            <PlanPage />
-          </ProtectedRoute>
-        } />
-        <Route path="resume" element={
-          <ProtectedRoute>
-            <ResumePage />
-          </ProtectedRoute>
-        } />
-        <Route path="profile" element={
-          <ProtectedRoute>
-            <ProfilePage />
-          </ProtectedRoute>
-        } />
-        <Route path="settings" element={
-          <ProtectedRoute>
-            <SettingsPage />
-          </ProtectedRoute>
-        } />
-        <Route path="student" element={
-          <ProtectedRoute>
-            <StudentPage />
-          </ProtectedRoute>
-        } />
-        <Route path="jobs" element={
-          <ProtectedRoute>
-            <JobsPage />
-          </ProtectedRoute>
-        } />
-      </Route>
-      <Route path="/holland" element={
-        <ProtectedRoute>
-          <HollandTestPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/holland/result/:id" element={
-        <ProtectedRoute>
-          <HollandResultPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/holland/history" element={
-        <ProtectedRoute>
-          <HollandHistoryPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/interview" element={
-        <ProtectedRoute>
-          <InterviewPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/doc" element={<DocPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      <Suspense fallback={<RouteLoadingFallback />}>
+        <Routes>
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="/welcome" element={<Landing />} />
+          <Route path="/" element={<MainLayout />}>
+            <Route index element={<Navigate to="/welcome" replace />} />
+            <Route path="start" element={<HomePage />} />
+            <Route
+              path="plan"
+              element={
+                <ProtectedRoute>
+                  <PlanPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="resume"
+              element={
+                <ProtectedRoute>
+                  <ResumePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="profile"
+              element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="student"
+              element={
+                <ProtectedRoute>
+                  <StudentPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="jobs"
+              element={
+                <ProtectedRoute>
+                  <JobsPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
+          <Route
+            path="/holland"
+            element={
+              <ProtectedRoute>
+                <HollandTestPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/holland/result/:id"
+            element={
+              <ProtectedRoute>
+                <HollandResultPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/holland/history"
+            element={
+              <ProtectedRoute>
+                <HollandHistoryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/interview"
+            element={
+              <ProtectedRoute>
+                <InterviewPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/doc" element={<DocPage />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
     </>
   );
 }

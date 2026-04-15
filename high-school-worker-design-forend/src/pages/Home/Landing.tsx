@@ -151,7 +151,6 @@ export default function Landing() {
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
-  const [featureAutoPlayProgress, setFeatureAutoPlayProgress] = useState(0);
   const [activeBarrages, setActiveBarrages] = useState<ActiveBarrage[]>([]);
   const [isShaking, setIsShaking] = useState(false);
   const barrageQueueRef = useRef<number[]>([]);
@@ -198,27 +197,13 @@ export default function Landing() {
   const trackX = trackBaseOffset - hoveredFeatureIndex * (cardWidth + cardGap) + dragOffset;
 
   useEffect(() => {
-    if (!isFeatureAutoPlay) {
-      setFeatureAutoPlayProgress(0);
-      return;
-    }
+    if (!isFeatureAutoPlay) return;
 
-    const startAt = performance.now();
-    let rafId = 0;
-
-    const updateProgress = (now: number) => {
-      const elapsed = now - startAt;
-      setFeatureAutoPlayProgress(Math.min(elapsed / FEATURE_ROTATE_INTERVAL_MS, 1));
-      rafId = window.requestAnimationFrame(updateProgress);
-    };
-
-    rafId = window.requestAnimationFrame(updateProgress);
     const autoPlayTimer = window.setTimeout(() => {
       setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
     }, FEATURE_ROTATE_INTERVAL_MS);
 
     return () => {
-      window.cancelAnimationFrame(rafId);
       window.clearTimeout(autoPlayTimer);
     };
   }, [isFeatureAutoPlay, hoveredFeatureIndex]);
@@ -418,6 +403,16 @@ export default function Landing() {
           background-clip: text;
           -webkit-text-fill-color: transparent;
           animation: rainbow-flow 3s ease infinite;
+        }
+        @keyframes feature-dot-progress {
+          from { width: 0%; }
+          to { width: 100%; }
+        }
+        .feature-dot-progress {
+          animation-name: feature-dot-progress;
+          animation-timing-function: linear;
+          animation-fill-mode: both;
+          animation-iteration-count: 1;
         }
       `}</style>
       <AnimatePresence>
@@ -783,8 +778,12 @@ export default function Landing() {
                         >
                           {idx === hoveredFeatureIndex ? (
                             <span
-                              className="absolute inset-y-0 left-0 rounded-full bg-white/95"
-                              style={{ width: `${Math.max(0, Math.min(featureAutoPlayProgress, 1)) * 100}%` }}
+                              key={`${hoveredFeatureIndex}-${isFeatureAutoPlay ? 'play' : 'pause'}`}
+                              className="feature-dot-progress absolute inset-y-0 left-0 rounded-full bg-white/95"
+                              style={{
+                                animationDuration: `${FEATURE_ROTATE_INTERVAL_MS}ms`,
+                                animationPlayState: isFeatureAutoPlay ? 'running' : 'paused',
+                              }}
                             />
                           ) : null}
                         </motion.button>
