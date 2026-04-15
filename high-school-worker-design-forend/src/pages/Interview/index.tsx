@@ -440,7 +440,8 @@ export default function InterviewPage() {
     formData.append('file', audioBlob, 'recording.webm');
     
     try {
-      const response = await fetch(`http://localhost:8000/transcribe?model=base`, {
+      const voiceApiUrl = import.meta.env.VITE_VOICE_API_BASE_URL || 'http://localhost:8000';
+      const response = await fetch(`${voiceApiUrl}/transcribe?model=base`, {
         method: 'POST',
         body: formData
       });
