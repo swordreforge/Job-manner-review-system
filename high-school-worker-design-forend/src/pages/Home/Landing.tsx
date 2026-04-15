@@ -108,7 +108,6 @@ const comments = [
   { id: 31, user: '应届小白', avatar: '🌟', text: '从简历到面试全程辅导，秋招终于拿到满意offer！', color: '#DFE6E9' },
   { id: 32, user: '技术总监', avatar: '👑', text: '团队招聘用了这个平台，人才匹配度明显提高', color: '#B2BEC3' },
   { id: 33, user: '销售冠军', avatar: '💪', text: '销售类面试话术总结得太到位了，帮我拿下了大客户', color: '#FF7675' },
-  { id: 34, user: '市场新人', avatar: '📢', text: '市场洞察报告很有价值，让我对行业有了更深的理解', color: '#AUNEB' },
   { id: 35, user: '创业老板', avatar: '💡', text: '创业经历包装得高大上，投资人看了都说好', color: '#FFEAA7' },
   { id: 36, user: '法务小刘', avatar: '⚖️', text: '法律行业求职指导非常专业，少走了很多弯路', color: '#74B9FF' },
   { id: 37, user: '医疗从业者', avatar: '🏥', text: '医疗AI岗位推荐太精准了，正好是我梦寐以求的方向', color: '#55EFC4' },
