@@ -210,15 +210,17 @@ export default function DocPage() {
   }, [setDocs]);
 
   useEffect(() => {
-    if (activeDocParam && allDocs.length > 0) {
+    if (allDocs.length === 0) return;
+    
+    if (activeDocParam) {
       const doc = allDocs.find(d => d.id === activeDocParam);
-      if (doc) {
+      if (doc && doc.id !== activeDocId) {
         setActiveDocId(doc.id);
       }
-    } else if (currentTabDocs.length > 0 && !activeDocId) {
+    } else if (!activeDocId && currentTabDocs.length > 0) {
       setActiveDocId(currentTabDocs[0].id);
     }
-  }, [activeDocParam, allDocs, currentTabDocs, activeDocId, setActiveDocId]);
+  }, [activeDocParam, allDocs.length, currentTabDocs.length, activeDocId, setActiveDocId]);
 
   useEffect(() => {
     if (!activeDocId) return;
