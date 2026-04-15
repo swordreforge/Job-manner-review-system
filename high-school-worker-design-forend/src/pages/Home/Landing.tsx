@@ -101,12 +101,29 @@ const comments = [
   { id: 21, user: '海归小吴', avatar: '✈️', text: '留学生求职的时间差总算被填平了，名企校招信息更新得飞快', color: '#63CDDA' },
   { id: 22, user: '设计喵', avatar: '🎨', text: '不但能改文字，简历的视觉排版也能自动搞定，强推！', color: '#EA8685' },
   { id: 23, user: '测试老王', avatar: '🕵️‍♂️', text: '试用过市面上好几款，这家的大模型响应速度是最快的，不卡顿', color: '#F8A5C2' },
+  { id: 24, user: '金融小明', avatar: '💰', text: '国企求职指导太专业了，帮我分析各岗位发展前景', color: '#6C5CE7' },
+  { id: 25, user: '产品Amy', avatar: '📱', text: '智能推荐岗位真的很准，每天都能发现新的机会', color: '#A29BFE' },
+  { id: 26, user: '数据小陈', avatar: '📊', text: '职业测评报告分析得太详细了，连我自己都没想到的优势被发现了', color: '#74B9FF' },
+  { id: 27, user: '前端阿杰', avatar: '💻', text: '大厂面试题库太全了，算法题命中率超高！', color: '#00CEC9' },
+  { id: 28, user: 'HR小美', avatar: '👔', text: '帮学生优化过的简历确实专业，筛选效率提升不少', color: '#FD79A8' },
+  { id: 29, user: '考公达人', avatar: '🏛️', text: '体制内求职攻略应有尽有，上岸经验分享特别实用', color: '#81ECEC' },
+  { id: 30, user: '跳槽老张', avatar: '🚀', text: '中年转行也不怕，AI给我规划的新路径太清晰了', color: '#FAB1A0' },
+  { id: 31, user: '应届小白', avatar: '🌟', text: '从简历到面试全程辅导，秋招终于拿到满意offer！', color: '#DFE6E9' },
+  { id: 32, user: '技术总监', avatar: '👑', text: '团队招聘用了这个平台，人才匹配度明显提高', color: '#B2BEC3' },
+  { id: 33, user: '销售冠军', avatar: '💪', text: '销售类面试话术总结得太到位了，帮我拿下了大客户', color: '#FF7675' },
+  { id: 34, user: '市场新人', avatar: '📢', text: '市场洞察报告很有价值，让我对行业有了更深的理解', color: '#AUNEB' },
+  { id: 35, user: '创业老板', avatar: '💡', text: '创业经历包装得高大上，投资人看了都说好', color: '#FFEAA7' },
+  { id: 36, user: '法务小刘', avatar: '⚖️', text: '法律行业求职指导非常专业，少走了很多弯路', color: '#74B9FF' },
+  { id: 37, user: '医疗从业者', avatar: '🏥', text: '医疗AI岗位推荐太精准了，正好是我梦寐以求的方向', color: '#55EFC4' },
+  { id: 38, user: '机械工程师', avatar: '🔧', text: '制造业转型互联网的路径规划得太详细了', color: '#FDCB6E' },
+  { id: 39, user: '新媒体运营', avatar: '📱', text: '爆款文案生成器太好用了，粉丝增长蹭蹭的', color: '#E17055' },
+  { id: 40, user: '客服主管', avatar: '🎧', text: '客服晋升管理层的攻略太实用了，感恩！', color: '#00B894' },
 ];
 
 const BARRAGE_TRACK_COUNT = 7;
 const BARRAGE_TRACK_HEIGHT = 48;
 const BARRAGE_TOP_OFFSET = 24;
-const BARRAGE_SCHEDULER_TICK_MS = 2000;
+const BARRAGE_SCHEDULER_TICK_MS = 750;
 const BARRAGE_MIN_GAP_MS = 50;
 
 type CommentItem = (typeof comments)[number];
@@ -469,7 +486,7 @@ export default function Landing() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.98 }}
               onClick={() => navigate('/auth')}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-orange-500 to-pink-500 border-0 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
             >
               <svg
                 className="w-5 h-5"
@@ -583,7 +600,7 @@ export default function Landing() {
                 size="large"
                 icon={<RightOutlined />}
                 onClick={() => navigate('/auth')}
-                className="bg-orange-500 border-orange-500 hover:bg-orange-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
               >
                 立即开始
               </Button>
