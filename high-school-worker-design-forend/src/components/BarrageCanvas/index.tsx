@@ -168,6 +168,8 @@ export default function BarrageCanvas({
           poolRef.current.push(item);
           occupiedTracksRef.current.delete(item.track);
           spawnBarrage(containerWidth);
+        } else if (item.x < containerWidth * 0.5 && item.x > containerWidth * 0.48) {
+          spawnBarrage(containerWidth);
         }
       }
       
