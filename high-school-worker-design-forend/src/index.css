@@ -1,7 +1,105 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap');
 
 @theme {
-  --font-sans: system-ui, -apple-system, sans-serif;
+  --font-sans: 'Roboto', 'Google Sans', 'Noto Sans SC', system-ui, -apple-system, sans-serif;
+}
+
+:root {
+  /* Material Design 3 Color System */
+  --md-sys-color-primary: #0B57D0;
+  --md-sys-color-on-primary: #FFFFFF;
+  --md-sys-color-primary-container: #D3E4FF;
+  --md-sys-color-on-primary-container: #001B3D;
+  
+  --md-sys-color-secondary: #555F71;
+  --md-sys-color-on-secondary: #FFFFFF;
+  --md-sys-color-secondary-container: #D9E3F8;
+  --md-sys-color-on-secondary-container: #121C2B;
+  
+  --md-sys-color-tertiary: #705575;
+  --md-sys-color-on-tertiary: #FFFFFF;
+  --md-sys-color-tertiary-container: #FAD8FD;
+  --md-sys-color-on-tertiary-container: #28132E;
+  
+  --md-sys-color-error: #BA1A1A;
+  --md-sys-color-on-error: #FFFFFF;
+  --md-sys-color-error-container: #FFDAD6;
+  --md-sys-color-on-error-container: #410002;
+  
+  --md-sys-color-surface: #FDFCFF;
+  --md-sys-color-surface-dim: #DEDEE1;
+  --md-sys-color-surface-bright: #FDFCFF;
+  --md-sys-color-surface-container-lowest: #FFFFFF;
+  --md-sys-color-surface-container-low: #F7F2F8;
+  --md-sys-color-surface-container: #F0EDF2;
+  --md-sys-color-surface-container-high: #EBE7ED;
+  --md-sys-color-surface-container-highest: #E5E1E7;
+  --md-sys-color-surface-variant: #E1E2EC;
+  --md-sys-color-on-surface: #1B1B1F;
+  --md-sys-color-on-surface-variant: #44474F;
+  
+  --md-sys-color-outline: #74777F;
+  --md-sys-color-outline-variant: #C4C6D0;
+  --md-sys-color-inverse-surface: #303033;
+  --md-sys-color-inverse-on-surface: #F3F0F4;
+  --md-sys-color-inverse-primary: #A9C7FF;
+  
+  /* Material Design 3 Shape - Corner Radius */
+  --md-sys-shape-corner-none: 0;
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-extra-large: 28px;
+  --md-sys-shape-corner-full: 9999px;
+  
+  /* Material Design 3 Elevation */
+  --md-sys-elevation-0: none;
+  --md-sys-elevation-1: 0 1px 2px rgba(0,0,0,0.3), 0 1px 3px 1px rgba(0,0,0,0.15);
+  --md-sys-elevation-2: 0 1px 2px rgba(0,0,0,0.3), 0 2px 6px 2px rgba(0,0,0,0.15);
+  --md-sys-elevation-3: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+  --md-sys-elevation-4: 0 6px 10px 4px rgba(0,0,0,0.15), 0 2px 3px rgba(0,0,0,0.3);
+  --md-sys-elevation-5: 0 8px 12px 6px rgba(0,0,0,0.15), 0 4px 4px rgba(0,0,0,0.3);
+
+  /* Legacy compatibility */
+  --color-primary: var(--md-sys-color-primary);
+  --color-success: #1B8C3B;
+  --color-warning: #8F5900;
+  --color-error: var(--md-sys-color-error);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-surface: var(--md-sys-color-surface);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-outline: var(--md-sys-color-outline);
+}
+
+/* Dark theme variables */
+[data-theme="dark"] {
+  --md-sys-color-surface: #1B1B1F;
+  --md-sys-color-surface-dim: #131315;
+  --md-sys-color-surface-bright: #353438;
+  --md-sys-color-surface-container-lowest: #0F0F12;
+  --md-sys-color-surface-container-low: #1D1B20;
+  --md-sys-color-surface-container: #211F26;
+  --md-sys-color-surface-container-high: #2B2930;
+  --md-sys-color-surface-container-highest: #36343B;
+  --md-sys-color-surface-variant: #44474F;
+  --md-sys-color-on-surface: #E4E1E6;
+  --md-sys-color-on-surface-variant: #C4C6D0;
+  --md-sys-color-outline: #8E9099;
+  --md-sys-color-outline-variant: #44474F;
+  --md-sys-color-inverse-surface: #E4E1E6;
+  --md-sys-color-inverse-on-surface: #303033;
+  --md-sys-color-inverse-primary: #0B57D0;
+  
+  --color-primary: #A9C7FF;
+  --color-success: #89D394;
+  --color-warning: #F2C04D;
+  --color-error: #F2B8B5;
+  --color-secondary: #BCC7DC;
+  --color-surface: #1B1B1F;
+  --color-on-surface: #E4E1E6;
+  --color-outline: #8E9099;
 }
 
 .prose {
@@ -74,17 +172,241 @@
 }
 
 :root {
-  --color-primary: #1677ff;
-  --color-success: #52c41a;
-  --color-warning: #faad14;
-  --color-error: #ff4d4f;
+  --color-primary: var(--md-sys-color-primary);
+  --color-success: #1B8C3B;
+  --color-warning: #8F5900;
+  --color-error: var(--md-sys-color-error);
+  --color-secondary: var(--md-sys-color-secondary);
+  --color-surface: var(--md-sys-color-surface);
+  --color-on-surface: var(--md-sys-color-on-surface);
+  --color-outline: var(--md-sys-color-outline);
 }
 
+/* Base styles for Material Design 3 */
 body {
   margin: 0;
   min-height: 100vh;
+  font-family: var(--font-sans);
+  background-color: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 #root {
   min-height: 100vh;
+}
+
+/* MD3 Surface backgrounds */
+.md-surface {
+  background-color: var(--md-sys-color-surface-container);
+}
+
+.md-surface-elevated {
+  background-color: var(--md-sys-color-surface-container-high);
+  box-shadow: var(--md-sys-elevation-1);
+}
+
+/* MD3 Card style */
+.md-card {
+  background-color: var(--md-sys-color-surface-container-low);
+  border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: var(--md-sys-elevation-1);
+  border: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.md-card-filled {
+  background-color: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  box-shadow: var(--md-sys-elevation-0);
+}
+
+/* MD3 Button overrides for Ant Design */
+.ant-btn {
+  border-radius: var(--md-sys-shape-corner-full) !important;
+  font-weight: 500;
+  transition: all 0.2s ease !important;
+}
+
+.ant-btn-primary {
+  background-color: var(--md-sys-color-primary) !important;
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+.ant-btn-primary:hover {
+  background-color: #1546B0 !important;
+  border-color: #1546B0 !important;
+  box-shadow: var(--md-sys-elevation-2) !important;
+}
+
+.ant-btn-default {
+  border-color: var(--md-sys-color-outline) !important;
+  color: var(--md-sys-color-primary) !important;
+}
+
+.ant-btn-default:hover {
+  border-color: var(--md-sys-color-primary) !important;
+  color: var(--md-sys-color-primary) !important;
+  background-color: var(--md-sys-color-primary-container) !important;
+}
+
+/* MD3 Input overrides */
+.ant-input,
+.ant-input-affix-wrapper {
+  border-radius: var(--md-sys-shape-corner-small) !important;
+  border-color: var(--md-sys-color-outline) !important;
+}
+
+.ant-input:focus,
+.ant-input-affix-wrapper:focus,
+.ant-input-affix-wrapper-focused {
+  border-color: var(--md-sys-color-primary) !important;
+  box-shadow: 0 0 0 2px var(--md-sys-color-primary-container) !important;
+}
+
+/* MD3 Card overrides for Ant Design */
+.ant-card {
+  border-radius: var(--md-sys-shape-corner-medium) !important;
+  border-color: var(--md-sys-color-outline-variant) !important;
+  box-shadow: var(--md-sys-elevation-0) !important;
+}
+
+.ant-card-head {
+  border-bottom-color: var(--md-sys-color-outline-variant) !important;
+}
+
+/* MD3 Tag */
+.ant-tag {
+  border-radius: var(--md-sys-shape-corner-small) !important;
+}
+
+/* MD3 Modal */
+.ant-modal-content {
+  border-radius: var(--md-sys-shape-corner-extra-large) !important;
+  box-shadow: var(--md-sys-elevation-3) !important;
+}
+
+.ant-modal-header {
+  border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0 !important;
+}
+
+/* MD3 Menu */
+.ant-menu {
+  border-inline-end: none !important;
+}
+
+/* Prose styles for documentation */
+.prose {
+  --spacing: 1rem;
+}
+
+.prose h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--md-sys-color-on-surface);
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose h3 {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.prose p {
+  color: var(--md-sys-color-on-surface-variant);
+  line-height: 1.75;
+  margin-bottom: 0.75rem;
+}
+
+.prose ul, .prose ol {
+  color: var(--md-sys-color-on-surface-variant);
+  padding-left: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.prose li {
+  margin-bottom: 0.25rem;
+}
+
+.prose code {
+  background: var(--md-sys-color-surface-container-high);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  color: #C4460C;
+  font-size: 0.875rem;
+}
+
+.prose strong {
+  color: var(--md-sys-color-on-surface);
+  font-weight: 600;
+}
+
+.prose a {
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+}
+
+.prose a:hover {
+  text-decoration: underline;
+}
+
+.prose blockquote {
+  border-left: 4px solid var(--md-sys-color-outline-variant);
+  padding-left: 1rem;
+  color: var(--md-sys-color-on-surface-variant);
+  font-style: italic;
+}
+
+/* Responsive typography */
+@media (max-width: 640px) {
+  .prose h1 {
+    font-size: 1.375rem;
+  }
+  
+  .prose h2 {
+    font-size: 1.125rem;
+  }
+  
+  .prose h3 {
+    font-size: 1rem;
+  }
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] .prose code {
+  color: #F7A366;
+  background: var(--md-sys-color-surface-container-high);
+}
+
+/* MD3 Modal custom styles */
+.ant-modal-content {
+  background-color: var(--md-sys-color-surface-container) !important;
+}
+
+.ant-modal-header {
+  background-color: var(--md-sys-color-surface-container) !important;
+}
+
+.ant-modal-title {
+  color: var(--md-sys-color-on-surface) !important;
+}
+
+.ant-modal-body {
+  background-color: var(--md-sys-color-surface-container) !important;
+}
+
+.ant-modal-footer {
+  background-color: var(--md-sys-color-surface-container) !important;
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Card, Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
+import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
 import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
@@ -426,13 +426,27 @@ export default function JobsPage() {
   };
 
   return (
-    <div className="min-h-screen relative z-10 p-4 md:p-6">
+    <div className="min-h-screen relative z-10 p-3 sm:p-4 md:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <div className="w-full space-y-4">
-        <Card title="岗位发展路径图谱" className="shadow-sm">
+        <div 
+          className="p-4 sm:p-5"
+          style={{ 
+            backgroundColor: 'var(--md-sys-color-surface-container-low)',
+            borderRadius: 'var(--md-sys-shape-corner-large)',
+            border: '1px solid var(--md-sys-color-outline-variant)',
+            boxShadow: 'var(--md-sys-elevation-0)'
+          }}
+        >
+          <div 
+            className="text-lg font-medium mb-4"
+            style={{ color: 'var(--md-sys-color-on-surface)' }}
+          >
+            岗位发展路径图谱
+          </div>
           <Tabs
             activeKey={activeCategory}
             onChange={setActiveCategory}
-            className="mb-3"
+            className="mb-4"
             items={[
               { key: 'tech', label: '技术研发' },
               { key: 'design', label: '产品设计' },
@@ -443,7 +457,7 @@ export default function JobsPage() {
 
           <div className="flex flex-wrap gap-3 items-center">
             <Select
-              style={{ width: 320 }}
+              style={{ width: '100%', maxWidth: 320 }}
               placeholder="选择岗位"
               loading={loading}
               value={selectedJobId}
@@ -459,20 +473,29 @@ export default function JobsPage() {
               onClick={handleRefresh}
               loading={pathsLoading}
               disabled={!selectedJobId}
+              style={{ 
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                backgroundColor: 'var(--md-sys-color-surface-container)'
+              }}
             >
               刷新
             </Button>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-gray-500">热门推荐:</span>
+            <span className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>热门推荐:</span>
             {popularJobs.map((name) => {
               const isActive = selectedJob ? (selectedJob.name ?? '').includes(name) : false;
               return (
                 <Tag
                   key={name}
-                  color={isActive ? 'blue' : 'default'}
-                  className="cursor-pointer px-3 py-1"
+                  style={{
+                    backgroundColor: isActive ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container)',
+                    color: isActive ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                    border: 'none',
+                    borderRadius: 'var(--md-sys-shape-corner-small)',
+                    cursor: 'pointer'
+                  }}
                   onClick={() => handleQuickPick(name)}
                 >
                   {name}
@@ -480,57 +503,84 @@ export default function JobsPage() {
               );
             })}
           </div>
-        </Card>
+        </div>
 
         {!selectedJobId && (
-          <Card className="min-h-125 overflow-hidden">
-            <div className="relative min-h-125 rounded-xl border border-slate-200 bg-linear-to-b from-slate-50 to-white">
-              <div className="pointer-events-none absolute inset-0 opacity-40">
-                <div className="absolute left-[15%] top-[20%] h-2 w-2 rounded-full bg-slate-300" />
-                <div className="absolute left-[30%] top-[35%] h-2 w-2 rounded-full bg-slate-300" />
-                <div className="absolute right-[22%] top-[25%] h-2 w-2 rounded-full bg-slate-300" />
-                <div className="absolute right-[35%] bottom-[28%] h-2 w-2 rounded-full bg-slate-300" />
-                <div className="absolute left-[28%] bottom-[24%] h-2 w-2 rounded-full bg-slate-300" />
-                <div className="absolute left-[16%] top-[21%] h-px w-32 rotate-12 bg-slate-200" />
-                <div className="absolute left-[30%] top-[35%] h-px w-40 -rotate-12 bg-slate-200" />
-                <div className="absolute right-[35%] bottom-[28%] h-px w-28 rotate-6 bg-slate-200" />
-              </div>
-
-              <div className="relative z-10 flex min-h-125 flex-col items-center justify-center px-6 text-center">
-                <h3 className="text-2xl font-semibold text-slate-800">选择一个岗位，探索完整发展路径</h3>
-                <p className="mt-3 max-w-2xl text-slate-500">
-                  你可以通过上方筛选快速定位岗位，系统将自动生成岗位图谱、晋升方向与换岗机会。
-                </p>
-                <div className="mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 md:grid-cols-3">
-                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
-                    <div className="flex items-center gap-2 font-medium text-slate-700">
-                      <ApartmentOutlined />
-                      探索完整技能栈
-                    </div>
+          <div 
+            className="min-h-[500px] overflow-hidden p-6"
+            style={{ 
+              backgroundColor: 'var(--md-sys-color-surface-container-low)',
+              borderRadius: 'var(--md-sys-shape-corner-large)',
+              border: '1px solid var(--md-sys-color-outline-variant)'
+            }}
+          >
+            <div className="relative z-10 flex min-h-[500px] flex-col items-center justify-center px-4 sm:px-6 text-center">
+              <h3 className="text-xl sm:text-2xl font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                选择一个岗位，探索完整发展路径
+              </h3>
+              <p className="mt-3 max-w-2xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                你可以通过上方筛选快速定位岗位，系统将自动生成岗位图谱、晋升方向与换岗机会。
+              </p>
+              <div className="mt-6 sm:mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
+                <div 
+                  className="rounded-xl border p-4 text-left"
+                  style={{ 
+                    backgroundColor: 'var(--md-sys-color-surface-container)',
+                    borderColor: 'var(--md-sys-color-outline-variant)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    <ApartmentOutlined style={{ color: 'var(--md-sys-color-primary)' }} />
+                    探索完整技能栈
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
-                    <div className="flex items-center gap-2 font-medium text-slate-700">
-                      <RiseOutlined />
-                      清晰的晋升路线
-                    </div>
+                </div>
+                <div 
+                  className="rounded-xl border p-4 text-left"
+                  style={{ 
+                    backgroundColor: 'var(--md-sys-color-surface-container)',
+                    borderColor: 'var(--md-sys-color-outline-variant)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    <RiseOutlined style={{ color: 'var(--md-sys-color-primary)' }} />
+                    清晰的晋升路线
                   </div>
-                  <div className="rounded-lg border border-slate-200 bg-white/80 p-4 text-left">
-                    <div className="flex items-center gap-2 font-medium text-slate-700">
-                      <BulbOutlined />
-                      核心竞争力分析
-                    </div>
+                </div>
+                <div 
+                  className="rounded-xl border p-4 text-left"
+                  style={{ 
+                    backgroundColor: 'var(--md-sys-color-surface-container)',
+                    borderColor: 'var(--md-sys-color-outline-variant)'
+                  }}
+                >
+                  <div className="flex items-center gap-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    <BulbOutlined style={{ color: 'var(--md-sys-color-primary)' }} />
+                    核心竞争力分析
                   </div>
                 </div>
               </div>
             </div>
-          </Card>
+          </div>
         )}
 
         {selectedJob && (
           <div className="space-y-4">
             {/* 岗位详情 */}
-            <Card title="岗位详情">
-              <Descriptions column={1} size="small">
+            <div 
+              className="p-4 sm:p-5"
+              style={{ 
+                backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                borderRadius: 'var(--md-sys-shape-corner-large)',
+                border: '1px solid var(--md-sys-color-outline-variant)'
+              }}
+            >
+              <div 
+                className="text-lg font-medium mb-4"
+                style={{ color: 'var(--md-sys-color-on-surface)' }}
+              >
+                岗位详情
+              </div>
+              <Descriptions column={1} size="small" bordered>
                 <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
                 <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
                 <Descriptions.Item label="公司">{selectedJob.company || '-'}</Descriptions.Item>
@@ -561,16 +611,24 @@ export default function JobsPage() {
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
 
             {/* 路径图谱 */}
-            <Card className="min-h-170 w-full [&_.ant-card-body]:flex [&_.ant-card-body]:h-full [&_.ant-card-body]:flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium">发展路径图谱</h3>
-                <div className="flex gap-2">
+            <div 
+              className="min-h-[680px] w-full p-4 sm:p-5"
+              style={{ 
+                backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                borderRadius: 'var(--md-sys-shape-corner-large)',
+                border: '1px solid var(--md-sys-color-outline-variant)'
+              }}
+            >
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                <h3 className="text-lg font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>发展路径图谱</h3>
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     icon={<ReloadOutlined />}
                     onClick={handleResetView}
+                    style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
                   >
                     重置视图
                   </Button>
@@ -581,6 +639,7 @@ export default function JobsPage() {
                     onClick={() => {
                       void handleGenerateAllPaths();
                     }}
+                    style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
                   >
                     AI智能分析
                   </Button>
@@ -738,7 +797,7 @@ export default function JobsPage() {
                   },
                 ]}
               />
-            </Card>
+            </div>
           </div>
         )}
       </div>

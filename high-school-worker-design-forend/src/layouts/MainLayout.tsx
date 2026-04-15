@@ -22,6 +22,23 @@ const docLinks: DocLink[] = [
 
 const DESKTOP_BREAKPOINT = 1024;
 
+const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 10L12 5L21 10L12 15L3 10Z" />
+    <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
+    <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
+  </svg>
+);
+
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -111,36 +128,62 @@ export default function MainLayout() {
   const sidebarWidth = isSidebarCollapsed ? 64 : 220;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <SidebarNav 
         isCollapsed={isSidebarCollapsed} 
         onToggleCollapse={handleToggleSidebar} 
       />
 
       <div 
-        className={`transition-all duration-300 ${
-          isDesktop ? `ml-[${sidebarWidth}px]` : ''
-        }`}
+        className="transition-all duration-300"
         style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
       >
         {isDesktop && (
-          <div className="h-14 bg-white border-b border-gray-100 flex items-center px-6 gap-2 sticky top-0 z-20">
-            <div className="flex items-center gap-1 text-sm text-gray-500">
-              <span>快速跳转</span>
+          <div 
+            className="flex items-center justify-between px-4 md:px-6 sticky top-0 z-20"
+            style={{ 
+              backgroundColor: 'var(--md-sys-color-surface-container)',
+              borderBottom: '1px solid var(--md-sys-color-outline-variant)',
+              height: '56px'
+            }}
+          >
+            <div className="flex items-center gap-2">
+              <div 
+                className="flex items-center justify-center rounded-full"
+                style={{ 
+                  background: 'linear-gradient(135deg, #0B57D0, #1E88E5)',
+                  width: '36px',
+                  height: '36px',
+                  boxShadow: 'var(--md-sys-elevation-1)'
+                }}
+              >
+                <GraduationCapIcon className="w-5 h-5 text-white" />
+              </div>
+              <span 
+                className="font-medium text-base hidden sm:block"
+                style={{ color: 'var(--md-sys-color-on-surface)' }}
+              >
+                职业规划助手
+              </span>
             </div>
-            <div className="flex items-center gap-2 ml-4">
+            <div className="flex items-center gap-1 md:gap-2 overflow-x-auto">
               {docLinks.map((link) => (
                 <button
                   key={link.path}
                   onClick={() => navigate(link.path)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
-                    location.pathname + location.search === link.path ||
-                    location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?')
-                      ? 'bg-orange-50 text-orange-600'
-                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                  }`}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all whitespace-nowrap"
+                  style={{
+                    backgroundColor: location.pathname + location.search === link.path ||
+                    (location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?'))
+                      ? 'var(--md-sys-color-primary-container)'
+                      : 'transparent',
+                    color: location.pathname + location.search === link.path ||
+                    (location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?'))
+                      ? 'var(--md-sys-color-on-primary-container)'
+                      : 'var(--md-sys-color-on-surface-variant)',
+                  }}
                 >
-                  {link.icon}
+                  <span className="text-base">{link.icon}</span>
                   <span>{link.title}</span>
                 </button>
               ))}
@@ -149,7 +192,7 @@ export default function MainLayout() {
         )}
 
         <div className={`${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
-          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-6">
+          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-4 md:py-6">
             <Outlet />
           </div>
         </div>
@@ -159,23 +202,29 @@ export default function MainLayout() {
         <TabBar
           activeKey={activeTab}
           onChange={handleTabChange}
-          className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
+          className="fixed bottom-0 left-0 right-0 z-20"
+          style={{ 
+            backgroundColor: 'var(--md-sys-color-surface-container)',
+            borderTop: '1px solid var(--md-sys-color-outline-variant)'
+          }}
         >
-          <TabBar.Item
-            key="home"
-            title="首页"
-            icon={<HomeOutlined />}
-          />
-          {tabs.slice(1).map((tab) => (
-            <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
+          {tabs.map((tab) => (
+            <TabBar.Item 
+              key={tab.key} 
+              title={tab.title} 
+              icon={tab.icon}
+              style={{
+                color: activeTab === tab.key ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)'
+              }}
+            />
           ))}
         </TabBar>
       )}
 
       <Modal
         title={
-          <div className="flex items-center gap-2">
-            <ExclamationCircleOutlined className="text-yellow-500" />
+          <div className="flex items-center gap-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+            <ExclamationCircleOutlined style={{ color: 'var(--md-sys-color-warning)' }} />
             <span>确认切换页面</span>
           </div>
         }
@@ -185,12 +234,17 @@ export default function MainLayout() {
         okText="确定切换"
         cancelText="取消"
         okButtonProps={{ danger: true }}
+        styles={{
+          header: { backgroundColor: 'var(--md-sys-color-surface-container)' },
+          body: { backgroundColor: 'var(--md-sys-color-surface-container)' },
+          footer: { backgroundColor: 'var(--md-sys-color-surface-container)' }
+        }}
       >
         <div className="py-2">
-          <p className="text-base text-gray-700">
-            当前有任务正在执行中：<span className="font-semibold text-gray-900">{taskDescription || '简历上传或解析'}</span>
+          <p className="text-base" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+            当前有任务正在执行中：<span className="font-semibold" style={{ color: 'var(--md-sys-color-on-surface)' }}>{taskDescription || '简历上传或解析'}</span>
           </p>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
             切换页面可能会导致任务中断，是否确认要继续切换？
           </p>
         </div>

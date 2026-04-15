@@ -1,5 +1,5 @@
-import { Card, Avatar, Button, message, Tag, Modal, Progress, Collapse } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { Avatar, Button, message, Tag, Modal, Collapse } from 'antd';
+import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
@@ -174,10 +174,18 @@ export default function ProfilePage() {
   const projects: StudentProject[] = studentData?.projects || [];
 
   return (
-    <div className="min-h-screen relative z-10 p-4">
-      {/* 用户信息卡片 */}
-      <Card className="mb-4">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen relative z-10 p-3 sm:p-4" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
+      {/* 用户信息卡片 - MD3 Card */}
+      <div 
+        className="mb-3 sm:mb-4 p-4 sm:p-5"
+        style={{ 
+          backgroundColor: 'var(--md-sys-color-surface-container-low)',
+          borderRadius: 'var(--md-sys-shape-corner-large)',
+          border: '1px solid var(--md-sys-color-outline-variant)',
+          boxShadow: 'var(--md-sys-elevation-0)'
+        }}
+      >
+        <div className="flex items-start gap-3 sm:gap-4">
           <div className="flex flex-col items-center gap-2">
             <div
               className="cursor-pointer"
@@ -189,74 +197,113 @@ export default function ProfilePage() {
               }}
             >
               <Avatar
-                size={64}
+                size={56}
                 src={avatarSrc}
                 icon={<UserOutlined />}
-                className="bg-blue-500"
+                style={{ 
+                  backgroundColor: 'var(--md-sys-color-primary)',
+                  boxShadow: 'var(--md-sys-elevation-1)'
+                }}
                 onError={() => {
                   setAvatarSrc('/default-avatar.svg');
                   return false;
                 }}
               />
             </div>
-            <Button size="small" type="link" className="px-0" onClick={() => navigate('/settings')}>
+            <Button size="small" type="link" className="px-0 text-xs" onClick={() => navigate('/settings')}>
               更换头像
             </Button>
           </div>
-          <div className="flex-1">
-            <div className="font-medium text-lg">{user?.username || '未登录'}</div>
-            <div className="text-gray-500 text-sm">{user?.email || '暂无邮箱'}</div>
-            <div className="text-gray-400 text-xs mt-1">
+          <div className="flex-1 min-w-0">
+            <div className="font-medium text-base sm:text-lg truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+              {user?.username || '未登录'}
+            </div>
+            <div className="text-sm truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+              {user?.email || '暂无邮箱'}
+            </div>
+            <div className="text-xs mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
               账户类型: {user?.role === 'admin' ? '管理员' : '用户'}
             </div>
           </div>
           <Button 
             type="text" 
+            size="small"
             icon={<EditOutlined />} 
             onClick={handleEditStudent}
+            style={{ color: 'var(--md-sys-color-primary)' }}
           >
-            编辑学生资料
+            <span className="hidden sm:inline">编辑</span>
           </Button>
         </div>
         {/* 学生资料状态 */}
-        <div className="mt-4 pt-4 border-t border-gray-100">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+        <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {studentData ? (
-                <Tag icon={<CheckCircleOutlined />} color="success">
+                <Tag 
+                  icon={<CheckCircleOutlined />} 
+                  style={{ 
+                    backgroundColor: 'var(--md-sys-color-secondary-container)',
+                    border: 'none',
+                    color: 'var(--md-sys-color-on-secondary-container)'
+                  }}
+                >
                   已创建学生资料
                 </Tag>
               ) : (
-                <Tag icon={<ExclamationCircleOutlined />} color="warning">
+                <Tag 
+                  icon={<ExclamationCircleOutlined />} 
+                  style={{ 
+                    backgroundColor: '#FFF8E1',
+                    border: 'none',
+                    color: '#8F5900'
+                  }}
+                >
                   未创建学生资料
                 </Tag>
               )}
               {studentData && (
-                <span className="text-sm text-gray-500">
+                <span className="text-xs sm:text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                   完成度: {calculateCompleteness(studentData)}%
                 </span>
               )}
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
-      {/* 学生资料信息 */}
-      <Card 
-        title="学生资料"
-        className="mb-4"
+      {/* 学生资料信息 - MD3 Card */}
+      <div 
+        className="mb-3 sm:mb-4"
+        style={{ 
+          backgroundColor: 'var(--md-sys-color-surface-container-low)',
+          borderRadius: 'var(--md-sys-shape-corner-large)',
+          border: '1px solid var(--md-sys-color-outline-variant)',
+          boxShadow: 'var(--md-sys-elevation-0)',
+          overflow: 'hidden'
+        }}
       >
+        <div 
+          className="px-4 py-3 font-medium text-base"
+          style={{ 
+            backgroundColor: 'var(--md-sys-color-surface-container)',
+            borderBottom: '1px solid var(--md-sys-color-outline-variant)',
+            color: 'var(--md-sys-color-on-surface)'
+          }}
+        >
+          学生资料
+        </div>
         {loadingStudent ? (
-          <div className="text-center py-8 text-gray-500">加载中...</div>
+          <div className="text-center py-8" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载中...</div>
         ) : studentData ? (
-          <div className="space-y-3">
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">姓名</span>
-              <span className="font-medium">{studentData.name || '-'}</span>
+          <div className="space-y-0">
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>姓名</span>
+              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.name || '-'}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">学历</span>
-              <span className="font-medium">
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学历</span>
+              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
                 {studentData.education === 'bachelor' ? '本科' :
                  studentData.education === 'master' ? '硕士' :
                  studentData.education === 'phd' ? '博士' :
@@ -264,42 +311,61 @@ export default function ProfilePage() {
                  studentData.education || '-'}
               </span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">专业</span>
-              <span className="font-medium">{studentData.major || '-'}</span>
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业</span>
+              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.major || '-'}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">毕业年份</span>
-              <span className="font-medium">{studentData.graduationYear || '-'}</span>
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>毕业年份</span>
+              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.graduationYear || '-'}</span>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">技能</span>
-              <div className="flex flex-wrap gap-1">
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>技能</span>
+              <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
                 {studentData.skills && studentData.skills.length > 0 ? (
                   studentData.skills.map((skill: StudentSkill, index: number) => (
-                    <Tag key={index} color="blue">{skill.name}</Tag>
+                    <Tag 
+                      key={index} 
+                      style={{ 
+                        backgroundColor: 'var(--md-sys-color-primary-container)',
+                        color: 'var(--md-sys-color-on-primary-container)',
+                        border: 'none'
+                      }}
+                    >
+                      {skill.name}
+                    </Tag>
                   ))
                 ) : (
-                  <span className="text-gray-400">暂无</span>
+                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)', opacity: 0.6 }}>暂无</span>
                 )}
               </div>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">证书</span>
-              <div className="flex flex-wrap gap-1">
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>证书</span>
+              <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
                 {studentData.certificates && studentData.certificates.length > 0 ? (
                   studentData.certificates.map((cert: StudentCert, index: number) => (
-                    <Tag key={index} color="green">{cert.name}</Tag>
+                    <Tag 
+                      key={index} 
+                      style={{ 
+                        backgroundColor: 'var(--md-sys-color-secondary-container)',
+                        color: 'var(--md-sys-color-on-secondary-container)',
+                        border: 'none'
+                      }}
+                    >
+                      {cert.name}
+                    </Tag>
                   ))
                 ) : (
-                  <span className="text-gray-400">暂无</span>
+                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)', opacity: 0.6 }}>暂无</span>
                 )}
               </div>
             </div>
-            <div className="flex justify-between items-center py-2 border-b border-gray-100">
-              <span className="text-gray-600">实习经历</span>
+            <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>实习经历</span>
               <Button
                 type="link"
+                size="small"
                 className="px-0"
                 disabled={(studentData.internship?.length || 0) === 0}
                 onClick={() => openExperienceModal('internship')}
@@ -307,10 +373,11 @@ export default function ProfilePage() {
                 {studentData.internship?.length || 0} 条
               </Button>
             </div>
-            <div className="flex justify-between items-center py-2">
-              <span className="text-gray-600">项目经验</span>
+            <div className="flex justify-between items-center py-3 px-4">
+              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>项目经验</span>
               <Button
                 type="link"
+                size="small"
                 className="px-0"
                 disabled={(studentData.projects?.length || 0) === 0}
                 onClick={() => openExperienceModal('project')}
@@ -321,52 +388,108 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <ExclamationCircleOutlined className="text-4xl text-yellow-500 mb-2" />
-            <div className="text-gray-500 mb-4">您还没有创建学生资料</div>
-            <Button type="primary" onClick={handleEditStudent}>
+            <ExclamationCircleOutlined className="text-3xl mb-2" style={{ color: '#8F5900' }} />
+            <div className="mb-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>您还没有创建学生资料</div>
+            <Button 
+              type="primary"
+              onClick={handleEditStudent}
+              style={{ 
+                backgroundColor: 'var(--md-sys-color-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)'
+              }}
+            >
               立即创建
             </Button>
           </div>
         )}
-      </Card>
+      </div>
 
-      <Card className="mb-4" bodyStyle={{ padding: 0 }}>
+      {/* 完成度明细 - MD3 Card */}
+      <div 
+        className="mb-3 sm:mb-4"
+        style={{ 
+          backgroundColor: 'var(--md-sys-color-surface-container-low)',
+          borderRadius: 'var(--md-sys-shape-corner-large)',
+          border: '1px solid var(--md-sys-color-outline-variant)',
+          overflow: 'hidden'
+        }}
+      >
         <Collapse
           ghost
           items={[
             {
               key: 'completeness',
               label: (
-                <div className="flex items-center pr-4">
-                  <span className="font-medium">资料完成度明细</span>
-                  <span className="ml-4 text-sm font-semibold text-green-600">{completenessPercent}%</span>
+                <div className="flex items-center pr-2">
+                  <span className="font-medium text-sm sm:text-base" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    资料完成度明细
+                  </span>
+                  <span 
+                    className="ml-3 text-sm font-semibold"
+                    style={{ color: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : '#8F5900' }}
+                  >
+                    {completenessPercent}%
+                  </span>
                 </div>
               ),
               children: (
                 <div className="px-4 pb-4">
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-gray-600">当前完成进度</span>
-                      <span className="font-medium">{completedCount}/{completenessItems.length}</span>
+                      <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>当前完成进度</span>
+                      <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                        {completedCount}/{completenessItems.length}
+                      </span>
                     </div>
-                    <Progress percent={completenessPercent} status={completenessPercent === 100 ? 'success' : 'active'} />
+                    <div 
+                      className="h-2 rounded-full overflow-hidden"
+                      style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}
+                    >
+                      <div 
+                        className="h-full rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${completenessPercent}%`,
+                          backgroundColor: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : '#8F5900'
+                        }}
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-0">
                     {completenessItems.map((item) => (
                       <div
                         key={item.key}
-                        className={`flex items-center justify-between py-2 border-b border-gray-100 last:border-0 ${item.completed ? '' : 'cursor-pointer hover:bg-gray-50 px-2 -mx-2 rounded'}`}
+                        className={`flex items-center justify-between py-2.5 border-b last:border-0 px-2 -mx-2 rounded transition-colors ${
+                          item.completed ? '' : 'cursor-pointer hover:bg-[var(--md-sys-color-surface-container)]'
+                        }`}
+                        style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}
                         onClick={() => {
                           if (!item.completed) {
                             navigate(`/student?section=${item.targetSection}`);
                           }
                         }}
                       >
-                        <span className="text-gray-700">{item.label}</span>
+                        <span style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.label}</span>
                         {item.completed ? (
-                          <Tag color="success">已完成</Tag>
+                          <Tag 
+                            color="success" 
+                            style={{ 
+                              backgroundColor: '#D4EDDA',
+                              color: '#1B8C3B',
+                              border: 'none'
+                            }}
+                          >
+                            已完成
+                          </Tag>
                         ) : (
-                          <Tag color="warning">未完成</Tag>
+                          <Tag 
+                            style={{ 
+                              backgroundColor: '#FFF8E1',
+                              color: '#8F5900',
+                              border: 'none'
+                            }}
+                          >
+                            未完成
+                          </Tag>
                         )}
                       </div>
                     ))}
@@ -376,34 +499,56 @@ export default function ProfilePage() {
             },
           ]}
         />
-      </Card>
+      </div>
 
-      {/* 功能菜单 */}
-      <Card>
+      {/* 功能菜单 - MD3 Card */}
+      <div 
+        className="mb-3 sm:mb-4"
+        style={{ 
+          backgroundColor: 'var(--md-sys-color-surface-container-low)',
+          borderRadius: 'var(--md-sys-shape-corner-large)',
+          border: '1px solid var(--md-sys-color-outline-variant)',
+          overflow: 'hidden'
+        }}
+      >
         <div className="space-y-0">
           {menuItems.map((item, index) => (
             <div
               key={index}
-              className="flex items-center gap-4 py-3 border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
+              className="flex items-center gap-3 sm:gap-4 py-3 px-4 border-b last:border-0 cursor-pointer transition-colors hover:bg-[var(--md-sys-color-surface-container)]"
+              style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}
               onClick={() => item.path && navigate(item.path)}
             >
-              <Avatar size="small" icon={item.icon} className="bg-blue-500" />
-              <div className="flex-1">
-                <div className="font-medium">{item.title}</div>
-                <div className="text-gray-500 text-sm">{item.desc}</div>
+              <Avatar 
+                size="small" 
+                icon={item.icon} 
+                style={{ backgroundColor: 'var(--md-sys-color-primary)' }} 
+              />
+              <div className="flex-1 min-w-0">
+                <div className="font-medium text-sm sm:text-base" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                  {item.title}
+                </div>
+                <div className="text-xs sm:text-sm truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                  {item.desc}
+                </div>
               </div>
+              <ArrowRightOutlined className="text-xs sm:text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }} />
             </div>
           ))}
         </div>
-      </Card>
+      </div>
 
       {/* 退出登录按钮 */}
       <Button 
         block 
-        className="mt-4" 
+        className="h-10 sm:h-11"
         danger 
         icon={<LogoutOutlined />}
         onClick={handleLogout}
+        style={{ 
+          borderRadius: 'var(--md-sys-shape-corner-full)',
+          fontWeight: 500
+        }}
       >
         退出登录
       </Button>
@@ -413,17 +558,26 @@ export default function ProfilePage() {
         open={experienceModalOpen}
         onCancel={() => setExperienceModalOpen(false)}
         footer={null}
-        title={experienceType === 'internship' ? '实习经历详情（仅查看）' : '项目经验详情（仅查看）'}
+        title={<span style={{ color: 'var(--md-sys-color-on-surface)' }}>
+          {experienceType === 'internship' ? '实习经历详情（仅查看）' : '项目经验详情（仅查看）'}
+        </span>}
       >
         {experienceType === 'internship' ? (
           internships.length > 0 ? (
             <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
               {internships.map((item: StudentInternship, index: number) => (
-                <Card
+                <div
                   key={`${item.company}-${item.position}-${index}`}
-                  size="small"
-                  title={`${index + 1}. ${item.company || '未填写公司'}`}
-                  extra={
+                  className="p-4 rounded-xl border"
+                  style={{ 
+                    backgroundColor: 'var(--md-sys-color-surface-container)',
+                    borderColor: 'var(--md-sys-color-outline-variant)'
+                  }}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      {index + 1}. {item.company || '未填写公司'}
+                    </div>
                     <div className="flex items-center gap-2">
                       <Button
                         size="small"
@@ -442,25 +596,37 @@ export default function ProfilePage() {
                         导出
                       </Button>
                     </div>
-                  }
-                >
-                  <div className="text-sm text-gray-700">岗位：{item.position || '-'}</div>
-                  <div className="text-sm text-gray-700 mt-1">时长：{item.duration || 0} 个月</div>
-                  <div className="text-sm text-gray-700 mt-1">描述：{item.description || '-'}</div>
-                </Card>
+                  </div>
+                  <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                    岗位：{item.position || '-'}
+                  </div>
+                  <div className="text-sm mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                    时长：{item.duration || 0} 个月
+                  </div>
+                  <div className="text-sm mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                    描述：{item.description || '-'}
+                  </div>
+                </div>
               ))}
             </div>
           ) : (
-            <div className="text-gray-500 text-center py-6">暂无实习经历</div>
+            <div className="text-center py-6" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>暂无实习经历</div>
           )
         ) : projects.length > 0 ? (
           <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
             {projects.map((item: StudentProject, index: number) => (
-              <Card
+              <div
                 key={`${item.name}-${item.role}-${index}`}
-                size="small"
-                title={`${index + 1}. ${item.name || '未填写项目名'}`}
-                extra={
+                className="p-4 rounded-xl border"
+                style={{ 
+                  backgroundColor: 'var(--md-sys-color-surface-container)',
+                  borderColor: 'var(--md-sys-color-outline-variant)'
+                }}
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    {index + 1}. {item.name || '未填写项目名'}
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       size="small"
@@ -479,24 +645,32 @@ export default function ProfilePage() {
                       导出
                     </Button>
                   </div>
-                }
-              >
-                <div className="text-sm text-gray-700">角色：{item.role || '-'}</div>
-                <div className="text-sm text-gray-700 mt-1">描述：{item.description || '-'}</div>
+                </div>
+                <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>角色：{item.role || '-'}</div>
+                <div className="text-sm mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>描述：{item.description || '-'}</div>
                 <div className="mt-2 flex flex-wrap gap-1">
                   {(item.technologies || []).length > 0 ? (
                     (item.technologies || []).map((tech: string, idx: number) => (
-                      <Tag key={`${tech}-${idx}`} color="blue">{tech}</Tag>
+                      <Tag 
+                        key={`${tech}-${idx}`} 
+                        style={{ 
+                          backgroundColor: 'var(--md-sys-color-primary-container)',
+                          color: 'var(--md-sys-color-on-primary-container)',
+                          border: 'none'
+                        }}
+                      >
+                        {tech}
+                      </Tag>
                     ))
                   ) : (
-                    <span className="text-sm text-gray-500">暂无技术栈</span>
+                    <span className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)', opacity: 0.6 }}>暂无技术栈</span>
                   )}
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         ) : (
-          <div className="text-gray-500 text-center py-6">暂无项目经验</div>
+          <div className="text-center py-6" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>暂无项目经验</div>
         )}
       </Modal>
 
@@ -506,11 +680,14 @@ export default function ProfilePage() {
         footer={null}
         centered
         closable={false}
+        className="md-modal"
       >
-        <div className="text-center p-4">
+        <div className="text-center p-4 sm:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface-container)' }}>
           <div className="text-4xl mb-4">🔔</div>
-          <div className="text-lg font-medium mb-2">完善学生资料，提升求职竞争力！</div>
-          <div className="text-gray-500 mb-6">
+          <div className="text-lg font-medium mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+            完善学生资料，提升求职竞争力！
+          </div>
+          <div className="mb-6" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
             您可以通过上传简历快速完善学生资料，AI将自动解析并填充信息。
           </div>
           <div className="flex flex-col gap-3">
@@ -521,6 +698,11 @@ export default function ProfilePage() {
                 setShowCompleteModal(false);
                 navigate('/resume');
               }}
+              style={{ 
+                backgroundColor: 'var(--md-sys-color-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                height: '44px'
+              }}
             >
               📄 上传简历快速完善资料
             </Button>
@@ -529,6 +711,10 @@ export default function ProfilePage() {
               onClick={() => {
                 setShowCompleteModal(false);
                 navigate('/student');
+              }}
+              style={{ 
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                height: '44px'
               }}
             >
               ✏️ 手动编辑资料
@@ -541,6 +727,7 @@ export default function ProfilePage() {
                 const modalKey = `profile_complete_modal_shown_${user?.id}`;
                 localStorage.setItem(modalKey, 'true');
               }}
+              style={{ color: 'var(--md-sys-color-on-surface-variant)' }}
             >
               暂时不需要
             </Button>
@@ -559,7 +746,7 @@ export default function ProfilePage() {
           setAvatarPreviewDragging(false);
           setAvatarPreviewDragStart({ x: 0, y: 0 });
         }}
-        title="头像预览"
+        title={<span style={{ color: 'var(--md-sys-color-on-surface)' }}>头像预览</span>}
       >
         <div
           className="flex justify-center overflow-hidden select-none"
@@ -581,7 +768,7 @@ export default function ProfilePage() {
           <img
             src={avatarSrc || '/default-avatar.svg'}
             alt="头像预览"
-            className={`max-w-full max-h-[70vh] object-contain rounded-lg ${avatarPreviewDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
+            className={`max-w-full max-h-[70vh] object-contain rounded-xl ${avatarPreviewDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             style={{
               transform: `translate(${avatarPreviewOffset.x}px, ${avatarPreviewOffset.y}px) scale(${avatarPreviewScale})`,
               transition: avatarPreviewDragging ? 'none' : 'transform 0.08s linear',
@@ -596,7 +783,9 @@ export default function ProfilePage() {
             }}
           />
         </div>
-        <div className="text-center text-xs text-gray-500 mt-3">鼠标滚轮缩放，按住左键可拖拽移动（50% - 400%）</div>
+        <div className="text-center text-xs mt-3" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+          鼠标滚轮缩放，按住左键可拖拽移动（50% - 400%）
+        </div>
       </Modal>
 
     </div>
