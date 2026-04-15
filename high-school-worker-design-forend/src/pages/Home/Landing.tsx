@@ -631,7 +631,7 @@ export default function Landing() {
                             <motion.article
                               key={item.title}
                               style={{ width: cardWidth, minWidth: cardWidth }}
-                              className="relative h-[30rem] md:h-[42rem] shrink-0 overflow-hidden rounded-2xl md:rounded-3xl border border-white/15 bg-[#11131a]"
+                              className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-2xl md:rounded-3xl border border-white/15 bg-[#11131a]"
                               animate={{
                                 opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
                                 scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
@@ -647,7 +647,7 @@ export default function Landing() {
                                 <img
                                   src={item.imageUrl}
                                   alt={item.title}
-                                  className="absolute inset-0 w-full h-full object-cover object-center"
+                                  className="absolute inset-0 w-full h-full object-contain"
                                   draggable={false}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
