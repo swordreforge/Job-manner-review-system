@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import { useAuthStore } from '../../stores';
 
 interface SidebarNavProps {
   isCollapsed: boolean;
@@ -26,6 +27,7 @@ const navItems: NavItem[] = [
 export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuthStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -55,17 +57,23 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
 
   return (
     <aside
-      className={`fixed top-0 left-0 h-screen bg-white border-r border-gray-200 flex flex-col transition-all duration-300 ease-in-out z-30 ${
+      className={`fixed top-0 left-0 h-screen flex flex-col transition-all duration-300 ease-in-out z-30 ${
         isCollapsed ? 'w-16' : 'w-[220px]'
       }`}
+      style={{ 
+        backgroundColor: 'var(--md-sys-color-surface-container)',
+        borderRight: '1px solid var(--md-sys-color-outline-variant)'
+      }}
     >
-      <div className={`h-16 flex items-center border-b border-gray-100 ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}>
+      <div className={`h-16 flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}
+        style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}
+      >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center flex-shrink-0">
             <span className="text-white font-bold text-sm">职</span>
           </div>
           {!isCollapsed && (
-            <span className="font-semibold text-gray-800 truncate">职业规划助手</span>
+            <span className="font-semibold truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>职业规划助手</span>
           )}
         </div>
       </div>
@@ -79,14 +87,16 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
                 <button
                   onClick={() => handleNavClick(item.path)}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 group relative ${
-                    active
-                      ? 'bg-orange-50 text-orange-600'
-                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
-                  } ${isCollapsed ? 'justify-center' : ''}`}
+                    isCollapsed ? 'justify-center' : ''
+                  }`}
+                  style={{
+                    backgroundColor: active ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                    color: active ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)',
+                  }}
                   title={isCollapsed ? item.title : undefined}
                 >
                   {active && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-orange-500 rounded-r-full" />
+                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-6 rounded-r-full" style={{ backgroundColor: 'var(--md-sys-color-primary)' }} />
                   )}
                   <span className={`text-lg flex-shrink-0 ${active ? 'text-orange-500' : ''}`}>
                     {item.icon}
@@ -101,14 +111,14 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
         </ul>
       </nav>
 
-      <div className="border-t border-gray-100">
+      <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
         <button
           onClick={() => navigate('/settings')}
-          className={`w-full flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200 ${
-            isActive({ key: 'settings', title: '', icon: null, path: '/settings', matchPaths: ['/settings'] })
-              ? 'bg-orange-50 text-orange-600'
-              : ''
-          } ${isCollapsed ? 'justify-center' : ''}`}
+          className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
+          style={{
+            backgroundColor: isActive({ key: 'settings', title: '', icon: null, path: '/settings', matchPaths: ['/settings'] }) ? 'var(--md-sys-color-primary-container)' : 'transparent',
+            color: 'var(--md-sys-color-on-surface-variant)',
+          }}
           title={isCollapsed ? '设置' : undefined}
         >
           <SettingOutlined className="text-lg" />
@@ -116,10 +126,11 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
         </button>
       </div>
 
-      <div className={`border-t border-gray-100 p-3 ${isCollapsed ? 'flex justify-center' : ''}`}>
+      <div className={isCollapsed ? 'flex justify-center p-3' : 'p-3'} style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
         <button
           onClick={onToggleCollapse}
-          className="flex items-center gap-2 text-gray-400 hover:text-gray-600 transition-colors"
+          className={`flex items-center gap-2 transition-colors ${isCollapsed ? 'justify-center w-full' : ''}`}
+          style={{ color: 'var(--md-sys-color-on-surface-variant)' }}
           title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
@@ -128,14 +139,22 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
       </div>
 
       {!isCollapsed && (
-        <div className="border-t border-gray-100 p-4">
+        <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)', padding: '1rem' }}>
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
-              <UserOutlined className="text-white text-lg" />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
+              {user?.avatar ? (
+                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <UserOutlined className="text-white text-lg" />
+              )}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-800 truncate">用户</p>
-              <p className="text-xs text-gray-400 truncate">user@example.com</p>
+              <p className="text-sm font-medium truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                {user?.username || '用户'}
+              </p>
+              <p className="text-xs truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                {user?.email || '未设置邮箱'}
+              </p>
             </div>
           </div>
         </div>

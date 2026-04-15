@@ -73,7 +73,7 @@
   --color-outline: var(--md-sys-color-outline);
 }
 
-/* Dark theme variables */
+/* Dark theme variables (must be outside :root) */
 [data-theme="dark"] {
   --md-sys-color-surface: #1B1B1F;
   --md-sys-color-surface-dim: #131315;
@@ -100,6 +100,18 @@
   --color-surface: #1B1B1F;
   --color-on-surface: #E4E1E6;
   --color-outline: #8E9099;
+
+  /* Dark mode semantic colors */
+  --md-sys-color-success: #89D394;
+  --md-sys-color-warning: #F2C04D;
+  --md-sys-color-info: #A9C7FF;
+}
+
+/* Light theme semantic colors (add to :root) */
+:root {
+  --md-sys-color-success: #1B8C3B;
+  --md-sys-color-warning: #8F5900;
+  --md-sys-color-info: #0B57D0;
 }
 
 .prose {
@@ -478,4 +490,114 @@ body {
 
 .ant-modal-footer {
   background-color: var(--md-sys-color-surface-container) !important;
+}
+
+/* Dark mode compatible utility classes */
+.dark-text-primary { color: var(--md-sys-color-primary); }
+.dark-text-secondary { color: var(--md-sys-color-on-surface-variant); }
+.dark-text-success { color: var(--md-sys-color-success); }
+.dark-text-warning { color: var(--md-sys-color-warning); }
+.dark-text-error { color: var(--md-sys-color-error); }
+.dark-bg-surface { background-color: var(--md-sys-color-surface-container); }
+.dark-bg-elevated { background-color: var(--md-sys-color-surface-container-high); }
+.dark-bg-hover:hover { background-color: var(--md-sys-color-surface-container); }
+.dark-border { border-color: var(--md-sys-color-outline-variant); }
+.dark-placeholder { color: var(--md-sys-color-on-surface-variant); }
+
+/* Legacy color mappings for dark mode compatibility */
+[data-theme="dark"] .text-gray-400,
+[data-theme="dark"] .text-gray-500,
+[data-theme="dark"] .text-gray-600,
+[data-theme="dark"] .text-gray-700,
+[data-theme="dark"] .text-gray-800,
+[data-theme="dark"] .text-gray-900 { color: var(--md-sys-color-on-surface-variant) !important; }
+
+[data-theme="dark"] .text-slate-400,
+[data-theme="dark"] .text-slate-600,
+[data-theme="dark"] .text-slate-800 { color: var(--md-sys-color-on-surface-variant) !important; }
+
+[data-theme="dark"] .text-slate-400 { color: var(--md-sys-color-on-surface-variant) !important; }
+[data-theme="dark"] .text-slate-600 { color: var(--md-sys-color-on-surface-variant) !important; }
+[data-theme="dark"] .text-slate-800 { color: var(--md-sys-color-on-surface) !important; }
+
+/* More text color overrides */
+[data-theme="dark"] .text-gray-900 { color: var(--md-sys-color-on-surface) !important; }
+[data-theme="dark"] .text-slate-900 { color: var(--md-sys-color-on-surface) !important; }
+[data-theme="dark"] .text-slate-700 { color: var(--md-sys-color-on-surface-variant) !important; }
+[data-theme="dark"] .text-blue-600 { color: var(--md-sys-color-primary) !important; }
+[data-theme="dark"] .text-blue-700 { color: var(--md-sys-color-primary) !important; }
+[data-theme="dark"] .text-green-600 { color: var(--md-sys-color-success) !important; }
+[data-theme="dark"] .text-green-700 { color: var(--md-sys-color-success) !important; }
+[data-theme="dark"] .text-orange-600 { color: var(--md-sys-color-warning) !important; }
+[data-theme="dark"] .text-orange-700 { color: var(--md-sys-color-warning) !important; }
+[data-theme="dark"] .text-red-600 { color: var(--md-sys-color-error) !important; }
+[data-theme="dark"] .text-red-700 { color: var(--md-sys-color-error) !important; }
+
+[data-theme="dark"] .bg-gray-50 { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .bg-gray-100 { background-color: var(--md-sys-color-surface-container-low) !important; }
+[data-theme="dark"] .bg-gray-200 { background-color: var(--md-sys-color-surface-container) !important; }
+
+[data-theme="dark"] .border-gray-200 { border-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .border-gray-100 { border-color: var(--md-sys-color-outline-variant) !important; }
+
+[data-theme="dark"] .hover\:bg-gray-50:hover { background-color: var(--md-sys-color-surface-container-high) !important; }
+[data-theme="dark"] .hover\:bg-gray-100:hover { background-color: var(--md-sys-color-surface-container) !important; }
+
+/* Icon color overrides for dark mode */
+[data-theme="dark"] .text-blue-500 { color: var(--md-sys-color-primary) !important; }
+[data-theme="dark"] .text-green-500 { color: var(--md-sys-color-success) !important; }
+[data-theme="dark"] .text-red-500 { color: var(--md-sys-color-error) !important; }
+[data-theme="dark"] .text-orange-500 { color: var(--md-sys-color-warning) !important; }
+
+/* Gradient backgrounds */
+[data-theme="dark"] .from-orange-50 { --tw-gradient-from: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .to-orange-100 { --tw-gradient-to: var(--md-sys-color-surface-container-high) !important; }
+[data-theme="dark"] .from-green-50 { --tw-gradient-from: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .to-blue-50 { --tw-gradient-to: var(--md-sys-color-surface-container) !important; }
+
+/* bg-white override for dark mode - must be after other rules */
+[data-theme="dark"] .bg-white { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .bg-white\/5 { background-color: rgba(228, 225, 230, 0.05) !important; }
+[data-theme="dark"] .bg-white\/10 { background-color: rgba(228, 225, 230, 0.1) !important; }
+[data-theme="dark"] .bg-white\/15 { background-color: rgba(228, 225, 230, 0.15) !important; }
+[data-theme="dark"] .bg-white\/20 { background-color: rgba(228, 225, 230, 0.2) !important; }
+[data-theme="dark"] .bg-white\/30 { background-color: rgba(228, 225, 230, 0.3) !important; }
+[data-theme="dark"] .bg-white\/90 { background-color: rgba(228, 225, 230, 0.9) !important; }
+[data-theme="dark"] .bg-white\/95 { background-color: rgba(228, 225, 230, 0.95) !important; }
+
+/* text-white overrides for dark mode */
+[data-theme="dark"] .text-white { color: var(--md-sys-color-on-surface) !important; }
+
+/* border-white overrides */
+[data-theme="dark"] .border-white\/20 { border-color: rgba(228, 225, 230, 0.2) !important; }
+[data-theme="dark"] .border-white\/45 { border-color: rgba(228, 225, 230, 0.45) !important; }
+[data-theme="dark"] .border-white\/60 { border-color: rgba(228, 225, 230, 0.6) !important; }
+[data-theme="dark"] .border-white\/90 { border-color: rgba(228, 225, 230, 0.9) !important; }
+
+/* slate color overrides */
+[data-theme="dark"] .border-slate-200 { border-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .bg-slate-50 { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .bg-slate-100 { background-color: var(--md-sys-color-surface-container-low) !important; }
+
+/* shadow overrides */
+[data-theme="dark"] .shadow-sm { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3) !important; }
+[data-theme="dark"] .shadow-md { box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3) !important; }
+[data-theme="dark"] .shadow-xl { box-shadow: 0 8px 12px rgba(0, 0, 0, 0.3) !important; }
+[data-theme="dark"] .shadow-2xl { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3) !important; }
+
+/* Catch remaining white backgrounds - override Ant Design Card and other components */
+[data-theme="dark"] .ant-card { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-list-item { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .ant-modal-content { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-drawer-content { background-color: var(--md-sys-color-surface) !important; }
+[data-theme="dark"] .ant-dropdown-menu { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-select-dropdown { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-popover-inner { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-tooltip-inner { background-color: var(--md-sys-color-surface-container-high) !important; }
+
+/* Override glass-effect class */
+[data-theme="dark"] .glass-effect { 
+  background-color: var(--md-sys-color-surface-container) !important; 
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--md-sys-color-outline-variant);
 }
