@@ -1,9 +1,10 @@
+import { useEffect } from 'react';
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalBackground from './components/GlobalBackground';
-import { useAuthStore } from './stores';
+import { useAuthStore, useThemeStore } from './stores';
 
 const Landing = lazy(() => import('./pages/Home/Landing'));
 const HomePage = lazy(() => import('./pages/Home'));
@@ -46,9 +47,23 @@ function RootRedirect() {
   return <Navigate to={isAuthenticated ? '/start' : '/welcome'} replace />;
 }
 
-import { useEffect } from 'react';
-
 export default function App() {
+  const { initialize } = useAuthStore();
+  const { theme } = useThemeStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') {
+      document.documentElement.setAttribute('data-theme', stored);
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+  }, []);
+
   return (
     <>
       <GlobalBackground />

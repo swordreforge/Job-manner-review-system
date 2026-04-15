@@ -129,3 +129,34 @@ export const useTaskStore = create<TaskState>((set) => ({
   taskDescription: '',
   setActiveTask: (active, description = '') => set({ hasActiveTask: active, taskDescription: description }),
 }));
+
+interface ThemeState {
+  theme: 'light' | 'dark';
+  setTheme: (theme: 'light' | 'dark') => void;
+  toggleTheme: () => void;
+}
+
+const getInitialTheme = (): 'light' | 'dark' => {
+  const stored = localStorage.getItem('theme');
+  if (stored === 'dark' || stored === 'light') return stored;
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+};
+
+export const useThemeStore = create<ThemeState>((set) => ({
+  theme: getInitialTheme(),
+
+  setTheme: (theme) => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+    set({ theme });
+  },
+
+  toggleTheme: () => {
+    set((state) => {
+      const newTheme = state.theme === 'light' ? 'dark' : 'light';
+      localStorage.setItem('theme', newTheme);
+      document.documentElement.setAttribute('data-theme', newTheme);
+      return { theme: newTheme };
+    });
+  },
+}));

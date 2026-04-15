@@ -1,9 +1,9 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
-import { useTaskStore } from '../stores';
+import { useTaskStore, useThemeStore } from '../stores';
 import { useState, useEffect } from 'react';
 import SidebarNav from '../components/SidebarNav';
 
@@ -43,6 +43,7 @@ export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hasActiveTask, taskDescription, setActiveTask } = useTaskStore();
+  const { theme, toggleTheme } = useThemeStore();
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -187,6 +188,17 @@ export default function MainLayout() {
                   <span>{link.title}</span>
                 </button>
               ))}
+              <button
+                onClick={toggleTheme}
+                className="flex items-center justify-center w-9 h-9 rounded-full text-sm transition-all"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-surface-container-high)',
+                  color: 'var(--md-sys-color-on-surface-variant)',
+                }}
+                title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+              >
+                {theme === 'dark' ? <SunOutlined className="text-base" /> : <MoonOutlined className="text-base" />}
+              </button>
             </div>
           </div>
         )}

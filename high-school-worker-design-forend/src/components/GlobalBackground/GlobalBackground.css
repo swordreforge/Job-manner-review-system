@@ -8,6 +8,7 @@
   z-index: -1;
   overflow: hidden;
   background: var(--md-sys-color-surface);
+  transition: background 0.3s ease;
 }
 
 .global-background.dark {
