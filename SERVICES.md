@@ -191,6 +191,26 @@ systemctl start mysql
 
 3. 使用 Nginx 作为反向代理
 
+### 前端独立部署（用户侧）
+
+前端编译后可通过 `serve` 独立运行，无需启动完整的开发服务：
+
+```bash
+# 安装 serve（如未安装）
+npm install -g serve
+
+# 进入前端目录
+cd high-school-worker-design-forend
+
+# 编译生产版本
+npm run build
+
+# 使用 serve 运行
+serve -s dist -l 3000
+```
+
+编译后的前端会自动请求后端 API `https://stu.swordreforge.top/api/v1`，用户可直接通过 http://localhost:3000 访问。
+
 ## 健康检查
 
 检查服务是否正常运行：
