@@ -97,27 +97,6 @@ export default function BarrageCanvas({
     updateSize();
     window.addEventListener('resize', updateSize);
     
-    const spawnBarrage = (containerWidth: number, initMode = false) => {
-      if (document.hidden) return;
-      
-      const availableTracks = Array.from({ length: trackCount }, (_, i) => i)
-        .filter((track) => !occupiedTracksRef.current.has(track));
-      
-      if (availableTracks.length === 0) return;
-      
-      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
-      const startX = initMode ? Math.random() * containerWidth : undefined;
-      spawnBarrageToTrack(containerWidth, [track], startX);
-    };
-    
-    const initBarrages = (containerWidth: number) => {
-      for (let i = 0; i < trackCount; i++) {
-        spawnBarrage(containerWidth, true);
-      }
-    };
-    
-    initBarrages(canvas.width);
-    
     const spawnBarrageToTrack = (containerWidth: number, tracks: number[], startX?: number) => {
       if (document.hidden) return;
       if (tracks.length === 0) return;
@@ -163,6 +142,27 @@ export default function BarrageCanvas({
       occupiedTracksRef.current.add(track);
       activeRef.current.push(item);
     };
+    
+    const spawnBarrage = (containerWidth: number, initMode = false) => {
+      if (document.hidden) return;
+      
+      const availableTracks = Array.from({ length: trackCount }, (_, i) => i)
+        .filter((track) => !occupiedTracksRef.current.has(track));
+      
+      if (availableTracks.length === 0) return;
+      
+      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
+      const startX = initMode ? Math.random() * containerWidth : undefined;
+      spawnBarrageToTrack(containerWidth, [track], startX);
+    };
+    
+    const initBarrages = (containerWidth: number) => {
+      for (let i = 0; i < trackCount; i++) {
+        spawnBarrage(containerWidth, true);
+      }
+    };
+    
+    initBarrages(canvas.width);
     
     const animate = (timestamp: number) => {
       const containerWidth = canvas.width;
