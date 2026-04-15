@@ -509,13 +509,18 @@ export default function Landing() {
         <div className="relative z-10">
           <motion.div
             initial={{ scale: 0, rotate: -180, opacity: 0 }}
-            animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { scale: 1, rotate: 0, opacity: 1 }}
-            whileTap={{ scale: 0.95 }}
-            transition={isShaking ? { duration: 0.6 } : { type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
-            onClick={handleShakeClick}
-            className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30 cursor-pointer"
+            animate={{ scale: 1, rotate: 0, opacity: 1 }}
+            transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
+            className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
           >
-            <GraduationCapIcon className="w-20 h-20 text-white" />
+            <motion.div
+              animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
+              transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
+              onClick={handleShakeClick}
+              className="cursor-pointer"
+            >
+              <GraduationCapIcon className="w-20 h-20 text-white" />
+            </motion.div>
           </motion.div>
 
           <motion.h1
