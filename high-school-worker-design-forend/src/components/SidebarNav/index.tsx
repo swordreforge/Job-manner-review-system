@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, MenuFoldOutlined, MenuUnfoldOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores';
 
@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
 export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -126,17 +126,42 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
         </button>
       </div>
 
-      <div className={isCollapsed ? 'flex justify-center p-3' : 'p-3'} style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
+      <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
         <button
           onClick={onToggleCollapse}
-          className={`flex items-center gap-2 transition-colors ${isCollapsed ? 'justify-center w-full' : ''}`}
-          style={{ color: 'var(--md-sys-color-on-surface-variant)' }}
+          className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
+          style={{
+            backgroundColor: 'transparent',
+            color: 'var(--md-sys-color-on-surface-variant)',
+          }}
           title={isCollapsed ? '展开菜单' : '收起菜单'}
         >
           {isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          {!isCollapsed && <span className="text-sm">收起</span>}
+          {!isCollapsed && <span className="font-medium">收起菜单</span>}
         </button>
       </div>
+
+      {user && (
+        <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
+          <button
+            onClick={() => {
+              if (window.confirm('确定要退出登录吗？')) {
+                logout();
+                navigate('/start');
+              }
+            }}
+            className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
+            style={{
+              backgroundColor: 'transparent',
+              color: 'var(--md-sys-color-error)',
+            }}
+            title={isCollapsed ? '退出登录' : undefined}
+          >
+            <LogoutOutlined />
+            {!isCollapsed && <span className="font-medium">退出登录</span>}
+          </button>
+        </div>
+      )}
 
       {!isCollapsed && (
         <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)', padding: '1rem' }}>
