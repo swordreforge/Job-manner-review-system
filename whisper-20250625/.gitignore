@@ -25,3 +25,12 @@ Cargo.lock
 
 # 测试
 test-results/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info
+.pytest_cache
+.ipynb_checkpoints
+thumbs.db

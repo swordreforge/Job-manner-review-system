@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RightOutlined, CheckOutlined, LeftOutlined } from '@ant-design/icons';
+import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -8,7 +8,6 @@ import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
 
-// 自定义博士帽 SVG 组件
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
   <svg
     className={className}
@@ -20,12 +19,27 @@ const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    {/* 帽顶（方形） */}
     <path d="M3 10L12 5L21 10L12 15L3 10Z" />
-
-    {/* 帽身（圆柱形底部） */}
     <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
     <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
+  </svg>
+);
+
+const DocumentIcon = ({ className = "" }: { className?: string }) => (
+  <svg
+    className={className}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z" />
+    <path d="M14 2V8H20" />
+    <path d="M8 12H16" />
+    <path d="M8 16H16" />
   </svg>
 );
 
@@ -56,7 +70,6 @@ const features = [
   },
 ];
 
-// 浮动图标配置
 const floatingIcons = [
   { Icon: FaFolder, size: 28, left: '5%', top: '15%', duration: 6, delay: 0 },
   { Icon: FaCog, size: 32, left: '85%', top: '25%', duration: 8, delay: 1 },
@@ -76,7 +89,6 @@ const compareData = [
   { feature: '个性化学习路径', us: true, competitionA: false, competitionB: false },
 ];
 
-// 用户评论弹幕数据
 const comments = [
   { id: 1, user: '小明', avatar: '👨‍💼', text: 'AI职业规划太准了！精准定位了我的优势方向', color: '#FF6B6B' },
   { id: 2, user: '小李', avatar: '👩‍💻', text: '模拟面试帮我拿到了字节offer！感谢！', color: '#4ECDC4' },
@@ -125,6 +137,7 @@ const BARRAGE_TRACK_HEIGHT = 48;
 const BARRAGE_TOP_OFFSET = 24;
 const BARRAGE_SCHEDULER_TICK_MS = 750;
 const BARRAGE_MIN_GAP_MS = 50;
+const FEATURE_ROTATE_INTERVAL_MS = 5000;
 
 type CommentItem = (typeof comments)[number];
 
@@ -132,7 +145,7 @@ type ActiveBarrage = {
   instanceId: number;
   comment: CommentItem;
   track: number;
-  duration: number; // 👈 新增：每条弹幕专属的动画时长
+  duration: number;
 };
 
 const commentById = new Map(comments.map((item) => [item.id, item]));
@@ -149,16 +162,24 @@ const shuffleArray = <T,>(items: T[]) => {
 export default function Landing() {
   const navigate = useNavigate();
   const [hoveredFeatureIndex, setHoveredFeatureIndex] = useState(0);
+  const [isFeatureAutoPlay, setIsFeatureAutoPlay] = useState(true);
   const [imagePreviewOpen, setImagePreviewOpen] = useState(false);
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
+  const [featureAutoPlayProgress, setFeatureAutoPlayProgress] = useState(0);
   const [activeBarrages, setActiveBarrages] = useState<ActiveBarrage[]>([]);
   const [isShaking, setIsShaking] = useState(false);
   const barrageQueueRef = useRef<number[]>([]);
   const occupiedTracksRef = useRef<Set<number>>(new Set());
   const lastSpawnAtRef = useRef(0);
   const barrageInstanceIdRef = useRef(1);
+  const galleryViewportRef = useRef<HTMLDivElement>(null);
+  const dragStartXRef = useRef<number | null>(null);
+  const draggedRef = useRef(false);
+  const [viewportWidth, setViewportWidth] = useState(0);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [isDraggingGallery, setIsDraggingGallery] = useState(false);
 
   const handleShakeClick = () => {
     if (isShaking) return;
@@ -174,14 +195,123 @@ export default function Landing() {
     setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
   };
 
+  const handleFeatureDotClick = (nextIndex: number) => {
+    if (nextIndex === hoveredFeatureIndex) return;
+    setHoveredFeatureIndex(nextIndex);
+  };
+
   const handleImageClick = () => {
     setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
     setImagePreviewOpen(true);
   };
 
-  // 品牌展示动画（纯展示，不等待资源）
+  const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
+  const resolvedViewportWidth = viewportWidth > 0 ? viewportWidth : fallbackViewportWidth;
+  const isMobileGallery = resolvedViewportWidth < 768;
+  const cardGap = isMobileGallery ? 12 : 20;
+  const cardWidth = resolvedViewportWidth * (isMobileGallery ? 0.88 : 0.72);
+  const trackBaseOffset = (resolvedViewportWidth - cardWidth) / 2;
+  const trackX = trackBaseOffset - hoveredFeatureIndex * (cardWidth + cardGap) + dragOffset;
+
   useEffect(() => {
-    const DISPLAY_DURATION = 800; // 显示时长（毫秒）
+    if (!isFeatureAutoPlay) {
+      setFeatureAutoPlayProgress(0);
+      return;
+    }
+
+    const startAt = performance.now();
+    let rafId = 0;
+
+    const updateProgress = (now: number) => {
+      const elapsed = now - startAt;
+      setFeatureAutoPlayProgress(Math.min(elapsed / FEATURE_ROTATE_INTERVAL_MS, 1));
+      rafId = window.requestAnimationFrame(updateProgress);
+    };
+
+    rafId = window.requestAnimationFrame(updateProgress);
+    const autoPlayTimer = window.setTimeout(() => {
+      setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
+    }, FEATURE_ROTATE_INTERVAL_MS);
+
+    return () => {
+      window.cancelAnimationFrame(rafId);
+      window.clearTimeout(autoPlayTimer);
+    };
+  }, [isFeatureAutoPlay, hoveredFeatureIndex]);
+
+  useEffect(() => {
+    const viewport = galleryViewportRef.current;
+    if (!viewport) return;
+
+    const updateViewportWidth = () => {
+      setViewportWidth(viewport.clientWidth);
+    };
+
+    updateViewportWidth();
+    const observer = new ResizeObserver(updateViewportWidth);
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [loading]);
+
+  const finalizeGalleryDrag = () => {
+    if (!isDraggingGallery) return;
+
+    const threshold = Math.max(40, cardWidth * 0.14);
+    if (dragOffset <= -threshold) {
+      showNextFeature();
+    } else if (dragOffset >= threshold) {
+      showPrevFeature();
+    }
+
+    setDragOffset(0);
+    dragStartXRef.current = null;
+    setIsDraggingGallery(false);
+    window.setTimeout(() => {
+      draggedRef.current = false;
+    }, 0);
+  };
+
+  const handleGalleryPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
+    dragStartXRef.current = event.clientX;
+    draggedRef.current = false;
+    setIsDraggingGallery(true);
+    setDragOffset(0);
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handleGalleryPointerMove = (event: React.PointerEvent<HTMLDivElement>) => {
+    if (!isDraggingGallery || dragStartXRef.current === null) return;
+
+    const delta = event.clientX - dragStartXRef.current;
+    if (Math.abs(delta) > 6) {
+      draggedRef.current = true;
+    }
+    setDragOffset(delta);
+  };
+
+  const handleGalleryCardClick = (index: number) => {
+    if (draggedRef.current) return;
+    if (index === hoveredFeatureIndex) {
+      handleImageClick();
+      return;
+    }
+    setHoveredFeatureIndex(index);
+  };
+
+  const handleGalleryKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      showPrevFeature();
+    }
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      showNextFeature();
+    }
+  };
+
+  useEffect(() => {
+    const DISPLAY_DURATION = 800;
     let startTime: number | null = null;
     let animationId: number | null = null;
 
@@ -214,11 +344,9 @@ export default function Landing() {
   }, []);
 
   useEffect(() => {
-    // 💡 新增：用一个 Set 来存储所有的 setTimeout ID，方便随时掐断它们
     const timeoutIds = new Set<number>();
 
     const spawnBarrage = () => {
-      // 💡 修复 1：如果页面在后台（用户切到了其他标签页），直接不执行发射逻辑
       if (document.hidden) return;
 
       const availableTracks = Array.from({ length: BARRAGE_TRACK_COUNT }, (_, index) => index)
@@ -254,10 +382,9 @@ export default function Landing() {
       occupiedTracksRef.current.add(track);
       setActiveBarrages((prev) => [...prev, { instanceId, comment, track, duration }]);
 
-      // 💡 修改：把 timeout 存起来
       const timeoutId = window.setTimeout(() => {
         occupiedTracksRef.current.delete(track);
-        timeoutIds.delete(timeoutId); // 执行完了就从 Set 里删掉
+        timeoutIds.delete(timeoutId);
       }, clearTimeMs);
       timeoutIds.add(timeoutId);
     };
@@ -265,37 +392,27 @@ export default function Landing() {
     spawnBarrage();
     const intervalId = window.setInterval(spawnBarrage, BARRAGE_SCHEDULER_TICK_MS);
 
-    // ==========================================
-    // 💡 核心修复 2：监听页面的可见性变化
-    // ==========================================
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        // 用户切走时：清空屏幕上的弹幕、清空被占用的轨道、掐断所有正在倒计时的 setTimeout
         setActiveBarrages([]);
         occupiedTracksRef.current.clear();
         timeoutIds.forEach(id => window.clearTimeout(id));
         timeoutIds.clear();
       } else {
-        // 用户切回来时：重置上次发射时间，防止瞬间连发
         lastSpawnAtRef.current = Date.now();
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
-      // 卸载组件时的终极清理
       window.clearInterval(intervalId);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       timeoutIds.forEach(id => window.clearTimeout(id));
-      // occupiedTracksRef.current.clear();
-      // barrageQueueRef.current = [];
-      // lastSpawnAtRef.current = 0;
     };
   }, []);
 
   return (
     <>
-      {/* 彩虹流动动画 */}
       <style>{`
         @keyframes rainbow-flow {
           0% { background-position: 0% 50%; }
@@ -319,7 +436,6 @@ export default function Landing() {
           animation: rainbow-flow 3s ease infinite;
         }
       `}</style>
-      {/* 加载动画 */}
       <AnimatePresence>
         {loading && (
           <motion.div
@@ -333,7 +449,6 @@ export default function Landing() {
             }}
           >
             <div className="text-center relative w-[280px] h-[280px] flex flex-col items-center justify-center">
-              {/* 多环动画区 */}
               <div className="relative w-[200px] h-[200px] mb-8 flex items-center justify-center">
                 <div
                   className="absolute w-[180px] h-[180px] rounded-full border-2 border-transparent"
@@ -362,7 +477,6 @@ export default function Landing() {
                     filter: 'drop-shadow(0 0 4px rgba(244,114,182,0.4))',
                   }}
                 />
-                {/* 中心脉冲点 */}
                 <motion.div
                   className="absolute w-6 h-6 rounded-full"
                   style={{
@@ -380,8 +494,6 @@ export default function Landing() {
                   }}
                 />
               </div>
-
-              {/* 百分比显示 */}
               <div className="relative z-10 font-bold text-[3.2rem] tracking-wider mt-5" style={{
                 background: 'linear-gradient(135deg, #fff, #a0c4ff)',
                 WebkitBackgroundClip: 'text',
@@ -393,13 +505,9 @@ export default function Landing() {
                 {percent}
                 <span className="text-[2rem]">%</span>
               </div>
-
-              {/* 加载文本 */}
               <div className="mt-3 text-xs tracking-[0.2em] uppercase font-medium text-[#9ca3cf] bg-white/5 backdrop-blur-sm px-4 py-1.5 rounded-full inline-block">
                 加载中...
               </div>
-
-              {/* 底部装饰光晕 */}
               <motion.div
                 className="absolute w-[300px] h-[300px] rounded-full -z-10"
                 style={{
@@ -415,8 +523,6 @@ export default function Landing() {
                   repeatType: 'reverse',
                 }}
               />
-
-              {/* 动画样式 */}
               <style>{`
                 @keyframes spin {
                   0% { transform: rotate(0deg); }
@@ -432,711 +538,533 @@ export default function Landing() {
         )}
       </AnimatePresence>
 
-      {/* 主内容 */}
       <AnimatePresence mode="wait">
         {!loading && (
           <motion.div
             className="min-h-screen text-white"
             style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}
           >
-      {/* 顶部工具栏 */}
-      <motion.div
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
-        className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10"
-      >
-        <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="flex items-center gap-3 cursor-pointer"
-            onClick={() => navigate('/welcome')}
-          >
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-              <GraduationCapIcon className="w-6 h-6 text-white" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
-              职业规划助手
-            </span>
-          </motion.div>
-
-          <div className="flex items-center gap-4">
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/doc')}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                />
-              </svg>
-              <span className="font-medium">文档</span>
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={() => navigate('/auth')}
-              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
-            >
-              <svg
-                className="w-5 h-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                />
-              </svg>
-              <span className="font-medium">登录/注册</span>
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Hero Section */}
-      <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
-        {/* 镭射效果背景 */}
-        <LaserGradient />
-        <LaserRay />
-
-        {/* 淡紫色渐变背景 */}
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
-
-        {/* 浮动图标层 - 不影响点击 */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {floatingIcons.map((item, idx) => {
-            const { Icon, size, left, top, duration, delay } = item;
-            return (
-              <motion.div
-                key={idx}
-                className="absolute text-purple-400/40"
-                style={{
-                  left,
-                  top,
-                }}
-                initial={{ y: 0, rotate: 0 }}
-                animate={{
-                  y: [0, -40, 0],
-                  rotate: [0, 8, 0],
-                }}
-                transition={{
-                  duration,
-                  delay,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <Icon size={size} />
-              </motion.div>
-            );
-          })}
-        </div>
-
-        {/* 内容层 - 确保在浮动层上方 */}
-        <div className="relative z-10">
-          <motion.div
-            initial={{ scale: 0, rotate: -180, opacity: 0 }}
-            animate={{ scale: 1, rotate: 0, opacity: 1 }}
-            transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
-            className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
-          >
             <motion.div
-              animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
-              transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
-              onClick={handleShakeClick}
-              className="cursor-pointer"
+              initial={{ y: -100, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
+              className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10"
             >
-              <GraduationCapIcon className="w-20 h-20 text-white" />
-            </motion.div>
-          </motion.div>
-
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-6xl md:text-7xl font-bold mb-12"
-          >
-你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
-          </motion.h1>
-
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
-          >
-            AI驱动的职业发展解决方案，助你找到理想工作
-            <br />
-            <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="flex flex-col sm:flex-row gap-10 justify-center"
-          >
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <Button
-                type="primary"
-                size="large"
-                icon={<RightOutlined />}
-                onClick={() => navigate('/auth')}
-                className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
-              >
-                立即开始
-              </Button>
-            </motion.div>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <Button
-                size="large"
-                onClick={() => {
-                  document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' });
-                }}
-                className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
-              >
-                了解更多
-              </Button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </div>
-
-      {/* Features Section */}
-      <div id="features" className="px-6 py-16 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl font-bold mb-4">
-            核心<span className="text-orange-400">功能</span>
-          </h2>
-          <p className="text-gray-400">全方位助你职业成长</p>
-        </motion.div>
-
-        {/* 功能图片展示区域 */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-12"
-        >
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-gray-800/50 to-gray-900/50 border border-gray-700/50 p-8 backdrop-blur-sm">
-            {/* 单张大图展示 */}
-            <div className="relative h-64 md:h-80 w-full overflow-hidden rounded-xl">
-              <AnimatePresence mode="wait">
+              <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
                 <motion.div
-                  key={hoveredFeatureIndex}
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  transition={{ duration: 0.3 }}
-                  className="absolute inset-0"
+                  whileHover={{ scale: 1.05 }}
+                  className="flex items-center gap-3 cursor-pointer"
+                  onClick={() => navigate('/welcome')}
                 >
-                  <motion.img
-                    src={features[hoveredFeatureIndex].imageUrl}
-                    alt={features[hoveredFeatureIndex].title}
-                    className="w-full h-full object-cover cursor-pointer"
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                    <GraduationCapIcon className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+                    职业规划助手
+                  </span>
+                </motion.div>
+
+                <div className="flex items-center gap-4">
+                  <motion.button
                     whileHover={{ scale: 1.05 }}
-                    transition={{ duration: 0.3 }}
-                    onClick={handleImageClick}
-                  />
-                  {/* 功能信息覆盖层 */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.3, delay: 0.2 }}
-                    className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex items-end p-6 pointer-events-none"
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/doc')}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300"
                   >
-                    <div>
-                      <h3 className="text-2xl font-semibold text-white mb-2">{features[hoveredFeatureIndex].title}</h3>
-                      <p className="text-base text-gray-300">{features[hoveredFeatureIndex].desc}</p>
-                    </div>
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                      />
+                    </svg>
+                    <span className="font-medium">文档</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => navigate('/auth')}
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                      />
+                    </svg>
+                    <span className="font-medium">登录/注册</span>
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ x: 100, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              transition={{ type: "spring", damping: 20, stiffness: 100, delay: 1 }}
+              className="fixed top-6 right-6 z-50"
+            >
+              <motion.div
+                whileHover={{ 
+                  scale: 1.08,
+                  boxShadow: [
+                    "0 10px 30px rgba(251, 146, 60, 0.3)",
+                    "0 15px 40px rgba(251, 146, 60, 0.4)",
+                    "0 15px 40px rgba(251, 146, 60, 0.4)"
+                  ]
+                }}
+                whileTap={{ scale: 0.98 }}
+                transition={{
+                  boxShadow: { duration: 0.4 },
+                  scale: { type: "spring", stiffness: 400 }
+                }}
+              >
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<DocumentIcon className="w-5 h-5" />}
+                  onClick={() => navigate('/doc')}
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-12 px-6 rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                >
+                  文档
+                </Button>
+              </motion.div>
+            </motion.div>
+
+            <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
+              <LaserGradient />
+              <LaserRay />
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
+
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                {floatingIcons.map((item, idx) => {
+                  const { Icon, size, left, top, duration, delay } = item;
+                  return (
+                    <motion.div
+                      key={idx}
+                      className="absolute text-purple-400/40"
+                      style={{ left, top }}
+                      initial={{ y: 0, rotate: 0 }}
+                      animate={{ y: [0, -40, 0], rotate: [0, 8, 0] }}
+                      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+                    >
+                      <Icon size={size} />
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              <div className="relative z-10">
+                <motion.div
+                  initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                  transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
+                  className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
+                >
+                  <motion.div
+                    animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
+                    transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
+                    onClick={handleShakeClick}
+                    className="cursor-pointer"
+                  >
+                    <GraduationCapIcon className="w-20 h-20 text-white" />
                   </motion.div>
                 </motion.div>
-              </AnimatePresence>
 
-              <div className="absolute inset-y-0 left-3 right-3 flex items-center justify-between pointer-events-none">
-                <motion.button
-                  type="button"
-                  aria-label="上一张"
-                  onClick={showPrevFeature}
-                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
+                <motion.h1
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.2 }}
+                  className="text-6xl md:text-7xl font-bold mb-12"
                 >
-                  <LeftOutlined />
-                </motion.button>
-                <motion.button
-                  type="button"
-                  aria-label="下一张"
-                  onClick={showNextFeature}
-                  className="pointer-events-auto w-10 h-10 rounded-full bg-black/45 border border-white/20 text-white flex items-center justify-center hover:bg-black/65 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-400"
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.95 }}
+                  你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
+                </motion.h1>
+
+                <motion.p
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.4 }}
+                  className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
                 >
-                  <RightOutlined />
-                </motion.button>
+                  AI驱动的职业发展解决方案，助你找到理想工作
+                  <br />
+                  <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.6 }}
+                  className="flex flex-col sm:flex-row gap-10 justify-center"
+                >
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                    <Button
+                      type="primary"
+                      size="large"
+                      icon={<RightOutlined />}
+                      onClick={() => navigate('/auth')}
+                      className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
+                    >
+                      立即开始
+                    </Button>
+                  </motion.div>
+                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                    <Button
+                      size="large"
+                      onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                      className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+                    >
+                      了解更多
+                    </Button>
+                  </motion.div>
+                </motion.div>
               </div>
             </div>
-            {/* 图片指示器 */}
-            <div className="flex justify-center gap-2 mt-4">
-              {features.map((_, idx) => (
-                <motion.button
-                  key={idx}
-                  onClick={() => setHoveredFeatureIndex(idx)}
-                  className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                    idx === hoveredFeatureIndex ? 'bg-orange-400 w-6' : 'bg-gray-600'
-                  }`}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                />
-              ))}
-            </div>
-          </div>
-        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
-
-                  {features.map((item, idx) => (
-
-                    <motion.div
-
-                      key={idx}
-
-                      initial={{ opacity: 0, y: 50 }}
-
-                      whileInView={{ opacity: 1, y: 0 }}
-
-                      whileHover={{
-
-                        scale: 1.05,
-
-                        boxShadow: [
-
-                          "0 20px 40px rgba(0,0,0,0.3)",
-
-                          "0 30px 60px rgba(251, 146, 60, 0.15)",
-
-                          "0 30px 60px rgba(251, 146, 60, 0.15)"
-
-                        ],
-
-                        borderColor: "rgba(251, 146, 60, 0.6)",
-
-                        background: [
-
-                          "rgba(255,255,255,0.05)",
-
-                          "rgba(255,255,255,0.08)",
-
-                          "rgba(255,255,255,0.08)"
-
-                        ]
-
-                      }}
-
-                      transition={{
-
-                        boxShadow: { duration: 0.4 },
-
-                        scale: { duration: 0.3, type: "spring", stiffness: 400 }
-
-                      }}
-
-                      onMouseEnter={() => setHoveredFeatureIndex(idx)}
-
-                      className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
-
-                      style={{
-
-                        background: 'rgba(255,255,255,0.05)',
-
-                        border: '1px solid rgba(255,255,255,0.1)',
-
-                        width: '100%',
-
-                        maxWidth: '480px'
-
-                      }}
-
-                    >
-
-                      {/* 光泽效果层 */}
-
-                      <motion.div
-
-                        className="absolute inset-0 rounded-2xl pointer-events-none"
-
-                        initial={{ opacity: 0 }}
-
-                        whileHover={{
-
-                          opacity: 1,
-
-                          background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
-
-                        }}
-
-                        transition={{ duration: 0.3 }}
-
-                      />
-
-                      {/* 发光边框效果 */}
-
-                      <motion.div
-
-                        className="absolute inset-0 rounded-2xl pointer-events-none"
-
-                        initial={{ opacity: 0 }}
-
-                        whileHover={{
-
-                          opacity: 1,
-
-                          boxShadow: "inset 0 0 20px rgba(251, 146, 60, 0.1)"
-
-                        }}
-
-                        transition={{ duration: 0.3 }}
-
-                      />
-
-                      <motion.div
-
-                        initial={{ scale: 0 }}
-
-                        whileInView={{ scale: 1 }}
-
-                        whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-
-                        transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
-
-
-                        className="text-4xl mb-4 relative z-10"
-
-                      >
-
-                        {item.icon}
-
-                      </motion.div>
-
-                      <h3 className="text-xl font-semibold mb-2 relative z-10">{item.title}</h3>
-
-                      <p className="text-gray-400 relative z-10">{item.desc}</p>
-
-                    </motion.div>
-
-                  ))}
-
-                </div>      </div>
-
-      {/* Comparison Section */}
-      <div className="px-6 py-16 max-w-4xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-12"
-        >
-          <h2 className="text-4xl font-bold mb-4">
-            与市面<span className="text-orange-400">产品对比</span>
-          </h2>
-          <p className="text-gray-400">功能全面领先，让求职更简单</p>
-        </motion.div>
-
-        <motion.div
-
-                  initial={{ opacity: 0, scale: 0.95 }}
-
-                  whileInView={{ opacity: 1, scale: 1 }}
-
-                  viewport={{ margin: "-50px" }}
-
-                  transition={{ duration: 0.6 }}
-
-                  className="space-y-0"
-
-                >
-
-                  {/* 表头 */}
-
-                  <motion.div
-
-                    initial={{ opacity: 0, y: -20 }}
-
-                    whileInView={{ opacity: 1, y: 0 }}
-
-                    transition={{ duration: 0.5 }}
-
-                    className="grid grid-cols-4 gap-4 pb-4 border-b border-gray-700 text-sm font-semibold"
-
-                  >
-
-                    <div className="text-left text-gray-400">功能</div>
-
-                    <div className="text-left text-orange-400">我们</div>
-
-                    <div className="text-center text-gray-500">竞品A</div>
-
-                    <div className="text-center text-gray-500">竞品B</div>
-
-                  </motion.div>
-
-        
-
-                  {/* 表格行 */}
-
-                  {compareData.map((row, idx) => (
-
-                    <motion.div
-
-                      key={idx}
-
-                      initial={{ opacity: 0, x: -20 }}
-
-                      whileInView={{ opacity: 1, x: 0 }}
-
-                      transition={{ duration: 0.4, delay: idx * 0.08 }}
-
-                      whileHover={{
-
-                        background: 'rgba(255,255,255,0.08)',
-
-                        scale: 1.02,
-
-                        boxShadow: "0 4px 20px rgba(0,0,0,0.3)"
-
-                      }}
-
-                      className="grid grid-cols-4 gap-4 py-4 border-b border-gray-800 cursor-pointer relative rounded-lg overflow-hidden"
-
-                    >
-
-                      {/* 悬停时的光泽效果 */}
-
-                      <motion.div
-
-                        className="absolute inset-0 pointer-events-none"
-
-                        initial={{ opacity: 0 }}
-
-                        whileHover={{
-
-                          opacity: 1,
-
-                          background: "linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 100%)"
-
-                        }}
-
-                        transition={{ duration: 0.3 }}
-
-                      />
-
-                      <div className="text-left text-gray-300 relative z-10 whitespace-nowrap">{row.feature}</div>
-
-                      <div className="text-left relative z-10">
-
-                        {row.us ? (
-
-                          <motion.div
-
-                            initial={{ scale: 0 }}
-
-                            whileInView={{ scale: 1 }}
-
-                            whileHover={{ scale: 1.2, rotate: [0, -10, 10, 0] }}
-
-                            transition={{ type: "spring", delay: idx * 0.08 + 0.2 }}
-
-                            className="inline-block"
-
-                          >
-
-                            <CheckOutlined className="text-green-400 text-xl" />
-
-                          </motion.div>
-
-                        ) : (
-
-                          <span className="text-gray-600">-</span>
-
-                        )}
-
-                      </div>
-
-                      <div className="text-center relative z-10">
-
-                        {row.competitionA ? (
-
-                          <CheckOutlined className="text-gray-500 text-xl" />
-
-                        ) : (
-
-                          <span className="text-gray-600">-</span>
-
-                        )}
-
-                      </div>
-
-                      <div className="text-center relative z-10">
-
-                        {row.competitionB ? (
-
-                          <CheckOutlined className="text-gray-500 text-xl" />
-
-                        ) : (
-
-                          <span className="text-gray-600">-</span>
-
-                        )}
-
-                      </div>
-
-                    </motion.div>
-
-                  ))}
-
-                </motion.div>
-      </div>
-
-      {/* 用户评论弹幕区域 */}
-      <div className="px-6 py-12 max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ margin: "-100px" }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-8"
-        >
-          <h2 className="text-3xl font-bold mb-3">
-            用户<span className="text-orange-400">真实评价</span>
-          </h2>
-          <p className="text-gray-400">听听他们的使用体验</p>
-        </motion.div>
-
-        {/* 弹幕区域 */}
-        <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
-          <div className="absolute inset-0 pointer-events-none">
-            {activeBarrages.map((item) => (
-                <motion.div
-                    key={item.instanceId}
-                    className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
-                    style={{
-                      top: `${BARRAGE_TOP_OFFSET + item.track * BARRAGE_TRACK_HEIGHT}px`,
-                      left: '100%',
-                      backgroundColor: `${item.comment.color}20`,
-                      borderColor: `${item.comment.color}40`,
-                    }}
-                    initial={{ x: 0 }}
-                    animate={{ x: 'calc(-100vw - 140%)' }}
-                    transition={{
-                      duration: item.duration, // 👈 核心修改：使用刚刚动态计算好的专属时长
-                      ease: 'linear',
-                    }}
-                    onAnimationComplete={() => {
-                      // ✨ 核心修复：动画彻底结束（20秒后）飞出屏幕外时，仅仅销毁自身的 DOM。
-                      // 不要在这里释放轨道，因为轨道早在上面 setTimeout 时就已经释放了。
-                      setActiveBarrages((prev) => prev.filter((barrage) => barrage.instanceId !== item.instanceId));
-                    }}
-                >
-                  <span className="text-lg">{item.comment.avatar}</span>
-                  <span className="text-sm font-semibold" style={{ color: item.comment.color }}>{item.comment.user}:</span>
-                  <span className="text-sm text-gray-300">{item.comment.text}</span>
-                </motion.div>
-            ))}
-          </div>
-          {/* ...装饰性元素... */}
-
-          {/* 装饰性元素 */}
-          <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-          <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-          <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
-        </div>
-      </div>
-
-      {/* CTA Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ margin: "-100px" }}
-        transition={{ duration: 0.8 }}
-        className="px-6 py-20 text-center"
-      >
-        <motion.h2
-          initial={{ opacity: 0, scale: 0.9 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="text-3xl font-bold mb-6"
-        >
-          准备好开启你的职业之旅了吗？
-        </motion.h2>
-        <motion.p
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-gray-400 mb-8"
-        >
-          5分钟了解适合自己的职业方向
-        </motion.p>
-        <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Button
-                    type="primary"
-                    size="large"
-                    icon={<GraduationCapIcon className="w-5 h-5" />}
-                    onClick={() => navigate('/auth')}
-                    className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
-                  >
-                    立即开始 →
-                  </Button>
-                </motion.div>
+            <div id="features" className="px-6 py-16 w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-12"
+              >
+                <h2 className="text-4xl font-bold mb-4">
+                  核心<span className="text-orange-400">功能</span>
+                </h2>
+                <p className="text-gray-400">全方位助你职业成长</p>
               </motion.div>
 
-      {/* Footer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        transition={{ duration: 0.6 }}
-        className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
-      >
-        <p>© 2026 职业规划助手. All rights reserved.</p>
-      </motion.div>
-      </motion.div>
-      )}
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="mb-12"
+              >
+                <div className="relative rounded-none border border-transparent bg-transparent p-2 md:p-4">
+                  <div className="relative">
+                    <div
+                      ref={galleryViewportRef}
+                      tabIndex={0}
+                      role="region"
+                      aria-label="核心功能轮播"
+                      onKeyDown={handleGalleryKeyDown}
+                      onPointerDown={handleGalleryPointerDown}
+                      onPointerMove={handleGalleryPointerMove}
+                      onPointerUp={finalizeGalleryDrag}
+                      onPointerCancel={finalizeGalleryDrag}
+                      className={`overflow-hidden select-none ${isDraggingGallery ? 'cursor-grabbing' : 'cursor-grab'}`}
+                    >
+                      <motion.div
+                        className="flex"
+                        style={{ gap: `${cardGap}px` }}
+                        animate={{ x: trackX }}
+                        transition={isDraggingGallery
+                          ? { duration: 0 }
+                          : { type: 'spring', stiffness: 100, damping: 34, mass: 1.2 }}
+                      >
+                        {features.map((item, idx) => {
+                          const isActive = idx === hoveredFeatureIndex;
+                          return (
+                            <motion.article
+                              key={item.title}
+                              style={{ width: cardWidth, minWidth: cardWidth }}
+                              className="relative h-[30rem] md:h-[42rem] shrink-0 overflow-hidden rounded-2xl md:rounded-3xl border border-white/15 bg-[#11131a]"
+                              animate={{
+                                opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
+                                scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
+                              }}
+                              transition={{ duration: 0.35, ease: 'easeOut' }}
+                            >
+                              <button
+                                type="button"
+                                aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
+                                onClick={() => handleGalleryCardClick(idx)}
+                                className="absolute inset-0"
+                              >
+                                <img
+                                  src={item.imageUrl}
+                                  alt={item.title}
+                                  className="h-full w-full object-cover"
+                                  draggable={false}
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                                <div className="absolute bottom-4 left-4 right-4 text-left">
+                                  <h3 className="text-2xl md:text-4xl font-semibold tracking-tight">{item.title}</h3>
+                                  <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">{item.desc}</p>
+                                </div>
+                              </button>
+                            </motion.article>
+                          );
+                        })}
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex justify-center">
+                  <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-white/45 bg-white/15 px-6 py-2 backdrop-blur-md">
+                    <div className="flex items-center gap-2">
+                      {features.map((_, idx) => (
+                        <motion.button
+                          key={idx}
+                          type="button"
+                          onClick={() => handleFeatureDotClick(idx)}
+                          className={`h-2.5 rounded-full transition-all duration-300 ${
+                            idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-white/30' : 'w-2.5 bg-white/60'
+                          }`}
+                          whileHover={{ scale: 1.2 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {idx === hoveredFeatureIndex ? (
+                            <span
+                              className="absolute inset-y-0 left-0 rounded-full bg-white/95"
+                              style={{ width: `${Math.max(0, Math.min(featureAutoPlayProgress, 1)) * 100}%` }}
+                            />
+                          ) : null}
+                        </motion.button>
+                      ))}
+                    </div>
+                    <motion.button
+                      type="button"
+                      aria-label={isFeatureAutoPlay ? '关闭自动轮换' : '开启自动轮换'}
+                      onClick={() => setIsFeatureAutoPlay((prev) => !prev)}
+                      className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
+                        isFeatureAutoPlay ? 'bg-white/35 border-white/90 text-white' : 'bg-white/20 border-white/60 text-white/90'
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      {isFeatureAutoPlay ? <PauseOutlined /> : <CaretRightOutlined />}
+                    </motion.button>
+                  </div>
+                </div>
+              </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
+                {features.map((item, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    whileHover={{
+                      scale: 1.05,
+                      boxShadow: [
+                        "0 20px 40px rgba(0,0,0,0.3)",
+                        "0 30px 60px rgba(251, 146, 60, 0.15)",
+                        "0 30px 60px rgba(251, 146, 60, 0.15)"
+                      ],
+                      borderColor: "rgba(251, 146, 60, 0.6)",
+                      background: [
+                        "rgba(255,255,255,0.05)",
+                        "rgba(255,255,255,0.08)",
+                        "rgba(255,255,255,0.08)"
+                      ]
+                    }}
+                    transition={{ boxShadow: { duration: 0.4 }, scale: { duration: 0.3, type: "spring", stiffness: 400 } }}
+                    onMouseEnter={() => setHoveredFeatureIndex(idx)}
+                    className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
+                    style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      width: '100%',
+                      maxWidth: '480px'
+                    }}
+                  >
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      whileHover={{
+                        opacity: 1,
+                        background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
+                      }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    <motion.div
+                      className="absolute inset-0 rounded-2xl pointer-events-none"
+                      initial={{ opacity: 0 }}
+                      whileHover={{ opacity: 1, boxShadow: "inset 0 0 20px rgba(251, 146, 60, 0.1)" }}
+                      transition={{ duration: 0.3 }}
+                    />
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                      transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
+                      className="text-4xl mb-4 relative z-10"
+                    >
+                      {item.icon}
+                    </motion.div>
+                    <h3 className="text-xl font-semibold mb-2 relative z-10">{item.title}</h3>
+                    <p className="text-gray-400 relative z-10">{item.desc}</p>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            <div className="px-6 py-16 max-w-4xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ margin: "-100px" }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-12"
+              >
+                <h2 className="text-4xl font-bold mb-4">
+                  与市面<span className="text-orange-400">产品对比</span>
+                </h2>
+                <p className="text-gray-400">功能全面领先，让求职更简单</p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ margin: "-50px" }}
+                transition={{ duration: 0.6 }}
+                className="space-y-0"
+              >
+                <motion.div
+                  initial={{ opacity: 0, y: -20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="grid grid-cols-4 gap-4 pb-4 border-b border-gray-700 text-sm font-semibold"
+                >
+                  <div className="text-left text-gray-400">功能</div>
+                  <div className="text-left text-orange-400">我们</div>
+                  <div className="text-left text-gray-400">竞品A</div>
+                  <div className="text-left text-gray-400">竞品B</div>
+                </motion.div>
+                {compareData.map((row, idx) => (
+                  <motion.div
+                    key={idx}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.4, delay: idx * 0.08 }}
+                    className="grid grid-cols-4 gap-4 py-4 border-b border-gray-800 items-center"
+                  >
+                    <div className="text-left">{row.feature}</div>
+                    <div className="text-left">{row.us && <CheckOutlined className="text-green-400" />}</div>
+                    <div className="text-left">{row.competitionA && <CheckOutlined className="text-green-400" />}</div>
+                    <div className="text-left">{row.competitionB && <CheckOutlined className="text-green-400" />}</div>
+                  </motion.div>
+                ))}
+              </motion.div>
+            </div>
+
+            <div className="px-6 py-12 max-w-6xl mx-auto">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ margin: "-100px" }}
+                transition={{ duration: 0.6 }}
+                className="text-center mb-8"
+              >
+                <h2 className="text-3xl font-bold mb-3">
+                  用户<span className="text-orange-400">真实评价</span>
+                </h2>
+                <p className="text-gray-400">听听他们的使用体验</p>
+              </motion.div>
+
+              <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
+                <div className="absolute inset-0 pointer-events-none">
+                  {activeBarrages.map((item) => (
+                    <motion.div
+                      key={item.instanceId}
+                      className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
+                      style={{
+                        top: `${BARRAGE_TOP_OFFSET + item.track * BARRAGE_TRACK_HEIGHT}px`,
+                        left: '100%',
+                        backgroundColor: `${item.comment.color}20`,
+                        borderColor: `${item.comment.color}40`,
+                      }}
+                      initial={{ x: 0 }}
+                      animate={{ x: 'calc(-100vw - 140%)' }}
+                      transition={{
+                        duration: item.duration,
+                        ease: 'linear',
+                      }}
+                      onAnimationComplete={() => {
+                        setActiveBarrages((prev) => prev.filter((barrage) => barrage.instanceId !== item.instanceId));
+                      }}
+                    >
+                      <span className="text-lg">{item.comment.avatar}</span>
+                      <span className="text-sm font-semibold" style={{ color: item.comment.color }}>{item.comment.user}:</span>
+                      <span className="text-sm text-gray-300">{item.comment.text}</span>
+                    </motion.div>
+                  ))}
+                </div>
+                <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
+                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ margin: "-100px" }}
+              transition={{ duration: 0.8 }}
+              className="px-6 py-20 text-center"
+            >
+              <motion.h2
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.6, delay: 0.2 }}
+                className="text-3xl font-bold mb-6"
+              >
+                准备好开启你的职业之旅了吗？
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="text-gray-400 mb-8"
+              >
+                5分钟了解适合自己的职业方向
+              </motion.p>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.6 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <Button
+                  type="primary"
+                  size="large"
+                  icon={<GraduationCapIcon className="w-5 h-5" />}
+                  onClick={() => navigate('/auth')}
+                  className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                >
+                  立即开始 →
+                </Button>
+              </motion.div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 0.6 }}
+              className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
+            >
+              <p>© 2026 职业规划助手. All rights reserved.</p>
+            </motion.div>
+          </motion.div>
+        )}
       </AnimatePresence>
 
-      {/* 图片预览模态框 */}
       <AnimatePresence>
         {imagePreviewOpen && (
           <motion.div
@@ -1175,4 +1103,3 @@ export default function Landing() {
     </>
   );
 }
-
