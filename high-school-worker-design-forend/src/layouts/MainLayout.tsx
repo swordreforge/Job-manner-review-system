@@ -1,11 +1,24 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
 import { useTaskStore } from '../stores';
 import { useState, useEffect } from 'react';
 import SidebarNav from '../components/SidebarNav';
+
+interface DocLink {
+  title: string;
+  icon: React.ReactNode;
+  path: string;
+}
+
+const docLinks: DocLink[] = [
+  { title: '使用指南', icon: <BookOutlined />, path: '/doc?tab=guide' },
+  { title: '常见问题', icon: <QuestionCircleOutlined />, path: '/doc?tab=faq' },
+  { title: '职业探索', icon: <CompassOutlined />, path: '/holland' },
+  { title: '面试技巧', icon: <ReadOutlined />, path: '/interview' },
+];
 
 const DESKTOP_BREAKPOINT = 1024;
 
@@ -110,6 +123,31 @@ export default function MainLayout() {
         }`}
         style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
       >
+        {isDesktop && (
+          <div className="h-14 bg-white border-b border-gray-100 flex items-center px-6 gap-2 sticky top-0 z-20">
+            <div className="flex items-center gap-1 text-sm text-gray-500">
+              <span>快速跳转</span>
+            </div>
+            <div className="flex items-center gap-2 ml-4">
+              {docLinks.map((link) => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                    location.pathname + location.search === link.path ||
+                    location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?')
+                      ? 'bg-orange-50 text-orange-600'
+                      : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                  }`}
+                >
+                  {link.icon}
+                  <span>{link.title}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className={`${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
           <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-6">
             <Outlet />
