@@ -5,6 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
 import { useTaskStore } from '../stores';
 import { useState, useEffect } from 'react';
+import SidebarNav from '../components/SidebarNav';
+
+const DESKTOP_BREAKPOINT = 1024;
 
 export default function MainLayout() {
   const location = useLocation();
@@ -12,9 +15,20 @@ export default function MainLayout() {
   const { hasActiveTask, taskDescription, setActiveTask } = useTaskStore();
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
   const isStudentPage = location.pathname.startsWith('/student');
-  const shouldFixTabBar = !isStudentPage;
+  const shouldFixTabBar = !isStudentPage && !isDesktop;
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= DESKTOP_BREAKPOINT);
+    };
+    checkDesktop();
+    window.addEventListener('resize', checkDesktop);
+    return () => window.removeEventListener('resize', checkDesktop);
+  }, []);
 
   const tabs = [
     { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
@@ -24,18 +38,14 @@ export default function MainLayout() {
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
 
-  // 根据当前路由计算应该高亮的标签
   const getActiveTab = () => {
     const pathname = location.pathname;
     
-    // /start 也高亮首页
     if (pathname === '/start') return 'home';
     
-    // 精确匹配
     const exactMatch = tabs.find(tab => tab.path === pathname);
     if (exactMatch) return exactMatch.key;
     
-    // 特殊路由匹配
     if (pathname.startsWith('/holland')) return 'home';
     if (pathname.startsWith('/plan')) return 'plan';
     if (pathname.startsWith('/resume')) return 'resume';
@@ -44,13 +54,11 @@ export default function MainLayout() {
     if (pathname.startsWith('/settings')) return 'profile';
     if (pathname.startsWith('/profile')) return 'profile';
     
-    // 默认返回首页
     return 'home';
   };
 
   const activeTab = getActiveTab();
 
-  // 监听任务状态变化，用于调试
   useEffect(() => {
     console.log('[MainLayout] Task state:', { hasActiveTask, taskDescription });
   }, [hasActiveTask, taskDescription]);
@@ -60,7 +68,6 @@ export default function MainLayout() {
     if (tab) {
       const targetPath = tab.key === 'home' ? '/start' : tab.path;
 
-      // 如果有活跃任务，显示确认对话框
       if (hasActiveTask) {
         setPendingNavigation(targetPath);
         setIsModalVisible(true);
@@ -72,7 +79,6 @@ export default function MainLayout() {
 
   const handleConfirmNavigation = () => {
     setIsModalVisible(false);
-    // 重置任务状态，避免切换到其他页面后仍然提示
     setActiveTask(false);
     if (pendingNavigation) {
       navigate(pendingNavigation);
@@ -85,27 +91,49 @@ export default function MainLayout() {
     setPendingNavigation(null);
   };
 
+  const handleToggleSidebar = () => {
+    setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const sidebarWidth = isSidebarCollapsed ? 64 : 220;
+
   return (
-    <div className="min-h-screen">
-      <div className={`relative z-10 ${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
-        <div className="mx-auto w-full max-w-5xl px-4 md:px-6">
-          <Outlet />
+    <div className="min-h-screen bg-gray-50">
+      <SidebarNav 
+        isCollapsed={isSidebarCollapsed} 
+        onToggleCollapse={handleToggleSidebar} 
+      />
+
+      <div 
+        className={`transition-all duration-300 ${
+          isDesktop ? `ml-[${sidebarWidth}px]` : ''
+        }`}
+        style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
+      >
+        <div className={`${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
+          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-6">
+            <Outlet />
+          </div>
         </div>
       </div>
-<TabBar
-        activeKey={activeTab}
-        onChange={handleTabChange}
-        className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
-      >
-        <TabBar.Item
-          key="home"
-          title="首页"
-          icon={<HomeOutlined />}
-        />
-        {tabs.slice(1).map((tab) => (
-          <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
-        ))}
-      </TabBar>
+
+      {!isDesktop && (
+        <TabBar
+          activeKey={activeTab}
+          onChange={handleTabChange}
+          className={`${shouldFixTabBar ? 'fixed bottom-0 left-0 right-0' : 'sticky bottom-0'} bg-white border-t border-gray-200 z-20`}
+        >
+          <TabBar.Item
+            key="home"
+            title="首页"
+            icon={<HomeOutlined />}
+          />
+          {tabs.slice(1).map((tab) => (
+            <TabBar.Item key={tab.key} title={tab.title} icon={tab.icon} />
+          ))}
+        </TabBar>
+      )}
+
       <Modal
         title={
           <div className="flex items-center gap-2">
