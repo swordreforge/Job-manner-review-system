@@ -107,13 +107,11 @@ const comments = [
   { id: 31, user: '应届小白', avatar: '🌟', text: '从简历到面试全程辅导，秋招终于拿到满意offer！', color: '#DFE6E9' },
   { id: 32, user: '技术总监', avatar: '👑', text: '团队招聘用了这个平台，人才匹配度明显提高', color: '#B2BEC3' },
   { id: 33, user: '销售冠军', avatar: '💪', text: '销售类面试话术总结得太到位了，帮我拿下了大客户', color: '#FF7675' },
-  { id: 34, user: '市场新人', avatar: '📢', text: '市场洞察报告很有价值，让我对行业有了更深的理解', color: '#AUNEB' },
-  { id: 35, user: '创业老板', avatar: '💡', text: '创业经历包装得高大上，投资人看了都说好', color: '#FFEAA7' },
-  { id: 36, user: '法务小刘', avatar: '⚖️', text: '法律行业求职指导非常专业，少走了很多弯路', color: '#74B9FF' },
-  { id: 37, user: '医疗从业者', avatar: '🏥', text: '医疗AI岗位推荐太精准了，正好是我梦寐以求的方向', color: '#55EFC4' },
-  { id: 38, user: '机械工程师', avatar: '🔧', text: '制造业转型互联网的路径规划得太详细了', color: '#FDCB6E' },
-  { id: 39, user: '新媒体运营', avatar: '📱', text: '爆款文案生成器太好用了，粉丝增长蹭蹭的', color: '#E17055' },
-  { id: 40, user: '客服主管', avatar: '🎧', text: '客服晋升管理层的攻略太实用了，感恩！', color: '#00B894' },
+  { id: 34, user: '创业老板', avatar: '💡', text: '创业经历包装得高大上，投资人看了都说好', color: '#FFEAA7' },
+  { id: 35, user: '法务小刘', avatar: '⚖️', text: '法律行业求职指导非常专业，少走了很多弯路', color: '#74B9FF' },
+  { id: 36, user: '医疗从业者', avatar: '🏥', text: '医疗AI岗位推荐太精准了，正好是我梦寐以求的方向', color: '#55EFC4' },
+  { id: 37, user: '机械工程师', avatar: '🔧', text: '制造业转型互联网的路径规划得太详细了', color: '#FDCB6E' },
+  { id: 38, user: '客服主管', avatar: '🎧', text: '客服晋升管理层的攻略太实用了，感恩！', color: '#00B894' },
 ];
 
 const BARRAGE_TRACK_COUNT = 7;
@@ -413,6 +411,10 @@ export default function Landing() {
           animation-timing-function: linear;
           animation-fill-mode: both;
           animation-iteration-count: 1;
+        }
+        @keyframes barrage-scroll {
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(calc(-100vw - 140%), 0, 0); }
         }
       `}</style>
       <AnimatePresence>
@@ -932,7 +934,7 @@ export default function Landing() {
               <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
                 <div className="absolute inset-0 pointer-events-none">
                   {activeBarrages.map((item) => (
-                    <motion.div
+                    <div
                       key={item.instanceId}
                       className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
                       style={{
@@ -940,21 +942,18 @@ export default function Landing() {
                         left: '100%',
                         backgroundColor: `${item.comment.color}20`,
                         borderColor: `${item.comment.color}40`,
+                        animation: `barrage-scroll ${item.duration}s linear forwards`,
+                        transform: 'translate3d(0, 0, 0)',
+                        willChange: 'transform',
                       }}
-                      initial={{ x: 0 }}
-                      animate={{ x: 'calc(-100vw - 140%)' }}
-                      transition={{
-                        duration: item.duration,
-                        ease: 'linear',
-                      }}
-                      onAnimationComplete={() => {
+                      onAnimationEnd={() => {
                         setActiveBarrages((prev) => prev.filter((barrage) => barrage.instanceId !== item.instanceId));
                       }}
                     >
                       <span className="text-lg">{item.comment.avatar}</span>
                       <span className="text-sm font-semibold" style={{ color: item.comment.color }}>{item.comment.user}:</span>
                       <span className="text-sm text-gray-300">{item.comment.text}</span>
-                    </motion.div>
+                    </div>
                   ))}
                 </div>
                 <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
