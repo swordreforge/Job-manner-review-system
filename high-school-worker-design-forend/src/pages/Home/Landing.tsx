@@ -7,6 +7,7 @@ import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate }
 import { RiWindowsFill } from 'react-icons/ri';
 import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
+import BarrageCanvas from '../../components/BarrageCanvas';
 
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
   <svg
@@ -116,32 +117,7 @@ const comments = [
   { id: 40, user: '客服主管', avatar: '🎧', text: '客服晋升管理层的攻略太实用了，感恩！', color: '#00B894' },
 ];
 
-const BARRAGE_TRACK_COUNT = 7;
-const BARRAGE_TRACK_HEIGHT = 48;
-const BARRAGE_TOP_OFFSET = 24;
-const BARRAGE_SCHEDULER_TICK_MS = 750;
-const BARRAGE_MIN_GAP_MS = 50;
 const FEATURE_ROTATE_INTERVAL_MS = 5000;
-
-type CommentItem = (typeof comments)[number];
-
-type ActiveBarrage = {
-  instanceId: number;
-  comment: CommentItem;
-  track: number;
-  duration: number;
-};
-
-const commentById = new Map(comments.map((item) => [item.id, item]));
-
-const shuffleArray = <T,>(items: T[]) => {
-  const cloned = [...items];
-  for (let i = cloned.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [cloned[i], cloned[j]] = [cloned[j], cloned[i]];
-  }
-  return cloned;
-};
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -151,12 +127,7 @@ export default function Landing() {
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
-  const [activeBarrages, setActiveBarrages] = useState<ActiveBarrage[]>([]);
   const [isShaking, setIsShaking] = useState(false);
-  const barrageQueueRef = useRef<number[]>([]);
-  const occupiedTracksRef = useRef<Set<number>>(new Set());
-  const lastSpawnAtRef = useRef(0);
-  const barrageInstanceIdRef = useRef(1);
   const galleryViewportRef = useRef<HTMLDivElement>(null);
   const dragStartXRef = useRef<number | null>(null);
   const draggedRef = useRef(false);
@@ -309,74 +280,6 @@ export default function Landing() {
 
     return () => {
       if (animationId) cancelAnimationFrame(animationId);
-    };
-  }, []);
-
-  useEffect(() => {
-    const timeoutIds = new Set<number>();
-
-    const spawnBarrage = () => {
-      if (document.hidden) return;
-
-      const availableTracks = Array.from({ length: BARRAGE_TRACK_COUNT }, (_, index) => index)
-          .filter((track) => !occupiedTracksRef.current.has(track));
-
-      if (availableTracks.length === 0) return;
-
-      const now = Date.now();
-      if (now - lastSpawnAtRef.current < BARRAGE_MIN_GAP_MS) return;
-
-      if (barrageQueueRef.current.length === 0) {
-        barrageQueueRef.current = shuffleArray(comments.map((item) => item.id));
-      }
-
-      const nextCommentId = barrageQueueRef.current.shift();
-      if (typeof nextCommentId !== 'number') return;
-
-      const comment = commentById.get(nextCommentId);
-      if (!comment) return;
-
-      const track = availableTracks[Math.floor(Math.random() * availableTracks.length)];
-
-      const estimatedWidth = 100 + (comment.text.length + comment.user.length) * 16;
-      const containerWidth = Math.min(window.innerWidth, 1152);
-      const SPEED = 120;
-      const duration = (containerWidth + estimatedWidth) / SPEED;
-      const clearTimeMs = ((estimatedWidth + 80) / SPEED) * 1000;
-
-      const instanceId = barrageInstanceIdRef.current;
-      barrageInstanceIdRef.current += 1;
-      lastSpawnAtRef.current = now;
-
-      occupiedTracksRef.current.add(track);
-      setActiveBarrages((prev) => [...prev, { instanceId, comment, track, duration }]);
-
-      const timeoutId = window.setTimeout(() => {
-        occupiedTracksRef.current.delete(track);
-        timeoutIds.delete(timeoutId);
-      }, clearTimeMs);
-      timeoutIds.add(timeoutId);
-    };
-
-    spawnBarrage();
-    const intervalId = window.setInterval(spawnBarrage, BARRAGE_SCHEDULER_TICK_MS);
-
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        setActiveBarrages([]);
-        occupiedTracksRef.current.clear();
-        timeoutIds.forEach(id => window.clearTimeout(id));
-        timeoutIds.clear();
-      } else {
-        lastSpawnAtRef.current = Date.now();
-      }
-    };
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.clearInterval(intervalId);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      timeoutIds.forEach(id => window.clearTimeout(id));
     };
   }, []);
 
@@ -930,33 +833,7 @@ export default function Landing() {
               </motion.div>
 
               <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
-                <div className="absolute inset-0 pointer-events-none">
-                  {activeBarrages.map((item) => (
-                    <motion.div
-                      key={item.instanceId}
-                      className="absolute h-10 flex items-center gap-2 px-3 py-1 rounded-full bg-gray-900/80 border border-gray-700/50 whitespace-nowrap"
-                      style={{
-                        top: `${BARRAGE_TOP_OFFSET + item.track * BARRAGE_TRACK_HEIGHT}px`,
-                        left: '100%',
-                        backgroundColor: `${item.comment.color}20`,
-                        borderColor: `${item.comment.color}40`,
-                      }}
-                      initial={{ x: 0 }}
-                      animate={{ x: 'calc(-100vw - 140%)' }}
-                      transition={{
-                        duration: item.duration,
-                        ease: 'linear',
-                      }}
-                      onAnimationComplete={() => {
-                        setActiveBarrages((prev) => prev.filter((barrage) => barrage.instanceId !== item.instanceId));
-                      }}
-                    >
-                      <span className="text-lg">{item.comment.avatar}</span>
-                      <span className="text-sm font-semibold" style={{ color: item.comment.color }}>{item.comment.user}:</span>
-                      <span className="text-sm text-gray-300">{item.comment.text}</span>
-                    </motion.div>
-                  ))}
-                </div>
+                <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={120} spawnInterval={400} />
                 <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
                 <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
                 <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
