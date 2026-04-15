@@ -635,7 +635,7 @@ export default function Landing() {
                             <motion.article
                               key={item.title}
                               style={{ width: cardWidth, minWidth: cardWidth }}
-                              className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-lg md:rounded-xl border border-white/15 bg-[#11131a]"
+                              className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-xl md:rounded-2xl border border-white/15 bg-[#11131a]"
                               animate={{
                                 opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
                                 scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
@@ -646,12 +646,12 @@ export default function Landing() {
                                   type="button"
                                   aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
                                   onClick={() => handleGalleryCardClick(idx)}
-                                  className="absolute inset-0 rounded-lg md:rounded-xl overflow-hidden"
+                                  className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden"
                                 >
                                 <img
                                   src={item.imageUrl}
                                   alt={item.title}
-                                  className="absolute inset-0 w-full h-full object-cover rounded-lg md:rounded-xl"
+                                  className="absolute inset-0 w-full h-full object-cover rounded-xl md:rounded-2xl"
                                   draggable={false}
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
