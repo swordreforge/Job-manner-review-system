@@ -316,6 +316,10 @@ export default function Landing() {
           animation-fill-mode: both;
           animation-iteration-count: 1;
         }
+        @keyframes barrage-scroll {
+          from { transform: translate3d(0, 0, 0); }
+          to { transform: translate3d(calc(-100vw - 140%), 0, 0); }
+        }
       `}</style>
       <AnimatePresence>
         {loading && (
