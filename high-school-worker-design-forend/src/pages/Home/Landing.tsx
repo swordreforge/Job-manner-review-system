@@ -832,7 +832,7 @@ export default function Landing() {
               </motion.div>
 
               <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
-                <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={120} spawnInterval={400} />
+                <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={200} spawnInterval={200} />
                 <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
                 <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
                 <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
