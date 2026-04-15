@@ -529,7 +529,7 @@ export default function Landing() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-6xl md:text-7xl font-bold mb-12"
           >
-            职业规划<span className="text-orange-400">助手</span>
+你的私人<span className="text-orange-400">AI</span><br /><span className="text-orange-400">职业规划</span>助手
           </motion.h1>
 
           <motion.p
