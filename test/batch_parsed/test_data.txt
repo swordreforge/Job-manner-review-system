@@ -1,0 +1,1 @@
+ID Name Department Position Salary JoinDate EMP001 Zhang Wei Engineering Senior Developer 25000 2023-01-15 EMP002 Li Ming Marketing Marketing Manager 20000 2022-06-01 EMP003 Wang Qiang Sales Sales Director 30000 2021-03-20 EMP004 Liu Fang HR HR Manager 18000 2022-09-10 EMP005 Chen Jie Finance Financial Analyst 15000 2023-07-01

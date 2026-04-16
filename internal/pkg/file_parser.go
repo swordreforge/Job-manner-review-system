@@ -1,8 +1,12 @@
 package pkg
 
 import (
+	"archive/zip"
 	"bytes"
+	"encoding/csv"
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/ledongthuc/pdf"
@@ -146,7 +150,299 @@ func ExtractText(filePath string) (string, error) {
 		return ExtractTextFromPDF(filePath)
 	} else if strings.HasSuffix(ext, ".docx") {
 		return ExtractTextFromDOCX(filePath)
+	} else if strings.HasSuffix(ext, ".xlsx") {
+		return ExtractTextFromXLSX(filePath)
+	} else if strings.HasSuffix(ext, ".csv") {
+		return ExtractTextFromCSV(filePath)
 	}
 
 	return "", fmt.Errorf("unsupported file format: %s", ext)
+}
+
+// ExtractTextFromXLSX 从 XLSX 文件提取文本（使用 ZIP 解析）
+func ExtractTextFromXLSX(filePath string) (string, error) {
+	r, err := zip.OpenReader(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open XLSX: %w", err)
+	}
+	defer r.Close()
+
+	var buf bytes.Buffer
+
+	// 首先读取共享字符串表
+	sharedStrings := make(map[int]string)
+	for _, file := range r.File {
+		if file.Name == "xl/sharedStrings.xml" {
+			rc, err := file.Open()
+			if err == nil {
+				defer rc.Close()
+				content, _ := io.ReadAll(rc)
+				sharedStrings = parseSharedStrings(string(content))
+			}
+			break
+		}
+	}
+
+	// 然后读取工作表数据
+	for _, file := range r.File {
+		name := file.Name
+		if strings.HasPrefix(name, "xl/worksheets/sheet") && strings.HasSuffix(name, ".xml") {
+			rc, err := file.Open()
+			if err != nil {
+				continue
+			}
+			defer rc.Close()
+
+			content, err := io.ReadAll(rc)
+			if err != nil {
+				continue
+			}
+
+			// 从 XML 提取文本内容（使用共享字符串映射）
+			text := extractSheetFromXLSX(string(content), sharedStrings)
+			if text != "" {
+				buf.WriteString(text)
+				buf.WriteString("\n")
+			}
+		}
+	}
+
+	if buf.Len() == 0 {
+		return "", fmt.Errorf("no content found in XLSX")
+	}
+
+	return cleanText(buf.String()), nil
+}
+
+// parseSharedStrings 解析共享字符串表
+func parseSharedStrings(content string) map[int]string {
+	result := make(map[int]string)
+
+	// 查找所有 <si> 标签块
+	for {
+		start := strings.Index(content, "<si>")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(content[start:], "</si>")
+		if end == -1 {
+			break
+		}
+
+		siContent := content[start : start+end]
+		var text strings.Builder
+
+		// 在 <si> 中查找 <t> 标签的内容
+		for {
+			tStart := strings.Index(siContent, "<t")
+			if tStart == -1 {
+				break
+			}
+			tEnd := strings.Index(siContent[tStart:], ">")
+			if tEnd == -1 {
+				break
+			}
+
+			// 找到闭合 </t>
+			textStart := tStart + tEnd + 1
+			textEnd := strings.Index(siContent[textStart:], "</t>")
+			if textEnd == -1 {
+				break
+			}
+
+			text.WriteString(strings.TrimSpace(siContent[textStart : textStart+textEnd]))
+			siContent = siContent[textStart+textEnd:]
+		}
+
+		// 找到这个字符串的索引
+		idxStart := strings.Index(content[:start], "<si")
+		if idxStart != -1 {
+			// 提取 t 标签前的数字作为索引
+			idx := 0
+			for i := idxStart + 3; i < start && content[i] >= '0' && content[i] <= '9'; i++ {
+				idx = idx*10 + int(content[i]-'0')
+			}
+			if text.Len() > 0 {
+				result[idx] = text.String()
+			}
+		}
+
+		content = content[start+end+5:]
+	}
+
+	return result
+}
+
+// extractSheetFromXLSX 从工作表 XML 提取数据
+func extractSheetFromXLSX(content string, sharedStrings map[int]string) string {
+	var result strings.Builder
+
+	// 直接提取所有 <c> 标签内的值
+	// 格式: <c r="A1" t="inlineStr"><is><t>Job ID</t></is></c>
+	// 或: <c r="A1"><v>1</v></c>
+	for {
+		// 查找单元格开始
+		cStart := strings.Index(content, "<c ")
+		if cStart == -1 {
+			cStart = strings.Index(content, "<c>")
+			if cStart == -1 {
+				break
+			}
+			cStart += 3
+		}
+
+		// 查找单元格结束 </c>
+		cEnd := strings.Index(content[cStart:], "</c>")
+		if cEnd == -1 {
+			break
+		}
+
+		cellContent := content[cStart : cStart+cEnd]
+
+		var cellValue string
+
+		// 优先检查内联字符串: <is><t>...</t></is>
+		isStart := strings.Index(cellContent, "<is>")
+		if isStart != -1 {
+			isEnd := strings.Index(cellContent[isStart:], "</is>")
+			if isEnd != -1 {
+				isContent := cellContent[isStart+4 : isStart+isEnd]
+				tStart := strings.Index(isContent, "<t>")
+				if tStart != -1 {
+					tEnd := strings.Index(isContent[tStart:], "</t>")
+					if tEnd != -1 {
+						cellValue = strings.TrimSpace(isContent[tStart+3 : tStart+tEnd])
+					}
+				}
+			}
+		}
+
+		// 如果没有内联字符串，检查 <v> 值
+		if cellValue == "" {
+			vStart := strings.Index(cellContent, "<v>")
+			if vStart != -1 {
+				vEnd := strings.Index(cellContent[vStart:], "</v>")
+				if vEnd != -1 {
+					val := cellContent[vStart+3 : vStart+vEnd]
+					val = strings.TrimSpace(val)
+
+					// 检查��否是共享字符串索引 (t="s")
+					if strings.Contains(cellContent, `t="s"`) {
+						idx := 0
+						for _, c := range val {
+							if c >= '0' && c <= '9' {
+								idx = idx*10 + int(c-'0')
+							}
+						}
+						if str, ok := sharedStrings[idx]; ok {
+							cellValue = str
+						}
+					} else {
+						cellValue = val
+					}
+				}
+			}
+		}
+
+		if cellValue != "" {
+			result.WriteString(cellValue)
+			result.WriteString("\t")
+		}
+
+		content = content[cStart+cEnd+3:]
+	}
+
+	return result.String()
+}
+
+// extractTextFromXLSXXML 从 XLSX XML 内容提取文本
+func extractTextFromXLSXXML(content string) string {
+	var result strings.Builder
+
+	// 提取 <v>...</v> 之间的内容（单元格值）
+	for {
+		start := strings.Index(content, "<v>")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(content[start:], "</v>")
+		if end == -1 {
+			break
+		}
+		text := content[start+3 : start+end]
+		text = strings.TrimSpace(text)
+		if text != "" {
+			result.WriteString(text)
+			result.WriteString("\t")
+		}
+		content = content[start+end+4:]
+	}
+
+	// 也提取 <t>...</t> 之间的内容（内联文本）
+	for {
+		start := strings.Index(content, "<t>")
+		if start == -1 {
+			break
+		}
+		end := strings.Index(content[start:], "</t>")
+		if end == -1 {
+			break
+		}
+		text := content[start+3 : start+end]
+		text = strings.TrimSpace(text)
+		if text != "" {
+			result.WriteString(text)
+			result.WriteString("\t")
+		}
+		content = content[start+end+4:]
+	}
+
+	return result.String()
+}
+
+// ExtractTextFromCSV 从 CSV 文件提取文本
+func ExtractTextFromCSV(filePath string) (string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to open CSV: %w", err)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	var buf bytes.Buffer
+
+	// 读取所有行
+	records, err := reader.ReadAll()
+	if err != nil {
+		return "", fmt.Errorf("failed to read CSV: %w", err)
+	}
+
+	for _, record := range records {
+		for _, field := range record {
+			buf.WriteString(strings.TrimSpace(field))
+			buf.WriteString("\t")
+		}
+		buf.WriteString("\n")
+	}
+
+	return cleanText(buf.String()), nil
+}
+
+// ParseCSVToRecords 解析 CSV 文件并返回结构化记录
+func ParseCSVToRecords(filePath string) ([][]string, error) {
+	f, err := os.Open(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to open CSV: %w", err)
+	}
+	defer f.Close()
+
+	reader := csv.NewReader(f)
+
+	records, err := reader.ReadAll()
+	if err != nil {
+		return nil, fmt.Errorf("failed to read CSV: %w", err)
+	}
+
+	return records, nil
 }

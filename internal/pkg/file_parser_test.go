@@ -279,3 +279,166 @@ func min(a, b int) int {
 	}
 	return b
 }
+
+// TestExtractTextFromXLSX tests XLSX file parsing
+func TestExtractTextFromXLSX(t *testing.T) {
+	tests := []struct {
+		name      string
+		filePath  string
+		wantEmpty bool
+		wantErr   bool
+	}{
+		{
+			name:      "valid XLSX file",
+			filePath:  filepath.Join(testDir, "test_jobs_students.xlsx"),
+			wantEmpty: false,
+			wantErr:   false,
+		},
+		{
+			name:      "non-existent XLSX file",
+			filePath:  filepath.Join(testDir, "nonexistent.xlsx"),
+			wantEmpty: true,
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExtractTextFromXLSX(tt.filePath)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExtractTextFromXLSX() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantEmpty && got != "" {
+				t.Errorf("ExtractTextFromXLSX() expected empty string, got non-empty")
+			}
+
+			if !tt.wantEmpty && got == "" {
+				t.Errorf("ExtractTextFromXLSX() expected non-empty string, got empty")
+			}
+
+			if !tt.wantEmpty && got != "" {
+				t.Logf("Extracted XLSX preview: %s", got[:min(200, len(got))])
+			}
+		})
+	}
+}
+
+// TestExtractTextFromCSV tests CSV file parsing
+func TestExtractTextFromCSV(t *testing.T) {
+	tests := []struct {
+		name      string
+		filePath  string
+		wantEmpty bool
+		wantErr   bool
+	}{
+		{
+			name:      "valid CSV file",
+			filePath:  filepath.Join(testDir, "test_data.csv"),
+			wantEmpty: false,
+			wantErr:   false,
+		},
+		{
+			name:      "non-existent CSV file",
+			filePath:  filepath.Join(testDir, "nonexistent.csv"),
+			wantEmpty: true,
+			wantErr:   true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := ExtractTextFromCSV(tt.filePath)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ExtractTextFromCSV() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantEmpty && got != "" {
+				t.Errorf("ExtractTextFromCSV() expected empty string, got non-empty")
+			}
+
+			if !tt.wantEmpty && got == "" {
+				t.Errorf("ExtractTextFromCSV() expected non-empty string, got empty")
+			}
+
+			if !tt.wantEmpty && got != "" {
+				t.Logf("Extracted CSV preview: %s", got[:min(200, len(got))])
+			}
+		})
+	}
+}
+
+// TestParseCSVToRecords tests CSV parsing to structured records
+func TestParseCSVToRecords(t *testing.T) {
+	records, err := ParseCSVToRecords(filepath.Join(testDir, "test_data.csv"))
+	if err != nil {
+		t.Fatalf("ParseCSVToRecords() error = %v", err)
+	}
+
+	if len(records) < 2 {
+		t.Fatalf("Expected at least 2 rows, got %d", len(records))
+	}
+
+	// Verify header
+	if records[0][0] != "ID" {
+		t.Errorf("Expected header 'ID', got %s", records[0][0])
+	}
+
+	t.Logf("Parsed %d records", len(records))
+	for i, record := range records {
+		t.Logf("Row %d: %v", i, record)
+	}
+}
+
+// TestBatchParsingAllFiles tests batch parsing of all test files
+func TestBatchParsingAllFiles(t *testing.T) {
+	testFiles := []string{
+		"test_jobs_students.xlsx",
+		"test_data.csv",
+		"黑白设计通用国际贸易财务会计专业简历.pdf",
+		"黑白设计通用国际贸易财务会计专业简历.docx",
+	}
+
+	// Create output directory
+	outputDir := filepath.Join(testDir, "batch_parsed")
+	if err := os.MkdirAll(outputDir, 0755); err != nil {
+		t.Fatalf("Failed to create output directory: %v", err)
+	}
+
+	for _, fileName := range testFiles {
+		t.Run(fileName, func(t *testing.T) {
+			filePath := filepath.Join(testDir, fileName)
+
+			// Skip if file doesn't exist
+			if _, err := os.Stat(filePath); os.IsNotExist(err) {
+				t.Skipf("Test file does not exist: %s", fileName)
+				return
+			}
+
+			text, err := ExtractText(filePath)
+			if err != nil {
+				t.Errorf("Failed to extract text from %s: %v", fileName, err)
+				return
+			}
+
+			if len(text) < 10 {
+				t.Errorf("Extracted text too short from %s: %d chars", fileName, len(text))
+			}
+
+			t.Logf("File %s: extracted %d characters", fileName, len(text))
+
+			// Save extracted text to output directory
+			baseName := strings.TrimSuffix(fileName, filepath.Ext(fileName))
+			outputFile := filepath.Join(outputDir, baseName+".txt")
+			if err := os.WriteFile(outputFile, []byte(text), 0644); err != nil {
+				t.Errorf("Failed to save extracted text: %v", err)
+			} else {
+				t.Logf("Saved to: %s", outputFile)
+			}
+		})
+	}
+}
