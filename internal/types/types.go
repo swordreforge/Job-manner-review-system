@@ -319,6 +319,31 @@ type RegisterWithInviteData struct {
 	Token     string `json:"token"`
 }
 
+type CreateInviteCodeReq struct {
+	Type      string `json:"type"`
+	MaxUses   int    `json:"maxUses"`
+	ExpiresIn int    `json:"expiresIn"`
+}
+
+type CreateInviteCodeResp struct {
+	Code      string `json:"code"`
+	MaxUses   int    `json:"maxUses"`
+	UsedCount int    `json:"usedCount"`
+	ExpiresAt int64  `json:"expiresAt"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+type ListInviteCodesReq struct {
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+	Status   string `json:"status"`
+}
+
+type ListInviteCodesResp struct {
+	Total int              `json:"total"`
+	List  []InviteCodeInfo `json:"list"`
+}
+
 type InviteCodeInfo struct {
 	Id        int64  `db:"id"`
 	Code      string `db:"code"`
