@@ -111,6 +111,8 @@ export const studentApi = {
     api.get<{ code: number; msg: string; data: import('../types').ResumeHistoryRecord }>(`/students/resume/history/${id}`),
   deleteResumeHistory: (id: number) =>
     api.delete<{ code: number; msg: string }>(`/students/resume/history/${id}`),
+  joinSchool: (data: { inviteCode: string; name: string }) =>
+    api.post<{ code: number; msg: string; data: { schoolId: number; schoolName: string; joinedAt: number } }>('/students/join-school', data),
 };
 
 export const jobApi = {
