@@ -1881,3 +1881,202 @@ textarea {
 .btn-success:hover {
     background: #059669;
 }
+
+/* 学校批量导入模态框样式 */
+.step-content {
+    min-height: 300px;
+}
+
+.step-panel {
+    display: none;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.step-panel.active {
+    display: block;
+}
+
+.instruction {
+    background: var(--bg-card);
+    border-radius: 8px;
+    padding: 24px;
+    margin-bottom: 20px;
+}
+
+.instruction h3 {
+    margin-bottom: 16px;
+    color: var(--text-primary);
+    font-size: 18px;
+}
+
+.instruction p {
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    line-height: 1.6;
+}
+
+.instruction ul {
+    list-style: none;
+    padding: 0;
+}
+
+.instruction ul li {
+    padding: 8px 0;
+    padding-left: 24px;
+    position: relative;
+    color: var(--text-secondary);
+}
+
+.instruction ul li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+#school-upload-area {
+    border: 2px dashed var(--border-color);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+#school-upload-area:hover,
+#school-upload-area.drag-over {
+    border-color: var(--primary-color);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+#school-upload-area .upload-icon {
+    margin-bottom: 16px;
+}
+
+#school-upload-area .upload-icon svg {
+    width: 48px;
+    height: 48px;
+    color: var(--text-secondary);
+}
+
+#school-upload-area p {
+    color: var(--text-secondary);
+    margin-bottom: 8px;
+}
+
+#school-upload-area .file-hint {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+#school-file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--bg-hover);
+    border-radius: 6px;
+}
+
+#school-file-info .file-name {
+    flex: 1;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+#school-file-info .file-size {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+.result-stats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-item {
+    text-align: center;
+    padding: 16px;
+    border-radius: 8px;
+}
+
+.stat-item.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.stat-item.failed {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.stat-item.total {
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
+}
+
+.stat-item .stat-number {
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    margin-bottom: 8px;
+}
+
+.stat-item.success .stat-number {
+    color: var(--success-color);
+}
+
+.stat-item.failed .stat-number {
+    color: var(--danger-color);
+}
+
+.stat-item.total .stat-number {
+    color: var(--primary-color);
+}
+
+.stat-item .stat-label {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+#import-errors {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+#import-errors h4 {
+    margin-bottom: 12px;
+    color: var(--text-primary);
+    font-size: 14px;
+}
+
+.errors-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.error-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--bg-hover);
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.error-row {
+    min-width: 80px;
+    font-size: 12px;
+    color: var(--danger-color);
+    font-weight: 600;
+}
+
+.error-message {
+    flex: 1;
+    font-size: 13px;
+    color: var(--text-secondary);
+}
