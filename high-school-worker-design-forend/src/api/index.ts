@@ -377,17 +377,14 @@ export const teacherApi = {
   listAlerts: (params?: { page?: number; pageSize?: number; alertType?: string; alertLevel?: string; status?: string }) =>
     api.get<{ code: number; msg: string; data: { total: number; list: TeacherAlert[] } }>('/teachers/alerts', { params }),
 
-  resolveAlert: (id: number) =>
+resolveAlert: (id: number) =>
     api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/resolve`),
 
   ignoreAlert: (id: number) =>
     api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/ignore`),
 
-  sendMessage: (data: { studentId: number; title: string; content: string }) =>
-    api.post<{ code: number; msg: string }>('/teachers/messages', data),
-
-  listMessages: (params?: { page?: number; pageSize?: number }) =>
-    api.get<{ code: number; msg: string; data: { total: number; list: TeacherMessage[] } }>('/teachers/messages', { params }),
+  checkAlert: (studentId: number) =>
+    api.post<{ code: number; msg: string }>(`/teachers/students/${studentId}/check-alert`),
 };
 
 export default api;

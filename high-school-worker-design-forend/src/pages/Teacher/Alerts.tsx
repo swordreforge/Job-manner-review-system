@@ -117,7 +117,31 @@ export default function TeacherAlerts() {
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">预警管理</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">预警管理</h1>
+        <Button 
+          type="primary" 
+          icon={<SearchOutlined />}
+          loading={loading}
+          onClick={async () => {
+            try {
+              const studentsRes = await teacherApi.listStudents({ page: 1, pageSize: 100 });
+              const list = (studentsRes as any).data?.list || (studentsRes as any).list || [];
+              for (const student of list) {
+                try {
+                  await teacherApi.checkAlert(student.id);
+                } catch (e) {}
+              }
+              message.success('预警检查完成');
+              fetchAlerts();
+            } catch (error) {
+              message.error('检查失败');
+            }
+          }}
+        >
+          检查所有学生
+        </Button>
+      </div>
 
       <Card className="mb-4">
         <Space wrap>

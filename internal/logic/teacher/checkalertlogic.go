@@ -44,7 +44,7 @@ func (l *CheckAlertLogic) CheckStudentAlert(studentId int64) error {
 
 	var rate float64
 	err = db.QueryRowContext(l.ctx,
-		"SELECT IFNULL(task_completion_rate, 0) FROM students WHERE id = ?", studentId).Scan(&rate)
+		"SELECT COALESCE(completeness_score, 0) FROM students WHERE id = ?", studentId).Scan(&rate)
 	if err != nil {
 		logx.Errorf("get student completion rate failed: %v", err)
 		return err
