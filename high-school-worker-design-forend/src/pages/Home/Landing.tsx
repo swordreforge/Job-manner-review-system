@@ -989,17 +989,7 @@ export default function Landing() {
                               </div>
                             </div>
                             
-                            {/* 操作按钮 */}
-                            <motion.button
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.6 }}
-                              onClick={() => navigate(item.buttonLink)}
-                              className="w-full py-3 bg-gradient-to-r from-orange-500 to-pink-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300"
-                            >
-                              {item.buttonText}
-                            </motion.button>
-                          </div>
+                            </div>
                         </>
                       )}
                     </motion.div>
