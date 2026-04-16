@@ -47,7 +47,7 @@ func (l *ListSchoolStudentsLogic) ListSchoolStudents(req *types.TeacherListStude
 	offset := (page - 1) * pageSize
 
 	query := `SELECT ss.id, s.user_id, s.name, u.username, u.email, ss.class_name, ss.grade, 
-                    s.task_completion_rate, s.last_activity_at, ss.joined_at, ss.status
+                    COALESCE(s.completeness_score, 0), s.last_activity_at, ss.joined_at, ss.status
              FROM student_schools ss
              JOIN students s ON ss.student_id = s.id
              JOIN users u ON s.user_id = u.id

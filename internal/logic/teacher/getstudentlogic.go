@@ -34,7 +34,7 @@ func (l *GetStudentDetailLogic) GetStudentDetail(req *types.TeacherGetStudentReq
 	}
 
 	query := `SELECT s.id, s.user_id, s.name, u.username, u.email, u.phone, ss.class_name, ss.grade,
-                    ss.school_id, sh.name, s.task_completion_rate, s.last_activity_at, ss.joined_at, ss.status
+                    ss.school_id, sh.name, COALESCE(s.completeness_score, 0), s.last_activity_at, ss.joined_at, ss.status
              FROM student_schools ss
              JOIN students s ON ss.student_id = s.id
              JOIN users u ON s.user_id = u.id
