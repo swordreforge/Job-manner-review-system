@@ -195,8 +195,7 @@ export default function Landing() {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
-  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
   const featuresContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -240,66 +239,25 @@ export default function Landing() {
     setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
     setImagePreviewOpen(true);
   };
-
-  const handleCardMouseEnter = (index: number) => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-      hoverTimeoutRef.current = null;
-    }
-    setHoveredCardIndex(index);
-  };
-
-  const handleCardMouseLeave = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
-    }
-    hoverTimeoutRef.current = setTimeout(() => {
-      setHoveredCardIndex(null);
-    }, 100);
-  };
-
-  const handleContainerMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
-    // 如果已经有卡片被悬停（放大状态），不进行切换计算
-    if (hoveredCardIndex !== null) return;
-    
-    if (!featuresContainerRef.current) return;
-    
-    const container = featuresContainerRef.current;
-    const rect = container.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    // 计算鼠标在哪个卡片区域
-    const cardWidth = rect.width / 2;
-    const cardHeight = rect.height / 2;
-    
-    const colIndex = Math.floor(x / cardWidth);
-    const rowIndex = Math.floor(y / cardHeight);
-    const cardIndex = rowIndex * 2 + colIndex;
-    
-    if (cardIndex >= 0 && cardIndex < features.length) {
-      if (hoveredCardIndex !== cardIndex) {
-        // 清除之前的timeout
-        if (hoverTimeoutRef.current) {
-          clearTimeout(hoverTimeoutRef.current);
-          hoverTimeoutRef.current = null;
-        }
-        handleCardMouseEnter(cardIndex);
+  
+    const handleCardClick = (index: number) => {
+      // 如果点击的是当前激活的卡片，则关闭
+      if (activeCardIndex === index) {
+        setActiveCardIndex(null);
+      } else {
+        // 否则激活点击的卡片
+        setActiveCardIndex(index);
       }
-    } else {
-      // 鼠标在无效区域，清除状态
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
+    };
+  
+    const handleContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
+      // 如果点击的是容器本身（不是卡片），则关闭
+      if (event.target === event.currentTarget) {
+        setActiveCardIndex(null);
       }
-      setHoveredCardIndex(null);
-    }
-  };
-
-  const handleContainerMouseLeave = () => {
-    handleCardMouseLeave();
-  };
-
-  const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
+    };
+  
+    const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
   const resolvedViewportWidth = viewportWidth > 0 ? viewportWidth : fallbackViewportWidth;
   const isMobileGallery = resolvedViewportWidth < 768;
   const cardGap = isMobileGallery ? 12 : 20;
@@ -420,14 +378,6 @@ export default function Landing() {
 
     return () => {
       if (animationId) cancelAnimationFrame(animationId);
-    };
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
-      }
     };
   }, []);
 
@@ -864,15 +814,14 @@ export default function Landing() {
                 <div 
                   ref={featuresContainerRef}
                   className="relative w-full h-full grid grid-cols-1 md:grid-cols-2 gap-6"
-                  onMouseMove={handleContainerMouseMove}
-                  onMouseLeave={handleContainerMouseLeave}
+                  onClick={handleContainerClick}
                 >
                   {features.map((item, idx) => (
                     <motion.div
                       key={idx}
                       initial={{ opacity: 0, y: 50 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      animate={hoveredCardIndex === idx ? {
+                      animate={activeCardIndex === idx ? {
                         position: 'absolute',
                         top: 0,
                         left: 0,
@@ -884,18 +833,22 @@ export default function Landing() {
                         boxShadow: '0 40px 80px rgba(251, 146, 60, 0.4)',
                         border: '1px solid rgba(251, 146, 60, 0.9)',
                         background: 'rgba(17, 19, 26, 0.98)',
-                      } : hoveredCardIndex !== null ? {
+                      } : activeCardIndex !== null ? {
                         opacity: 0,
                         pointerEvents: 'none',
                       } : { opacity: 1 }}
                       transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
                       className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
                       style={{
-                        background: hoveredCardIndex === null && hoveredCardIndex !== idx ? 'rgba(255,255,255,0.05)' : '',
-                        border: hoveredCardIndex === null && hoveredCardIndex !== idx ? '1px solid rgba(255,255,255,0.1)' : '',
+                        background: activeCardIndex === null && activeCardIndex !== idx ? 'rgba(255,255,255,0.05)' : '',
+                        border: activeCardIndex === null && activeCardIndex !== idx ? '1px solid rgba(255,255,255,0.1)' : '',
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleCardClick(idx);
                       }}
                     >
-                      {hoveredCardIndex !== idx && (
+                      {activeCardIndex !== idx && (
                         <>
                           <div
                             className="absolute inset-0 rounded-2xl pointer-events-none"
@@ -922,7 +875,7 @@ export default function Landing() {
                         </>
                       )}
                       
-                      {hoveredCardIndex === idx && (
+                      {activeCardIndex === idx && (
                         <>
                           <div
                             className="absolute inset-0 rounded-2xl pointer-events-none"
