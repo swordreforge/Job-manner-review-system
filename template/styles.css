@@ -1992,25 +1992,32 @@ textarea {
 }
 
 #school-file-info .btn-remove-file {
-    width: 24px;
-    height: 24px;
+    width: 32px;
+    height: 32px;
     border: none;
     background: var(--danger-color);
     color: white;
-    border-radius: 50%;
+    border-radius: 6px;
     cursor: pointer;
-    font-size: 16px;
+    font-size: 20px;
+    font-weight: 600;
     line-height: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
     flex-shrink: 0;
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
 }
 
 #school-file-info .btn-remove-file:hover {
     background: #dc2626;
-    transform: scale(1.1);
+    transform: scale(1.05);
+    box-shadow: 0 4px 8px rgba(239, 68, 68, 0.3);
+}
+
+#school-file-info .btn-remove-file:active {
+    transform: scale(0.95);
 }
 
 .result-stats {
