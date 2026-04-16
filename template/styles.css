@@ -1988,6 +1988,29 @@ textarea {
 #school-file-info .file-size {
     font-size: 12px;
     color: var(--text-secondary);
+    margin-right: 12px;
+}
+
+#school-file-info .btn-remove-file {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: var(--danger-color);
+    color: white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    flex-shrink: 0;
+}
+
+#school-file-info .btn-remove-file:hover {
+    background: #dc2626;
+    transform: scale(1.1);
 }
 
 .result-stats {
