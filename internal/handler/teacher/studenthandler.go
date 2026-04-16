@@ -2,8 +2,6 @@ package handler
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"github.com/zeromicro/go-zero/rest/httpx"
 
@@ -32,19 +30,14 @@ func ListSchoolStudentsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func GetStudentDetailHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
-		idStr := ""
-		if len(pathParts) >= 4 {
-			idStr = pathParts[3]
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
+		var req types.TeacherGetStudentReq
+		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
 		l := teacher.NewGetStudentDetailLogic(r.Context(), svcCtx)
-		resp, err := l.GetStudentDetail(&types.TeacherGetStudentReq{StudentId: id})
+		resp, err := l.GetStudentDetail(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
@@ -55,19 +48,14 @@ func GetStudentDetailHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func GetStudentTasksHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
-		idStr := ""
-		if len(pathParts) >= 6 {
-			idStr = pathParts[5]
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
+		var req types.TeacherGetStudentReq
+		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
 		l := teacher.NewGetStudentTasksLogic(r.Context(), svcCtx)
-		resp, err := l.GetStudentTasks(id)
+		resp, err := l.GetStudentTasks(req.StudentId)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
@@ -96,19 +84,14 @@ func ListAlertsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func ResolveAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
-		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
+		var req types.AlertActionReq
+		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
 		l := teacher.NewResolveAlertLogic(r.Context(), svcCtx)
-		if err := l.ResolveAlert(id); err != nil {
+		if err := l.ResolveAlert(req.AlertId); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
 			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "resolved"})
@@ -118,19 +101,14 @@ func ResolveAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func IgnoreAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
-		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
+		var req types.AlertActionReq
+		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
 		l := teacher.NewIgnoreAlertLogic(r.Context(), svcCtx)
-		if err := l.IgnoreAlert(id); err != nil {
+		if err := l.IgnoreAlert(req.AlertId); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
 			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "ignored"})
@@ -140,19 +118,14 @@ func IgnoreAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func CheckAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
-		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
-		}
-		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
+		var req types.AlertActionReq
+		if err := httpx.Parse(r, &req); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 			return
 		}
 
 		l := teacher.NewCheckAlertLogic(r.Context(), svcCtx)
-		if err := l.CheckStudentAlert(id); err != nil {
+		if err := l.CheckStudentAlert(req.AlertId); err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
 			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "checked"})
