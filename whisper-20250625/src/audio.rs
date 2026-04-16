@@ -95,6 +95,15 @@ pub fn validate_audio_size(audio_data: &[u8], max_duration_seconds: u32) -> Resu
     Ok(())
 }
 
+/// 检查 ffmpeg 是否已安装
+pub fn check_ffmpeg_installed() -> bool {
+    Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

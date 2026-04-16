@@ -2,6 +2,8 @@ package student
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"career-api/internal/svc"
@@ -122,6 +124,15 @@ func (l *JoinSchoolLogic) JoinSchool(req *types.JoinSchoolReq) (*types.JoinSchoo
 		logx.Errorf("increment invite code usage failed: %v", err)
 	}
 
+	studentName := req.Name
+	if studentName == "" {
+		studentName = student.Name
+	}
+
+	if err := l.createChatGroups(schoolId, studentId, studentName); err != nil {
+		logx.Errorf("create chat groups failed: %v", err)
+	}
+
 	return &types.JoinSchoolResp{
 		Code: 0,
 		Msg:  "success",
@@ -132,3 +143,97 @@ func (l *JoinSchoolLogic) JoinSchool(req *types.JoinSchoolReq) (*types.JoinSchoo
 		},
 	}, nil
 }
+
+	func (l *JoinSchoolLogic) createChatGroups(schoolId, studentId int64, studentName string) error {
+		db, err := l.svcCtx.DB.RawDB()
+		if err != nil {
+			return err
+		}
+
+		rows, err := db.QueryContext(l.ctx, `
+			SELECT t.user_id, t.name
+			FROM teachers t
+			WHERE t.school_id = ? AND t.status = 'active'
+			ORDER BY t.id ASC
+		`, schoolId)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		type teacherInfo struct {
+			userID int64
+			name   string
+		}
+		teachers := make([]teacherInfo, 0)
+		for rows.Next() {
+			var teacher teacherInfo
+			if err := rows.Scan(&teacher.userID, &teacher.name); err != nil {
+				continue
+			}
+			teachers = append(teachers, teacher)
+		}
+
+		now := time.Now().Unix()
+		for _, teacher := range teachers {
+			var existingID int64
+			err := db.QueryRowContext(l.ctx, `
+				SELECT g.id
+				FROM chat_groups g
+				JOIN chat_group_members m1 ON g.id = m1.group_id
+				JOIN chat_group_members m2 ON g.id = m2.group_id
+				WHERE g.school_id = ? AND g.chat_type = 'direct'
+				  AND m1.user_id = ? AND m1.user_type = 'student'
+				  AND m2.user_id = ? AND m2.user_type = 'teacher'
+				LIMIT 1
+			`, schoolId, studentId, teacher.userID).Scan(&existingID)
+			if err == nil && existingID > 0 {
+				continue
+			}
+			if err != nil && err != sql.ErrNoRows {
+				logx.Errorf("query existing chat group failed: %v", err)
+				continue
+			}
+
+			tx, err := db.BeginTx(l.ctx, nil)
+			if err != nil {
+				return err
+			}
+
+			groupName := fmt.Sprintf("%s & %s", studentName, teacher.name)
+			result, err := tx.ExecContext(l.ctx, `
+				INSERT INTO chat_groups (school_id, name, chat_type, created_by, created_at, updated_at)
+				VALUES (?, ?, 'direct', ?, ?, ?)
+			`, schoolId, groupName, teacher.userID, now, now)
+			if err != nil {
+				_ = tx.Rollback()
+				logx.Errorf("insert chat group failed: %v", err)
+				continue
+			}
+
+			groupID, _ := result.LastInsertId()
+			if _, err := tx.ExecContext(l.ctx, `
+				INSERT INTO chat_group_members (group_id, user_id, user_type, user_name, role, joined_at)
+				VALUES (?, ?, 'student', ?, 'member', ?)
+			`, groupID, studentId, studentName, now); err != nil {
+				_ = tx.Rollback()
+				logx.Errorf("insert student group member failed: %v", err)
+				continue
+			}
+			if _, err := tx.ExecContext(l.ctx, `
+				INSERT INTO chat_group_members (group_id, user_id, user_type, user_name, role, joined_at)
+				VALUES (?, ?, 'teacher', ?, 'owner', ?)
+			`, groupID, teacher.userID, teacher.name, now); err != nil {
+				_ = tx.Rollback()
+				logx.Errorf("insert teacher group member failed: %v", err)
+				continue
+			}
+
+			if err := tx.Commit(); err != nil {
+				logx.Errorf("commit chat group failed: %v", err)
+				continue
+			}
+		}
+
+		return nil
+	}

@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined, MessageOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores';
 
@@ -20,6 +20,7 @@ const studentNavItems: NavItem[] = [
   { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/start', matchPaths: ['/start', '/'] },
   { key: 'plan', title: '职业规划', icon: <BulbOutlined />, path: '/plan', matchPaths: ['/plan', '/holland'] },
   { key: 'resume', title: '简历优化', icon: <FileTextOutlined />, path: '/resume', matchPaths: ['/resume'] },
+  { key: 'messages', title: '消息中心', icon: <MessageOutlined />, path: '/messages', matchPaths: ['/messages'] },
   { key: 'jobs', title: '岗位搜索', icon: <BankOutlined />, path: '/jobs', matchPaths: ['/jobs'] },
   { key: 'profile', title: '个人中心', icon: <UserOutlined />, path: '/profile', matchPaths: ['/profile', '/settings', '/student'] },
 ];
@@ -29,6 +30,7 @@ const teacherNavItems: NavItem[] = [
   { key: 'students', title: '学生管理', icon: <TeamOutlined />, path: '/teacher/students', matchPaths: ['/teacher/students'] },
   { key: 'invite', title: '邀请码', icon: <FileAddOutlined />, path: '/teacher/invite-codes', matchPaths: ['/teacher/invite-codes'] },
   { key: 'alerts', title: '预警管理', icon: <AlertOutlined />, path: '/teacher/alerts', matchPaths: ['/teacher/alerts'] },
+  { key: 'messages', title: '消息中心', icon: <MessageOutlined />, path: '/teacher/messages', matchPaths: ['/teacher/messages'] },
   { key: 'profile', title: '个人中心', icon: <UserOutlined />, path: '/teacher/profile', matchPaths: ['/teacher/profile'] },
 ];
 

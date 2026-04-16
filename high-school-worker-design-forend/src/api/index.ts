@@ -189,6 +189,28 @@ export const jobPathApi = {
     api.post<{ code: number; msg: string }>(`/jobs/${jobId}/path-analysis`, data),
 };
 
+export const chatApi = {
+  listGroups: () =>
+    api.get<{ code: number; msg: string; data: import('../types').ChatGroup[] }>('/chat/groups'),
+
+  createGroup: (data: { schoolId?: number; peerUserId: number; peerUserType: 'teacher' | 'student'; peerUserName?: string; name?: string }) =>
+    api.post<{ code: number; msg: string; data: import('../types').ChatGroup }>('/chat/groups', data),
+
+  getMessages: (groupId: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').ChatMessage[] }>(`/chat/groups/${groupId}/messages`),
+
+  sendMessage: (groupId: number, content: string) =>
+    api.post<{ code: number; msg: string; data: import('../types').ChatMessage }>(`/chat/groups/${groupId}/messages`, { content }),
+
+  getMembers: (groupId: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').ChatGroupMember[] }>(`/chat/groups/${groupId}/members`),
+
+  markRead: (groupId: number) =>
+    api.put<{ code: number; msg: string; data: { groupId: number; readAt: number } }>(`/chat/groups/${groupId}/read`),
+
+  streamUrl: (groupId: number) => `${BASE_URL}/chat/groups/${groupId}/stream`,
+};
+
 export const hollandApi = {
   getQuestions: () =>
     api.get<{ code: number; msg: string; data: import('../types').HollandTestInfo }>('/holland/questions'),
@@ -388,6 +410,23 @@ resolveAlert: (id: number) =>
 
   checkAlert: (studentId: number) =>
     api.post<{ code: number; msg: string }>(`/teachers/students/${studentId}/check-alert`),
+
+  listMessages: (params?: { page?: number; pageSize?: number }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').InboxMessage> }>('/teachers/messages', { params }),
+
+  sendMessage: (data: { receiverId: number; title: string; content: string }) =>
+    api.post<{ code: number; msg: string }>('/teachers/messages', data),
+
+  deleteMessage: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/teachers/messages/${id}`),
+};
+
+export const studentMessageApi = {
+  listMessages: (params?: { page?: number; pageSize?: number }) =>
+    api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').InboxMessage> }>('/students/messages', { params }),
+
+  markAsRead: (id: number) =>
+    api.put<{ code: number; msg: string }>(`/students/messages/${id}/read`),
 };
 
 export default api;

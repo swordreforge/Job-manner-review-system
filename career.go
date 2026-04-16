@@ -522,6 +522,51 @@ func autoMigrate(dataSource string) error {
 				KEY idx_created (created_at)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息表'`,
 		},
+		{
+			name: "chat_groups",
+			createSQL: `CREATE TABLE IF NOT EXISTS chat_groups (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				name VARCHAR(100) DEFAULT NULL COMMENT '群组名称',
+				chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一)',
+				created_by BIGINT(20) NOT NULL COMMENT '创建者ID',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_school (school_id),
+				KEY idx_created_by (created_by)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天群组表'`,
+		},
+		{
+			name: "chat_group_members",
+			createSQL: `CREATE TABLE IF NOT EXISTS chat_group_members (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				group_id BIGINT(20) NOT NULL COMMENT '群组ID',
+				user_id BIGINT(20) NOT NULL COMMENT '用户ID',
+				user_type VARCHAR(20) NOT NULL COMMENT '用户类型: teacher, student',
+				user_name VARCHAR(100) DEFAULT NULL COMMENT '用户名称',
+				role VARCHAR(20) NOT NULL DEFAULT 'member' COMMENT '角色: owner(创建者), member(成员)',
+				joined_at BIGINT(20) NOT NULL,
+				last_read_at BIGINT(20) DEFAULT NULL COMMENT '最后已读时间',
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_group_user (group_id, user_id, user_type),
+				KEY idx_user (user_id, user_type)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组成员表'`,
+		},
+		{
+			name: "chat_messages",
+			createSQL: `CREATE TABLE IF NOT EXISTS chat_messages (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				group_id BIGINT(20) NOT NULL COMMENT '群组ID',
+				sender_id BIGINT(20) NOT NULL COMMENT '发送者ID',
+				sender_type VARCHAR(20) NOT NULL COMMENT '发送者类型: teacher, student',
+				sender_name VARCHAR(100) DEFAULT NULL COMMENT '发送者名称',
+				content TEXT NOT NULL COMMENT '消息内容',
+				created_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_group (group_id, created_at)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天消息表'`,
+		},
 	}
 
 	for _, table := range tables {

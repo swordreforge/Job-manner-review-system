@@ -15,6 +15,7 @@ import (
 	student "career-api/internal/handler/student"
 	teacher "career-api/internal/handler/teacher"
 	user "career-api/internal/handler/user"
+	chat "career-api/internal/handler/chat"
 	"career-api/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -539,6 +540,41 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 
 	server.AddRoutes(
 		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/chat/groups",
+				Handler: chat.CreateGroupHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/chat/groups",
+				Handler: chat.ListGroupsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/chat/groups/:id/messages",
+				Handler: chat.ListMessagesHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/chat/groups/:id/messages",
+				Handler: chat.SendMessageHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/chat/groups/:id/members",
+				Handler: chat.ListMembersHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/chat/groups/:id/read",
+				Handler: chat.MarkReadHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/chat/groups/:id/stream",
+				Handler: chat.StreamHandler(serverCtx),
+			},
 			{
 				Method:  http.MethodPost,
 				Path:    "/teachers/messages",

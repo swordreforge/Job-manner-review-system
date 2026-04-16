@@ -26,6 +26,8 @@ const TeacherStudents = lazy(() => import('./pages/Teacher/Students'));
 const TeacherInviteCodes = lazy(() => import('./pages/Teacher/InviteCodes'));
 const TeacherAlerts = lazy(() => import('./pages/Teacher/Alerts'));
 const TeacherProfilePage = lazy(() => import('./pages/Teacher/Profile'));
+const TeacherMessagesPage = lazy(() => import('./pages/Teacher/Messages'));
+const StudentMessagesPage = lazy(() => import('./pages/Messages'));
 
 function RouteLoadingFallback() {
   return (
@@ -121,62 +123,78 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-<Route
-            path="jobs"
-            element={
-              <ProtectedRoute>
-                <JobsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/index"
-            element={
-              <ProtectedRoute>
-                <TeacherDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/students"
-            element={
-              <ProtectedRoute>
-                <TeacherStudents />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/invite-codes"
-            element={
-              <ProtectedRoute>
-                <TeacherInviteCodes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/alerts"
-            element={
-              <ProtectedRoute>
-                <TeacherAlerts />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/settings"
-            element={
-              <ProtectedRoute>
-                <SettingsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="teacher/profile"
-            element={
-              <ProtectedRoute>
-                <TeacherProfilePage />
-              </ProtectedRoute>
-            }
-          />
+            <Route
+              path="jobs"
+              element={
+                <ProtectedRoute>
+                  <JobsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="messages"
+              element={
+                <ProtectedRoute>
+                  <StudentMessagesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/index"
+              element={
+                <ProtectedRoute>
+                  <TeacherDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/students"
+              element={
+                <ProtectedRoute>
+                  <TeacherStudents />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/invite-codes"
+              element={
+                <ProtectedRoute>
+                  <TeacherInviteCodes />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/alerts"
+              element={
+                <ProtectedRoute>
+                  <TeacherAlerts />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/messages"
+              element={
+                <ProtectedRoute>
+                  <TeacherMessagesPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/settings"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="teacher/profile"
+              element={
+                <ProtectedRoute>
+                  <TeacherProfilePage />
+                </ProtectedRoute>
+              }
+            />
           </Route>
           <Route
             path="/holland"

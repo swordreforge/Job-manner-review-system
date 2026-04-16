@@ -2,9 +2,11 @@ package student
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"career-api/internal/svc"
+	"career-api/internal/types"
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
@@ -22,8 +24,13 @@ func NewReadMessageLogic(ctx context.Context, svcCtx *svc.ServiceContext) *ReadM
 	}
 }
 
-func (l *ReadMessageLogic) MarkAsRead(messageId int64) error {
-	receiverId := l.getCurrentStudentId()
+func (l *ReadMessageLogic) MarkAsRead(req *types.ReadMessageReq) error {
+	// 从JWT token中获取student ID
+	userId, ok := l.ctx.Value("userId").(int64)
+	if !ok {
+		return errors.New("failed to get userId from context")
+	}
+
 	now := time.Now().Unix()
 
 	db, err := l.svcCtx.DB.RawDB()
@@ -32,9 +39,7 @@ func (l *ReadMessageLogic) MarkAsRead(messageId int64) error {
 	}
 
 	_, err = db.ExecContext(l.ctx,
-		"UPDATE messages SET is_read = 1, read_at = ?, updated_at = ? WHERE id = ? AND receiver_id = ?",
-		now, now, messageId, receiverId)
+		"UPDATE messages SET status = 'read', read_at = ? WHERE id = ? AND receiver_id = ?",
+		now, req.Id, userId)
 	return err
 }
-
-func (l *ReadMessageLogic) getCurrentStudentId() int64 { return 1 }

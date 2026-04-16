@@ -9,6 +9,52 @@ export interface PageResponse<T> {
   list: T[];
 }
 
+export interface ChatGroup {
+  id: number;
+  schoolId: number;
+  name: string;
+  chatType: string;
+  createdBy: number;
+  createdAt: number;
+  updatedAt: number;
+  lastMessage?: string;
+  unreadCount?: number;
+}
+
+export interface ChatGroupMember {
+  id: number;
+  groupId: number;
+  userId: number;
+  userType: 'teacher' | 'student';
+  userName?: string;
+  role: 'owner' | 'member';
+  joinedAt: number;
+  lastReadAt?: number;
+}
+
+export interface ChatMessage {
+  id: number;
+  groupId: number;
+  senderId: number;
+  senderType: 'teacher' | 'student';
+  senderName: string;
+  content: string;
+  createdAt: number;
+}
+
+export interface InboxMessage {
+  id: number;
+  senderId: number;
+  senderName: string;
+  receiverId: number;
+  receiverName: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: number;
+  readAt?: number;
+}
+
 export interface User {
   id: number;
   username: string;

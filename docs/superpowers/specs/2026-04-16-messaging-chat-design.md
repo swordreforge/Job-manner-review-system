@@ -1,145 +1,178 @@
-# 站内信和聊天室设计方案
+# 站内信与聊天室设计方案
 
-## 概述
+## 目标
 
-实现教师端和学生端的站内信系统和一对一聊天室功能，支持教师提醒学生完善资料和学生与教师沟通。
+为教师端和学生端补齐统一的消息中心，包含两类能力：
 
-## 现有资源
+1. 站内信：教师给学生发送通知、提醒和说明，学生查看并标记已读。
+2. 聊天室：教师与学生之间的一对一实时对话，支持消息历史、实时推送和未读统计。
 
-### 站内信 (已实现后端)
-- 表: `messages` (已在 career.go:505)
-- API: `/teachers/messages` (POST 发送, GET 列表)
-- API: `/students/messages` (GET 列表)
-- API: `/students/messages/:id/read` (PUT 标记已读)
+当前代码库里，站内信后端已经存在基础接口，聊天室已有表结构和逻辑雏形，但还缺少完整权限校验、消息中心前端页、实时推送和统一的页面入口。
 
-## 设计方案
+## 设计原则
 
-### 1. 数据库设计
+- 站内信与聊天室分离建模，避免后续维护时互相污染。
+- 聊天室优先保证实时性与稳定性，采用 SSE 做消息增量推送，复用项目里已经验证过的流式接口模式。
+- 教师端与学生端共享相同的聊天室数据模型，但页面入口和能力展示不同。
+- 默认只支持一对一 direct 会话，不做群聊扩展，避免无关复杂度。
 
-#### 1.1 chat_groups - 群组表
-```sql
-CREATE TABLE IF NOT EXISTS chat_groups (
-  id BIGINT(20) NOT NULL AUTO_INCREMENT,
-  school_id BIGINT(20) NOT NULL COMMENT '学校ID',
-  name VARCHAR(100) DEFAULT NULL COMMENT '群组名称',
-  chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一)',
-  created_by BIGINT(20) NOT NULL COMMENT '创建者ID',
-  created_at BIGINT(20) NOT NULL,
-  updated_at BIGINT(20) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_school (school_id),
-  KEY idx_created_by (created_by)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天群组表'
-```
+## 现状判断
 
-#### 1.2 chat_group_members - 群组成员表
-```sql
-CREATE TABLE IF NOT EXISTS chat_group_members (
-  id BIGINT(20) NOT NULL AUTO_INCREMENT,
-  group_id BIGINT(20) NOT NULL COMMENT '群组ID',
-  user_id BIGINT(20) NOT NULL COMMENT '用户ID',
-  user_type VARCHAR(20) NOT NULL COMMENT '用户类型: teacher, student',
-  user_name VARCHAR(100) DEFAULT NULL COMMENT '用户名称',
-  role VARCHAR(20) NOT NULL DEFAULT 'member' COMMENT '角色: owner(创建者), member(成员)',
-  joined_at BIGINT(20) NOT NULL,
-  last_read_at BIGINT(20) DEFAULT NULL COMMENT '最后已读时间',
-  PRIMARY KEY (id),
-  UNIQUE KEY uk_group_user (group_id, user_id, user_type),
-  KEY idx_user (user_id, user_type)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='群组成员表'
-```
+- 站内信后端：已存在 `/teachers/messages`、`/students/messages`、`/students/messages/:id/read` 相关路由和处理逻辑。
+- 聊天室后端：`chat_groups`、`chat_group_members`、`chat_messages` 已进入数据库定义和部分 logic/handler 草稿，但仍需补齐权限、查询范围和实时推送。
+- 前端：已有统一 API 封装与教师/学生端页面体系，但尚未有独立的消息中心页面，也没有聊天室 UI。
 
-#### 1.3 chat_messages - 聊天消息表
-```sql
-CREATE TABLE IF NOT EXISTS chat_messages (
-  id BIGINT(20) NOT NULL AUTO_INCREMENT,
-  group_id BIGINT(20) NOT NULL COMMENT '群组ID',
-  sender_id BIGINT(20) NOT NULL COMMENT '发送者ID',
-  sender_type VARCHAR(20) NOT NULL COMMENT '发送者类型: teacher, student',
-  sender_name VARCHAR(100) DEFAULT NULL COMMENT '发送者名称',
-  content TEXT NOT NULL COMMENT '消息内容',
-  created_at BIGINT(20) NOT NULL,
-  PRIMARY KEY (id),
-  KEY idx_group (group_id, created_at)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天消息表'
-```
+## 后端设计
 
-### 2. 后端 API 设计
+### 数据模型
 
-#### 2.1 聊天室 API
+#### `chat_groups`
+- 作用：定义一对一会话的容器。
+- 关键字段：`school_id`、`chat_type`、`created_by`、`created_at`、`updated_at`。
+- 约束：`chat_type` 固定为 `direct`；会话必须归属一个学校。
+
+#### `chat_group_members`
+- 作用：记录会话成员及阅读状态。
+- 关键字段：`group_id`、`user_id`、`user_type`、`user_name`、`role`、`joined_at`、`last_read_at`。
+- 约束：同一用户同一群组只保留一条成员记录；`role` 用于标识 owner/member。
+
+#### `chat_messages`
+- 作用：保存聊天消息内容。
+- 关键字段：`group_id`、`sender_id`、`sender_type`、`sender_name`、`content`、`created_at`。
+- 约束：只保存纯文本内容；消息按创建时间正序读取。
+
+### API 设计
+
+#### 聊天室 API
 
 | Method | Path | 说明 |
-|--------|------|------|
-| POST | /chat/groups | 创建群组 |
-| GET | /chat/groups | 获取用户的群组列表 |
-| GET | /chat/groups/:id/messages | 获取群组消息历史 |
+| --- | --- | --- |
+| POST | /chat/groups | 创建会话 |
+| GET | /chat/groups | 获取当前用户会话列表 |
+| GET | /chat/groups/:id/messages | 获取会话历史消息 |
 | POST | /chat/groups/:id/messages | 发送消息 |
-| GET | /chat/groups/:id/members | 获取群组成员 |
+| GET | /chat/groups/:id/members | 获取会话成员 |
+| PUT | /chat/groups/:id/read | 标记会话已读 |
+| GET | /chat/groups/:id/stream | SSE 消息推送 |
 
-#### 2.2 站内信 API (补充)
+#### 站内信 API
 
 | Method | Path | 说明 |
-|--------|------|------|
+| --- | --- | --- |
 | POST | /teachers/messages | 教师发送站内信 |
-| GET | /teachers/messages | 教师获取发送列表 |
-| GET | /students/messages | 学生获取收信列表 |
-| PUT | /students/messages/:id/read | 标记已读 |
-| DELETE | /teachers/messages/:id | 删除站内信 |
+| GET | /teachers/messages | 教师获取已发送列表 |
+| DELETE | /teachers/messages/:id | 教师删除站内信 |
+| GET | /students/messages | 学生获取收到的站内信 |
+| PUT | /students/messages/:id/read | 学生标记站内信已读 |
 
-### 3. 前端页面设计
+### 权限规则
 
-#### 3.1 消息页面结构
-```
-/teacher/messages     教师端消息页面
-/student/messages    学生端消息页面
+- 当前登录用户只能访问自己所属学校的会话。
+- 会话历史、成员和推送流都必须校验成员身份。
+- 教师可以查看与自己相关的所有一对一会话；学生只能查看自己加入的会话。
+- 发消息时必须校验发送者是否属于该会话成员。
 
-Tabs:
-- 站内信: 收发的站内信列表
-- 聊天室: 聊天群组列表和对话
-```
+### 实时方案
 
-#### 3.2 站内信页面
-- 列表视图: 发件人/收件人、标题、摘要、时间、未读状态
-- 详情弹窗: 查看完整内容
-- 教师端: 发信表单(选择学生、输入标��和内容)
+聊天室采用 SSE 作为实时通道：
 
-#### 3.3 聊天室页面
-- 左侧: 群组列表 (显示成员名称、最近消息、头像)
-- 右侧: 聊天窗口 (消息历史、输入框、发送按钮)
+- 前端首次进入会话时，先调历史接口拉取最近消息。
+- 同时建立 SSE 连接，订阅该会话的新消息事件。
+- 发送消息成功后，前端可以立即本地追加，再等待 SSE 或发送返回结果做最终对齐。
+- 若 SSE 断开，前端自动重连，并在重连后补拉消息历史，避免消息丢失。
 
-### 4. 自动创建群组逻辑
+选择 SSE 的原因是项目里已经有流式面试对话的稳定实现路径，和现有 go-zero 结构更匹配，部署也比 WebSocket 简单。
 
-学生加入学校时自动创建教师-学生私聊群组:
-```go
-// 在 student/joinschoollogic.go 中, 学生加入学校成功后
-// 1. 获取该学校的教师列表
-// 2. 为每个教师创建一个一对一chat_group
-// 3. 将教师和学生都加入群组
-```
+### 自动建会话
 
-### 5. 实现顺序
+学生加入学校后，系统自动为该学生与学校内教师建立一对一会话：
 
-#### Phase 1: 后端 (聊天室)
-1. 数据库表创建
-2. 创建群组 API
-3. 发送消息 API
-4. 消息历史 API
-5. 自动创建群组逻辑
+1. 读取当前学校教师列表。
+2. 为每个教师和该学生创建 direct 会话。
+3. 写入双方成员记录，设置 `joined_at`。
+4. 如会话已存在则跳过，保证幂等。
 
-#### Phase 2: 前端 - 教师端
-1. API 接口定义
-2. 消息页面框架 (Tabs)
-3. 站内信发信功能
-4. 聊天室功能
+这样教师端进入消息中心时就能直接看到所有学生会话，学生端也能立刻联系教师，不需要额外“新建聊天”操作。
 
-#### Phase 3: 前端 - 学生端
-1. 消息页面
-2. 站内信查看
-3. 聊天室功能
+## 前端设计
 
-## 注意事项
+### 页面入口
 
-1. 聊天室采用一对一 (direct) 类型，不支持群组扩展
-2. 消息只支持纯文本，后续可扩展
-3. 未读数统计: 站内信 + 聊天室各自独立计算
-4. 侧边栏显示未读总数badge
+- 教师端：`/teacher/messages`
+- 学生端：`/messages` 或统一放在当前主导航下的消息中心页
+
+页面建议在侧边栏和顶部入口都放置消息入口，并展示未读数 badge。
+
+### 教师端消息中心
+
+建议用两个 Tab：
+
+1. 站内信
+  - 已发送列表、标题、接收对象、摘要、发送时间、已读状态。
+  - 新建站内信弹窗：选择学生、输入标题和内容。
+2. 聊天室
+  - 左侧会话列表：学生姓名、最后消息、未读数、时间。
+  - 右侧聊天窗口：消息流、输入框、发送按钮、加载与断线状态。
+
+### 学生端消息中心
+
+建议同样用两个 Tab：
+
+1. 站内信
+  - 收件箱列表、未读标识、详情抽屉或弹窗、已读操作。
+2. 聊天室
+  - 与教师的一对一会话列表。
+  - 右侧聊天窗口默认显示最近有消息的会话，支持自动滚动和实时刷新。
+
+### 交互细节
+
+- 列表项显示最近一条消息摘要，便于快速定位。
+- 未读消息要做显式标识，进入会话后自动标记已读。
+- 输入框支持回车发送，Shift+Enter 换行。
+- 发送失败要保留草稿并提示重试。
+- 空状态要给出明确引导，避免页面显得“空白但不可用”。
+
+### 前端状态管理
+
+- 会话列表、当前会话、消息历史、未读数分别独立管理。
+- Web 端无需把聊天室状态塞进全局 store，优先放在页面局部状态，减少耦合。
+- 只有当前用户信息、角色、学校信息等基础数据继续复用现有 auth store。
+
+## 交付边界
+
+### 本次要做
+
+- 聊天室后端路由和权限闭环。
+- 消息中心前端页面。
+- 教师端和学生端入口补齐。
+- 实时 SSE 推送。
+
+### 暂不做
+
+- 文件、图片、语音消息。
+- 群聊。
+- 消息撤回、引用回复、@提醒。
+- 已读回执细粒度到每条消息的复杂交互。
+
+## 风险与处理
+
+- 会话重复创建：通过唯一约束和幂等插入避免。
+- SSE 断线：前端自动重连并补拉消息。
+- 未读数不准：以会话成员 `last_read_at` 和消息时间戳计算，前端仅展示结果，不自行推导主逻辑。
+- 旧数据迁移：新增表不影响现有站内信数据，属于增量扩展。
+
+## 验收标准
+
+- 教师端和学生端都能看到消息中心入口。
+- 双方能进入一对一会话并实时收发消息。
+- 消息历史可正常加载，刷新后不丢失。
+- 未读数在进入会话后能正确减少。
+- 站内信仍然保持现有能力，不受聊天室改动影响。
+
+## 实现顺序
+
+1. 完成聊天室数据库和后端接口。
+2. 接入学生入校自动建会话逻辑。
+3. 完成教师端消息中心。
+4. 完成学生端消息中心。
+5. 补充未读数、断线重连和空状态优化。

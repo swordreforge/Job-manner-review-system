@@ -1,6 +1,6 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined, MoonOutlined, SunOutlined, MessageOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
 import { useTaskStore, useThemeStore, useAuthStore } from '../stores';
@@ -68,6 +68,7 @@ export default function MainLayout() {
     { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
     { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
     { key: 'resume', title: '简历', icon: <FileTextOutlined />, path: '/resume' },
+    { key: 'messages', title: '消息', icon: <MessageOutlined />, path: '/messages' },
     { key: 'jobs', title: '岗位', icon: <BankOutlined />, path: '/jobs' },
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
@@ -77,6 +78,7 @@ export default function MainLayout() {
     { key: 'students', title: '学生', icon: <UserOutlined />, path: '/teacher/students' },
     { key: 'invite', title: '邀请码', icon: <FileTextOutlined />, path: '/teacher/invite-codes' },
     { key: 'alerts', title: '预警', icon: <ExclamationCircleOutlined />, path: '/teacher/alerts' },
+    { key: 'messages', title: '消息', icon: <MessageOutlined />, path: '/teacher/messages' },
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/teacher/profile' },
   ];
 
@@ -90,6 +92,7 @@ export default function MainLayout() {
     if (pathname.startsWith('/teacher/students')) return 'students';
     if (pathname.startsWith('/teacher/invite')) return 'invite';
     if (pathname.startsWith('/teacher/alerts')) return 'alerts';
+    if (pathname.startsWith('/teacher/messages')) return 'messages';
     if (pathname.startsWith('/teacher/profile')) return 'profile';
     
     // Student routes
@@ -101,6 +104,7 @@ export default function MainLayout() {
     if (pathname.startsWith('/holland')) return 'home';
     if (pathname.startsWith('/plan')) return 'plan';
     if (pathname.startsWith('/resume')) return 'resume';
+    if (pathname.startsWith('/messages')) return 'messages';
     if (pathname.startsWith('/jobs')) return 'jobs';
     if (pathname.startsWith('/student')) return 'profile';
     if (pathname.startsWith('/settings')) return 'profile';

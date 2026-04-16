@@ -1008,6 +1008,11 @@ type SendMessageReq struct {
 	Content    string `json:"content"`
 }
 
+type ListMessagesReq struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"pageSize,default=20"`
+}
+
 type MessageInfo struct {
 	Id           int64  `json:"id"`
 	SenderId     int64  `json:"senderId"`
@@ -1018,7 +1023,7 @@ type MessageInfo struct {
 	Content      string `json:"content"`
 	IsRead       bool   `json:"isRead"`
 	CreatedAt    int64  `json:"createdAt"`
-	ReadAt       int64  `json:"readAt,optional"`
+	ReadAt       *int64 `json:"readAt,optional"`
 }
 
 type ListMessagesResp struct {
@@ -1059,4 +1064,53 @@ type StudentSchoolInfo struct {
 	SchoolName string `json:"schoolName"`
 	Status     string `json:"status"`
 	JoinedAt   int64  `json:"joinedAt"`
+}
+
+type CreateGroupReq struct {
+	SchoolId     int64  `json:"schoolId,optional"`
+	PeerUserId   int64  `json:"peerUserId" validate:"required,gt=0"`
+	PeerUserType string `json:"peerUserType" validate:"required,oneof=teacher student"`
+	PeerUserName string `json:"peerUserName,optional"`
+	Name         string `json:"name,optional"`
+}
+
+type ChatGroup struct {
+	Id          int64  `json:"id"`
+	SchoolId    int64  `json:"schoolId"`
+	Name        string `json:"name"`
+	ChatType    string `json:"chatType"`
+	CreatedBy   int64  `json:"createdBy"`
+	CreatedAt   int64  `json:"createdAt"`
+	UpdatedAt   int64  `json:"updatedAt"`
+	LastMessage string `json:"lastMessage,omitempty"`
+	UnreadCount int64  `json:"unreadCount,omitempty"`
+}
+
+type ChatGroupMember struct {
+	Id         int64  `json:"id"`
+	GroupId    int64  `json:"groupId"`
+	UserId     int64  `json:"userId"`
+	UserType   string `json:"userType"`
+	UserName   string `json:"userName,omitempty"`
+	Role       string `json:"role"`
+	JoinedAt   int64  `json:"joinedAt"`
+	LastReadAt int64  `json:"lastReadAt,omitempty"`
+}
+
+type ChatMessage struct {
+	Id         int64  `json:"id"`
+	GroupId    int64  `json:"groupId"`
+	SenderId   int64  `json:"senderId"`
+	SenderType string `json:"senderType"`
+	SenderName string `json:"senderName"`
+	Content    string `json:"content"`
+	CreatedAt  int64  `json:"createdAt"`
+}
+
+type SendChatMessageReq struct {
+	Content string `json:"content" validate:"required"`
+}
+
+type ReadMessageReq struct {
+	Id int64 `path:"id" validate:"required,gt=0"`
 }

@@ -169,8 +169,14 @@ func SendMessageHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 
 func ListMessagesHandlerTeacher(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.ListMessagesReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
 		l := teacher.NewListMessagesLogic(r.Context(), svcCtx)
-		resp, err := l.ListMessages()
+		resp, err := l.ListMessages(&req)
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
