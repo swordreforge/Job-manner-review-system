@@ -294,6 +294,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/resume/history/:id",
 				Handler: student.DeleteResumeHistoryHandler(serverCtx),
 			},
+			{
+				// Student registration with invite code
+				Method:  http.MethodPost,
+				Path:    "/students/register-with-invite",
+				Handler: student.RegisterWithInviteHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)
