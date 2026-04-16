@@ -885,7 +885,7 @@ export default function Landing() {
                           />
                           
                           {/* 详情信息 */}
-                          <div className="absolute inset-0 p-8 flex flex-col justify-start relative z-10 overflow-y-auto">
+                          <div className="absolute inset-0 px-8 pt-6 pb-8 flex flex-col justify-start relative z-10 overflow-y-auto">
                             <h3 className="text-4xl font-bold mb-2">{item.title}</h3>
                             <p className="text-gray-400 text-base mb-6">{item.desc}</p>
                             
