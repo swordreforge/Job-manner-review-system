@@ -167,7 +167,11 @@
             <div id="students-content" class="content">
                 <div class="page-header">
                     <h1>学生管理</h1>
-                    <button class="btn btn-primary" id="add-student-btn">添加学生</button>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" id="download-student-template-btn">下载模板</button>
+                        <button class="btn btn-success" id="batch-import-students-btn">批量导入</button>
+                        <button class="btn btn-primary" id="add-student-btn">添加学生</button>
+                    </div>
                 </div>
 
                 <div class="search-bar">
@@ -205,7 +209,11 @@
             <div id="jobs-content" class="content">
                 <div class="page-header">
                     <h1>岗位管理</h1>
-                    <button class="btn btn-primary" id="add-job-btn">添加岗位</button>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" id="download-job-template-btn">下载模板</button>
+                        <button class="btn btn-success" id="batch-import-jobs-btn">批量导入</button>
+                        <button class="btn btn-primary" id="add-job-btn">添加岗位</button>
+                    </div>
                 </div>
 
                 <div class="search-bar">
@@ -993,6 +1001,226 @@
                         <button type="submit" class="btn btn-primary">保存</button>
                     </div>
                 </form>
+            </div>
+        </div>
+
+        <!-- 批量导入学生模态框 -->
+        <div id="batch-import-students-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入学生</h2>
+                    <button class="close-btn" id="close-batch-import-students-modal">&times;</button>
+                </div>
+                <div class="batch-import-content">
+                    <div class="import-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-text">下载模板</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-text">填写数据</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-text">上传文件</div>
+                        </div>
+                    </div>
+                    
+                    <div class="import-instructions">
+                        <h3>导入说明</h3>
+                        <ol>
+                            <li>点击下方"下载模板"按钮获取 Excel 模板</li>
+                            <li>按照模板格式填写学生数据</li>
+                            <li>上传填写好的 Excel 文件</li>
+                            <li>系统会自动验证数据并导入</li>
+                        </ol>
+                        <div class="download-template-section">
+                            <button class="btn btn-secondary" id="download-student-template-modal-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                下载 Excel 模板
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>上传文件</h3>
+                        <div class="file-upload-area" id="student-file-upload-area">
+                            <input type="file" id="student-import-file" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>点击或拖拽文件到此处上传</p>
+                                <small>支持 .xlsx 和 .xls 格式</small>
+                            </div>
+                            <div class="file-info" id="student-file-info" style="display: none;">
+                                <div class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <div class="file-name" id="student-file-name">-</div>
+                                    <div class="file-size" id="student-file-size">-</div>
+                                </div>
+                                <button class="btn-remove-file" id="remove-student-file">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-progress" id="student-import-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="student-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="student-progress-text">正在处理...</div>
+                    </div>
+
+                    <div class="import-result" id="student-import-result" style="display: none;">
+                        <h3>导入结果</h3>
+                        <div class="result-summary">
+                            <div class="result-item success">
+                                <span class="result-icon">✓</span>
+                                <div>
+                                    <div class="result-value" id="student-success-count">0</div>
+                                    <div class="result-label">成功导入</div>
+                                </div>
+                            </div>
+                            <div class="result-item failed">
+                                <span class="result-icon">×</span>
+                                <div>
+                                    <div class="result-value" id="student-failed-count">0</div>
+                                    <div class="result-label">导入失败</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="error-list" id="student-error-list" style="display: none;">
+                            <h4>错误详情</h4>
+                            <ul id="student-error-items"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-batch-import-students">取消</button>
+                    <button type="button" class="btn btn-primary" id="start-batch-import-students" disabled>开始导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量导入岗位模态框 -->
+        <div id="batch-import-jobs-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入岗位</h2>
+                    <button class="close-btn" id="close-batch-import-jobs-modal">&times;</button>
+                </div>
+                <div class="batch-import-content">
+                    <div class="import-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-text">下载模板</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-text">填写数据</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-text">上传文件</div>
+                        </div>
+                    </div>
+                    
+                    <div class="import-instructions">
+                        <h3>导入说明</h3>
+                        <ol>
+                            <li>点击下方"下载模板"按钮获取 Excel 模板</li>
+                            <li>按照模板格式填写岗位数据</li>
+                            <li>上传填写好的 Excel 文件</li>
+                            <li>系统会自动验证数据并导入</li>
+                        </ol>
+                        <div class="download-template-section">
+                            <button class="btn btn-secondary" id="download-job-template-modal-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                下载 Excel 模板
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>上传文件</h3>
+                        <div class="file-upload-area" id="job-file-upload-area">
+                            <input type="file" id="job-import-file" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>点击或拖拽文件到此处上传</p>
+                                <small>支持 .xlsx 和 .xls 格式</small>
+                            </div>
+                            <div class="file-info" id="job-file-info" style="display: none;">
+                                <div class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <div class="file-name" id="job-file-name">-</div>
+                                    <div class="file-size" id="job-file-size">-</div>
+                                </div>
+                                <button class="btn-remove-file" id="remove-job-file">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-progress" id="job-import-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="job-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="job-progress-text">正在处理...</div>
+                    </div>
+
+                    <div class="import-result" id="job-import-result" style="display: none;">
+                        <h3>导入结果</h3>
+                        <div class="result-summary">
+                            <div class="result-item success">
+                                <span class="result-icon">✓</span>
+                                <div>
+                                    <div class="result-value" id="job-success-count">0</div>
+                                    <div class="result-label">成功导入</div>
+                                </div>
+                            </div>
+                            <div class="result-item failed">
+                                <span class="result-icon">×</span>
+                                <div>
+                                    <div class="result-value" id="job-failed-count">0</div>
+                                    <div class="result-label">导入失败</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="error-list" id="job-error-list" style="display: none;">
+                            <h4>错误详情</h4>
+                            <ul id="job-error-items"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-batch-import-jobs">取消</button>
+                    <button type="button" class="btn btn-primary" id="start-batch-import-jobs" disabled>开始导入</button>
+                </div>
             </div>
         </div>
 

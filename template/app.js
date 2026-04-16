@@ -1538,6 +1538,9 @@ function init() {
     document.getElementById('job-modal').addEventListener('click', (e) => {
         if (e.target === document.getElementById('job-modal')) closeJobModal();
     });
+
+    // 批量导入功能事件监听
+    setupBatchImportEventListeners();
 }
 
 // ============ 岗位管理 ============
@@ -2490,6 +2493,430 @@ async function deleteRowData(columnName, columnValue) {
         console.error('删除数据失败:', error);
         showToast('删除数据失败: ' + error.message, 'error');
     }
+}
+
+// ========== 批量导入功能 ==========
+
+// 打开批量导入学生模态框
+function openBatchImportStudentsModal() {
+    const modal = document.getElementById('batch-import-students-modal');
+    resetStudentImportForm();
+    modal.classList.add('active');
+}
+
+// 关闭批量导入学生模态框
+function closeBatchImportStudentsModal() {
+    document.getElementById('batch-import-students-modal').classList.remove('active');
+}
+
+// 重置学生导入表单
+function resetStudentImportForm() {
+    const fileInput = document.getElementById('student-import-file');
+    const fileInfo = document.getElementById('student-file-info');
+    const uploadPlaceholder = document.querySelector('#student-file-upload-area .upload-placeholder');
+    const importProgress = document.getElementById('student-import-progress');
+    const importResult = document.getElementById('student-import-result');
+    const startBtn = document.getElementById('start-batch-import-students');
+    
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    uploadPlaceholder.style.display = 'block';
+    importProgress.style.display = 'none';
+    importResult.style.display = 'none';
+    startBtn.disabled = true;
+    
+    // 重置进度
+    document.getElementById('student-progress-fill').style.width = '0%';
+}
+
+// 处理学生文件选择
+function handleStudentFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // 验证文件类型
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !['xlsx', 'xls'].includes(fileExtension)) {
+        showToast('请上传 Excel 文件 (.xlsx 或 .xls)', 'error');
+        return;
+    }
+    
+    // 显示文件信息
+    const fileInfo = document.getElementById('student-file-info');
+    const uploadPlaceholder = document.querySelector('#student-file-upload-area .upload-placeholder');
+    const startBtn = document.getElementById('start-batch-import-students');
+    
+    document.getElementById('student-file-name').textContent = file.name;
+    document.getElementById('student-file-size').textContent = formatFileSize(file.size);
+    
+    fileInfo.style.display = 'flex';
+    uploadPlaceholder.style.display = 'none';
+    startBtn.disabled = false;
+}
+
+// 移除学生文件
+function removeStudentFile() {
+    const fileInput = document.getElementById('student-import-file');
+    fileInput.value = '';
+    resetStudentImportForm();
+}
+
+// 开始批量导入学生
+async function startBatchImportStudents() {
+    const fileInput = document.getElementById('student-import-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('请选择要导入的文件', 'error');
+        return;
+    }
+    
+    const importProgress = document.getElementById('student-import-progress');
+    const importResult = document.getElementById('student-import-result');
+    const progressFill = document.getElementById('student-progress-fill');
+    const progressText = document.getElementById('student-progress-text');
+    
+    // 显示进度
+    importProgress.style.display = 'block';
+    importResult.style.display = 'none';
+    progressFill.style.width = '10%';
+    progressText.textContent = '正在读取文件...';
+    
+    try {
+        // 读取文件并转换为 Base64
+        const base64Data = await fileToBase64(file);
+        
+        progressFill.style.width = '30%';
+        progressText.textContent = '正在上传文件...';
+        
+        // 调用批量导入 API
+        const response = await apiRequest('/students/batch-import', {
+            method: 'POST',
+            body: JSON.stringify({
+                file: base64Data
+            })
+        });
+        
+        progressFill.style.width = '100%';
+        progressText.textContent = '导入完成';
+        
+        // 显示结果
+        setTimeout(() => {
+            importProgress.style.display = 'none';
+            importResult.style.display = 'block';
+            
+            const result = response.data;
+            document.getElementById('student-success-count').textContent = result.success;
+            document.getElementById('student-failed-count').textContent = result.failed;
+            
+            const errorList = document.getElementById('student-error-list');
+            const errorItems = document.getElementById('student-error-items');
+            
+            if (result.errors && result.errors.length > 0) {
+                errorList.style.display = 'block';
+                errorItems.innerHTML = result.errors.map(error => 
+                    `<li>第 ${error.row} 行: ${error.message}</li>`
+                ).join('');
+            } else {
+                errorList.style.display = 'none';
+            }
+            
+            // 刷新学生列表
+            loadStudents();
+        }, 500);
+        
+    } catch (error) {
+        console.error('批量导入失败:', error);
+        showToast('批量导入失败: ' + error.message, 'error');
+        importProgress.style.display = 'none';
+    }
+}
+
+// 下载学生导入模板
+async function downloadStudentTemplate() {
+    try {
+        const response = await fetch(`${API_BASE}/students/import-template`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'student_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('模板下载成功');
+        } else {
+            throw new Error('下载失败');
+        }
+    } catch (error) {
+        console.error('下载模板失败:', error);
+        showToast('下载模板失败: ' + error.message, 'error');
+    }
+}
+
+// 打开批量导入岗位模态框
+function openBatchImportJobsModal() {
+    const modal = document.getElementById('batch-import-jobs-modal');
+    resetJobImportForm();
+    modal.classList.add('active');
+}
+
+// 关闭批量导入岗位模态框
+function closeBatchImportJobsModal() {
+    document.getElementById('batch-import-jobs-modal').classList.remove('active');
+}
+
+// 重置岗位导入表单
+function resetJobImportForm() {
+    const fileInput = document.getElementById('job-import-file');
+    const fileInfo = document.getElementById('job-file-info');
+    const uploadPlaceholder = document.querySelector('#job-file-upload-area .upload-placeholder');
+    const importProgress = document.getElementById('job-import-progress');
+    const importResult = document.getElementById('job-import-result');
+    const startBtn = document.getElementById('start-batch-import-jobs');
+    
+    fileInput.value = '';
+    fileInfo.style.display = 'none';
+    uploadPlaceholder.style.display = 'block';
+    importProgress.style.display = 'none';
+    importResult.style.display = 'none';
+    startBtn.disabled = true;
+    
+    // 重置进度
+    document.getElementById('job-progress-fill').style.width = '0%';
+}
+
+// 处理岗位文件选择
+function handleJobFileSelect(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    // 验证文件类型
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    const fileExtension = file.name.split('.').pop().toLowerCase();
+    
+    if (!validTypes.includes(file.type) && !['xlsx', 'xls'].includes(fileExtension)) {
+        showToast('请上传 Excel 文件 (.xlsx 或 .xls)', 'error');
+        return;
+    }
+    
+    // 显示文件信息
+    const fileInfo = document.getElementById('job-file-info');
+    const uploadPlaceholder = document.querySelector('#job-file-upload-area .upload-placeholder');
+    const startBtn = document.getElementById('start-batch-import-jobs');
+    
+    document.getElementById('job-file-name').textContent = file.name;
+    document.getElementById('job-file-size').textContent = formatFileSize(file.size);
+    
+    fileInfo.style.display = 'flex';
+    uploadPlaceholder.style.display = 'none';
+    startBtn.disabled = false;
+}
+
+// 移除岗位文件
+function removeJobFile() {
+    const fileInput = document.getElementById('job-import-file');
+    fileInput.value = '';
+    resetJobImportForm();
+}
+
+// 开始批量导入岗位
+async function startBatchImportJobs() {
+    const fileInput = document.getElementById('job-import-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+        showToast('请选择要导入的文件', 'error');
+        return;
+    }
+    
+    const importProgress = document.getElementById('job-import-progress');
+    const importResult = document.getElementById('job-import-result');
+    const progressFill = document.getElementById('job-progress-fill');
+    const progressText = document.getElementById('job-progress-text');
+    
+    // 显示进度
+    importProgress.style.display = 'block';
+    importResult.style.display = 'none';
+    progressFill.style.width = '10%';
+    progressText.textContent = '正在读取文件...';
+    
+    try {
+        // 读取文件并转换为 Base64
+        const base64Data = await fileToBase64(file);
+        
+        progressFill.style.width = '30%';
+        progressText.textContent = '正在上传文件...';
+        
+        // 调用批量导入 API
+        const response = await apiRequest('/jobs/batch-import', {
+            method: 'POST',
+            body: JSON.stringify({
+                file: base64Data
+            })
+        });
+        
+        progressFill.style.width = '100%';
+        progressText.textContent = '导入完成';
+        
+        // 显示结果
+        setTimeout(() => {
+            importProgress.style.display = 'none';
+            importResult.style.display = 'block';
+            
+            const result = response.data;
+            document.getElementById('job-success-count').textContent = result.success;
+            document.getElementById('job-failed-count').textContent = result.failed;
+            
+            const errorList = document.getElementById('job-error-list');
+            const errorItems = document.getElementById('job-error-items');
+            
+            if (result.errors && result.errors.length > 0) {
+                errorList.style.display = 'block';
+                errorItems.innerHTML = result.errors.map(error => 
+                    `<li>第 ${error.row} 行: ${error.message}</li>`
+                ).join('');
+            } else {
+                errorList.style.display = 'none';
+            }
+            
+            // 刷新岗位列表
+            loadJobs();
+        }, 500);
+        
+    } catch (error) {
+        console.error('批量导入失败:', error);
+        showToast('批量导入失败: ' + error.message, 'error');
+        importProgress.style.display = 'none';
+    }
+}
+
+// 下载岗位导入模板
+async function downloadJobTemplate() {
+    try {
+        const response = await fetch(`${API_BASE}/jobs/import-template`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'job_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('模板下载成功');
+        } else {
+            throw new Error('下载失败');
+        }
+    } catch (error) {
+        console.error('下载模板失败:', error);
+        showToast('下载模板失败: ' + error.message, 'error');
+    }
+}
+
+// 辅助函数：文件转 Base64
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => {
+            // 移除 data URL 前缀 (例如 "data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,")
+            const base64Data = reader.result.split(',')[1];
+            resolve(base64Data);
+        };
+        reader.onerror = error => reject(error);
+    });
+}
+
+// 辅助函数：格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// 设置批量导入相关的事件监听器
+function setupBatchImportEventListeners() {
+    // 学生批量导入
+    document.getElementById('batch-import-students-btn').addEventListener('click', openBatchImportStudentsModal);
+    document.getElementById('download-student-template-btn').addEventListener('click', downloadStudentTemplate);
+    document.getElementById('download-student-template-modal-btn').addEventListener('click', downloadStudentTemplate);
+    document.getElementById('close-batch-import-students-modal').addEventListener('click', closeBatchImportStudentsModal);
+    document.getElementById('cancel-batch-import-students').addEventListener('click', closeBatchImportStudentsModal);
+    document.getElementById('student-import-file').addEventListener('change', handleStudentFileSelect);
+    document.getElementById('remove-student-file').addEventListener('click', removeStudentFile);
+    document.getElementById('start-batch-import-students').addEventListener('click', startBatchImportStudents);
+    
+    // 学生文件拖拽上传
+    const studentUploadArea = document.getElementById('student-file-upload-area');
+    studentUploadArea.addEventListener('click', () => {
+        document.getElementById('student-import-file').click();
+    });
+    studentUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        studentUploadArea.classList.add('dragover');
+    });
+    studentUploadArea.addEventListener('dragleave', () => {
+        studentUploadArea.classList.remove('dragover');
+    });
+    studentUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        studentUploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            document.getElementById('student-import-file').files = e.dataTransfer.files;
+            handleStudentFileSelect({ target: { files: [file] } });
+        }
+    });
+    
+    // 岗位批量导入
+    document.getElementById('batch-import-jobs-btn').addEventListener('click', openBatchImportJobsModal);
+    document.getElementById('download-job-template-btn').addEventListener('click', downloadJobTemplate);
+    document.getElementById('download-job-template-modal-btn').addEventListener('click', downloadJobTemplate);
+    document.getElementById('close-batch-import-jobs-modal').addEventListener('click', closeBatchImportJobsModal);
+    document.getElementById('cancel-batch-import-jobs').addEventListener('click', closeBatchImportJobsModal);
+    document.getElementById('job-import-file').addEventListener('change', handleJobFileSelect);
+    document.getElementById('remove-job-file').addEventListener('click', removeJobFile);
+    document.getElementById('start-batch-import-jobs').addEventListener('click', startBatchImportJobs);
+    
+    // 岗位文件拖拽上传
+    const jobUploadArea = document.getElementById('job-file-upload-area');
+    jobUploadArea.addEventListener('click', () => {
+        document.getElementById('job-import-file').click();
+    });
+    jobUploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        jobUploadArea.classList.add('dragover');
+    });
+    jobUploadArea.addEventListener('dragleave', () => {
+        jobUploadArea.classList.remove('dragover');
+    });
+    jobUploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        jobUploadArea.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            document.getElementById('job-import-file').files = e.dataTransfer.files;
+            handleJobFileSelect({ target: { files: [file] } });
+        }
+    });
 }
 
 // 页面加载完成后初始化
