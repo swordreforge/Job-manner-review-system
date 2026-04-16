@@ -33,16 +33,18 @@ export default function TeacherDashboard() {
         teacherApi.listAlerts({ page: 1, pageSize: 5, status: 'pending' }),
       ]);
 
-      const studentList = studentsRes.data?.list || [];
-      const alertList = alertsRes.data?.list || [];
+      // 支持两种响应格式
+      const getData = (res: any) => res.data ?? res;
+      const studentList = getData(studentsRes).list || [];
+      const alertList = getData(alertsRes).list || [];
 
-      const totalRate = studentList.reduce((sum, s) => sum + (s.taskCompletionRate || 0), 0);
+      const totalRate = studentList.reduce((sum: number, s: TeacherStudent) => sum + (s.taskCompletionRate || 0), 0);
       const avgRate = studentList.length > 0 ? totalRate / studentList.length : 0;
 
       setStats({
-        totalStudents: studentsRes.data?.total || 0,
-        activeStudents: studentList.filter(s => s.lastActivityAt && Date.now() - s.lastActivityAt * 1000 < 7 * 24 * 60 * 60 * 1000).length,
-        pendingAlerts: alertsRes.data?.total || 0,
+        totalStudents: getData(studentsRes).total || 0,
+        activeStudents: studentList.filter((s: TeacherStudent) => s.lastActivityAt && Date.now() - s.lastActivityAt * 1000 < 7 * 24 * 60 * 60 * 1000).length,
+        pendingAlerts: getData(alertsRes).total || 0,
         avgCompletionRate: Math.round(avgRate),
       });
 
