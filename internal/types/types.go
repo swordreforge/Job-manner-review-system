@@ -1042,3 +1042,21 @@ type JoinSchoolData struct {
 	SchoolName string `json:"schoolName"`
 	JoinedAt   int64  `json:"joinedAt"`
 }
+
+type ListStudentSchoolsResp struct {
+	Code int                     `json:"code"`
+	Msg  string                  `json:"msg"`
+	Data *ListStudentSchoolsData `json:"data,optional"`
+}
+
+type ListStudentSchoolsData struct {
+	Total int                 `json:"total"`
+	List  []StudentSchoolInfo `json:"list"`
+}
+
+type StudentSchoolInfo struct {
+	SchoolId   int64  `json:"schoolId"`
+	SchoolName string `json:"schoolName"`
+	Status     string `json:"status"`
+	JoinedAt   int64  `json:"joinedAt"`
+}

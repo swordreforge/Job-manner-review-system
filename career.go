@@ -438,6 +438,7 @@ func autoMigrate(dataSource string) error {
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				student_id BIGINT(20) NOT NULL COMMENT '学生ID',
 				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				teacher_id BIGINT(20) DEFAULT NULL COMMENT '教师ID',
 				class_name VARCHAR(50) DEFAULT NULL COMMENT '班级名称',
 				grade VARCHAR(20) DEFAULT NULL COMMENT '年级',
 				invite_code_id BIGINT(20) DEFAULT NULL COMMENT '使用的邀请码ID',
@@ -798,6 +799,8 @@ func migrateColumns(dataSource string) error {
 		// students table - add task_completion_rate and last_activity_at
 		{"students", "task_completion_rate", "ALTER TABLE students ADD COLUMN task_completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '8系列任务总完成度'"},
 		{"students", "last_activity_at", "ALTER TABLE students ADD COLUMN last_activity_at BIGINT(20) DEFAULT NULL COMMENT '最后活动时间'"},
+		// student_schools table - add teacher_id
+		{"student_schools", "teacher_id", "ALTER TABLE student_schools ADD COLUMN teacher_id BIGINT(20) DEFAULT NULL COMMENT '教师ID'"},
 	}
 
 	for _, m := range migrations {

@@ -113,6 +113,8 @@ export const studentApi = {
     api.delete<{ code: number; msg: string }>(`/students/resume/history/${id}`),
   joinSchool: (data: { inviteCode: string; name: string }) =>
     api.post<{ code: number; msg: string; data: { schoolId: number; schoolName: string; joinedAt: number } }>('/students/join-school', data),
+  getSchools: () =>
+    api.get<{ code: number; msg: string; data: { total: number; list: { schoolId: number; schoolName: string; status: string; joinedAt: number }[] } }>('/students/schools'),
 };
 
 export const jobApi = {

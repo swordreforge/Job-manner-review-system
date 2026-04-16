@@ -20,6 +20,8 @@ export default function ProfilePage() {
   const [joinSchoolLoading, setJoinSchoolLoading] = useState(false);
   const [inviteCode, setInviteCode] = useState('');
   const [studentName, setStudentName] = useState('');
+  const [studentSchools, setStudentSchools] = useState<{ schoolId: number; schoolName: string; status: string; joinedAt: number }[]>([]);
+  const [loadingSchools, setLoadingSchools] = useState(false);
   const [experienceModalOpen, setExperienceModalOpen] = useState(false);
   const [experienceType, setExperienceType] = useState<'internship' | 'project'>('internship');
   const [avatarSrc, setAvatarSrc] = useState('/default-avatar.svg');
@@ -53,7 +55,23 @@ export default function ProfilePage() {
   useEffect(() => {
     // 获取学生资料
     fetchStudentData();
+    // 获取学生已加入的学校
+    fetchStudentSchools();
   }, []);
+
+  const fetchStudentSchools = async () => {
+    setLoadingSchools(true);
+    try {
+      const response = await studentApi.getSchools();
+      if (response.code === 0 && response.data) {
+        setStudentSchools(response.data.list);
+      }
+    } catch (error) {
+      console.error('Failed to fetch schools:', error);
+    } finally {
+      setLoadingSchools(false);
+    }
+  };
 
   const fetchStudentData = async () => {
     setLoadingStudent(true);
@@ -236,14 +254,34 @@ export default function ProfilePage() {
           title="学校信息" 
           extra={
             <Button type="link" onClick={() => setJoinSchoolModalVisible(true)}>
-              加入学校
+              {studentSchools.length > 0 ? '再加入' : '加入学校'}
             </Button>
           }
           className="mb-3"
         >
-          <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-            点击"加入学校"按钮，使用教师提供的邀请码加入学校
-          </div>
+          {loadingSchools ? (
+            <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载中...</div>
+          ) : studentSchools.length > 0 ? (
+            <div className="space-y-2">
+              {studentSchools.map((school) => (
+                <div key={school.schoolId} className="flex items-center justify-between p-2 rounded" style={{ backgroundColor: 'var(--md-sys-color-surface-container-low)' }}>
+                  <div>
+                    <div className="font-medium">{school.schoolName}</div>
+                    <div className="text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                      加入时间: {new Date(school.joinedAt * 1000).toLocaleDateString()}
+                    </div>
+                  </div>
+                  <Tag color={school.status === 'active' ? 'green' : 'default'}>
+                    {school.status === 'active' ? '在读' : school.status}
+                  </Tag>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+              点击"加入学校"按钮，使用教师提供的邀请码加入学校
+            </div>
+          )}
         </Card>
 
         <Modal
@@ -289,6 +327,7 @@ export default function ProfilePage() {
                     setJoinSchoolModalVisible(false);
                     setInviteCode('');
                     setStudentName('');
+                    fetchStudentSchools();
                   } else {
                     message.error(result.msg);
                   }

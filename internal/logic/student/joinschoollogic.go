@@ -108,6 +108,7 @@ func (l *JoinSchoolLogic) JoinSchool(req *types.JoinSchoolReq) (*types.JoinSchoo
 		"INSERT INTO student_schools (student_id, school_id, teacher_id, invite_code_id, status, joined_at, created_at, updated_at) VALUES (?, ?, ?, ?, 'active', ?, ?, ?)",
 		studentId, schoolId, teacherId, codeId, now, now, now)
 	if err != nil {
+		logx.Errorf("insert student_schools failed: %v, studentId=%d, schoolId=%d, teacherId=%d, codeId=%d", err, studentId, schoolId, teacherId, codeId)
 		return &types.JoinSchoolResp{
 			Code: 500,
 			Msg:  "failed to join school",

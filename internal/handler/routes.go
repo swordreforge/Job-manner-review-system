@@ -306,6 +306,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/join-school",
 				Handler: student.JoinSchoolHandler(serverCtx),
 			},
+			{
+				// List student's schools
+				Method:  http.MethodGet,
+				Path:    "/students/schools",
+				Handler: student.ListSchoolsHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)
