@@ -3,7 +3,7 @@ import { TabBar } from 'antd-mobile';
 import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
-import { useTaskStore, useThemeStore } from '../stores';
+import { useTaskStore, useThemeStore, useAuthStore } from '../stores';
 import { useState, useEffect } from 'react';
 import SidebarNav from '../components/SidebarNav';
 
@@ -50,7 +50,8 @@ export default function MainLayout() {
   const [isDesktop, setIsDesktop] = useState(false);
 
   const isStudentPage = location.pathname.startsWith('/student');
-  const shouldFixTabBar = !isStudentPage && !isDesktop;
+  const isTeacherPage = location.pathname.startsWith('/teacher');
+  const shouldFixTabBar = !isStudentPage && !isTeacherPage && !isDesktop;
 
   useEffect(() => {
     const checkDesktop = () => {
@@ -61,7 +62,9 @@ export default function MainLayout() {
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  const tabs = [
+  const { role } = useAuthStore();
+  
+  const studentTabs = [
     { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
     { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
     { key: 'resume', title: '简历', icon: <FileTextOutlined />, path: '/resume' },
@@ -69,9 +72,27 @@ export default function MainLayout() {
     { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
   ];
 
+  const teacherTabs = [
+    { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher' },
+    { key: 'students', title: '学生', icon: <UserOutlined />, path: '/teacher/students' },
+    { key: 'invite', title: '邀请码', icon: <FileTextOutlined />, path: '/teacher/invite-codes' },
+    { key: 'alerts', title: '预警', icon: <ExclamationCircleOutlined />, path: '/teacher/alerts' },
+    { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/teacher/profile' },
+  ];
+
+  const tabs = role === 'teacher' ? teacherTabs : studentTabs;
+
   const getActiveTab = () => {
     const pathname = location.pathname;
     
+    // Teacher routes
+    if (pathname === '/teacher') return 'dashboard';
+    if (pathname.startsWith('/teacher/students')) return 'students';
+    if (pathname.startsWith('/teacher/invite')) return 'invite';
+    if (pathname.startsWith('/teacher/alerts')) return 'alerts';
+    if (pathname.startsWith('/teacher/profile')) return 'profile';
+    
+    // Student routes
     if (pathname === '/start') return 'home';
     
     const exactMatch = tabs.find(tab => tab.path === pathname);
@@ -85,7 +106,7 @@ export default function MainLayout() {
     if (pathname.startsWith('/settings')) return 'profile';
     if (pathname.startsWith('/profile')) return 'profile';
     
-    return 'home';
+    return role === 'teacher' ? 'dashboard' : 'home';
   };
 
   const activeTab = getActiveTab();
@@ -97,7 +118,9 @@ export default function MainLayout() {
   const handleTabChange = (key: string) => {
     const tab = tabs.find(t => t.key === key);
     if (tab) {
-      const targetPath = tab.key === 'home' ? '/start' : tab.path;
+      let targetPath = tab.path;
+      if (tab.key === 'home') targetPath = '/start';
+      if (tab.key === 'dashboard') targetPath = '/teacher';
 
       if (hasActiveTask) {
         setPendingNavigation(targetPath);

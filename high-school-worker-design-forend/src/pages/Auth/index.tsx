@@ -54,6 +54,13 @@ export default function AuthPage() {
           const userInfo = await userApi.getInfo();
           if (userInfo && userInfo.data) {
             setUser(userInfo.data);
+            
+            // Redirect based on role
+            const targetPath = userInfo.data.role === 'teacher' ? '/teacher' : '/start';
+            setTimeout(() => {
+              navigate(targetPath);
+            }, 800);
+            return;
           }
         } catch (error) {
           console.error('Failed to get user info:', error);

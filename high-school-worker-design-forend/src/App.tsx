@@ -25,6 +25,7 @@ const TeacherDashboard = lazy(() => import('./pages/Teacher/Dashboard'));
 const TeacherStudents = lazy(() => import('./pages/Teacher/Students'));
 const TeacherInviteCodes = lazy(() => import('./pages/Teacher/InviteCodes'));
 const TeacherAlerts = lazy(() => import('./pages/Teacher/Alerts'));
+const TeacherProfilePage = lazy(() => import('./pages/Teacher/Profile'));
 
 function RouteLoadingFallback() {
   return (
@@ -35,7 +36,7 @@ function RouteLoadingFallback() {
 }
 
 function RootRedirect() {
-  const { isAuthenticated, isAuthChecked, initialize } = useAuthStore();
+  const { isAuthenticated, isAuthChecked, initialize, role } = useAuthStore();
 
   useEffect(() => {
     initialize();
@@ -49,7 +50,8 @@ function RootRedirect() {
     );
   }
 
-  return <Navigate to={isAuthenticated ? '/start' : '/welcome'} replace />;
+  const targetPath = isAuthenticated ? (role === 'teacher' ? '/teacher' : '/start') : '/welcome';
+  return <Navigate to={targetPath} replace />;
 }
 
 export default function App() {
@@ -156,6 +158,22 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <TeacherAlerts />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/settings"
+            element={
+              <ProtectedRoute>
+                <SettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/profile"
+            element={
+              <ProtectedRoute>
+                <TeacherProfilePage />
               </ProtectedRoute>
             }
           />

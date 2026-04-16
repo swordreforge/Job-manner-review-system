@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores';
 
@@ -29,7 +29,7 @@ const teacherNavItems: NavItem[] = [
   { key: 'students', title: '学生管理', icon: <TeamOutlined />, path: '/teacher/students', matchPaths: ['/teacher/students'] },
   { key: 'invite', title: '邀请码', icon: <FileAddOutlined />, path: '/teacher/invite-codes', matchPaths: ['/teacher/invite-codes'] },
   { key: 'alerts', title: '预警管理', icon: <AlertOutlined />, path: '/teacher/alerts', matchPaths: ['/teacher/alerts'] },
-  { key: 'settings', title: '设置', icon: <SettingOutlined />, path: '/teacher/settings', matchPaths: ['/teacher/settings'] },
+  { key: 'profile', title: '个人中心', icon: <UserOutlined />, path: '/teacher/profile', matchPaths: ['/teacher/profile'] },
 ];
 
 export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
@@ -152,7 +152,7 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
           onClick={() => {
             if (window.confirm('确定要退出登录吗？')) {
               logout();
-              navigate('/start');
+              navigate(role === 'teacher' ? '/teacher' : '/start');
             }
           }}
           className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
