@@ -13,6 +13,7 @@ import (
 	match "career-api/internal/handler/match"
 	report "career-api/internal/handler/report"
 	student "career-api/internal/handler/student"
+	teacher "career-api/internal/handler/teacher"
 	user "career-api/internal/handler/user"
 	"career-api/internal/svc"
 
@@ -428,5 +429,29 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		rest.WithPrefix("/api/v1"),
 		rest.WithTimeout(120000*time.Millisecond), // 2分钟超时，用于SSE流式输出
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				// Create teacher invite code
+				Method:  http.MethodPost,
+				Path:    "/teachers/invite-codes",
+				Handler: teacher.CreateInviteCodeHandler(serverCtx),
+			},
+			{
+				// List teacher invite codes
+				Method:  http.MethodGet,
+				Path:    "/teachers/invite-codes",
+				Handler: teacher.ListInviteCodesHandler(serverCtx),
+			},
+			{
+				// Revoke teacher invite code
+				Method:  http.MethodDelete,
+				Path:    "/teachers/invite-codes/:id",
+				Handler: teacher.RevokeInviteCodeHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
 	)
 }
