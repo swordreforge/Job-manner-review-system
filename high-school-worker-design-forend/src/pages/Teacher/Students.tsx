@@ -26,8 +26,10 @@ export default function TeacherStudents() {
     setLoading(true);
     try {
       const res = await teacherApi.listStudents({ page, pageSize, ...filters });
-      setStudents(res.data?.list || []);
-      setTotal(res.data?.total || 0);
+      // 支持两种响应格式: {total, list} 或 {code, msg, data: {total, list}}
+      const data = (res as any).data ?? res;
+      setStudents(data.list || []);
+      setTotal(data.total || 0);
     } catch (error) {
       message.error('获取学生列表失败');
     } finally {
