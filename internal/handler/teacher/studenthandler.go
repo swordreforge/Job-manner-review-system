@@ -159,3 +159,32 @@ func CheckAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 	}
 }
+
+func SendMessageHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.SendMessageReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewSendMessageLogic(r.Context(), svcCtx)
+		if err := l.SendMessage(&req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "sent"})
+		}
+	}
+}
+
+func ListMessagesHandlerTeacher(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		l := teacher.NewListMessagesLogic(r.Context(), svcCtx)
+		resp, err := l.ListMessages()
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}

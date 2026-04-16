@@ -507,4 +507,30 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 		},
 		rest.WithPrefix("/api/v1"),
 	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/teachers/messages",
+				Handler: teacher.SendMessageHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/teachers/messages",
+				Handler: teacher.ListMessagesHandlerTeacher(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/students/messages",
+				Handler: student.ListMessagesHandlerStudent(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/students/messages/:id/read",
+				Handler: student.ReadMessageHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+	)
 }
