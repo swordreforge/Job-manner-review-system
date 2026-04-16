@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined, CloseOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -883,6 +883,17 @@ export default function Landing() {
                               background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
                             }}
                           />
+                          
+                          {/* 关闭按钮 */}
+                          <motion.button
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.2 }}
+                            onClick={handleCardClick}
+                            className="absolute top-4 right-4 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white hover:text-orange-400 transition-all duration-300 z-20"
+                          >
+                            <CloseOutlined />
+                          </motion.button>
                           
                           {/* 详情信息 */}
                           <div className="absolute inset-0 px-8 pt-4 pb-8 flex flex-col justify-start relative z-10 overflow-y-auto">
