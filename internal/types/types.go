@@ -944,70 +944,34 @@ type InterviewBaseResp struct {
 	Msg  string `json:"msg"`
 }
 
-// Teacher student list types
-type TeacherListStudentsReq struct {
-	Page      int    `json:"page"`
-	PageSize  int    `json:"pageSize"`
-	ClassName string `json:"className,optional"`
-	Grade     string `json:"grade,optional"`
-	Status    string `json:"status,optional"`
+type TeacherListAlertsReq struct {
+	Page       int    `json:"page"`
+	PageSize   int    `json:"pageSize"`
+	AlertType  string `json:"alertType,optional"`
+	AlertLevel string `json:"alertLevel,optional"`
 }
 
-type TeacherStudentInfo struct {
-	Id                 int64   `json:"id"`
-	UserId             int64   `json:"userId"`
-	Name               string  `json:"name"`
-	Username           string  `json:"username"`
-	Email              string  `json:"email"`
-	ClassName          string  `json:"className,optional"`
-	Grade              string  `json:"grade,optional"`
-	TaskCompletionRate float64 `json:"taskCompletionRate"`
-	LastActivityAt     int64   `json:"lastActivityAt,optional"`
-	JoinedAt           int64   `json:"joinedAt"`
-	Status             string  `json:"status"`
-}
-
-type TeacherListStudentsResp struct {
-	Total int                  `json:"total"`
-	List  []TeacherStudentInfo `json:"list"`
-}
-
-type TeacherGetStudentReq struct {
-	StudentId int64 `path:"id"`
-}
-
-type TeacherStudentDetailResp struct {
-	Id                 int64   `json:"id"`
-	UserId             int64   `json:"userId"`
-	Name               string  `json:"name"`
-	Username           string  `json:"username"`
-	Email              string  `json:"email"`
-	Phone              string  `json:"phone,optional"`
-	ClassName          string  `json:"className,optional"`
-	Grade              string  `json:"grade,optional"`
-	SchoolId           int64   `json:"schoolId"`
-	SchoolName         string  `json:"schoolName"`
-	TaskCompletionRate float64 `json:"taskCompletionRate"`
-	LastActivityAt     int64   `json:"lastActivityAt,optional"`
-	JoinedAt           int64   `json:"joinedAt"`
-	Status             string  `json:"status"`
-}
-
-type TeacherTaskProgress struct {
-	TaskSeriesId   int     `json:"taskSeriesId"`
-	TaskName       string  `json:"taskName"`
-	TaskType       string  `json:"taskType"`
-	Status         string  `json:"status"`
+type TeacherAlertInfo struct {
+	Id             int64   `json:"id"`
+	StudentId      int64   `json:"studentId"`
+	StudentName    string  `json:"studentName"`
+	SchoolId       int64   `json:"schoolId"`
+	AlertType      string  `json:"alertType"`
+	AlertLevel     string  `json:"alertLevel"`
+	Description    string  `json:"description"`
 	CompletionRate float64 `json:"completionRate"`
-	Score          float64 `json:"score,optional"`
-	StartedAt      int64   `json:"startedAt,optional"`
-	CompletedAt    int64   `json:"completedAt,optional"`
+	TotalTasks     int     `json:"totalTasks"`
+	CompletedTasks int     `json:"completedTasks"`
+	Status         string  `json:"status"`
+	CreatedAt      int64   `json:"createdAt"`
+	UpdatedAt      int64   `json:"updatedAt"`
 }
 
-type TeacherGetStudentTasksResp struct {
-	StudentId      int64                 `json:"studentId"`
-	TotalTasks     int                   `json:"totalTasks"`
-	CompletedTasks int                   `json:"completedTasks"`
-	OverallRate    float64               `json:"overallRate"`
-	Tasks          []TeacherTaskProgress `json:"tasks"`
+type TeacherListAlertsResp struct {
+	Total int                `json:"total"`
+	List  []TeacherAlertInfo `json:"list"`
+}
+
+type AlertActionReq struct {
+	AlertId int64 `path:"id"`
 }
