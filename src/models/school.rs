@@ -86,3 +86,25 @@ pub struct SchoolListResponse {
     pub page_size: u64,
     pub list: Vec<SchoolResponse>,
 }
+
+/// 批量导入学校请求
+#[derive(Debug, Deserialize)]
+pub struct BatchImportSchoolsRequest {
+    pub file: String,  // Base64 编码的 Excel 文件
+}
+
+/// 批量导入学校结果
+#[derive(Debug, Serialize)]
+pub struct SchoolImportResult {
+    pub total: u32,
+    pub success: u32,
+    pub failed: u32,
+    pub errors: Vec<SchoolImportError>,
+}
+
+/// 批量导入学校错误
+#[derive(Debug, Serialize)]
+pub struct SchoolImportError {
+    pub row: u32,
+    pub message: String,
+}

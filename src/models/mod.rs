@@ -6,7 +6,7 @@ pub mod student;
 pub mod user;
 
 pub use job::{CreateJobRequest, Job, JobQuery, JobResponse, UpdateJobRequest, BatchImportJobsRequest, ImportResult, ImportError};
-pub use school::{CreateSchoolRequest, School, SchoolQuery, SchoolResponse, UpdateSchoolRequest};
+pub use school::{CreateSchoolRequest, School, SchoolQuery, SchoolResponse, UpdateSchoolRequest, BatchImportSchoolsRequest, SchoolImportResult, SchoolImportError};
 pub use student::{
     CreateStudentRequest, Student, StudentQuery, StudentResponse, UpdateStudentRequest,
     BatchImportStudentsRequest, StudentImportResult, StudentImportError,

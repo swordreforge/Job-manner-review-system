@@ -121,6 +121,10 @@ fn configure_api_v1() -> Scope {
                 .route("", web::post().to(crate::handlers::school::create))
                 // 学校列表
                 .route("", web::get().to(crate::handlers::school::list))
+                // 下载导入模板（需要在 /{id} 之前）
+                .route("/import-template", web::get().to(crate::handlers::school::download_school_template))
+                // 批量导入（需要在 /{id} 之前）
+                .route("/batch-import", web::post().to(crate::handlers::school::batch_import))
                 // 学校详情
                 .route("/{id}", web::get().to(crate::handlers::school::get))
                 // 更新学校

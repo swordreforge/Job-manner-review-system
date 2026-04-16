@@ -291,7 +291,10 @@
             <div id="schools-content" class="content">
                 <div class="page-header">
                     <h1>学校管理</h1>
-                    <button class="btn btn-primary" id="add-school-btn">添加学校</button>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" id="batch-import-schools-btn">批量导入</button>
+                        <button class="btn btn-primary" id="add-school-btn">添加学校</button>
+                    </div>
                 </div>
 
                 <div class="search-bar">
@@ -1220,6 +1223,114 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" id="cancel-batch-import-jobs">取消</button>
                     <button type="button" class="btn btn-primary" id="start-batch-import-jobs" disabled>开始导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学校批量导入模态框 -->
+        <div id="school-batch-import-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入学校</h2>
+                    <button class="close-btn" id="close-school-batch-import-modal">&times;</button>
+                </div>
+                <div class="batch-import-steps">
+                    <div class="step active" data-step="1">
+                        <div class="step-number">1</div>
+                        <div class="step-label">下载模板</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-number">2</div>
+                        <div class="step-label">填写数据</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-number">3</div>
+                        <div class="step-label">上传文件</div>
+                    </div>
+                </div>
+                <div class="step-content">
+                    <div class="step-panel active" data-panel="1">
+                        <div class="instruction">
+                            <h3>第一步：下载导入模板</h3>
+                            <p>点击下方按钮下载学校导入模板，模板包含以下字段：</p>
+                            <ul>
+                                <li>学校名称（必填）</li>
+                                <li>地址</li>
+                                <li>联系人</li>
+                                <li>联系电话</li>
+                                <li>联系邮箱</li>
+                            </ul>
+                            <button class="btn btn-primary" id="download-school-template-btn">下载模板</button>
+                        </div>
+                    </div>
+                    <div class="step-panel" data-panel="2">
+                        <div class="instruction">
+                            <h3>第二步：填写数据</h3>
+                            <p>按照模板格式填写学校信息，注意：</p>
+                            <ul>
+                                <li>学校名称为必填项</li>
+                                <li>学校代码由系统自动生成，无需填写</li>
+                                <li>其他字段可根据实际情况填写</li>
+                                <li>请不要修改模板的表头</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="step-panel" data-panel="3">
+                        <div class="instruction">
+                            <h3>第三步：上传文件</h3>
+                            <p>将填写好的 Excel 文件上传到系统</p>
+                        </div>
+                        <div class="upload-area" id="school-upload-area">
+                            <input type="file" id="school-file-input" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <p>拖拽文件到此处或点击上传</p>
+                            <p class="file-hint">支持 .xlsx 和 .xls 格式</p>
+                        </div>
+                        <div id="school-file-info" class="file-info" style="display: none;">
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                            <button class="btn btn-small btn-remove-file" id="remove-school-file">移除</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="school-import-progress" class="import-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p class="progress-text">正在导入...</p>
+                </div>
+                <div id="school-import-result" class="import-result" style="display: none;">
+                    <h3>导入完成</h3>
+                    <div class="result-stats">
+                        <div class="stat-item success">
+                            <span class="stat-number" id="school-import-success">0</span>
+                            <span class="stat-label">成功</span>
+                        </div>
+                        <div class="stat-item failed">
+                            <span class="stat-number" id="school-import-failed">0</span>
+                            <span class="stat-label">失败</span>
+                        </div>
+                        <div class="stat-item total">
+                            <span class="stat-number" id="school-import-total">0</span>
+                            <span class="stat-label">总计</span>
+                        </div>
+                    </div>
+                    <div id="school-import-errors" class="import-errors" style="display: none;">
+                        <h4>错误详情</h4>
+                        <div class="errors-list"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="prev-school-step" style="display: none;">上一步</button>
+                    <button type="button" class="btn btn-primary" id="next-school-step">下一步</button>
+                    <button type="button" class="btn btn-primary" id="start-school-import" style="display: none;">开始导入</button>
+                    <button type="button" class="btn btn-secondary" id="close-school-import-result" style="display: none;">关闭</button>
                 </div>
             </div>
         </div>

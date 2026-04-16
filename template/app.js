@@ -1452,6 +1452,9 @@ function init() {
     if (elements.addSchoolBtn) {
         elements.addSchoolBtn.addEventListener('click', () => openSchoolModal('add'));
     }
+    if (document.getElementById('batch-import-schools-btn')) {
+        document.getElementById('batch-import-schools-btn').addEventListener('click', openSchoolBatchImportModal);
+    }
     if (elements.schoolSearchBtn) {
         elements.schoolSearchBtn.addEventListener('click', () => loadSchools(1));
     }
@@ -1502,6 +1505,57 @@ function init() {
     // 暴露全局函数供HTML调用
     window.editSchool = (id) => openSchoolModal('edit', id);
     window.deleteSchool = deleteSchool;
+
+    // 学校批量导入事件监听
+    if (document.getElementById('close-school-batch-import-modal')) {
+        document.getElementById('close-school-batch-import-modal').addEventListener('click', closeSchoolBatchImportModal);
+    }
+    if (document.getElementById('download-school-template-btn')) {
+        document.getElementById('download-school-template-btn').addEventListener('click', downloadSchoolTemplate);
+    }
+    if (document.getElementById('next-school-step')) {
+        document.getElementById('next-school-step').addEventListener('click', nextSchoolStep);
+    }
+    if (document.getElementById('prev-school-step')) {
+        document.getElementById('prev-school-step').addEventListener('click', prevSchoolStep);
+    }
+    if (document.getElementById('start-school-import')) {
+        document.getElementById('start-school-import').addEventListener('click', startSchoolImport);
+    }
+    if (document.getElementById('close-school-import-result')) {
+        document.getElementById('close-school-import-result').addEventListener('click', closeSchoolBatchImportModal);
+    }
+    if (document.getElementById('remove-school-file')) {
+        document.getElementById('remove-school-file').addEventListener('click', removeSchoolFile);
+    }
+
+    // 学校文件上传事件
+    const schoolUploadArea = document.getElementById('school-upload-area');
+    const schoolFileInput = document.getElementById('school-file-input');
+
+    if (schoolUploadArea && schoolFileInput) {
+        schoolUploadArea.addEventListener('click', () => schoolFileInput.click());
+        schoolUploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            schoolUploadArea.classList.add('drag-over');
+        });
+        schoolUploadArea.addEventListener('dragleave', () => {
+            schoolUploadArea.classList.remove('drag-over');
+        });
+        schoolUploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            schoolUploadArea.classList.remove('drag-over');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleSchoolFileSelect(files[0]);
+            }
+        });
+        schoolFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleSchoolFileSelect(e.target.files[0]);
+            }
+        });
+    }
 
     // 定时刷新系统状态和服务器时间
     setInterval(() => {
@@ -2921,3 +2975,231 @@ function setupBatchImportEventListeners() {
 
 // 页面加载完成后初始化
 document.addEventListener('DOMContentLoaded', init);
+
+// ============ 学校批量导入 ============
+
+let schoolImportStep = 1;
+let schoolSelectedFile = null;
+
+// 打开学校批量导入模态框
+function openSchoolBatchImportModal() {
+    const modal = document.getElementById('school-batch-import-modal');
+    modal.classList.add('active');
+    schoolImportStep = 1;
+    schoolSelectedFile = null;
+    updateSchoolImportStep();
+    resetSchoolImportFile();
+}
+
+// 关闭学校批量导入模态框
+function closeSchoolBatchImportModal() {
+    document.getElementById('school-batch-import-modal').classList.remove('active');
+    resetSchoolImport();
+}
+
+// 更新学校导入步骤
+function updateSchoolImportStep() {
+    const steps = document.querySelectorAll('#school-batch-import-modal .step');
+    const panels = document.querySelectorAll('#school-batch-import-modal .step-panel');
+
+    steps.forEach(step => {
+        const stepNum = parseInt(step.dataset.step);
+        step.classList.toggle('active', stepNum <= schoolImportStep);
+        step.classList.toggle('completed', stepNum < schoolImportStep);
+    });
+
+    panels.forEach(panel => {
+        panel.classList.toggle('active', panel.dataset.panel == schoolImportStep);
+    });
+
+    // 更新按钮显示
+    document.getElementById('prev-school-step').style.display = schoolImportStep > 1 ? 'inline-block' : 'none';
+    document.getElementById('next-school-step').style.display = schoolImportStep < 3 ? 'inline-block' : 'none';
+    document.getElementById('start-school-import').style.display = schoolImportStep === 3 ? 'inline-block' : 'none';
+}
+
+// 下一步
+function nextSchoolStep() {
+    if (schoolImportStep < 3) {
+        schoolImportStep++;
+        updateSchoolImportStep();
+    }
+}
+
+// 上一步
+function prevSchoolStep() {
+    if (schoolImportStep > 1) {
+        schoolImportStep--;
+        updateSchoolImportStep();
+    }
+}
+
+// 下载学校导入模板
+async function downloadSchoolTemplate() {
+    try {
+        const response = await fetch(`${API_BASE}/schools/import-template`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'school_import_template.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('模板下载成功');
+        } else {
+            throw new Error('下载失败');
+        }
+    } catch (error) {
+        console.error('下载模板失败:', error);
+        showToast('下载模板失败: ' + error.message, 'error');
+    }
+}
+
+// 处理学校文件选择
+function handleSchoolFileSelect(file) {
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    const validExtensions = ['.xlsx', '.xls'];
+
+    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+
+    if (!validExtensions.includes(fileExtension)) {
+        showToast('请上传 Excel 文件（.xlsx 或 .xls 格式）', 'error');
+        return;
+    }
+
+    schoolSelectedFile = file;
+
+    // 显示文件信息
+    const fileInfo = document.getElementById('school-file-info');
+    fileInfo.style.display = 'block';
+    fileInfo.querySelector('.file-name').textContent = file.name;
+    fileInfo.querySelector('.file-size').textContent = formatFileSize(file.size);
+
+    // 隐藏上传区域
+    document.getElementById('school-upload-area').style.display = 'none';
+}
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+}
+
+// 移除学校文件
+function removeSchoolFile() {
+    schoolSelectedFile = null;
+    document.getElementById('school-file-info').style.display = 'none';
+    document.getElementById('school-upload-area').style.display = 'block';
+    document.getElementById('school-file-input').value = '';
+}
+
+// 开始学校批量导入
+async function startSchoolImport() {
+    if (!schoolSelectedFile) {
+        showToast('请选择要上传的文件', 'error');
+        return;
+    }
+
+    // 读取文件并转换为 Base64
+    const fileReader = new FileReader();
+    fileReader.onload = async function(e) {
+        const base64Data = e.target.result.split(',')[1];
+
+        try {
+            // 显示进度条
+            const progressArea = document.getElementById('school-import-progress');
+            progressArea.style.display = 'block';
+
+            const response = await apiRequest('/schools/batch-import', {
+                method: 'POST',
+                body: JSON.stringify({
+                    file: base64Data
+                })
+            });
+
+            if (response.code === 200) {
+                const result = response.data;
+
+                // 显示结果
+                progressArea.style.display = 'none';
+                const resultArea = document.getElementById('school-import-result');
+                resultArea.style.display = 'block';
+
+                document.getElementById('school-import-total').textContent = result.total;
+                document.getElementById('school-import-success').textContent = result.success;
+                document.getElementById('school-import-failed').textContent = result.failed;
+
+                // 显示错误详情
+                const errorsArea = document.getElementById('school-import-errors');
+                const errorsList = errorsArea.querySelector('.errors-list');
+                errorsList.innerHTML = '';
+
+                if (result.errors && result.errors.length > 0) {
+                    errorsArea.style.display = 'block';
+                    result.errors.forEach(error => {
+                        const errorItem = document.createElement('div');
+                        errorItem.className = 'error-item';
+                        errorItem.innerHTML = `
+                            <span class="error-row">第 ${error.row} 行</span>
+                            <span class="error-message">${error.message}</span>
+                        `;
+                        errorsList.appendChild(errorItem);
+                    });
+                } else {
+                    errorsArea.style.display = 'none';
+                }
+
+                // 更新按钮
+                document.getElementById('prev-school-step').style.display = 'none';
+                document.getElementById('next-school-step').style.display = 'none';
+                document.getElementById('start-school-import').style.display = 'none';
+                document.getElementById('close-school-import-result').style.display = 'inline-block';
+
+                // 刷新学校列表
+                loadSchools(1);
+
+                showToast('导入完成');
+            }
+        } catch (error) {
+            console.error('导入失败:', error);
+            showToast('导入失败: ' + error.message, 'error');
+            document.getElementById('school-import-progress').style.display = 'none';
+        }
+    };
+
+    fileReader.readAsDataURL(schoolSelectedFile);
+}
+
+// 重置学校导入
+function resetSchoolImport() {
+    schoolImportStep = 1;
+    schoolSelectedFile = null;
+    updateSchoolImportStep();
+    resetSchoolImportFile();
+
+    document.getElementById('school-import-progress').style.display = 'none';
+    document.getElementById('school-import-result').style.display = 'none';
+    document.getElementById('prev-school-step').style.display = 'none';
+    document.getElementById('next-school-step').style.display = 'inline-block';
+    document.getElementById('start-school-import').style.display = 'none';
+    document.getElementById('close-school-import-result').style.display = 'none';
+}
+
+// 重置学校导入文件
+function resetSchoolImportFile() {
+    schoolSelectedFile = null;
+    document.getElementById('school-file-info').style.display = 'none';
+    document.getElementById('school-upload-area').style.display = 'block';
+    document.getElementById('school-file-input').value = '';
+}
