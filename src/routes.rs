@@ -105,6 +105,21 @@ fn configure_api_v1() -> Scope {
                 // 删除岗位
                 .route("/{id}", web::delete().to(crate::handlers::job::delete)),
         )
+        // 学校路由(需要认证)
+        .service(
+            web::scope("/schools")
+                .wrap(crate::middleware::AuthMiddleware)
+                // 创建学校
+                .route("", web::post().to(crate::handlers::school::create))
+                // 学校列表
+                .route("", web::get().to(crate::handlers::school::list))
+                // 学校详情
+                .route("/{id}", web::get().to(crate::handlers::school::get))
+                // 更新学校
+                .route("/{id}", web::put().to(crate::handlers::school::update))
+                // 删除学校
+                .route("/{id}", web::delete().to(crate::handlers::school::delete)),
+        )
         // 用户路由(需要认证)
         .service(
             web::scope("/users")

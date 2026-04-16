@@ -43,6 +43,7 @@
                         <a href="#" class="nav-item active" data-page="dashboard">首页</a>
                         <a href="#" class="nav-item" data-page="students">学生管理</a>
                         <a href="#" class="nav-item" data-page="jobs">岗位管理</a>
+                        <a href="#" class="nav-item" data-page="schools">学校管理</a>
                         <a href="#" class="nav-item" data-page="users">用户管理</a>
                         <a href="#" class="nav-item" data-page="schema">数据管理</a>
                         <a href="#" class="nav-item" data-page="system">系统状态</a>
@@ -274,6 +275,54 @@
                         <button class="btn btn-secondary" id="user-prev-page" disabled>上一页</button>
                         <span id="user-page-info">第 1 页</span>
                         <button class="btn btn-secondary" id="user-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学校管理内容 -->
+            <div id="schools-content" class="content">
+                <div class="page-header">
+                    <h1>学校管理</h1>
+                    <button class="btn btn-primary" id="add-school-btn">添加学校</button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="school-search" placeholder="搜索学校名称或代码...">
+                    <button class="btn btn-secondary" id="school-search-btn">搜索</button>
+                    <select id="school-status-filter" class="status-filter">
+                        <option value="">全部状态</option>
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                        <option value="suspended">暂停</option>
+                    </select>
+                </div>
+
+                <div id="schools-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>学校代码</th>
+                                <th>学校名称</th>
+                                <th>地址</th>
+                                <th>联系人</th>
+                                <th>联系电话</th>
+                                <th>联系邮箱</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schools-table-body">
+                            <tr>
+                                <td colspan="10" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="school-pagination">
+                        <button class="btn btn-secondary" id="school-prev-page" disabled>上一页</button>
+                        <span id="school-page-info">第 1 页</span>
+                        <button class="btn btn-secondary" id="school-next-page" disabled>下一页</button>
                     </div>
                 </div>
             </div>
@@ -627,6 +676,58 @@
                     </div>
                     <div class="form-actions">
                         <button type="button" class="btn btn-secondary" id="cancel-user-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 学校编辑/添加模态框 -->
+        <div id="school-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="school-modal-title">添加学校</h2>
+                    <button class="close-btn" id="close-school-modal">&times;</button>
+                </div>
+                <form id="school-form">
+                    <input type="hidden" id="school-id">
+                    <div class="form-group">
+                        <label for="school-name">学校名称 *</label>
+                        <input type="text" id="school-name" name="name" required minlength="2" maxlength="100" placeholder="请输入学校名称（2-100字符）">
+                    </div>
+                    <div class="form-group">
+                        <label for="school-code">学校代码</label>
+                        <input type="text" id="school-code" name="code" readonly placeholder="系统自动生成">
+                        <small class="text-muted">学校代码由系统自动生成，不可修改</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-address">地址</label>
+                        <input type="text" id="school-address" name="address" placeholder="请输入学校地址">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="school-contact-person">联系人</label>
+                            <input type="text" id="school-contact-person" name="contact_person" placeholder="请输入联系人姓名">
+                        </div>
+                        <div class="form-group">
+                            <label for="school-contact-phone">联系电话</label>
+                            <input type="tel" id="school-contact-phone" name="contact_phone" placeholder="请输入联系电话">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-contact-email">联系邮箱</label>
+                        <input type="email" id="school-contact-email" name="contact_email" placeholder="请输入联系邮箱">
+                    </div>
+                    <div class="form-group" id="school-status-group" style="display: none;">
+                        <label for="school-status">状态</label>
+                        <select id="school-status" name="status">
+                            <option value="active">启用</option>
+                            <option value="inactive">禁用</option>
+                            <option value="suspended">暂停</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-school-btn">取消</button>
                         <button type="submit" class="btn btn-primary">保存</button>
                     </div>
                 </form>

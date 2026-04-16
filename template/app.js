@@ -14,6 +14,11 @@ const state = {
     totalJobs: 0,
     jobs: [],
     currentEditJobId: null,
+    // 学校相关
+    currentSchoolPage: 1,
+    totalSchools: 0,
+    schools: [],
+    currentEditSchoolId: null,
     // 用户相关
     currentUserPage: 1,
     totalUsers: 0,
@@ -53,6 +58,7 @@ const elements = {
         dashboard: document.getElementById('dashboard-content'),
         students: document.getElementById('students-content'),
         jobs: document.getElementById('jobs-content'),
+        schools: document.getElementById('schools-content'),
         users: document.getElementById('users-content'),
         schema: document.getElementById('schema-content'),
         system: document.getElementById('system-content')
@@ -70,6 +76,14 @@ const elements = {
     prevPageBtn: document.getElementById('prev-page'),
     nextPageBtn: document.getElementById('next-page'),
     pageInfo: document.getElementById('page-info'),
+    // 学校管理元素
+    addSchoolBtn: document.getElementById('add-school-btn'),
+    schoolSearch: document.getElementById('school-search'),
+    schoolSearchBtn: document.getElementById('school-search-btn'),
+    schoolsTableBody: document.getElementById('schools-table-body'),
+    schoolPrevPageBtn: document.getElementById('school-prev-page'),
+    schoolNextPageBtn: document.getElementById('school-next-page'),
+    schoolPageInfo: document.getElementById('school-page-info'),
     // 系统状态元素
     refreshStatusBtn: document.getElementById('refresh-status-btn'),
     backupBtn: document.getElementById('backup-btn'),
@@ -81,6 +95,11 @@ const elements = {
     studentForm: document.getElementById('student-form'),
     closeModalBtn: document.getElementById('close-modal'),
     cancelBtn: document.getElementById('cancel-btn'),
+    schoolModal: document.getElementById('school-modal'),
+    schoolModalTitle: document.getElementById('school-modal-title'),
+    schoolForm: document.getElementById('school-form'),
+    closeSchoolModalBtn: document.getElementById('close-school-modal'),
+    cancelSchoolBtn: document.getElementById('cancel-school-btn'),
     // 提示消息
     toast: document.getElementById('toast'),
     // 快捷操作
@@ -137,6 +156,160 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+// 学校管理API函数
+async function loadSchools(page = 1) {
+    try {
+        const keyword = elements.schoolSearch.value;
+        const status = document.getElementById('school-status-filter')?.value || '';
+
+        let url = `/schools?page=${page}&page_size=${state.pageSize}`;
+        if (keyword) url += `&keyword=${encodeURIComponent(keyword)}`;
+        if (status) url += `&status=${encodeURIComponent(status)}`;
+
+        const response = await apiRequest(url);
+
+        if (response.code === 200) {
+            state.schools = response.data.items;
+            state.totalSchools = response.data.total;
+            state.currentSchoolPage = page;
+
+            updateSchoolsTable();
+            updateSchoolPagination();
+        }
+    } catch (error) {
+        console.error('加载学校列表失败:', error);
+        showToast('加载学校列表失败', 'error');
+    }
+}
+
+function updateSchoolsTable() {
+    if (state.schools.length === 0) {
+        elements.schoolsTableBody.innerHTML = `
+            <tr>
+                <td colspan="10" class="loading">暂无学校数据</td>
+            </tr>
+        `;
+        return;
+    }
+
+    elements.schoolsTableBody.innerHTML = state.schools.map(school => `
+        <tr>
+            <td title="${escapeHtml(String(school.id))}">${school.id}</td>
+            <td title="${escapeHtml(school.code)}">${school.code}</td>
+            <td title="${escapeHtml(school.name)}">${school.name}</td>
+            <td title="${escapeHtml(school.address || '-')}">${school.address || '-'}</td>
+            <td title="${escapeHtml(school.contact_person || '-')}">${school.contact_person || '-'}</td>
+            <td title="${escapeHtml(school.contact_phone || '-')}">${school.contact_phone || '-'}</td>
+            <td title="${escapeHtml(school.contact_email || '-')}">${school.contact_email || '-'}</td>
+            <td>
+                <span class="status-badge status-${school.status}">${escapeHtml(school.status)}</span>
+            </td>
+            <td title="${escapeHtml(school.created_at ? new Date(school.created_at * 1000).toLocaleString() : '-')}">
+                ${school.created_at ? new Date(school.created_at * 1000).toLocaleString() : '-'}
+            </td>
+            <td>
+                <button class="btn btn-secondary" onclick="editSchool('${school.id}')">编辑</button>
+                <button class="btn btn-secondary" style="color: var(--danger-color);" onclick="deleteSchool('${school.id}')">删除</button>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function updateSchoolPagination() {
+    const totalPages = Math.ceil(state.totalSchools / state.pageSize);
+    elements.schoolPageInfo.textContent = `第 ${state.currentSchoolPage} / ${totalPages || 1} 页`;
+    elements.schoolPrevPageBtn.disabled = state.currentSchoolPage <= 1;
+    elements.schoolNextPageBtn.disabled = state.currentSchoolPage >= totalPages;
+}
+
+async function createSchool(data) {
+    try {
+        const response = await apiRequest('/schools', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+
+        if (response.code === 200) {
+            showToast('学校创建成功', 'success');
+            loadSchools(1);
+            closeSchoolModal();
+        }
+    } catch (error) {
+        console.error('创建学校失败:', error);
+        showToast('创建学校失败', 'error');
+    }
+}
+
+async function updateSchool(id, data) {
+    try {
+        const response = await apiRequest(`/schools/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+
+        if (response.code === 200) {
+            showToast('学校更新成功', 'success');
+            loadSchools(state.currentSchoolPage);
+            closeSchoolModal();
+        }
+    } catch (error) {
+        console.error('更新学校失败:', error);
+        showToast('更新学校失败', 'error');
+    }
+}
+
+async function deleteSchool(id) {
+    if (!confirm('确定要删除这个学校吗？此操作不可撤销。')) {
+        return;
+    }
+
+    try {
+        const response = await apiRequest(`/schools/${id}`, {
+            method: 'DELETE'
+        });
+
+        if (response.code === 200) {
+            showToast('学校删除成功', 'success');
+            loadSchools(state.currentSchoolPage);
+        }
+    } catch (error) {
+        console.error('删除学校失败:', error);
+        showToast('删除学校失败', 'error');
+    }
+}
+
+function openSchoolModal(mode = 'add', id = null) {
+    state.currentEditSchoolId = id;
+    elements.schoolModalTitle.textContent = mode === 'add' ? '添加学校' : '编辑学校';
+    document.getElementById('school-status-group').style.display = mode === 'edit' ? 'block' : 'none';
+
+    if (mode === 'edit' && id) {
+        const school = state.schools.find(s => s.id === id);
+        if (school) {
+            document.getElementById('school-id').value = school.id;
+            document.getElementById('school-name').value = school.name;
+            document.getElementById('school-code').value = school.code;
+            document.getElementById('school-address').value = school.address || '';
+            document.getElementById('school-contact-person').value = school.contact_person || '';
+            document.getElementById('school-contact-phone').value = school.contact_phone || '';
+            document.getElementById('school-contact-email').value = school.contact_email || '';
+            document.getElementById('school-status').value = school.status;
+        }
+    } else {
+        elements.schoolForm.reset();
+        document.getElementById('school-id').value = '';
+        document.getElementById('school-code').value = '';
+    }
+
+    elements.schoolModal.classList.add('active');
+}
+
+function closeSchoolModal() {
+    elements.schoolModal.classList.remove('active');
+    elements.schoolForm.reset();
+    state.currentEditSchoolId = null;
+}
+
 // 页面切换
 function switchPage(page) {
     // 更新导航状态
@@ -170,6 +343,9 @@ function switchPage(page) {
             break;
         case 'jobs':
             loadJobs();
+            break;
+        case 'schools':
+            loadSchools();
             break;
         case 'users':
             loadUsers();
@@ -1271,6 +1447,61 @@ function init() {
             }
         });
     });
+
+    // 学校管理事件监听
+    if (elements.addSchoolBtn) {
+        elements.addSchoolBtn.addEventListener('click', () => openSchoolModal('add'));
+    }
+    if (elements.schoolSearchBtn) {
+        elements.schoolSearchBtn.addEventListener('click', () => loadSchools(1));
+    }
+    if (elements.schoolSearch) {
+        elements.schoolSearch.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') loadSchools(1);
+        });
+    }
+    if (elements.schoolPrevPageBtn) {
+        elements.schoolPrevPageBtn.addEventListener('click', () => {
+            if (state.currentSchoolPage > 1) loadSchools(state.currentSchoolPage - 1);
+        });
+    }
+    if (elements.schoolNextPageBtn) {
+        elements.schoolNextPageBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalSchools / state.pageSize);
+            if (state.currentSchoolPage < totalPages) loadSchools(state.currentSchoolPage + 1);
+        });
+    }
+    if (elements.closeSchoolModalBtn) {
+        elements.closeSchoolModalBtn.addEventListener('click', closeSchoolModal);
+    }
+    if (elements.cancelSchoolBtn) {
+        elements.cancelSchoolBtn.addEventListener('click', closeSchoolModal);
+    }
+    if (elements.schoolForm) {
+        elements.schoolForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const formData = new FormData(elements.schoolForm);
+            const data = {
+                name: formData.get('name'),
+                address: formData.get('address'),
+                contact_person: formData.get('contact_person'),
+                contact_phone: formData.get('contact_phone'),
+                contact_email: formData.get('contact_email')
+            };
+
+            if (state.currentEditSchoolId) {
+                data.status = formData.get('status');
+                await updateSchool(state.currentEditSchoolId, data);
+            } else {
+                await createSchool(data);
+            }
+        });
+    }
+
+    // 暴露全局函数供HTML调用
+    window.editSchool = (id) => openSchoolModal('edit', id);
+    window.deleteSchool = deleteSchool;
 
     // 定时刷新系统状态和服务器时间
     setInterval(() => {
