@@ -27,11 +27,19 @@ func (l *RevokeInviteCodeLogic) RevokeInviteCode(id int64) error {
 	schoolId := int64(1)
 	teacherId := int64(1)
 
-	if v, ok := l.ctx.Value("schoolId").(int64); ok {
+	if v, ok := l.ctx.Value("schoolId").(int64); ok && v > 0 {
 		schoolId = v
 	}
-	if v, ok := l.ctx.Value("teacherId").(int64); ok {
+	if v, ok := l.ctx.Value("teacherId").(int64); ok && v > 0 {
 		teacherId = v
+	}
+
+	// If context doesn't have teacherId, get from database
+	if teacherId == 1 && schoolId > 0 {
+		db, err := l.svcCtx.DB.RawDB()
+		if err == nil {
+			db.QueryRowContext(l.ctx, "SELECT id FROM teachers WHERE school_id = ? LIMIT 1", schoolId).Scan(&teacherId)
+		}
 	}
 
 	db, err := l.svcCtx.DB.RawDB()

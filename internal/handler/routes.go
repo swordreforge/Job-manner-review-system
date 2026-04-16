@@ -440,6 +440,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 	server.AddRoutes(
 		[]rest.Route{
 			{
+				// Teacher registration (no auth required)
+				Method:  http.MethodPost,
+				Path:    "/teachers/register",
+				Handler: teacher.TeacherRegisterHandler(serverCtx),
+			},
+			{
 				// Create teacher invite code
 				Method:  http.MethodPost,
 				Path:    "/teachers/invite-codes",
@@ -456,6 +462,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodDelete,
 				Path:    "/teachers/invite-codes/:id",
 				Handler: teacher.RevokeInviteCodeHandler(serverCtx),
+			},
+			{
+				// Delete teacher invite code
+				Method:  http.MethodDelete,
+				Path:    "/teachers/invite-codes/delete/:id",
+				Handler: teacher.DeleteInviteCodeHandler(serverCtx),
 			},
 		},
 		rest.WithPrefix("/api/v1"),

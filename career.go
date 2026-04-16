@@ -103,7 +103,7 @@ func main() {
 	handler.RegisterHandlers(server, ctx)
 
 	// 应用认证中间件
-	server.Use(middleware.NewAuthMiddleware(ctx.Config.Auth.AccessSecret).Handle)
+	server.Use(middleware.NewAuthMiddlewareWithDSN(c.Auth.AccessSecret, c.Mysql.DataSource).Handle)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()
@@ -555,6 +555,14 @@ func autoMigrate(dataSource string) error {
 	}
 
 	logx.Infof("Database migration completed")
+
+	// Seed initial data using existing seedData function
+	if err := seedData(dataSource); err != nil {
+		logx.Errorf("Seed data failed: %v", err)
+	} else {
+		logx.Info("Initial data seeded successfully")
+	}
+
 	return nil
 }
 
@@ -876,6 +884,21 @@ func seedData(dataSource string) error {
 			return fmt.Errorf("failed to insert test user: %w", err)
 		}
 		logx.Infof("Test user created: testuser / 123456")
+	}
+
+	// Seed test school
+	var schoolCount int
+	err = tx.QueryRow("SELECT COUNT(*) FROM schools WHERE code = 'SCH001'").Scan(&schoolCount)
+	if err != nil && err != sql.ErrNoRows {
+		return fmt.Errorf("failed to check school: %w", err)
+	}
+	if schoolCount == 0 {
+		_, err = tx.Exec("INSERT INTO schools (name, code, address, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
+			"测试高中", "SCH001", "北京市朝阳区", "active", now, now)
+		if err != nil {
+			return fmt.Errorf("failed to insert test school: %w", err)
+		}
+		logx.Infof("Test school created: SCH001 - 测试高中")
 	}
 
 	var jobCount int

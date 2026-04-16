@@ -285,4 +285,105 @@ export const interviewApi = {
     api.delete<{ code: number; msg: string }>(`/interview/${id}`),
 };
 
+export interface TeacherInviteCode {
+  id: number;
+  code: string;
+  type: string;
+  maxUses: number;
+  usedCount: number;
+  status: string;
+  expiresAt: number;
+  createdAt: number;
+}
+
+export interface TeacherStudent {
+  id: number;
+  userId: number;
+  name: string;
+  username: string;
+  email: string;
+  className?: string;
+  grade?: string;
+  taskCompletionRate: number;
+  lastActivityAt?: number;
+  joinedAt: number;
+}
+
+export interface TeacherTaskProgress {
+  taskSeriesId: number;
+  taskName: string;
+  taskType: string;
+  status: string;
+  completionRate: number;
+  score?: number;
+  startedAt?: number;
+  completedAt?: number;
+}
+
+export interface TeacherAlert {
+  id: number;
+  studentId: number;
+  studentName: string;
+  className?: string;
+  alertType: string;
+  alertLevel: string;
+  description: string;
+  completionRate: number;
+  totalTasks: number;
+  completedTasks: number;
+  status: string;
+  createdAt: number;
+}
+
+export interface TeacherMessage {
+  id: number;
+  studentId: number;
+  studentName: string;
+  title: string;
+  content: string;
+  isRead: boolean;
+  createdAt: number;
+}
+
+export const teacherApi = {
+  register: (data: { username: string; password: string; email: string; name: string; schoolCode: string; employeeId?: string; department?: string }) =>
+    api.post<{ code: number; msg: string; token?: string; userId?: number; schoolId?: number }>('/teachers/register', data),
+
+  createInviteCode: (data: { type?: string; maxUses?: number; expiresIn?: number }) =>
+    api.post<{ code: number; msg: string; data: TeacherInviteCode }>('/teachers/invite-codes', data),
+
+  listInviteCodes: (params?: { page?: number; pageSize?: number; status?: string }) =>
+    api.get<{ code: number; msg: string; data: { total: number; list: TeacherInviteCode[] } }>('/teachers/invite-codes', { params }),
+
+  revokeInviteCode: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/teachers/invite-codes/${id}`),
+
+  deleteInviteCode: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/teachers/invite-codes/delete/${id}`),
+
+  listStudents: (params?: { page?: number; pageSize?: number; className?: string; grade?: string; status?: string }) =>
+    api.get<{ code: number; msg: string; data: { total: number; list: TeacherStudent[] } }>('/teachers/students', { params }),
+
+  getStudentDetail: (id: number) =>
+    api.get<{ code: number; msg: string; data: TeacherStudent }>(`/teachers/students/${id}`),
+
+  getStudentTasks: (id: number) =>
+    api.get<{ code: number; msg: string; data: { studentId: number; totalTasks: number; completedTasks: number; overallRate: number; tasks: TeacherTaskProgress[] } }>(`/teachers/students/${id}/tasks`),
+
+  listAlerts: (params?: { page?: number; pageSize?: number; alertType?: string; alertLevel?: string; status?: string }) =>
+    api.get<{ code: number; msg: string; data: { total: number; list: TeacherAlert[] } }>('/teachers/alerts', { params }),
+
+  resolveAlert: (id: number) =>
+    api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/resolve`),
+
+  ignoreAlert: (id: number) =>
+    api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/ignore`),
+
+  sendMessage: (data: { studentId: number; title: string; content: string }) =>
+    api.post<{ code: number; msg: string }>('/teachers/messages', data),
+
+  listMessages: (params?: { page?: number; pageSize?: number }) =>
+    api.get<{ code: number; msg: string; data: { total: number; list: TeacherMessage[] } }>('/teachers/messages', { params }),
+};
+
 export default api;

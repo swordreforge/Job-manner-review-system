@@ -333,6 +333,31 @@ type CreateInviteCodeResp struct {
 	CreatedAt int64  `json:"createdAt"`
 }
 
+type CreateInviteCodeAPIResp struct {
+	Code int                   `json:"code"`
+	Msg  string                `json:"msg"`
+	Data *CreateInviteCodeResp `json:"data,optional"`
+}
+
+type TeacherRegisterReq struct {
+	Username   string `json:"username" validate:"required,min=3,max=20"`
+	Password   string `json:"password" validate:"required,min=6,max=20"`
+	Email      string `json:"email" validate:"required,email"`
+	Phone      string `json:"phone,optional" validate:"omitempty,len=11"`
+	Name       string `json:"name" validate:"required,min=2,max=50"`
+	SchoolCode string `json:"schoolCode" validate:"required,len=6"`
+	EmployeeId string `json:"employeeId,optional"`
+	Department string `json:"department,optional"`
+}
+
+type TeacherRegisterResp struct {
+	Code     int    `json:"code"`
+	Msg      string `json:"msg"`
+	Token    string `json:"token,optional"`
+	UserId   int64  `json:"userId,optional"`
+	SchoolId int64  `json:"schoolId,optional"`
+}
+
 type InviteCodeInfo struct {
 	Id        int64  `json:"id"`
 	Code      string `json:"code"`
@@ -345,9 +370,9 @@ type InviteCodeInfo struct {
 }
 
 type ListInviteCodesReq struct {
-	Page     int    `json:"page"`
-	PageSize int    `json:"pageSize"`
-	Status   string `json:"status"`
+	Page     int    `form:"page,default=1"`
+	PageSize int    `form:"pageSize,default=10"`
+	Status   string `form:"status,optional"`
 }
 
 type ListInviteCodesResp struct {
@@ -356,11 +381,11 @@ type ListInviteCodesResp struct {
 }
 
 type TeacherListStudentsReq struct {
-	Page      int    `json:"page"`
-	PageSize  int    `json:"pageSize"`
-	ClassName string `json:"className,optional"`
-	Grade     string `json:"grade,optional"`
-	Status    string `json:"status,optional"`
+	Page      int    `form:"page,default=1"`
+	PageSize  int    `form:"pageSize,default=10"`
+	ClassName string `form:"className,optional"`
+	Grade     string `form:"grade,optional"`
+	Status    string `form:"status,optional"`
 }
 
 type TeacherStudentInfo struct {
@@ -945,10 +970,11 @@ type InterviewBaseResp struct {
 }
 
 type TeacherListAlertsReq struct {
-	Page       int    `json:"page"`
-	PageSize   int    `json:"pageSize"`
-	AlertType  string `json:"alertType,optional"`
-	AlertLevel string `json:"alertLevel,optional"`
+	Page       int    `form:"page,default=1"`
+	PageSize   int    `form:"pageSize,default=10"`
+	AlertType  string `form:"alertType,optional"`
+	AlertLevel string `form:"alertLevel,optional"`
+	Status     string `form:"status,optional"`
 }
 
 type TeacherAlertInfo struct {

@@ -27,11 +27,19 @@ func (l *ListInviteCodesLogic) ListInviteCodes(req *types.ListInviteCodesReq) (*
 	schoolId := int64(1)
 	teacherId := int64(1)
 
-	if v, ok := l.ctx.Value("schoolId").(int64); ok {
+	if v, ok := l.ctx.Value("schoolId").(int64); ok && v > 0 {
 		schoolId = v
 	}
-	if v, ok := l.ctx.Value("teacherId").(int64); ok {
+	if v, ok := l.ctx.Value("teacherId").(int64); ok && v > 0 {
 		teacherId = v
+	}
+
+	// If context doesn't have teacherId, get from database
+	if teacherId == 1 && schoolId > 0 {
+		db, err := l.svcCtx.DB.RawDB()
+		if err == nil {
+			db.QueryRowContext(l.ctx, "SELECT id FROM teachers WHERE school_id = ? LIMIT 1", schoolId).Scan(&teacherId)
+		}
 	}
 
 	page := 1
@@ -50,7 +58,7 @@ func (l *ListInviteCodesLogic) ListInviteCodes(req *types.ListInviteCodesReq) (*
 		return &types.ListInviteCodesResp{}, err
 	}
 
-	query := "SELECT id, code, type, max_uses, used_count, status FROM invite_codes WHERE school_id = ? AND teacher_id = ?"
+	query := "SELECT id, code, type, max_uses, used_count, status, expires_at, created_at FROM invite_codes WHERE school_id = ? AND teacher_id = ?"
 	args := []interface{}{schoolId, teacherId}
 
 	if req.Status != "" {
@@ -71,7 +79,7 @@ func (l *ListInviteCodesLogic) ListInviteCodes(req *types.ListInviteCodesReq) (*
 	var list []types.InviteCodeInfo
 	for rows.Next() {
 		var info types.InviteCodeInfo
-		if err := rows.Scan(&info.Id, &info.Code, &info.Type, &info.MaxUses, &info.UsedCount, &info.Status); err != nil {
+		if err := rows.Scan(&info.Id, &info.Code, &info.Type, &info.MaxUses, &info.UsedCount, &info.Status, &info.ExpiresAt, &info.CreatedAt); err != nil {
 			logx.Errorf("scan invite code failed: %v", err)
 			continue
 		}

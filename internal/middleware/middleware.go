@@ -2,18 +2,25 @@ package middleware
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"strings"
 
 	"career-api/internal/pkg"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type AuthMiddleware struct {
 	accessSecret string
+	dataSource   string
 }
 
 func NewAuthMiddleware(accessSecret string) *AuthMiddleware {
 	return &AuthMiddleware{accessSecret: accessSecret}
+}
+
+func NewAuthMiddlewareWithDSN(accessSecret, dataSource string) *AuthMiddleware {
+	return &AuthMiddleware{accessSecret: accessSecret, dataSource: dataSource}
 }
 
 func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
@@ -21,6 +28,7 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		path := r.URL.Path
 		if strings.Contains(path, "/user/login") ||
 			strings.Contains(path, "/user/register") ||
+			strings.Contains(path, "/teachers/register") ||
 			strings.Contains(path, "/health") ||
 			strings.HasPrefix(path, "/img/") {
 			next(w, r)
@@ -60,6 +68,31 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, "username", claims.Username)
 		ctx = context.WithValue(ctx, "role", claims.Role)
 
+		// For teachers, add schoolId to context
+		if claims.Role == "teacher" {
+			schoolId := m.getTeacherSchoolId(claims.UserId)
+			ctx = context.WithValue(ctx, "schoolId", schoolId)
+		}
+
 		next(w, r.WithContext(ctx))
 	}
+}
+
+func (m *AuthMiddleware) getTeacherSchoolId(userId int64) int64 {
+	if m.dataSource == "" {
+		return 1 // default
+	}
+
+	db, err := sql.Open("mysql", m.dataSource)
+	if err != nil {
+		return 1
+	}
+	defer db.Close()
+
+	var schoolId int64
+	err = db.QueryRow("SELECT school_id FROM teachers WHERE user_id = ?", userId).Scan(&schoolId)
+	if err != nil {
+		return 1
+	}
+	return schoolId
 }

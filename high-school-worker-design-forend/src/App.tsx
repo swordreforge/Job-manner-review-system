@@ -21,6 +21,11 @@ const HollandHistoryPage = lazy(() => import('./pages/Holland/History'));
 const InterviewPage = lazy(() => import('./pages/Interview'));
 const DocPage = lazy(() => import('./pages/Doc'));
 
+const TeacherDashboard = lazy(() => import('./pages/Teacher/Dashboard'));
+const TeacherStudents = lazy(() => import('./pages/Teacher/Students'));
+const TeacherInviteCodes = lazy(() => import('./pages/Teacher/InviteCodes'));
+const TeacherAlerts = lazy(() => import('./pages/Teacher/Alerts'));
+
 function RouteLoadingFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center text-gray-400">
@@ -114,14 +119,46 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="jobs"
-              element={
-                <ProtectedRoute>
-                  <JobsPage />
-                </ProtectedRoute>
-              }
-            />
+<Route
+            path="jobs"
+            element={
+              <ProtectedRoute>
+                <JobsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher"
+            element={
+              <ProtectedRoute>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/students"
+            element={
+              <ProtectedRoute>
+                <TeacherStudents />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/invite-codes"
+            element={
+              <ProtectedRoute>
+                <TeacherInviteCodes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="teacher/alerts"
+            element={
+              <ProtectedRoute>
+                <TeacherAlerts />
+              </ProtectedRoute>
+            }
+          />
           </Route>
           <Route
             path="/holland"

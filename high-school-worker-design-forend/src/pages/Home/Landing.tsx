@@ -889,7 +889,7 @@ export default function Landing() {
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.2 }}
-                            onClick={handleCardClick}
+                            onClick={() => handleCardClick(idx)}
                             className="absolute top-4 right-4 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white hover:text-orange-400 transition-all duration-300 z-20"
                           >
                             <CloseOutlined />

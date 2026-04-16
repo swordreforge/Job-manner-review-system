@@ -1,11 +1,12 @@
 package handler
 
 import (
-	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest/httpx"
 
 	"career-api/internal/logic/teacher"
@@ -28,9 +29,11 @@ func CreateInviteCodeHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		httpx.OkJsonCtx(r.Context(), w, types.CreateInviteCodeAPIResp{
+			Code: 0,
+			Msg:  "success",
+			Data: resp,
+		})
 	}
 }
 
@@ -49,22 +52,33 @@ func ListInviteCodesHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(resp)
+		httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{
+			"code": 0,
+			"msg":  "success",
+			"data": resp,
+		})
 	}
 }
 
 func RevokeInviteCodeHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		pathParts := strings.Split(r.URL.Path, "/")
+		// Path is like /api/v1/teachers/invite-codes/1
+		// Split by "/" and take the last part
+		path := r.URL.Path
+		parts := strings.Split(path, "/")
+
 		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
+		for i := len(parts) - 1; i >= 0; i-- {
+			if parts[i] != "" {
+				idStr = parts[i]
+				break
+			}
 		}
+
 		id, err := strconv.ParseInt(idStr, 10, 64)
-		if err != nil {
-			httpx.ErrorCtx(r.Context(), w, err)
+		if err != nil || id == 0 {
+			logx.Errorf("invalid id: path=%s, parts=%v, idStr=%s", path, parts, idStr)
+			httpx.ErrorCtx(r.Context(), w, fmt.Errorf("invalid invite code id"))
 			return
 		}
 
@@ -75,8 +89,31 @@ func RevokeInviteCodeHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]interface{}{"code": 0, "msg": "success"})
+		httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "success"})
+	}
+}
+
+func DeleteInviteCodeHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		path := r.URL.Path
+		parts := strings.Split(path, "/")
+
+		idStr := parts[len(parts)-1]
+
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil || id == 0 {
+			logx.Errorf("invalid id: path=%s, parts=%v, idStr=%s", path, parts, idStr)
+			httpx.ErrorCtx(r.Context(), w, fmt.Errorf("invalid invite code id"))
+			return
+		}
+
+		l := teacher.NewDeleteInviteCodeLogic(r.Context(), svcCtx)
+		err = l.DeleteInviteCode(id)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "success"})
 	}
 }

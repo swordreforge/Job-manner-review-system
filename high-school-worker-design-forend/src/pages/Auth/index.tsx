@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { Form, Input, Button, Card, Tabs, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined, BankOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { userApi } from '../../api';
+import { userApi, teacherApi } from '../../api';
 import { useAuthStore } from '../../stores';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
@@ -88,6 +88,26 @@ export default function AuthPage() {
       }
     } catch (error: unknown) {
       console.error('Register error:', error);
+      const err = error as { response?: { data?: { msg?: string } }; message?: string };
+      const errorMsg = err.response?.data?.msg || err.message || '注册失败，请检查网络连接';
+      message.error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleTeacherRegister = async (values: { username: string; password: string; email: string; name: string; schoolCode: string; employeeId?: string; department?: string }) => {
+    setLoading(true);
+    try {
+      const result = await teacherApi.register(values);
+      if (result.code === 0) {
+        message.success('教师注册成功，请登录');
+        setActiveTab('login');
+      } else {
+        message.error(result.msg || '注册失败');
+      }
+    } catch (error: unknown) {
+      console.error('Teacher register error:', error);
       const err = error as { response?: { data?: { msg?: string } }; message?: string };
       const errorMsg = err.response?.data?.msg || err.message || '注册失败，请检查网络连接';
       message.error(errorMsg);
@@ -442,6 +462,159 @@ export default function AuthPage() {
                     className="auth-button"
                   >
                     注册
+                  </Button>
+                </Form.Item>
+
+                <div className="text-center text-gray-500 text-sm" style={{ marginTop: '1.25rem' }}>
+                  已有账户？<a className="auth-link" onClick={() => handleTabChange('login')}>立即登录</a>
+                </div>
+              </motion.div>
+            </Form>
+          </motion.div>
+        </AnimatePresence>
+      ),
+    },
+    {
+      key: 'teacher-register',
+      label: '教师注册',
+      children: (
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={`teacher-register-${tabKey}`}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            className="tab-content-wrapper"
+          >
+            <Form
+              form={registerForm}
+              onFinish={handleTeacherRegister}
+              layout="vertical"
+              className="auth-form"
+            >
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.3 }}
+              >
+                <Form.Item
+                  name="username"
+                  rules={[
+                    { required: true, message: '请输入用户名' },
+                    { min: 3, message: '用户名至少3个字符' },
+                    { pattern: /^[a-zA-Z0-9_]+$/, message: '用户名只能包含字母、数字和下划线' }
+                  ]}
+                  validateTrigger="onBlur"
+                >
+                  <Input
+                    prefix={<UserOutlined />}
+                    placeholder="用户名"
+                    size="large"
+                    className="auth-input"
+                    autoComplete="username"
+                  />
+                </Form.Item>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+              >
+                <Form.Item
+                  name="email"
+                  rules={[
+                    { required: true, message: '请输入邮箱' },
+                    { type: 'email', message: '请输入有效的邮箱地址' }
+                  ]}
+                  validateTrigger="onBlur"
+                >
+                  <Input
+                    prefix={<MailOutlined />}
+                    placeholder="邮箱"
+                    size="large"
+                    className="auth-input"
+                    autoComplete="email"
+                  />
+                </Form.Item>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2, duration: 0.3 }}
+              >
+                <Form.Item
+                  name="password"
+                  rules={[
+                    { required: true, message: '请输入密码' },
+                    { min: 6, message: '密码至少6个字符' }
+                  ]}
+                  validateTrigger="onBlur"
+                >
+                  <Input.Password
+                    prefix={<LockOutlined />}
+                    placeholder="密码"
+                    size="large"
+                    className="auth-input"
+                    autoComplete="new-password"
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </Form.Item>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25, duration: 0.3 }}
+              >
+                <Form.Item
+                  name="name"
+                  rules={[{ required: true, message: '请输入姓名' }]}
+                >
+                  <Input
+                    prefix={<UserOutlined />}
+                    placeholder="姓名"
+                    size="large"
+                    className="auth-input"
+                  />
+                </Form.Item>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+              >
+                <Form.Item
+                  name="schoolCode"
+                  rules={[{ required: true, message: '请输入学校代码' }]}
+                >
+                  <Input
+                    prefix={<BankOutlined />}
+                    placeholder="学校代码 (6位)"
+                    size="large"
+                    className="auth-input"
+                  />
+                </Form.Item>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.35, duration: 0.3 }}
+              >
+                <Form.Item style={{ marginBottom: 0, marginTop: '1rem' }}>
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={loading}
+                    block
+                    size="large"
+                    className="auth-button"
+                  >
+                    注册教师账号
                   </Button>
                 </Form.Item>
 

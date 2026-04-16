@@ -6,12 +6,14 @@ interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
   isAuthChecked: boolean;
+  role: 'student' | 'teacher' | 'admin';
   setToken: (token: string) => void;
   setUser: (user: User) => void;
   logout: () => void;
   clearAuth: () => void;
   initialize: () => void;
   setAuthChecked: (checked: boolean) => void;
+  setRole: (role: 'student' | 'teacher' | 'admin') => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -19,23 +21,26 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isAuthChecked: false,
+  role: 'student',
 
   setToken: (token) => {
     localStorage.setItem('token', token);
     set({ token, isAuthenticated: true, isAuthChecked: true });
   },
 
-  setUser: (user) => set({ user }),
+  setUser: (user) => set({ user, role: (user?.role as 'student' | 'teacher' | 'admin') || 'student' }),
 
   logout: () => {
     localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true });
+    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true, role: 'student' });
   },
 
   clearAuth: () => {
     localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true });
+    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true, role: 'student' });
   },
+
+  setRole: (role) => set({ role }),
 
   initialize: () => {
     const token = localStorage.getItem('token');

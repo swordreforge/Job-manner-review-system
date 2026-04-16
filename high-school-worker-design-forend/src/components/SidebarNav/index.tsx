@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, MenuFoldOutlined, MenuUnfoldOutlined, LogoutOutlined } from '@ant-design/icons';
+import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, SettingOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '../../stores';
 
@@ -16,7 +16,7 @@ interface NavItem {
   matchPaths?: string[];
 }
 
-const navItems: NavItem[] = [
+const studentNavItems: NavItem[] = [
   { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/start', matchPaths: ['/start', '/'] },
   { key: 'plan', title: '职业规划', icon: <BulbOutlined />, path: '/plan', matchPaths: ['/plan', '/holland'] },
   { key: 'resume', title: '简历优化', icon: <FileTextOutlined />, path: '/resume', matchPaths: ['/resume'] },
@@ -24,10 +24,18 @@ const navItems: NavItem[] = [
   { key: 'profile', title: '个人中心', icon: <UserOutlined />, path: '/profile', matchPaths: ['/profile', '/settings', '/student'] },
 ];
 
-export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNavProps) {
+const teacherNavItems: NavItem[] = [
+  { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher', matchPaths: ['/teacher'] },
+  { key: 'students', title: '学生管理', icon: <TeamOutlined />, path: '/teacher/students', matchPaths: ['/teacher/students'] },
+  { key: 'invite', title: '邀请码', icon: <FileAddOutlined />, path: '/teacher/invite-codes', matchPaths: ['/teacher/invite-codes'] },
+  { key: 'alerts', title: '预警管理', icon: <AlertOutlined />, path: '/teacher/alerts', matchPaths: ['/teacher/alerts'] },
+  { key: 'settings', title: '设置', icon: <SettingOutlined />, path: '/teacher/settings', matchPaths: ['/teacher/settings'] },
+];
+
+export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, role } = useAuthStore();
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -38,6 +46,8 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  const navItems = role === 'teacher' ? teacherNavItems : studentNavItems;
 
   const isActive = (item: NavItem) => {
     const pathname = location.pathname;
@@ -70,10 +80,12 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
       >
         <div className="flex items-center gap-3 min-w-0">
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center flex-shrink-0">
-            <span className="text-white font-bold text-sm">职</span>
+            <span className="text-white font-bold text-sm">{role === 'teacher' ? '教' : '职'}</span>
           </div>
           {!isCollapsed && (
-            <span className="font-semibold truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>职业规划助手</span>
+            <span className="font-semibold truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+              {role === 'teacher' ? '教师工作台' : '职业规划助手'}
+            </span>
           )}
         </div>
       </div>
@@ -111,59 +123,7 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
         </ul>
       </nav>
 
-      <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
-        <button
-          onClick={() => navigate('/settings')}
-          className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
-          style={{
-            backgroundColor: isActive({ key: 'settings', title: '', icon: null, path: '/settings', matchPaths: ['/settings'] }) ? 'var(--md-sys-color-primary-container)' : 'transparent',
-            color: 'var(--md-sys-color-on-surface-variant)',
-          }}
-          title={isCollapsed ? '设置' : undefined}
-        >
-          <SettingOutlined className="text-lg" />
-          {!isCollapsed && <span className="font-medium">设置</span>}
-        </button>
-      </div>
-
-      <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
-        <button
-          onClick={onToggleCollapse}
-          className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
-          style={{
-            backgroundColor: 'transparent',
-            color: 'var(--md-sys-color-on-surface-variant)',
-          }}
-          title={isCollapsed ? '展开菜单' : '收起菜单'}
-        >
-          {isCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          {!isCollapsed && <span className="font-medium">收起菜单</span>}
-        </button>
-      </div>
-
       {user && (
-        <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
-          <button
-            onClick={() => {
-              if (window.confirm('确定要退出登录吗？')) {
-                logout();
-                navigate('/start');
-              }
-            }}
-            className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
-            style={{
-              backgroundColor: 'transparent',
-              color: 'var(--md-sys-color-error)',
-            }}
-            title={isCollapsed ? '退出登录' : undefined}
-          >
-            <LogoutOutlined />
-            {!isCollapsed && <span className="font-medium">退出登录</span>}
-          </button>
-        </div>
-      )}
-
-      {!isCollapsed && (
         <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)', padding: '1rem' }}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 overflow-hidden">
@@ -173,17 +133,39 @@ export default function SidebarNav({ isCollapsed, onToggleCollapse }: SidebarNav
                 <UserOutlined className="text-white text-lg" />
               )}
             </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
-                {user?.username || '用户'}
-              </p>
-              <p className="text-xs truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                {user?.email || '未设置邮箱'}
-              </p>
-            </div>
+            {!isCollapsed && (
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                  {user?.username || '用户'}
+                </p>
+                <p className="text-xs truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                  {role === 'teacher' ? '教师' : '学生'}
+                </p>
+              </div>
+            )}
           </div>
         </div>
       )}
+
+      <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
+        <button
+          onClick={() => {
+            if (window.confirm('确定要退出登录吗？')) {
+              logout();
+              navigate('/start');
+            }
+          }}
+          className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
+          style={{
+            backgroundColor: 'transparent',
+            color: 'var(--md-sys-color-error)',
+          }}
+          title={isCollapsed ? '退出登录' : undefined}
+        >
+          <LogoutOutlined />
+          {!isCollapsed && <span className="font-medium">退出登录</span>}
+        </button>
+      </div>
     </aside>
   );
 }
