@@ -92,3 +92,22 @@ pub struct StudentQuery {
     pub page_size: Option<u64>,
     pub keyword: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct BatchImportStudentsRequest {
+    pub file: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentImportResult {
+    pub total: u32,
+    pub success: u32,
+    pub failed: u32,
+    pub errors: Vec<StudentImportError>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct StudentImportError {
+    pub row: u32,
+    pub message: String,
+}

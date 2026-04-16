@@ -48,7 +48,11 @@ fn configure_api_v1() -> Scope {
                 // 更新学生信息
                 .route("/{id}", web::put().to(crate::handlers::student::update))
                 // 删除学生
-                .route("/{id}", web::delete().to(crate::handlers::student::delete)),
+                .route("/{id}", web::delete().to(crate::handlers::student::delete))
+                // 批量导入学生
+                .route("/batch-import", web::post().to(crate::handlers::student::batch_import_students))
+                // 下载学生导入模板
+                .route("/import-template", web::get().to(crate::handlers::student::download_student_template)),
         )
         // 测试数据路由(需要认证)
         .service(
@@ -103,7 +107,11 @@ fn configure_api_v1() -> Scope {
                 // 更新岗位
                 .route("/{id}", web::put().to(crate::handlers::job::update))
                 // 删除岗位
-                .route("/{id}", web::delete().to(crate::handlers::job::delete)),
+                .route("/{id}", web::delete().to(crate::handlers::job::delete))
+                // 批量导入岗位
+                .route("/batch-import", web::post().to(crate::handlers::job::batch_import))
+                // 下载导入模板
+                .route("/import-template", web::get().to(crate::handlers::job::download_template)),
         )
         // 学校路由(需要认证)
         .service(

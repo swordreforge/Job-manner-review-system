@@ -89,3 +89,22 @@ pub struct JobQuery {
     pub industry: Option<String>,
     pub category: Option<String>,
 }
+
+#[derive(Debug, Deserialize)]
+pub struct BatchImportJobsRequest {
+    pub file: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ImportResult {
+    pub total: u32,
+    pub success: u32,
+    pub failed: u32,
+    pub errors: Vec<ImportError>,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ImportError {
+    pub row: u32,
+    pub message: String,
+}
