@@ -87,6 +87,11 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Run column migration for existing tables (adds new columns without breaking)
+	if err := migrateColumns(c.Mysql.DataSource); err != nil {
+		logx.Errorf("Column migration failed: %v", err)
+	}
+
 	if err := seedData(c.Mysql.DataSource); err != nil {
 		logx.Errorf("Seed data failed: %v", err)
 	}
@@ -157,10 +162,12 @@ func autoMigrate(dataSource string) error {
 				phone VARCHAR(20) DEFAULT NULL,
 				avatar VARCHAR(255) DEFAULT NULL,
 				role VARCHAR(20) NOT NULL DEFAULT 'student',
+				school_id BIGINT(20) DEFAULT NULL,
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
-				KEY idx_username (username)
+				KEY idx_username (username),
+				KEY idx_school_id (school_id)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},
 		{
@@ -179,6 +186,8 @@ func autoMigrate(dataSource string) error {
 				projects TEXT DEFAULT NULL,
 				completeness_score DOUBLE NOT NULL DEFAULT 0,
 				competitiveness_score DOUBLE NOT NULL DEFAULT 0,
+				task_completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '8系列任务总完成度',
+				last_activity_at BIGINT(20) DEFAULT NULL COMMENT '最后活动时间',
 				resume_url VARCHAR(255) DEFAULT NULL,
 				suggestions TEXT DEFAULT NULL,
 				resume_content TEXT DEFAULT NULL,
@@ -363,6 +372,154 @@ func autoMigrate(dataSource string) error {
 				KEY idx_student_id (student_id),
 				KEY idx_created (created_at)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		// Teacher side tables
+		{
+			name: "schools",
+			createSQL: `CREATE TABLE IF NOT EXISTS schools (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				name VARCHAR(100) NOT NULL COMMENT '学校名称',
+				code VARCHAR(20) NOT NULL UNIQUE COMMENT '学校代码',
+				address VARCHAR(200) DEFAULT NULL COMMENT '学校地址',
+				contact_person VARCHAR(50) DEFAULT NULL COMMENT '联系人',
+				contact_phone VARCHAR(20) DEFAULT NULL COMMENT '联系电话',
+				contact_email VARCHAR(100) DEFAULT NULL COMMENT '联系邮箱',
+				status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态: active, inactive, suspended',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_code (code),
+				KEY idx_status (status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学校表'`,
+		},
+		{
+			name: "teachers",
+			createSQL: `CREATE TABLE IF NOT EXISTS teachers (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				user_id BIGINT(20) NOT NULL COMMENT '关联用户ID',
+				school_id BIGINT(20) NOT NULL COMMENT '所属学校ID',
+				name VARCHAR(50) NOT NULL COMMENT '教师姓名',
+				employee_id VARCHAR(50) DEFAULT NULL COMMENT '工号',
+				department VARCHAR(100) DEFAULT NULL COMMENT '院系/部门',
+				phone VARCHAR(20) DEFAULT NULL COMMENT '联系电话',
+				status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态: active, inactive',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_user_id (user_id),
+				KEY idx_school_id (school_id),
+				KEY idx_status (status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='教师表'`,
+		},
+		{
+			name: "invite_codes",
+			createSQL: `CREATE TABLE IF NOT EXISTS invite_codes (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				code VARCHAR(20) NOT NULL UNIQUE COMMENT '邀请码',
+				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				teacher_id BIGINT(20) NOT NULL COMMENT '创建教师ID',
+				type VARCHAR(20) NOT NULL DEFAULT 'student' COMMENT '类型: student, teacher',
+				max_uses INT NOT NULL DEFAULT 100 COMMENT '最大使用次数',
+				used_count INT NOT NULL DEFAULT 0 COMMENT '已使用次数',
+				status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态: active, expired, revoked',
+				expires_at BIGINT(20) DEFAULT NULL COMMENT '过期时间',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_code (code),
+				KEY idx_school_id (school_id),
+				KEY idx_teacher_id (teacher_id),
+				KEY idx_status (status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='邀请码表'`,
+		},
+		{
+			name: "student_schools",
+			createSQL: `CREATE TABLE IF NOT EXISTS student_schools (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL COMMENT '学生ID',
+				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				class_name VARCHAR(50) DEFAULT NULL COMMENT '班级名称',
+				grade VARCHAR(20) DEFAULT NULL COMMENT '年级',
+				invite_code_id BIGINT(20) DEFAULT NULL COMMENT '使用的邀请码ID',
+				status VARCHAR(20) NOT NULL DEFAULT 'active' COMMENT '状态: active, graduated, transferred',
+				joined_at BIGINT(20) NOT NULL COMMENT '加入时间',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_student_school (student_id, school_id),
+				KEY idx_school_id (school_id),
+				KEY idx_status (status)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生-学校关联表'`,
+		},
+		{
+			name: "student_task_progress",
+			createSQL: `CREATE TABLE IF NOT EXISTS student_task_progress (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL COMMENT '学生ID',
+				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				task_series_id INT NOT NULL COMMENT '任务系列ID (1-8)',
+				task_name VARCHAR(100) NOT NULL COMMENT '任务名称',
+				task_type VARCHAR(50) NOT NULL COMMENT '任务类型: holland_test, resume_upload, career_plan, interview, etc.',
+				status VARCHAR(20) NOT NULL DEFAULT 'not_started' COMMENT '状态: not_started, in_progress, completed, skipped',
+				completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '完成度 (0-100)',
+				score DECIMAL(5,2) DEFAULT NULL COMMENT '任务得分',
+				started_at BIGINT(20) DEFAULT NULL COMMENT '开始时间',
+				completed_at BIGINT(20) DEFAULT NULL COMMENT '完成时间',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				UNIQUE KEY uk_student_series (student_id, task_series_id),
+				KEY idx_school_id (school_id),
+				KEY idx_status (status),
+				KEY idx_completion_rate (completion_rate)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='学生任务进度表'`,
+		},
+		{
+			name: "alert_records",
+			createSQL: `CREATE TABLE IF NOT EXISTS alert_records (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				student_id BIGINT(20) NOT NULL COMMENT '学生ID',
+				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
+				teacher_id BIGINT(20) NOT NULL COMMENT '教师ID',
+				alert_type VARCHAR(50) NOT NULL COMMENT '预警类型: low_completion, no_activity, deadline_warning',
+				alert_level VARCHAR(20) NOT NULL COMMENT '预警级别: low, medium, high, critical',
+				description TEXT NOT NULL COMMENT '预警描述',
+				completion_rate DECIMAL(5,2) NOT NULL COMMENT '当前完成度',
+				total_tasks INT NOT NULL COMMENT '总任务数',
+				completed_tasks INT NOT NULL COMMENT '已完成任务数',
+				status VARCHAR(20) NOT NULL DEFAULT 'pending' COMMENT '状态: pending, resolved, ignored',
+				resolved_at BIGINT(20) DEFAULT NULL COMMENT '解决时间',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_student_id (student_id),
+				KEY idx_school_id (school_id),
+				KEY idx_teacher_id (teacher_id),
+				KEY idx_status (status),
+				KEY idx_alert_type (alert_type),
+				KEY idx_created_at (created_at)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='预警记录表'`,
+		},
+		{
+			name: "messages",
+			createSQL: `CREATE TABLE IF NOT EXISTS messages (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				sender_id BIGINT(20) NOT NULL COMMENT '发送者ID',
+				sender_type VARCHAR(20) NOT NULL COMMENT '��送者类型: teacher, student, system',
+				receiver_id BIGINT(20) NOT NULL COMMENT '接收者ID',
+				receiver_type VARCHAR(20) NOT NULL COMMENT '接收者类型: teacher, student',
+				title VARCHAR(200) DEFAULT NULL COMMENT '消息标题',
+				content TEXT NOT NULL COMMENT '消息内容',
+				message_type VARCHAR(50) NOT NULL DEFAULT 'system' COMMENT '消息类型: task_reminder, alert, system, note',
+				status VARCHAR(20) NOT NULL DEFAULT 'unread' COMMENT '状态: unread, read',
+				created_at BIGINT(20) NOT NULL,
+				read_at BIGINT(20) DEFAULT NULL COMMENT '阅读时间',
+				PRIMARY KEY (id),
+				KEY idx_sender (sender_id, sender_type),
+				KEY idx_receiver (receiver_id, receiver_type),
+				KEY idx_status (status),
+				KEY idx_created (created_at)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='消息表'`,
 		},
 	}
 
@@ -612,6 +769,51 @@ func normalizeCreateSQL(sqlText string) string {
 	normalized = spacePattern.ReplaceAllString(normalized, " ")
 
 	return strings.TrimSpace(normalized)
+}
+
+// migrateColumns adds new columns to existing tables without breaking old data
+func migrateColumns(dataSource string) error {
+	db, err := sql.Open("mysql", dataSource)
+	if err != nil {
+		return fmt.Errorf("failed to connect: %w", err)
+	}
+	defer db.Close()
+
+	migrations := []struct {
+		table  string
+		column string
+		sql    string
+	}{
+		// users table - add school_id
+		{"users", "school_id", "ALTER TABLE users ADD COLUMN school_id BIGINT(20) DEFAULT NULL"},
+		{"users", "school_id_idx", "ALTER TABLE users ADD KEY idx_school_id (school_id)"},
+		// students table - add task_completion_rate and last_activity_at
+		{"students", "task_completion_rate", "ALTER TABLE students ADD COLUMN task_completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '8系列任务总完成度'"},
+		{"students", "last_activity_at", "ALTER TABLE students ADD COLUMN last_activity_at BIGINT(20) DEFAULT NULL COMMENT '最后活动时间'"},
+	}
+
+	for _, m := range migrations {
+		// Check if column exists
+		var exists int
+		checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '%s' AND column_name = '%s'", m.table, m.column)
+		if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
+			logx.Errorf("Failed to check column %s.%s: %v", m.table, m.column, err)
+			continue
+		}
+		if exists > 0 {
+			continue // Column already exists
+		}
+
+		// Add column
+		if _, err := db.Exec(m.sql); err != nil {
+			logx.Errorf("Failed to add column %s.%s: %v", m.table, m.column, err)
+			continue
+		}
+		logx.Infof("Added column: %s.%s", m.table, m.column)
+	}
+
+	logx.Infof("Column migration completed")
+	return nil
 }
 
 func seedData(dataSource string) error {
