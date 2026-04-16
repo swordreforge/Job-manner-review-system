@@ -333,20 +333,6 @@ type CreateInviteCodeResp struct {
 	CreatedAt int64  `json:"createdAt"`
 }
 
-<<<<<<< HEAD
-type ListInviteCodesReq struct {
-	Page     int    `json:"page"`
-	PageSize int    `json:"pageSize"`
-	Status   string `json:"status"`
-}
-
-type ListInviteCodesResp struct {
-	Total int              `json:"total"`
-	List  []InviteCodeInfo `json:"list"`
-}
-
-=======
->>>>>>> feature/teacher-side
 type InviteCodeInfo struct {
 	Id        int64  `json:"id"`
 	Code      string `json:"code"`

@@ -898,7 +898,7 @@ export default function Landing() {
                           {/* 详情信息 */}
                           <div className="absolute inset-0 px-8 pt-4 pb-8 flex flex-col justify-start relative z-10 overflow-y-auto">
                             <h3 className="text-4xl font-bold mb-2">{item.title}</h3>
-                            <p className="text-gray-400 text-lg mb-6 leading-normal">{item.desc}</p>
+                            <p className="text-gray-400 text-xl mb-6 leading-snug">{item.desc}</p>
                             
                             {/* 视觉分隔 */}
                             <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
@@ -910,7 +910,7 @@ export default function Landing() {
                               transition={{ delay: 0.3 }}
                               className="mb-6"
                             >
-                              <p className="text-gray-300 text-base leading-tight">{item.detailDesc}</p>
+                              <p className="text-gray-300 text-lg leading-snug">{item.detailDesc}</p>
                             </motion.div>
                             
                             {/* 视觉分隔 */}
