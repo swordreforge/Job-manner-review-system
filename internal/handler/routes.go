@@ -300,6 +300,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/register-with-invite",
 				Handler: student.RegisterWithInviteHandler(serverCtx),
 			},
+			{
+				// Join school
+				Method:  http.MethodPost,
+				Path:    "/students/join-school",
+				Handler: student.JoinSchoolHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)
