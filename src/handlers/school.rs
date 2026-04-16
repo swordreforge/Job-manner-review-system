@@ -140,13 +140,18 @@ pub async fn delete(
 
 /// 批量导入学校
 pub async fn batch_import(
-    pool: web::Data<sqlx::MySqlPool>,
     req: web::Json<BatchImportSchoolsRequest>,
+    state: web::Data<AppState>,
 ) -> impl Responder {
+    log::info!("开始批量导入学校");
+
+    let pool = &state.mysql_pool;
+
     // 解码 Base64 文件
     let file_data = match general_purpose::STANDARD.decode(&req.file) {
         Ok(data) => data,
         Err(e) => {
+            log::error!("文件解码失败: {}", e);
             return HttpResponse::BadRequest()
                 .json(ErrorResponse::error("文件解码失败", Some(e.to_string())));
         }
@@ -205,7 +210,7 @@ pub async fn batch_import(
         };
 
         // 生成学校代码
-        let school_code = match generate_school_code(&pool).await {
+        let school_code = match generate_school_code(pool.as_ref()).await {
             Ok(code) => code,
             Err(e) => {
                 failed += 1;
