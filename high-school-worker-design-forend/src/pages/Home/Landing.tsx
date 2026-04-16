@@ -33,30 +33,86 @@ const features = [
   {
     title: 'AI智能分析',
     desc: '基于DeepSeek大模型，提供精准的职业规划建议',
-    detailDesc: '通过深度分析你的技能、经验和兴趣，AI智能分析系统能为你量身定制职业发展路径。无论是转行、晋升还是跳槽，系统都会根据最新的市场趋势和岗位需求，为你提供专业的建议和指导。适用场景：职业迷茫期、技能转型、求职规划等。',
+    detailDesc: '通过深度分析你的技能、经验和兴趣，AI智能分析系统能为你量身定制职业发展路径。无论是转行、晋升还是跳槽，系统都会根据最新的市场趋势和岗位需求，为你提供专业的建议和指导。',
     icon: '🤖',
     imageUrl: 'https://swordreforge.top/img/worker-show/jobs.webp',
+    features: [
+      { icon: '🎯', text: '精准匹配' },
+      { icon: '📊', text: '数据分析' },
+      { icon: '🚀', text: '智能推荐' },
+      { icon: '💡', text: '个性化建议' },
+    ],
+    scenarios: ['职业迷茫期', '技能转型', '求职规划', '晋升决策'],
+    stats: [
+      { label: '匹配准确率', value: '95%' },
+      { label: '用户满意度', value: '98%' },
+      { label: '职业发展提速', value: '40%' },
+    ],
+    buttonText: '立即体验',
+    buttonLink: '/holland',
   },
   {
     title: '职业图谱',
     desc: '可视化展示岗位晋升和转岗路径，了解职业发展可能性',
-    detailDesc: '职业图谱以直观的树状图形式展示完整的职业发展路径。你可以清晰地看到从初级到高级的晋升阶梯，了解不同岗位之间的转换要求。系统会根据你的当前职位，推荐最合适的职业发展路径，并标注关键的能力提升节点。适用场景：职业规划、晋升准备、转岗决策等。',
+    detailDesc: '职业图谱以直观的树状图形式展示完整的职业发展路径。你可以清晰地看到从初级到高级的晋升阶梯，了解不同岗位之间的转换要求。系统会根据你的当前职位，推荐最合适的职业发展路径，并标注关键的能力提升节点。',
     icon: '🗺️',
     imageUrl: 'https://swordreforge.top/img/worker-show/plan.webp',
+    features: [
+      { icon: '🌳', text: '可视化路径' },
+      { icon: '📈', text: '晋升阶梯' },
+      { icon: '🔄', text: '转岗建议' },
+      { icon: '🎓', text: '能力提升' },
+    ],
+    scenarios: ['职业规划', '晋升准备', '转岗决策', '目标设定'],
+    stats: [
+      { label: '岗位覆盖', value: '500+' },
+      { label: '路径准确率', value: '92%' },
+      { label: '平均晋升时间', value: '-30%' },
+    ],
+    buttonText: '探索路径',
+    buttonLink: '/plan',
   },
   {
     title: '简历优化',
     desc: '智能分析简历，针对目标岗位提供优化建议',
-    detailDesc: 'AI简历优化引擎会深度分析你的简历内容，针对特定的目标岗位提供个性化的优化建议。系统会指出简历中的亮点和不足，优化项目描述，突出关键技能，并根据ATS系统的要求调整格式。适用场景：求职准备、简历升级、投递优化等。',
+    detailDesc: 'AI简历优化引擎会深度分析你的简历内容，针对特定的目标岗位提供个性化的优化建议。系统会指出简历中的亮点和不足，优化项目描述，突出关键技能，并根据ATS系统的要求调整格式。',
     icon: '📝',
     imageUrl: 'https://swordreforge.top/img/worker-show/profile.webp',
+    features: [
+      { icon: '🔍', text: '智能分析' },
+      { icon: '✨', text: '亮点突出' },
+      { icon: '🎯', text: '精准匹配' },
+      { icon: '📄', text: 'ATS优化' },
+    ],
+    scenarios: ['求职准备', '简历升级', '投递优化', '转行求职'],
+    stats: [
+      { label: '投递回复率', value: '+200%' },
+      { label: '面试邀请', value: '+150%' },
+      { label: '优化效率', value: '10分钟' },
+    ],
+    buttonText: '优化简历',
+    buttonLink: '/resume',
   },
   {
     title: '模拟面试',
     desc: '大厂/国企双模式，AI实时反馈面试表现',
-    detailDesc: '模拟面试系统提供大厂和国企两种不同的面试模式。大厂模式侧重技术深度和算法能力，国企模式注重综合素质和表达逻辑。AI面试官会根据你的回答实时反馈，指出优点和改进点，帮助你提升面试技巧。适用场景：面试准备、技能提升、求职冲刺等。',
+    detailDesc: '模拟面试系统提供大厂和国企两种不同的面试模式。大厂模式侧重技术深度和算法能力，国企模式注重综合素质和表达逻辑。AI面试官会根据你的回答实时反馈，指出优点和改进点，帮助你提升面试技巧。',
     icon: '🎯',
     imageUrl: 'https://swordreforge.top/img/worker-show/start.webp',
+    features: [
+      { icon: '🎭', text: '真实模拟' },
+      { icon: '🤖', text: 'AI反馈' },
+      { icon: '📊', text: '表现分析' },
+      { icon: '💪', text: '能力提升' },
+    ],
+    scenarios: ['面试准备', '技能提升', '求职冲刺', '压力训练'],
+    stats: [
+      { label: '面试通过率', value: '+80%' },
+      { label: '用户评分', value: '4.9分' },
+      { label: '平均练习时长', value: '15分钟' },
+    ],
+    buttonText: '开始面试',
+    buttonLink: '/interview',
   },
 ];
 
@@ -876,17 +932,81 @@ export default function Landing() {
                           />
                           
                           {/* 详情信息 */}
-                          <div className="absolute inset-0 p-8 flex flex-col justify-center relative z-10">
+                          <div className="absolute inset-0 p-8 flex flex-col relative z-10 overflow-y-auto">
                             <motion.div
                               initial={{ scale: 0 }}
                               animate={{ scale: 1 }}
                               transition={{ type: "spring", delay: 0.2 }}
-                              className="text-6xl mb-6"
+                              className="text-6xl mb-4"
                             >
                               {item.icon}
                             </motion.div>
-                            <h3 className="text-4xl font-bold mb-4">{item.title}</h3>
-                            <p className="text-gray-300 text-lg leading-relaxed">{item.detailDesc}</p>
+                            <h3 className="text-4xl font-bold mb-3">{item.title}</h3>
+                            <p className="text-gray-400 text-base mb-6">{item.desc}</p>
+                            
+                            {/* 视觉分隔 */}
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
+                            
+                            {/* 详细介绍 */}
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.3 }}
+                              className="mb-6"
+                            >
+                              <p className="text-gray-300 text-sm leading-relaxed">{item.detailDesc}</p>
+                            </motion.div>
+                            
+                            {/* 视觉分隔 */}
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
+                            
+                            {/* 使用场景标签 */}
+                            <div className="mb-6">
+                              <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider">适用场景</h4>
+                              <div className="flex flex-wrap gap-2">
+                                {item.scenarios.map((scenario, sIdx) => (
+                                  <motion.span
+                                    key={sIdx}
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: 0.4 + sIdx * 0.05 }}
+                                    className="px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs text-gray-300 hover:bg-white/20 transition-colors"
+                                  >
+                                    {scenario}
+                                  </motion.span>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* 数据指标 */}
+                            <div className="mb-6">
+                              <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider">效果数据</h4>
+                              <div className="grid grid-cols-3 gap-3">
+                                {item.stats.map((stat, stIdx) => (
+                                  <motion.div
+                                    key={stIdx}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.5 + stIdx * 0.1 }}
+                                    className="text-center p-3 bg-white/5 border border-white/10 rounded-lg"
+                                  >
+                                    <div className="text-2xl font-bold text-orange-400 mb-1">{stat.value}</div>
+                                    <div className="text-xs text-gray-400">{stat.label}</div>
+                                  </motion.div>
+                                ))}
+                              </div>
+                            </div>
+                            
+                            {/* 操作按钮 */}
+                            <motion.button
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.6 }}
+                              onClick={() => navigate(item.buttonLink)}
+                              className="w-full py-3 bg-gradient-to-r from-orange-500 to-pink-500 rounded-xl font-semibold text-white hover:shadow-lg hover:shadow-orange-500/30 transition-all duration-300"
+                            >
+                              {item.buttonText}
+                            </motion.button>
                           </div>
                         </>
                       )}
