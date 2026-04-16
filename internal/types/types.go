@@ -975,3 +975,27 @@ type TeacherListAlertsResp struct {
 type AlertActionReq struct {
 	AlertId int64 `path:"id"`
 }
+
+type SendMessageReq struct {
+	ReceiverId int64  `json:"receiverId"`
+	Title      string `json:"title"`
+	Content    string `json:"content"`
+}
+
+type MessageInfo struct {
+	Id           int64  `json:"id"`
+	SenderId     int64  `json:"senderId"`
+	SenderName   string `json:"senderName"`
+	ReceiverId   int64  `json:"receiverId"`
+	ReceiverName string `json:"receiverName"`
+	Title        string `json:"title"`
+	Content      string `json:"content"`
+	IsRead       bool   `json:"isRead"`
+	CreatedAt    int64  `json:"createdAt"`
+	ReadAt       int64  `json:"readAt,optional"`
+}
+
+type ListMessagesResp struct {
+	Total int           `json:"total"`
+	List  []MessageInfo `json:"list"`
+}
