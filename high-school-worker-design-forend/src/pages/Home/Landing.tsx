@@ -901,24 +901,24 @@ export default function Landing() {
                             <p className="text-gray-400 text-xl mb-6 leading-snug">{item.desc}</p>
                             
                             {/* 视觉分隔 */}
-                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4" />
                             
                             {/* 详细介绍 */}
                             <motion.div
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               transition={{ delay: 0.3 }}
-                              className="mb-6"
+                              className="mb-4"
                             >
                               <p className="text-gray-300 text-lg leading-snug">{item.detailDesc}</p>
                             </motion.div>
                             
                             {/* 视觉分隔 */}
-                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-6" />
+                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4" />
                             
                             {/* 使用场景标签 */}
-                            <div className="mb-6">
-                              <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider">适用场景</h4>
+                            <div className="mb-4">
+                              <h4 className="text-sm font-semibold text-orange-400 mb-2 uppercase tracking-wider">适用场景</h4>
                               <div className="flex flex-wrap gap-2">
                                 {item.scenarios.map((scenario, sIdx) => (
                                   <motion.span
@@ -935,8 +935,8 @@ export default function Landing() {
                             </div>
                             
                             {/* 数据指标 */}
-                            <div className="mb-6">
-                              <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider">效果数据</h4>
+                            <div className="mb-2">
+                              <h4 className="text-sm font-semibold text-orange-400 mb-2 uppercase tracking-wider">效果数据</h4>
                               <div className="grid grid-cols-3 gap-3">
                                 {item.stats.map((stat, stIdx) => (
                                   <motion.div
