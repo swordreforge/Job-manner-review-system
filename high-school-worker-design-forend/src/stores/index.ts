@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { userApi } from '../api';
 import type { User, Student, Job, MatchResult, Report } from '../types';
 
 interface AuthState {
@@ -42,10 +43,22 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   setRole: (role) => set({ role }),
 
-  initialize: () => {
+  initialize: async () => {
     const token = localStorage.getItem('token');
     if (token) {
       set({ token, isAuthenticated: true });
+      try {
+        const res = await userApi.getInfo();
+        if (res?.data) {
+          set({ 
+            user: res.data, 
+            role: (res.data.role as 'student' | 'teacher' | 'admin') || 'student' 
+          });
+        }
+      } catch (e) {
+        localStorage.removeItem('token');
+        set({ token: null, user: null, isAuthenticated: false, role: 'student' });
+      }
     } else {
       set({ isAuthenticated: false });
     }
