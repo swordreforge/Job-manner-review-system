@@ -793,23 +793,36 @@ func migrateColumns(dataSource string) error {
 	}
 
 	for _, m := range migrations {
-		// Check if column exists
 		var exists int
-		checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '%s' AND column_name = '%s'", m.table, m.column)
-		if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
-			logx.Errorf("Failed to check column %s.%s: %v", m.table, m.column, err)
-			continue
-		}
-		if exists > 0 {
-			continue // Column already exists
+		// Check if it's an index migration (ends with _idx)
+		isIndex := strings.HasSuffix(m.column, "_idx")
+
+		if isIndex {
+			// Check if index exists in information_schema.statistics
+			checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '%s' AND index_name = '%s'", m.table, m.column)
+			if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
+				logx.Errorf("Failed to check index %s.%s: %v", m.table, m.column, err)
+				continue
+			}
+		} else {
+			// Check if column exists in information_schema.columns
+			checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '%s' AND column_name = '%s'", m.table, m.column)
+			if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
+				logx.Errorf("Failed to check column %s.%s: %v", m.table, m.column, err)
+				continue
+			}
 		}
 
-		// Add column
+		if exists > 0 {
+			continue // Column/Index already exists
+		}
+
+		// Add column/index
 		if _, err := db.Exec(m.sql); err != nil {
-			logx.Errorf("Failed to add column %s.%s: %v", m.table, m.column, err)
+			logx.Errorf("Failed to add %s.%s: %v", m.table, m.column, err)
 			continue
 		}
-		logx.Infof("Added column: %s.%s", m.table, m.column)
+		logx.Infof("Added %s: %s.%s", map[bool]string{true: "index", false: "column"}[isIndex], m.table, m.column)
 	}
 
 	logx.Infof("Column migration completed")

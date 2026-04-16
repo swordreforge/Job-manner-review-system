@@ -297,6 +297,39 @@ type RegisterReq struct {
 	Phone    string `json:"phone,optional" validate:"omitempty,len=11"`
 }
 
+type RegisterWithInviteReq struct {
+	Username   string `json:"username" validate:"required,min=3,max=20"`
+	Password   string `json:"password" validate:"required,min=6,max=20"`
+	Email      string `json:"email" validate:"required,email"`
+	Name       string `json:"name,optional"`
+	InviteCode string `json:"inviteCode" validate:"required"`
+}
+
+type RegisterWithInviteResp struct {
+	Code int                     `json:"code"`
+	Msg  string                  `json:"msg"`
+	Data *RegisterWithInviteData `json:"data,optional"`
+}
+
+type RegisterWithInviteData struct {
+	UserId    int64  `json:"userId"`
+	Username  string `json:"username"`
+	StudentId int64  `json:"studentId"`
+	SchoolId  int64  `json:"schoolId"`
+	Token     string `json:"token"`
+}
+
+type InviteCodeInfo struct {
+	Id        int64  `db:"id"`
+	Code      string `db:"code"`
+	SchoolId  int64  `db:"school_id"`
+	TeacherId int64  `db:"teacher_id"`
+	Type      string `db:"type"`
+	MaxUses   int    `db:"max_uses"`
+	UsedCount int    `db:"used_count"`
+	Status    string `db:"status"`
+}
+
 type RelatedJobsReq struct {
 	JobId int64  `path:"id"`
 	Type  string `path:"type,options=promotion transfer related"`
