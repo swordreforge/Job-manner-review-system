@@ -14,5 +14,5 @@ pub use student::{
 pub use user::{
     ChangePasswordRequest, ChangeUsernameRequest, Claims, CreateMySqlUserRequest,
     CreateUserRequest, LoginRequest, LoginResponse, MySqlUser, MySqlUserResponse, TokenInfo,
-    UpdateMySqlUserRequest, User, UserResponse,
+    UpdateMySqlUserRequest, User, UserResponse, BatchImportUsersRequest, UserImportResult, UserImportError,
 };

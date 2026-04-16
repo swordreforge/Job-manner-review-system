@@ -140,6 +140,10 @@ fn configure_api_v1() -> Scope {
                 .route("", web::post().to(crate::handlers::user::create))
                 // 用户列表
                 .route("", web::get().to(crate::handlers::user::list))
+                // 下载导入模板（需要在 /{id} 之前）
+                .route("/import-template", web::get().to(crate::handlers::user::download_user_template))
+                // 批量导入用户（需要在 /{id} 之前）
+                .route("/batch-import", web::post().to(crate::handlers::user::batch_import))
                 // 用户详情
                 .route("/{id}", web::get().to(crate::handlers::user::get))
                 // 更新用户

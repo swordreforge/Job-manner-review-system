@@ -136,6 +136,7 @@ pub struct CreateMySqlUserRequest {
     pub password: String,
     pub email: Option<String>,
     pub phone: Option<String>,
+    pub avatar: Option<String>,
     pub role: Option<String>,
 }
 
@@ -159,4 +160,26 @@ pub struct ChangePasswordRequest {
 pub struct ChangeUsernameRequest {
     pub password: String, // 需要验证当前密码
     pub new_username: String,
+}
+
+/// 批量导入用户请求
+#[derive(Debug, Deserialize)]
+pub struct BatchImportUsersRequest {
+    pub file: String,  // Base64 编码的 Excel 文件
+}
+
+/// 批量导入用户结果
+#[derive(Debug, Serialize)]
+pub struct UserImportResult {
+    pub total: u32,
+    pub success: u32,
+    pub failed: u32,
+    pub errors: Vec<UserImportError>,
+}
+
+/// 批量导入用户错误
+#[derive(Debug, Serialize)]
+pub struct UserImportError {
+    pub row: u32,
+    pub message: String,
 }

@@ -43,6 +43,20 @@ impl AppBuilder {
     pub async fn build_and_run(self) -> anyhow::Result<()> {
         let config = self.config.ok_or_else(|| anyhow::anyhow!("Config not set"))?;
 
+        // 打印启动信息
+        log::info!("==========================================");
+        log::info!("启动教师端管理系统...");
+        log::info!("==========================================");
+        log::info!("服务器配置:");
+        log::info!("  主机: {}", config.host);
+        log::info!("  端口: {}", config.port);
+        log::info!("  地址: {}", config.server_address());
+        log::info!("数据库配置:");
+        log::info!("  MySQL 主机: {}:{}", config.mysql_host, config.mysql_port);
+        log::info!("  MySQL 数据库: {}", config.mysql_database);
+        log::info!("  MySQL 用户: {}", config.mysql_username);
+        log::info!("==========================================");
+
         // 获取当前可执行文件的路径
         let exe_path = std::env::current_exe()?;
         let exe_dir = exe_path.parent().unwrap_or_else(|| std::path::Path::new("."));
@@ -90,7 +104,12 @@ impl AppBuilder {
         .bind(&config.server_address())?
         .run();
 
-        log::info!("Teacher API server started on {}", config.server_address());
+        log::info!("==========================================");
+        log::info!("服务器已成功启动!");
+        log::info!("==========================================");
+        log::info!("访问地址:");
+        log::info!("  本地访问: http://{}", config.server_address());
+        log::info!("==========================================");
 
         server.await?;
 
