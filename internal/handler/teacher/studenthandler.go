@@ -25,11 +25,7 @@ func ListSchoolStudentsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		if err != nil {
 			httpx.ErrorCtx(r.Context(), w, err)
 		} else {
-			httpx.OkJsonCtx(r.Context(), w, types.TeacherListStudentsResp{
-				Code: 0,
-				Msg:  "success",
-				Data: resp,
-			})
+			httpx.OkJsonCtx(r.Context(), w, resp)
 		}
 	}
 }
@@ -38,8 +34,8 @@ func GetStudentDetailHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathParts := strings.Split(r.URL.Path, "/")
 		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
+		if len(pathParts) >= 4 {
+			idStr = pathParts[3]
 		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
@@ -61,8 +57,8 @@ func GetStudentTasksHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		pathParts := strings.Split(r.URL.Path, "/")
 		idStr := ""
-		if len(pathParts) >= 5 {
-			idStr = pathParts[4]
+		if len(pathParts) >= 6 {
+			idStr = pathParts[5]
 		}
 		id, err := strconv.ParseInt(idStr, 10, 64)
 		if err != nil {
