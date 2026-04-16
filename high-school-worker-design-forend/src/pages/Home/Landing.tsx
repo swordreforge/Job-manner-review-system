@@ -33,24 +33,28 @@ const features = [
   {
     title: 'AI智能分析',
     desc: '基于DeepSeek大模型，提供精准的职业规划建议',
+    detailDesc: '通过深度分析你的技能、经验和兴趣，AI智能分析系统能为你量身定制职业发展路径。无论是转行、晋升还是跳槽，系统都会根据最新的市场趋势和岗位需求，为你提供专业的建议和指导。适用场景：职业迷茫期、技能转型、求职规划等。',
     icon: '🤖',
     imageUrl: 'https://swordreforge.top/img/worker-show/jobs.webp',
   },
   {
     title: '职业图谱',
     desc: '可视化展示岗位晋升和转岗路径，了解职业发展可能性',
+    detailDesc: '职业图谱以直观的树状图形式展示完整的职业发展路径。你可以清晰地看到从初级到高级的晋升阶梯，了解不同岗位之间的转换要求。系统会根据你的当前职位，推荐最合适的职业发展路径，并标注关键的能力提升节点。适用场景：职业规划、晋升准备、转岗决策等。',
     icon: '🗺️',
     imageUrl: 'https://swordreforge.top/img/worker-show/plan.webp',
   },
   {
     title: '简历优化',
     desc: '智能分析简历，针对目标岗位提供优化建议',
+    detailDesc: 'AI简历优化引擎会深度分析你的简历内容，针对特定的目标岗位提供个性化的优化建议。系统会指出简历中的亮点和不足，优化项目描述，突出关键技能，并根据ATS系统的要求调整格式。适用场景：求职准备、简历升级、投递优化等。',
     icon: '📝',
     imageUrl: 'https://swordreforge.top/img/worker-show/profile.webp',
   },
   {
     title: '模拟面试',
     desc: '大厂/国企双模式，AI实时反馈面试表现',
+    detailDesc: '模拟面试系统提供大厂和国企两种不同的面试模式。大厂模式侧重技术深度和算法能力，国企模式注重综合素质和表达逻辑。AI面试官会根据你的回答实时反馈，指出优点和改进点，帮助你提升面试技巧。适用场景：面试准备、技能提升、求职冲刺等。',
     icon: '🎯',
     imageUrl: 'https://swordreforge.top/img/worker-show/start.webp',
   },
@@ -135,6 +139,9 @@ export default function Landing() {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
+  const [hoveredCardIndex, setHoveredCardIndex] = useState<number | null>(null);
+  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const featuresContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     initialize();
@@ -176,6 +183,64 @@ export default function Landing() {
   const handleImageClick = () => {
     setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
     setImagePreviewOpen(true);
+  };
+
+  const handleCardMouseEnter = (index: number) => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
+    }
+    setHoveredCardIndex(index);
+  };
+
+  const handleCardMouseLeave = () => {
+    if (hoverTimeoutRef.current) {
+      clearTimeout(hoverTimeoutRef.current);
+    }
+    hoverTimeoutRef.current = setTimeout(() => {
+      setHoveredCardIndex(null);
+    }, 100);
+  };
+
+  const handleContainerMouseMove = (event: React.MouseEvent<HTMLDivElement>) => {
+    // 如果已经有卡片被悬停（放大状态），不进行切换计算
+    if (hoveredCardIndex !== null) return;
+    
+    if (!featuresContainerRef.current) return;
+    
+    const container = featuresContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // 计算鼠标在哪个卡片区域
+    const cardWidth = rect.width / 2;
+    const cardHeight = rect.height / 2;
+    
+    const colIndex = Math.floor(x / cardWidth);
+    const rowIndex = Math.floor(y / cardHeight);
+    const cardIndex = rowIndex * 2 + colIndex;
+    
+    if (cardIndex >= 0 && cardIndex < features.length) {
+      if (hoveredCardIndex !== cardIndex) {
+        // 清除之前的timeout
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current);
+          hoverTimeoutRef.current = null;
+        }
+        handleCardMouseEnter(cardIndex);
+      }
+    } else {
+      // 鼠标在无效区域，清除状态
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
+      setHoveredCardIndex(null);
+    }
+  };
+
+  const handleContainerMouseLeave = () => {
+    handleCardMouseLeave();
   };
 
   const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
@@ -299,6 +364,14 @@ export default function Landing() {
 
     return () => {
       if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -731,64 +804,95 @@ export default function Landing() {
                 </div>
               </motion.div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 justify-items-center">
-                {features.map((item, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, y: 50 }}
-                    whileInView={{ opacity: 1, y: 0 }}
-                    whileHover={{
-                      scale: 1.05,
-                      boxShadow: [
-                        "0 20px 40px rgba(0,0,0,0.3)",
-                        "0 30px 60px rgba(251, 146, 60, 0.15)",
-                        "0 30px 60px rgba(251, 146, 60, 0.15)"
-                      ],
-                      borderColor: "rgba(251, 146, 60, 0.6)",
-                      background: [
-                        "rgba(255,255,255,0.05)",
-                        "rgba(255,255,255,0.08)",
-                        "rgba(255,255,255,0.08)"
-                      ]
-                    }}
-                    transition={{ boxShadow: { duration: 0.4 }, scale: { duration: 0.3, type: "spring", stiffness: 400 } }}
-                    onMouseEnter={() => setHoveredFeatureIndex(idx)}
-                    className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
-                    style={{
-                      background: 'rgba(255,255,255,0.05)',
-                      border: '1px solid rgba(255,255,255,0.1)',
-                      width: '100%',
-                      maxWidth: '480px'
-                    }}
-                  >
+              <div className="relative h-[50vh] max-w-5xl mx-auto">
+                <div 
+                  ref={featuresContainerRef}
+                  className="relative w-full h-full grid grid-cols-1 md:grid-cols-2 gap-6"
+                  onMouseMove={handleContainerMouseMove}
+                  onMouseLeave={handleContainerMouseLeave}
+                >
+                  {features.map((item, idx) => (
                     <motion.div
-                      className="absolute inset-0 rounded-2xl pointer-events-none"
-                      initial={{ opacity: 0 }}
-                      whileHover={{
-                        opacity: 1,
-                        background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
+                      key={idx}
+                      initial={{ opacity: 0, y: 50 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      animate={hoveredCardIndex === idx ? {
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        zIndex: 20,
+                        borderRadius: '1.5rem',
+                        padding: '2.5rem',
+                        boxShadow: '0 40px 80px rgba(251, 146, 60, 0.4)',
+                        border: '1px solid rgba(251, 146, 60, 0.9)',
+                        background: 'rgba(17, 19, 26, 0.98)',
+                      } : hoveredCardIndex !== null ? {
+                        opacity: 0,
+                        pointerEvents: 'none',
+                      } : { opacity: 1 }}
+                      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+                      className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
+                      style={{
+                        background: hoveredCardIndex === null && hoveredCardIndex !== idx ? 'rgba(255,255,255,0.05)' : '',
+                        border: hoveredCardIndex === null && hoveredCardIndex !== idx ? '1px solid rgba(255,255,255,0.1)' : '',
                       }}
-                      transition={{ duration: 0.3 }}
-                    />
-                    <motion.div
-                      className="absolute inset-0 rounded-2xl pointer-events-none"
-                      initial={{ opacity: 0 }}
-                      whileHover={{ opacity: 1, boxShadow: "inset 0 0 20px rgba(251, 146, 60, 0.1)" }}
-                      transition={{ duration: 0.3 }}
-                    />
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      whileInView={{ scale: 1 }}
-                      whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                      transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
-                      className="text-4xl mb-4 relative z-10"
                     >
-                      {item.icon}
+                      {hoveredCardIndex !== idx && (
+                        <>
+                          <div
+                            className="absolute inset-0 rounded-2xl pointer-events-none"
+                            style={{
+                              background: 'rgba(255,255,255,0.05)',
+                              border: '1px solid rgba(255,255,255,0.1)',
+                            }}
+                          />
+                          
+                          {/* 简略信息 */}
+                          <div className="relative z-10">
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              whileInView={{ scale: 1 }}
+                              whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
+                              transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
+                              className="text-4xl mb-4"
+                            >
+                              {item.icon}
+                            </motion.div>
+                            <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
+                            <p className="text-gray-400">{item.desc}</p>
+                          </div>
+                        </>
+                      )}
+                      
+                      {hoveredCardIndex === idx && (
+                        <>
+                          <div
+                            className="absolute inset-0 rounded-2xl pointer-events-none"
+                            style={{
+                              background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
+                            }}
+                          />
+                          
+                          {/* 详情信息 */}
+                          <div className="absolute inset-0 p-8 flex flex-col justify-center relative z-10">
+                            <motion.div
+                              initial={{ scale: 0 }}
+                              animate={{ scale: 1 }}
+                              transition={{ type: "spring", delay: 0.2 }}
+                              className="text-6xl mb-6"
+                            >
+                              {item.icon}
+                            </motion.div>
+                            <h3 className="text-4xl font-bold mb-4">{item.title}</h3>
+                            <p className="text-gray-300 text-lg leading-relaxed">{item.detailDesc}</p>
+                          </div>
+                        </>
+                      )}
                     </motion.div>
-                    <h3 className="text-xl font-semibold mb-2 relative z-10">{item.title}</h3>
-                    <p className="text-gray-400 relative z-10">{item.desc}</p>
-                  </motion.div>
-                ))}
+                  ))}
+                </div>
               </div>
             </div>
 
