@@ -75,3 +75,87 @@ func GetStudentTasksHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 		}
 	}
 }
+
+func ListAlertsHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.TeacherListAlertsReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewListAlertsLogic(r.Context(), svcCtx)
+		resp, err := l.ListAlerts(&req)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, resp)
+		}
+	}
+}
+
+func ResolveAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pathParts := strings.Split(r.URL.Path, "/")
+		idStr := ""
+		if len(pathParts) >= 5 {
+			idStr = pathParts[4]
+		}
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewResolveAlertLogic(r.Context(), svcCtx)
+		if err := l.ResolveAlert(id); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "resolved"})
+		}
+	}
+}
+
+func IgnoreAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pathParts := strings.Split(r.URL.Path, "/")
+		idStr := ""
+		if len(pathParts) >= 5 {
+			idStr = pathParts[4]
+		}
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewIgnoreAlertLogic(r.Context(), svcCtx)
+		if err := l.IgnoreAlert(id); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "ignored"})
+		}
+	}
+}
+
+func CheckAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		pathParts := strings.Split(r.URL.Path, "/")
+		idStr := ""
+		if len(pathParts) >= 5 {
+			idStr = pathParts[4]
+		}
+		id, err := strconv.ParseInt(idStr, 10, 64)
+		if err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewCheckAlertLogic(r.Context(), svcCtx)
+		if err := l.CheckStudentAlert(id); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "checked"})
+		}
+	}
+}

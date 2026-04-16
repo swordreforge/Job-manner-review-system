@@ -478,6 +478,32 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/teachers/students/:id/tasks",
 				Handler: teacher.GetStudentTasksHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/teachers/students/:id/check-alert",
+				Handler: teacher.CheckAlertHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodGet,
+				Path:    "/teachers/alerts",
+				Handler: teacher.ListAlertsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/teachers/alerts/:id/resolve",
+				Handler: teacher.ResolveAlertHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/teachers/alerts/:id/ignore",
+				Handler: teacher.IgnoreAlertHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)
