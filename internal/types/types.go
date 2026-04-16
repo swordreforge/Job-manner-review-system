@@ -1025,3 +1025,20 @@ type ListMessagesResp struct {
 	Total int           `json:"total"`
 	List  []MessageInfo `json:"list"`
 }
+
+type JoinSchoolReq struct {
+	InviteCode string `json:"inviteCode" validate:"required"`
+	Name       string `json:"name,optional"`
+}
+
+type JoinSchoolResp struct {
+	Code int             `json:"code"`
+	Msg  string          `json:"msg"`
+	Data *JoinSchoolData `json:"data,optional"`
+}
+
+type JoinSchoolData struct {
+	SchoolId   int64  `json:"schoolId"`
+	SchoolName string `json:"schoolName"`
+	JoinedAt   int64  `json:"joinedAt"`
+}
