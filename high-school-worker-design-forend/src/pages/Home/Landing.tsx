@@ -926,7 +926,7 @@ export default function Landing() {
                                     initial={{ opacity: 0, scale: 0.8 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     transition={{ delay: 0.4 + sIdx * 0.05 }}
-                                    className="px-3 py-1.5 bg-white/10 border border-white/20 rounded-full text-xs text-gray-300 hover:bg-white/20 transition-colors"
+                                    className="px-3 py-2 bg-white/10 border border-white/20 rounded-full text-sm text-gray-300 hover:bg-white/20 transition-colors"
                                   >
                                     {scenario}
                                   </motion.span>
