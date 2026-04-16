@@ -2,6 +2,7 @@ package teacher
 
 import (
 	"context"
+	"database/sql"
 
 	"career-api/internal/svc"
 	"career-api/internal/types"
@@ -79,15 +80,25 @@ func (l *ListSchoolStudentsLogic) ListSchoolStudents(req *types.TeacherListStude
 	var list []types.TeacherStudentInfo
 	for rows.Next() {
 		var info types.TeacherStudentInfo
-		if err := rows.Scan(&info.Id, &info.UserId, &info.Name, &info.Username, &info.Email,
-			&info.ClassName, &info.Grade, &info.TaskCompletionRate, &info.LastActivityAt,
+		var className, grade, email sql.NullString
+		var lastActivityAt sql.NullInt64
+		if err := rows.Scan(&info.Id, &info.UserId, &info.Name, &info.Username, &email,
+			&className, &grade, &info.TaskCompletionRate, &lastActivityAt,
 			&info.JoinedAt, &info.Status); err != nil {
 			logx.Errorf("scan student failed: %v", err)
 			continue
 		}
+		info.ClassName = className.String
+		info.Grade = grade.String
+		info.Email = email.String
+		info.LastActivityAt = lastActivityAt.Int64
 		list = append(list, info)
 	}
 	_ = rows.Err()
+
+	if list == nil {
+		list = []types.TeacherStudentInfo{}
+	}
 
 	countQuery := `SELECT COUNT(*) FROM student_schools WHERE school_id = ?`
 	var total int
