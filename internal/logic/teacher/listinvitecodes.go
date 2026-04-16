@@ -50,7 +50,7 @@ func (l *ListInviteCodesLogic) ListInviteCodes(req *types.ListInviteCodesReq) (*
 		return &types.ListInviteCodesResp{}, err
 	}
 
-	query := "SELECT id, code, school_id, teacher_id, type, max_uses, used_count, status FROM invite_codes WHERE school_id = ? AND teacher_id = ?"
+	query := "SELECT id, code, type, max_uses, used_count, status FROM invite_codes WHERE school_id = ? AND teacher_id = ?"
 	args := []interface{}{schoolId, teacherId}
 
 	if req.Status != "" {
