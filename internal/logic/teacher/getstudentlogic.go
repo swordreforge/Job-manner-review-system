@@ -2,6 +2,7 @@ package teacher
 
 import (
 	"context"
+	"database/sql"
 
 	"career-api/internal/svc"
 	"career-api/internal/types"
@@ -41,10 +42,16 @@ func (l *GetStudentDetailLogic) GetStudentDetail(req *types.TeacherGetStudentReq
              WHERE ss.student_id = ? AND ss.school_id = ?`
 
 	var resp types.TeacherStudentDetailResp
+	var phone, className, grade sql.NullString
+	var lastActivityAt sql.NullInt64
 	err = db.QueryRowContext(l.ctx, query, req.StudentId, schoolId).Scan(
-		&resp.Id, &resp.UserId, &resp.Name, &resp.Username, &resp.Email, &resp.Phone,
-		&resp.ClassName, &resp.Grade, &resp.SchoolId, &resp.SchoolName,
-		&resp.TaskCompletionRate, &resp.LastActivityAt, &resp.JoinedAt, &resp.Status)
+		&resp.Id, &resp.UserId, &resp.Name, &resp.Username, &resp.Email, &phone,
+		&className, &grade, &resp.SchoolId, &resp.SchoolName,
+		&resp.TaskCompletionRate, &lastActivityAt, &resp.JoinedAt, &resp.Status)
+	resp.Phone = phone.String
+	resp.ClassName = className.String
+	resp.Grade = grade.String
+	resp.LastActivityAt = lastActivityAt.Int64
 
 	if err != nil {
 		logx.Errorf("get student detail failed: %v", err)
