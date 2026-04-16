@@ -71,7 +71,7 @@ func (l *ListInviteCodesLogic) ListInviteCodes(req *types.ListInviteCodesReq) (*
 	var list []types.InviteCodeInfo
 	for rows.Next() {
 		var info types.InviteCodeInfo
-		if err := rows.Scan(&info.Id, &info.Code, &info.Type, &info.MaxUses, &info.UsedCount, &info.Status, &info.ExpiresAt, &info.CreatedAt); err != nil {
+		if err := rows.Scan(&info.Id, &info.Code, &info.Type, &info.MaxUses, &info.UsedCount, &info.Status); err != nil {
 			logx.Errorf("scan invite code failed: %v", err)
 			continue
 		}
