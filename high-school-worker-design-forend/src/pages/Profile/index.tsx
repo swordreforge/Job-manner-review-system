@@ -1,4 +1,4 @@
-import { Avatar, Button, message, Tag, Modal, Collapse } from 'antd';
+import { Avatar, Button, message, Tag, Modal, Collapse, Input, Card } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
@@ -16,6 +16,10 @@ export default function ProfilePage() {
   const [studentData, setStudentData] = useState<Student | null>(null);
   const [loadingStudent, setLoadingStudent] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [joinSchoolModalVisible, setJoinSchoolModalVisible] = useState(false);
+  const [joinSchoolLoading, setJoinSchoolLoading] = useState(false);
+  const [inviteCode, setInviteCode] = useState('');
+  const [studentName, setStudentName] = useState('');
   const [experienceModalOpen, setExperienceModalOpen] = useState(false);
   const [experienceType, setExperienceType] = useState<'internship' | 'project'>('internship');
   const [avatarSrc, setAvatarSrc] = useState('/default-avatar.svg');
@@ -221,61 +225,90 @@ export default function ProfilePage() {
             <div className="text-sm truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
               {user?.email || '暂无邮箱'}
             </div>
-            <div className="text-xs mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+<div className="text-xs mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
               账户类型: {user?.role === 'admin' ? '管理员' : '用户'}
             </div>
           </div>
-          <Button 
-            type="text" 
-            size="small"
-            icon={<EditOutlined />} 
-            onClick={handleEditStudent}
-            style={{ color: 'var(--md-sys-color-primary)' }}
-          >
-            <span className="hidden sm:inline">编辑</span>
-          </Button>
         </div>
-        {/* 学生资料状态 */}
-        <div className="mt-4 pt-3 border-t" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-          <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex items-center gap-2 flex-wrap">
-              {studentData ? (
-                <Tag 
-                  icon={<CheckCircleOutlined />} 
-                  style={{ 
-                    backgroundColor: 'var(--md-sys-color-secondary-container)',
-                    border: 'none',
-                    color: 'var(--md-sys-color-on-secondary-container)'
-                  }}
-                >
-                  已创建学生资料
-                </Tag>
-              ) : (
-                <Tag 
-                  icon={<ExclamationCircleOutlined />} 
-                  style={{ 
-                    backgroundColor: '#FFF8E1',
-                    border: 'none',
-                    color: '#8F5900'
-                  }}
-                >
-                  未创建学生资料
-                </Tag>
-              )}
-              {studentData && (
-                <span className="text-xs sm:text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                  完成度: {calculateCompleteness(studentData)}%
-                </span>
-              )}
-            </div>
+
+        {/* 学校信息 */}
+        <Card 
+          title="学校信息" 
+          extra={
+            <Button type="link" onClick={() => setJoinSchoolModalVisible(true)}>
+              加入学校
+            </Button>
+          }
+          className="mb-3"
+        >
+          <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+            点击"加入学校"按钮，使用教师提供的邀请码加入学校
           </div>
-        </div>
+        </Card>
+
+        <Modal
+          title="加入学校"
+          open={joinSchoolModalVisible}
+          onCancel={() => setJoinSchoolModalVisible(false)}
+          footer={null}
+        >
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">邀请码</label>
+              <Input
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                placeholder="请输入教师提供的邀请码"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">姓名</label>
+              <Input
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                placeholder="请输入您的姓名"
+              />
+            </div>
+            <Button
+              type="primary"
+              block
+              loading={joinSchoolLoading}
+              onClick={async () => {
+                if (!inviteCode.trim()) {
+                  message.error('请输入邀请码');
+                  return;
+                }
+                setJoinSchoolLoading(true);
+                try {
+                  const result = await studentApi.joinSchool({
+                    inviteCode: inviteCode.trim(),
+                    name: studentName.trim(),
+                  });
+                  if (result.code === 0) {
+                    message.success(`成功加入 ${result.data.schoolName}`);
+                    setJoinSchoolModalVisible(false);
+                    setInviteCode('');
+                    setStudentName('');
+                  } else {
+                    message.error(result.msg);
+                  }
+                } catch (error) {
+                  message.error('加入学校失败');
+                } finally {
+                  setJoinSchoolLoading(false);
+                }
+              }}
+            >
+              确定加入
+            </Button>
+          </div>
+        </Modal>
       </div>
 
       {/* 学生资料信息 - MD3 Card */}
-      <div 
-        className="mb-3 sm:mb-4"
-        style={{ 
+        <div 
+          className="mb-3 sm:mb-4"
+          style={{
           backgroundColor: 'var(--md-sys-color-surface-container-low)',
           borderRadius: 'var(--md-sys-shape-corner-large)',
           border: '1px solid var(--md-sys-color-outline-variant)',
