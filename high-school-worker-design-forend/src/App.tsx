@@ -50,7 +50,7 @@ function RootRedirect() {
     );
   }
 
-  const targetPath = isAuthenticated ? (role === 'teacher' ? '/teacher' : '/start') : '/welcome';
+  const targetPath = isAuthenticated ? (role === 'teacher' ? '/teacher/index' : '/start') : '/welcome';
   return <Navigate to={targetPath} replace />;
 }
 
@@ -130,7 +130,7 @@ export default function App() {
             }
           />
           <Route
-            path="teacher"
+            path="teacher/index"
             element={
               <ProtectedRoute>
                 <TeacherDashboard />

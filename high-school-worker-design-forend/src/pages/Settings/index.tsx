@@ -628,7 +628,7 @@ export default function SettingsPage() {
   return (
     <div className="min-h-screen relative z-10 p-4">
       <div className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 bg-white/90 backdrop-blur border-b border-gray-100 flex items-center gap-2">
-        <Button onClick={() => navigate(user?.role === 'teacher' ? '/teacher/profile' : '/profile')} icon={<ArrowLeftOutlined />}>返回个人中心</Button>
+        <Button onClick={() => navigate(user?.role === 'teacher' ? '/teacher/profile' : '/profile')} icon={<ArrowLeftOutlined />}>返回{user?.role === 'teacher' ? '工作台' : '个人中心'}</Button>
         <h1 className="text-xl font-bold">设置</h1>
       </div>
       <Tabs items={userInfoItems} defaultActiveKey="user-info" />

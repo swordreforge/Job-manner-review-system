@@ -56,7 +56,7 @@ export default function AuthPage() {
             setUser(userInfo.data);
             
             // Redirect based on role
-            const targetPath = userInfo.data.role === 'teacher' ? '/teacher' : '/start';
+            const targetPath = userInfo.data.role === 'teacher' ? '/teacher/index' : '/start';
             setTimeout(() => {
               navigate(targetPath);
             }, 800);

@@ -73,7 +73,7 @@ export default function MainLayout() {
   ];
 
   const teacherTabs = [
-    { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher' },
+    { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher/index' },
     { key: 'students', title: '学生', icon: <UserOutlined />, path: '/teacher/students' },
     { key: 'invite', title: '邀请码', icon: <FileTextOutlined />, path: '/teacher/invite-codes' },
     { key: 'alerts', title: '预警', icon: <ExclamationCircleOutlined />, path: '/teacher/alerts' },
@@ -86,7 +86,7 @@ export default function MainLayout() {
     const pathname = location.pathname;
     
     // Teacher routes
-    if (pathname === '/teacher') return 'dashboard';
+    if (pathname === '/teacher/index') return 'dashboard';
     if (pathname.startsWith('/teacher/students')) return 'students';
     if (pathname.startsWith('/teacher/invite')) return 'invite';
     if (pathname.startsWith('/teacher/alerts')) return 'alerts';
@@ -120,7 +120,7 @@ export default function MainLayout() {
     if (tab) {
       let targetPath = tab.path;
       if (tab.key === 'home') targetPath = '/start';
-      if (tab.key === 'dashboard') targetPath = '/teacher';
+      if (tab.key === 'dashboard') targetPath = '/teacher/index';
 
       if (hasActiveTask) {
         setPendingNavigation(targetPath);

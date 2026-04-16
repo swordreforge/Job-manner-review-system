@@ -25,7 +25,7 @@ const studentNavItems: NavItem[] = [
 ];
 
 const teacherNavItems: NavItem[] = [
-  { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher', matchPaths: ['/teacher'] },
+  { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher/index', matchPaths: ['/teacher/index'] },
   { key: 'students', title: '学生管理', icon: <TeamOutlined />, path: '/teacher/students', matchPaths: ['/teacher/students'] },
   { key: 'invite', title: '邀请码', icon: <FileAddOutlined />, path: '/teacher/invite-codes', matchPaths: ['/teacher/invite-codes'] },
   { key: 'alerts', title: '预警管理', icon: <AlertOutlined />, path: '/teacher/alerts', matchPaths: ['/teacher/alerts'] },
@@ -52,9 +52,9 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
   const isActive = (item: NavItem) => {
     const pathname = location.pathname;
     if (item.matchPaths) {
-      return item.matchPaths.some(p => pathname === p || pathname.startsWith(p + '/'));
+      return item.matchPaths.some(p => pathname === p || (pathname.startsWith(p) && p !== '/'));
     }
-    return pathname === item.path || pathname.startsWith(item.path + '/');
+    return pathname === item.path || (pathname.startsWith(item.path) && item.path !== '/');
   };
 
   const handleNavClick = (path: string) => {
@@ -152,7 +152,7 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
           onClick={() => {
             if (window.confirm('确定要退出登录吗？')) {
               logout();
-              navigate(role === 'teacher' ? '/teacher' : '/start');
+              navigate(role === 'teacher' ? '/teacher/index' : '/start');
             }
           }}
           className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
