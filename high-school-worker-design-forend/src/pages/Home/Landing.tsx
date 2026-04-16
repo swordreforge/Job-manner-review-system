@@ -947,7 +947,7 @@ export default function Landing() {
                                     className="text-center p-3 bg-white/5 border border-white/10 rounded-lg"
                                   >
                                     <div className="text-2xl font-bold text-orange-400 mb-1">{stat.value}</div>
-                                    <div className="text-xs text-gray-400">{stat.label}</div>
+                                    <div className="text-xs text-white">{stat.label}</div>
                                   </motion.div>
                                 ))}
                               </div>
