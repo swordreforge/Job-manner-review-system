@@ -43,16 +43,16 @@ fn configure_api_v1() -> Scope {
                 .route("", web::post().to(crate::handlers::student::create))
                 // 学生列表
                 .route("", web::get().to(crate::handlers::student::list))
+                // 下载学生导入模板（需要在 /{id} 之前）
+                .route("/import-template", web::get().to(crate::handlers::student::download_student_template))
+                // 批量导入学生（需要在 /{id} 之前）
+                .route("/batch-import", web::post().to(crate::handlers::student::batch_import_students))
                 // 学生详情
                 .route("/{id}", web::get().to(crate::handlers::student::get))
                 // 更新学生信息
                 .route("/{id}", web::put().to(crate::handlers::student::update))
                 // 删除学生
-                .route("/{id}", web::delete().to(crate::handlers::student::delete))
-                // 批量导入学生
-                .route("/batch-import", web::post().to(crate::handlers::student::batch_import_students))
-                // 下载学生导入模板
-                .route("/import-template", web::get().to(crate::handlers::student::download_student_template)),
+                .route("/{id}", web::delete().to(crate::handlers::student::delete)),
         )
         // 测试数据路由(需要认证)
         .service(
@@ -102,16 +102,16 @@ fn configure_api_v1() -> Scope {
                 .route("", web::post().to(crate::handlers::job::create))
                 // 岗位列表
                 .route("", web::get().to(crate::handlers::job::list))
+                // 下载导入模板（需要在 /{id} 之前）
+                .route("/import-template", web::get().to(crate::handlers::job::download_template))
+                // 批量导入岗位（需要在 /{id} 之前）
+                .route("/batch-import", web::post().to(crate::handlers::job::batch_import))
                 // 岗位详情
                 .route("/{id}", web::get().to(crate::handlers::job::get))
                 // 更新岗位
                 .route("/{id}", web::put().to(crate::handlers::job::update))
                 // 删除岗位
-                .route("/{id}", web::delete().to(crate::handlers::job::delete))
-                // 批量导入岗位
-                .route("/batch-import", web::post().to(crate::handlers::job::batch_import))
-                // 下载导入模板
-                .route("/import-template", web::get().to(crate::handlers::job::download_template)),
+                .route("/{id}", web::delete().to(crate::handlers::job::delete)),
         )
         // 学校路由(需要认证)
         .service(
