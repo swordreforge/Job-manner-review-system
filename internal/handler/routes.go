@@ -528,6 +528,11 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/teachers/alerts/:id/ignore",
 				Handler: teacher.IgnoreAlertHandler(serverCtx),
 			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/teachers/alerts/:id/unresolve",
+				Handler: teacher.UnresolveAlertHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)

@@ -380,6 +380,9 @@ export const teacherApi = {
 resolveAlert: (id: number) =>
     api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/resolve`),
 
+  unresolveAlert: (id: number) =>
+    api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/unresolve`),
+
   ignoreAlert: (id: number) =>
     api.put<{ code: number; msg: string }>(`/teachers/alerts/${id}/ignore`),
 

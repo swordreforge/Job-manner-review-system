@@ -1,5 +1,5 @@
 import { Avatar, Button, message, Tag, Modal, Collapse, Input, Card } from 'antd';
-import { UserOutlined, SettingOutlined, LogoutOutlined, EditOutlined, CheckCircleOutlined, ExclamationCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { UserOutlined, SettingOutlined, LogoutOutlined, ExclamationCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';

@@ -116,6 +116,23 @@ func IgnoreAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	}
 }
 
+func UnresolveAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var req types.AlertActionReq
+		if err := httpx.Parse(r, &req); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+			return
+		}
+
+		l := teacher.NewUnresolveAlertLogic(r.Context(), svcCtx)
+		if err := l.UnresolveAlert(req.AlertId); err != nil {
+			httpx.ErrorCtx(r.Context(), w, err)
+		} else {
+			httpx.OkJsonCtx(r.Context(), w, map[string]interface{}{"code": 0, "msg": "unresolved"})
+		}
+	}
+}
+
 func CheckAlertHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req types.AlertActionReq

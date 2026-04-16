@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Card, Select, message } from 'antd';
-import { SearchOutlined, CheckCircleOutlined, CloseCircleOutlined } from '@ant-design/icons';
+import { SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, UndoOutlined } from '@ant-design/icons';
 import { teacherApi, type TeacherAlert } from '../../api';
 
 const { Option } = Select;
@@ -21,8 +21,9 @@ export default function TeacherAlerts() {
     setLoading(true);
     try {
       const res = await teacherApi.listAlerts({ page, pageSize, ...filters });
-      setAlerts(res.data?.list || []);
-      setTotal(res.data?.total || 0);
+      const getData = (r: any) => r.data ?? r;
+      setAlerts(getData(res).list || []);
+      setTotal(getData(res).total || 0);
     } catch (error) {
       message.error('获取预警列表失败');
     } finally {
@@ -44,6 +45,16 @@ export default function TeacherAlerts() {
     try {
       await teacherApi.ignoreAlert(id);
       message.success('已忽略');
+      fetchAlerts();
+    } catch (error) {
+      message.error('操作失败');
+    }
+  };
+
+  const handleUnresolve = async (id: number) => {
+    try {
+      await teacherApi.unresolveAlert(id);
+      message.success('已撤销，现在为待处理状态');
       fetchAlerts();
     } catch (error) {
       message.error('操作失败');
@@ -109,6 +120,11 @@ export default function TeacherAlerts() {
                 忽略
               </Button>
             </>
+          )}
+          {(record.status === 'resolved' || record.status === 'ignored') && (
+            <Button type="link" size="small" icon={<UndoOutlined />} onClick={() => handleUnresolve(record.id)}>
+              撤销
+            </Button>
           )}
         </Space>
       )
