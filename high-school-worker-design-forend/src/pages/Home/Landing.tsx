@@ -933,15 +933,7 @@ export default function Landing() {
                           
                           {/* 详情信息 */}
                           <div className="absolute inset-0 p-8 flex flex-col relative z-10 overflow-y-auto">
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring", delay: 0.2 }}
-                              className="text-6xl mb-4"
-                            >
-                              {item.icon}
-                            </motion.div>
-                            <h3 className="text-4xl font-bold mb-3">{item.title}</h3>
+                            <h3 className="text-4xl font-bold mb-2">{item.title}</h3>
                             <p className="text-gray-400 text-base mb-6">{item.desc}</p>
                             
                             {/* 视觉分隔 */}
