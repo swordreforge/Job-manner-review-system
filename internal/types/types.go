@@ -333,6 +333,7 @@ type CreateInviteCodeResp struct {
 	CreatedAt int64  `json:"createdAt"`
 }
 
+<<<<<<< HEAD
 type ListInviteCodesReq struct {
 	Page     int    `json:"page"`
 	PageSize int    `json:"pageSize"`
@@ -344,15 +345,28 @@ type ListInviteCodesResp struct {
 	List  []InviteCodeInfo `json:"list"`
 }
 
+=======
+>>>>>>> feature/teacher-side
 type InviteCodeInfo struct {
-	Id        int64  `db:"id"`
-	Code      string `db:"code"`
-	SchoolId  int64  `db:"school_id"`
-	TeacherId int64  `db:"teacher_id"`
-	Type      string `db:"type"`
-	MaxUses   int    `db:"max_uses"`
-	UsedCount int    `db:"used_count"`
-	Status    string `db:"status"`
+	Id        int64  `json:"id"`
+	Code      string `json:"code"`
+	Type      string `json:"type"`
+	MaxUses   int    `json:"maxUses"`
+	UsedCount int    `json:"usedCount"`
+	Status    string `json:"status"`
+	ExpiresAt int64  `json:"expiresAt"`
+	CreatedAt int64  `json:"createdAt"`
+}
+
+type ListInviteCodesReq struct {
+	Page     int    `json:"page"`
+	PageSize int    `json:"pageSize"`
+	Status   string `json:"status"`
+}
+
+type ListInviteCodesResp struct {
+	Total int              `json:"total"`
+	List  []InviteCodeInfo `json:"list"`
 }
 
 type RelatedJobsReq struct {
