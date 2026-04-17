@@ -211,18 +211,7 @@ function RouteLoadingFallback() {
 }
 
 function RootRedirect() {
-  const { isAuthenticated, isAuthChecked, initialize, role, user } = useAuthStore();
-  const [showOnboarding, setShowOnboarding] = useState(false);
-
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
-
-  useEffect(() => {
-    if (isAuthenticated && user?.firstLogin) {
-      setShowOnboarding(true);
-    }
-  }, [isAuthenticated, user]);
+  const { isAuthenticated, isAuthChecked, role } = useAuthStore();
 
   if (!isAuthChecked) {
     return (
@@ -233,25 +222,26 @@ function RootRedirect() {
   }
 
   const targetPath = isAuthenticated ? (role === 'teacher' ? '/teacher/index' : '/start') : '/welcome';
-  return (
-    <>
-      <OnboardingWizardModal
-        open={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
-      />
-      <Navigate to={targetPath} replace />
-    </>
-  );
+  return <Navigate to={targetPath} replace />;
 }
 
 export default function App() {
-  const { initialize } = useAuthStore();
+  const { initialize, isAuthenticated, isAuthChecked, user } = useAuthStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    console.log('[App] check onboarding:', { isAuthChecked, isAuthenticated, firstLogin: user?.firstLogin });
+    if (isAuthChecked && isAuthenticated && user?.firstLogin) {
+      console.log('[App] show onboarding!');
+      setShowOnboarding(true);
+    }
+  }, [isAuthChecked, isAuthenticated, user]);
 
   useEffect(() => {
     const stored = localStorage.getItem('theme');
@@ -265,6 +255,10 @@ export default function App() {
   return (
     <>
       <GlobalBackground />
+      <OnboardingWizardModal
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
       <ConfigProvider locale={zhCN} theme={createAntdThemeConfig(isDark)}>
         <Suspense fallback={<RouteLoadingFallback />}>
           <Routes>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Modal, Button, message } from 'antd';
-import { FileTextOutlined, BulbOutlined, AimOutlined, BankOutlined, MessageOutlined } from '@ant-design/icons';
+import { Button, message, Steps, Drawer } from 'antd';
+import { FileTextOutlined, BulbOutlined, AimOutlined, BankOutlined, MessageOutlined, MenuOutlined, LeftOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../api';
 
@@ -16,35 +16,35 @@ const steps: Step[] = [
   {
     key: 'resume',
     title: '完善简历',
-    description: '上传简历或手动填写学生信息，让系统更好地为你推荐岗位',
+    description: '上传简历或手动填写学生信息',
     icon: <FileTextOutlined />,
     actionPath: '/resume',
   },
   {
     key: 'holland',
     title: '霍兰德职业测试',
-    description: '通过测试了解你的职业兴趣类型',
+    description: '了解职业兴趣类型',
     icon: <BulbOutlined />,
     actionPath: '/holland',
   },
   {
     key: 'plan',
     title: '查看职业规划',
-    description: '基于测试结果生成个性化职业规划',
+    description: '个性化职业规划',
     icon: <AimOutlined />,
     actionPath: '/plan',
   },
   {
     key: 'jobs',
     title: '搜索岗位',
-    description: '浏览并搜索符合你方向的岗位',
+    description: '浏览符合方向的岗位',
     icon: <BankOutlined />,
     actionPath: '/jobs',
   },
   {
     key: 'interview',
     title: '模拟面试',
-    description: 'AI 面试官陪你练习面试技巧',
+    description: 'AI面试练习',
     icon: <MessageOutlined />,
     actionPath: '/interview',
   },
@@ -58,6 +58,7 @@ interface OnboardingWizardModalProps {
 export default function OnboardingWizardModal({ open, onComplete }: OnboardingWizardModalProps) {
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
+  const [folded, setFolded] = useState(true);
 
   const handleComplete = async () => {
     try {
@@ -78,75 +79,124 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
     }
   };
 
-  const currentStepData = steps[currentStep];
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  if (!open) return null;
 
   return (
-    <Modal
-      open={open}
-      footer={null}
-      closable={false}
-      maskClosable={false}
-      width={480}
-      centered
-      className="onboarding-modal"
-      styles={{
-        body: { padding: '24px' },
-      }}
-    >
-      <div className="text-center mb-6">
-        <div className="text-sm text-gray-500 mb-2">
-          {currentStep + 1} / {steps.length}
-        </div>
-        <div
-          className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
-          style={{ backgroundColor: 'var(--md-sys-color-primary-container)' }}
+    <>
+      <div
+        className="onboarding-folded"
+        style={{
+          position: 'fixed',
+          right: folded ? '0' : '-200px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 1001,
+          transition: 'right 0.3s ease',
+        }}
+      >
+        <Button
+          type="primary"
+          shape="round"
+          size="large"
+          onClick={() => setFolded(false)}
+          style={{
+            padding: '16px 8px',
+            height: 'auto',
+            writingMode: 'vertical-lr',
+            textOrientation: 'upright',
+            backgroundColor: 'var(--md-sys-color-primary)',
+          }}
         >
-          <span style={{ fontSize: '32px', color: 'var(--md-sys-color-on-primary-container)' }}>
-            {currentStepData.icon}
-          </span>
-        </div>
-        <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
-          {currentStepData.title}
-        </h2>
-        <p className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-          {currentStepData.description}
-        </p>
+          <MenuOutlined /> 引导
+        </Button>
       </div>
 
-      <Button
-        type="primary"
-        size="large"
-        block
-        className="mb-3"
-        onClick={() => navigate(currentStepData.actionPath)}
+      <Drawer
+        title={null}
+        placement="right"
+        onClose={() => setFolded(true)}
+        open={!folded}
+        width={280}
+        closable={false}
+        mask={false}
+        styles={{
+          body: { padding: '16px', backgroundColor: 'var(--md-sys-color-surface)' },
+          header: { display: 'none' },
+        }}
       >
-        去完成
-      </Button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <span style={{ fontWeight: 'bold', color: 'var(--md-sys-color-on-surface)' }}>新手引导</span>
+          <Button type="text" size="small" onClick={() => setFolded(true)}>
+            <LeftOutlined />
+          </Button>
+        </div>
 
-      <div className="flex justify-between items-center mt-4">
-        <Button
-          disabled={currentStep === 0}
-          onClick={() => setCurrentStep((s) => s - 1)}
-        >
-          上一步
-        </Button>
-        
-        {currentStep === steps.length - 1 ? (
-          <Button type="primary" onClick={handleComplete}>
+        <Steps
+          direction="vertical"
+          current={currentStep}
+          size="small"
+          items={steps.map((step, index) => ({
+            title: (
+              <span
+                style={{
+                  color: index === currentStep ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)',
+                  cursor: 'pointer',
+                }}
+                onClick={() => handleNavigate(step.actionPath)}
+              >
+                {step.title}
+              </span>
+            ),
+            description: (
+              <span
+                style={{
+                  fontSize: '12px',
+                  color: 'var(--md-sys-color-on-surface-variant)',
+                }}
+              >
+                {step.description}
+              </span>
+            ),
+            icon: step.icon,
+          }))}
+        />
+
+        <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <Button
+            type="primary"
+            block
+            onClick={() => handleNavigate(steps[currentStep].actionPath)}
+          >
+            去完成当前步骤
+          </Button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <Button
+              disabled={currentStep === 0}
+              onClick={() => setCurrentStep((s) => s - 1)}
+              style={{ flex: 1 }}
+            >
+              上一步
+            </Button>
+            <Button
+              disabled={currentStep === steps.length - 1}
+              onClick={() => setCurrentStep((s) => s + 1)}
+              style={{ flex: 1 }}
+            >
+              下一步
+            </Button>
+          </div>
+          <Button type="link" block onClick={handleSkip}>
+            跳过引导
+          </Button>
+          <Button block onClick={handleComplete}>
             完成
           </Button>
-        ) : (
-          <Button onClick={() => setCurrentStep((s) => s + 1)}>
-            下一步
-          </Button>
-        )}
-      </div>
-
-      <div className="text-center mt-4">
-        <Button type="link" size="small" onClick={handleSkip}>
-          跳过
-        </Button>
-      </div>
-    </Modal>
+        </div>
+      </Drawer>
+    </>
   );
 }

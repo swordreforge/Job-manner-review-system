@@ -50,6 +50,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       try {
         const res = await userApi.getInfo();
         if (res?.data) {
+          console.log('[Store] user loaded:', res.data);
           set({ 
             user: res.data, 
             role: (res.data.role as 'student' | 'teacher' | 'admin') || 'student' 
