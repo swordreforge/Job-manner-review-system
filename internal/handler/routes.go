@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	chat "career-api/internal/handler/chat"
 	graph "career-api/internal/handler/graph"
 	interview "career-api/internal/handler/interview"
 	job "career-api/internal/handler/job"
@@ -15,7 +16,6 @@ import (
 	student "career-api/internal/handler/student"
 	teacher "career-api/internal/handler/teacher"
 	user "career-api/internal/handler/user"
-	chat "career-api/internal/handler/chat"
 	"career-api/internal/svc"
 
 	"github.com/zeromicro/go-zero/rest"
@@ -354,6 +354,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Method:  http.MethodDelete,
 				Path:    "/user/account",
 				Handler: user.DeleteAccountHandler(serverCtx),
+			},
+			{
+				// Complete onboarding
+				Method:  http.MethodPost,
+				Path:    "/user/complete-onboarding",
+				Handler: user.CompleteOnboardingHandler(serverCtx),
 			},
 			{
 				// User login
