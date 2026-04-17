@@ -13,7 +13,8 @@ RUN npm ci
 # 复制源代码
 COPY . .
 
-# 构建应用
+# 构建应用（默认使用 staging 模式，匹配 nginx.conf 代理）
+ARG VITE_MODE=staging
 RUN npm run build
 
 # 生产阶段
