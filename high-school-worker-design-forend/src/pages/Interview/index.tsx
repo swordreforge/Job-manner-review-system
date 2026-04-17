@@ -432,16 +432,49 @@ export default function InterviewPage() {
     return correctedWords.join('');
   };
 
+  // 将音频 blob 转换为 PCM 格式
+  const convertToPCM = async (audioBlob: Blob): Promise<Float32Array> => {
+    const arrayBuffer = await audioBlob.arrayBuffer();
+    const audioContext = new AudioContext();
+    const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    
+    const rawData = audioBuffer.getChannelData(0);
+    const sampleRate = audioBuffer.sampleRate;
+    const targetSampleRate = 16000;
+    
+    if (sampleRate !== targetSampleRate) {
+      const ratio = sampleRate / targetSampleRate;
+      const newLength = Math.round(rawData.length / ratio);
+      const resampledData = new Float32Array(newLength);
+      for (let i = 0; i < newLength; i++) {
+        resampledData[i] = rawData[Math.floor(i * ratio)];
+      }
+      audioContext.close();
+      return resampledData;
+    }
+    
+    audioContext.close();
+    return rawData;
+  };
+
   // 语音识别
   const transcribeAudio = async (audioBlob: Blob) => {
     setTranscribing(true);
     
-    const formData = new FormData();
-    formData.append('file', audioBlob, 'recording.webm');
-    
     try {
+      const pcmData = await convertToPCM(audioBlob);
+      const int16Array = new Int16Array(pcmData.length);
+      for (let i = 0; i < pcmData.length; i++) {
+        const s = Math.max(-1, Math.min(1, pcmData[i]));
+        int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+      }
+      
       const voiceApiUrl = import.meta.env.VITE_VOICE_API_BASE_URL || 'http://localhost:8000';
-      const response = await fetch(`${voiceApiUrl}/transcribe?model=base`, {
+      const formData = new FormData();
+      const pcmBlob = new Blob([int16Array], { type: 'audio/raw' });
+      formData.append('file', pcmBlob, 'recording.pcm');
+      
+      const response = await fetch(`${voiceApiUrl}/transcribe`, {
         method: 'POST',
         body: formData
       });

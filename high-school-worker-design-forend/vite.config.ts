@@ -6,7 +6,7 @@ import tailwindcss from '@tailwindcss/vite'
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
-    host: '0.0.0.0',  // 监听所有网络接口，允许通过局域网 IP 或 127.0.0.1 访问
-    port: 5173,       // 指定端口
+    host: '0.0.0.0',
+    port: 5173,
   },
 })
