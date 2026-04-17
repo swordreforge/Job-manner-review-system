@@ -472,7 +472,7 @@ pub async fn read_config(query: web::Query<ReadConfigQuery>) -> impl Responder {
 
     match std::fs::read_to_string(path) {
         Ok(content) => {
-            let yaml_result: Result<(), serde_yaml::Error> = serde_yaml::from_str(&content);
+            let yaml_result: Result<serde_yaml::Value, serde_yaml::Error> = serde_yaml::from_str(&content);
             match yaml_result {
                 Ok(_) => {
                     HttpResponse::Ok().json(serde_json::json!({
