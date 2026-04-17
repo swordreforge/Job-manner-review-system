@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { Button, message, Steps, Drawer } from 'antd';
-import { FileTextOutlined, BulbOutlined, AimOutlined, BankOutlined, MessageOutlined, MenuOutlined, LeftOutlined } from '@ant-design/icons';
+import { useState, useEffect } from 'react';
+import { Button, message, Steps, Drawer, Modal } from 'antd';
+import { FileTextOutlined, BulbOutlined, AimOutlined, BankOutlined, MessageOutlined, MenuOutlined, LeftOutlined, RocketOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../api';
 
@@ -59,6 +59,13 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [folded, setFolded] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+
+  useEffect(() => {
+    if (open && folded) {
+      setShowWelcomeModal(true);
+    }
+  }, [open]);
 
   const handleComplete = async () => {
     try {
@@ -83,10 +90,62 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
     navigate(path);
   };
 
+  const handleOpenGuide = () => {
+    setShowWelcomeModal(false);
+    setFolded(false);
+  };
+
   if (!open) return null;
 
   return (
     <>
+      <Modal
+        open={showWelcomeModal}
+        onCancel={() => setShowWelcomeModal(false)}
+        footer={null}
+        closable={false}
+        maskClosable={false}
+        centered
+        width={400}
+      >
+        <div className="text-center py-4">
+          <div
+            className="w-20 h-20 mx-auto rounded-full flex items-center justify-center mb-4"
+            style={{ backgroundColor: 'var(--md-sys-color-primary-container)' }}
+          >
+            <RocketOutlined style={{ fontSize: '40px', color: 'var(--md-sys-color-on-primary-container)' }} />
+          </div>
+          <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+            欢迎加入！
+          </h2>
+          <p className="text-sm mb-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+            让我们开始你的职业探索之旅吧
+          </p>
+          <div className="text-left bg-gray-50 rounded-lg p-4 mb-4">
+            <p className="text-sm font-medium mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+              你将完成以下任务：
+            </p>
+            <ul className="text-sm space-y-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+              <li>1. 完善简历 - 让系统更好地推荐岗位</li>
+              <li>2. 霍兰德测试 - 了解你的职业兴趣</li>
+              <li>3. 职业规划 - 获取个性化建议</li>
+              <li>4. 搜索岗位 - 找到合适的工作</li>
+              <li>5. 模拟面试 - 提升面试技巧</li>
+            </ul>
+          </div>
+          <p className="text-sm mb-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+            点击右上角的
+            <span className="font-bold" style={{ color: 'var(--md-sys-color-primary)' }}>
+              「引导」
+            </span>
+            按钮开始
+          </p>
+          <Button type="primary" size="large" block onClick={handleOpenGuide}>
+            立即开始
+          </Button>
+        </div>
+      </Modal>
+
       <div
         className="onboarding-folded"
         style={{
@@ -152,12 +211,7 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
               </span>
             ),
             description: (
-              <span
-                style={{
-                  fontSize: '12px',
-                  color: 'var(--md-sys-color-on-surface-variant)',
-                }}
-              >
+              <span style={{ fontSize: '12px', color: 'var(--md-sys-color-on-surface-variant)' }}>
                 {step.description}
               </span>
             ),
