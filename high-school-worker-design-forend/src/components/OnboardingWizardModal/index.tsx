@@ -246,8 +246,13 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
           <Button type="link" block onClick={handleSkip}>
             跳过引导
           </Button>
-          <Button block onClick={handleComplete}>
-            完成
+          <Button 
+            block 
+            onClick={handleComplete}
+            disabled={currentStep !== steps.length - 1}
+            className={currentStep !== steps.length - 1 ? 'opacity-50' : ''}
+          >
+            {currentStep !== steps.length - 1 ? `完成 (第${currentStep + 1}/5步)` : '完成'}
           </Button>
         </div>
       </Drawer>
