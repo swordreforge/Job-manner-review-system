@@ -84,9 +84,25 @@ pub async fn list_tables(state: web::Data<crate::state::AppState>) -> impl Respo
             let mut tables = Vec::new();
             
             for row in rows {
-                let table_name: String = row.get("table_name");
-                let table_comment: Option<String> = row.get("table_comment");
-                let engine: Option<String> = row.get("engine");
+                let get_string = |col: &str| -> String {
+                    row.try_get::<String, _>(col).unwrap_or_else(|_| {
+                        row.try_get::<Vec<u8>, _>(col)
+                            .map(|bytes| String::from_utf8_lossy(&bytes).into_owned())
+                            .unwrap_or_default()
+                    })
+                };
+
+                let table_name = get_string("table_name");
+                let table_comment = row.try_get::<String, _>("table_comment").ok().or_else(|| {
+                    row.try_get::<Vec<u8>, _>("table_comment")
+                        .map(|b| String::from_utf8_lossy(&b).into_owned())
+                        .ok()
+                });
+                let engine = row.try_get::<String, _>("engine").ok().or_else(|| {
+                    row.try_get::<Vec<u8>, _>("engine")
+                        .map(|b| String::from_utf8_lossy(&b).into_owned())
+                        .ok()
+                });
                 let created_time: Option<String> = row.try_get("created_time").ok();
                 
                 // 查询表的行数
