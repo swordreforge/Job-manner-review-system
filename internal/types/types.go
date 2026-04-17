@@ -656,13 +656,14 @@ type ResetAvatarResp struct {
 }
 
 type UserInfo struct {
-	Id        int64  `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	Avatar    string `json:"avatar"`
-	Role      string `json:"role"`
-	CreatedAt int64  `json:"createdAt"`
+	Id         int64  `json:"id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Phone      string `json:"phone"`
+	Avatar     string `json:"avatar"`
+	Role       string `json:"role"`
+	FirstLogin bool   `json:"firstLogin"`
+	CreatedAt  int64  `json:"createdAt"`
 }
 
 type UserResp struct {
