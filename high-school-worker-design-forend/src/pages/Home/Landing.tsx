@@ -788,58 +788,60 @@ export default function Landing() {
                     </div>
                   </motion.div>
 
-                  {/* === 卡片滚动堆叠动画 核心区 === */}
-                  {/* 这里使用上面修复后的全局滚动(useWindowScroll={true})，同时 itemStackDistance 设为 0。 */}
-                  <div className="w-full max-w-6xl mx-auto py-10 px-4">
+                  {/* 核心改动：横向拉宽至 1400px，纵向压窄至 55vh，优化内部间距适配新比例 */}
+                  <div className="w-full max-w-[1400px] mx-auto pt-10 pb-4 px-4 md:px-8">
                     <ScrollStack
                         useWindowScroll={true}
                         itemDistance={100}
                         itemStackDistance={0}
                         stackPosition="15%"
-                        baseScale={0.85}
+                        baseScale={0.9}
                         rotationAmount={0}
                         blurAmount={0}
                     >
                       {features.map((item, idx) => (
                           <ScrollStackItem
                               key={idx}
-                              itemClassName="max-w-5xl mx-auto !bg-[#11131a] !border !border-gray-700/60 !rounded-[2rem] !p-8 md:!p-12 !shadow-[0_-10px_40px_rgba(0,0,0,0.8)] !h-[70vh] w-full flex flex-col justify-start relative overflow-hidden"
+                              itemClassName="max-w-full mx-auto !bg-gradient-to-br !from-[#1a1d2c] !to-[#11131a] !border !border-white/10 !rounded-[2.5rem] !p-6 md:!p-10 !shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.05)] !h-[55vh] min-h-[480px] w-full flex flex-col justify-start relative overflow-hidden"
                           >
                             <div
-                                className="absolute top-0 inset-x-0 h-1 pointer-events-none"
-                                style={{ background: "linear-gradient(90deg, transparent, rgba(251,146,60,0.4), transparent)" }}
+                                className="absolute top-0 inset-x-0 h-1.5 pointer-events-none opacity-80"
+                                style={{ background: "linear-gradient(90deg, transparent, rgba(251,146,60,0.8), transparent)" }}
                             />
 
-                            <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-2 custom-scrollbar">
-                              <div className="flex items-center gap-6 mb-6">
-                                <div className="text-5xl bg-white/5 p-4 rounded-2xl border border-white/10 shadow-inner shrink-0">
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-orange-500/10 blur-3xl rounded-full pointer-events-none" />
+                            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
+
+                            <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-3 custom-scrollbar">
+                              <div className="flex items-center gap-5 mb-5 shrink-0">
+                                <div className="text-4xl md:text-5xl bg-gradient-to-br from-white/10 to-transparent p-4 rounded-3xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center shrink-0">
                                   {item.icon}
                                 </div>
                                 <div>
-                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 text-white">{item.title}</h3>
-                                  <p className="text-gray-400 text-lg md:text-xl leading-snug">{item.desc}</p>
+                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-tight">{item.title}</h3>
+                                  <p className="text-gray-400/90 text-base md:text-lg leading-snug">{item.desc}</p>
                                 </div>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6 shrink-0" />
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-5 shrink-0" />
 
-                              <div className="mb-6 flex-grow">
-                                <p className="text-gray-300 text-lg md:text-xl leading-relaxed">{item.detailDesc}</p>
+                              <div className="mb-5 flex-grow">
+                                <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">{item.detailDesc}</p>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6 shrink-0" />
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-5 shrink-0" />
 
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 shrink-0">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
                                 <div>
-                                  <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                                  <h4 className="text-sm font-semibold text-orange-400/90 mb-3 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]"></span>
                                     适用场景
                                   </h4>
                                   <div className="flex flex-wrap gap-2">
                                     {item.scenarios.map((scenario, sIdx) => (
                                         <span
                                             key={sIdx}
-                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 cursor-default"
+                                            className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md cursor-default"
                                         >
                                   {scenario}
                                 </span>
@@ -848,18 +850,18 @@ export default function Landing() {
                                 </div>
 
                                 <div>
-                                  <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                                  <h4 className="text-sm font-semibold text-orange-400/90 mb-3 uppercase tracking-widest flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]"></span>
                                     效果数据
                                   </h4>
-                                  <div className="grid grid-cols-3 gap-4">
+                                  <div className="grid grid-cols-3 gap-3">
                                     {item.stats.map((stat, stIdx) => (
                                         <div
                                             key={stIdx}
-                                            className="text-center p-3 bg-white/5 border border-white/10 rounded-xl"
+                                            className="text-center p-3 bg-white/5 border border-white/10 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm"
                                         >
-                                          <div className="text-2xl md:text-3xl font-bold text-orange-400 mb-1">{stat.value}</div>
-                                          <div className="text-xs md:text-sm text-gray-400">{stat.label}</div>
+                                          <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent mb-1 tracking-tight">{stat.value}</div>
+                                          <div className="text-xs md:text-sm text-gray-400 font-medium">{stat.label}</div>
                                         </div>
                                     ))}
                                   </div>
@@ -873,7 +875,7 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="px-6 py-16 max-w-4xl mx-auto">
+                <div className="px-6 pt-4 pb-16 max-w-5xl mx-auto">
                   <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
@@ -892,18 +894,18 @@ export default function Landing() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ margin: "-50px" }}
                       transition={{ duration: 0.6 }}
-                      className="space-y-0"
+                      className="space-y-0 bg-[#11131a]/50 p-6 md:p-10 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm"
                   >
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="grid grid-cols-4 gap-4 pb-4 border-b border-gray-700 text-sm font-semibold"
+                        className="grid grid-cols-4 gap-4 pb-5 border-b border-gray-700/80 text-sm md:text-base font-bold tracking-wide"
                     >
-                      <div className="text-left text-gray-400">功能</div>
+                      <div className="text-left text-gray-400">功能对比</div>
                       <div className="text-left text-orange-400">我们</div>
-                      <div className="text-left text-gray-400">竞品A</div>
-                      <div className="text-left text-gray-400">竞品B</div>
+                      <div className="text-left text-gray-500">竞品A</div>
+                      <div className="text-left text-gray-500">竞品B</div>
                     </motion.div>
                     {compareData.map((row, idx) => (
                         <motion.div
@@ -911,12 +913,12 @@ export default function Landing() {
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.4, delay: idx * 0.08 }}
-                            className="grid grid-cols-4 gap-4 py-4 border-b border-gray-800 items-center"
+                            className="grid grid-cols-4 gap-4 py-5 border-b border-gray-800/80 items-center hover:bg-white/[0.02] transition-colors rounded-lg px-2 -mx-2"
                         >
-                          <div className="text-left">{row.feature}</div>
-                          <div className="text-left">{row.us && <CheckOutlined className="text-green-400" />}</div>
-                          <div className="text-left">{row.competitionA && <CheckOutlined className="text-green-400" />}</div>
-                          <div className="text-left">{row.competitionB && <CheckOutlined className="text-green-400" />}</div>
+                          <div className="text-left font-medium text-gray-200">{row.feature}</div>
+                          <div className="text-left">{row.us && <CheckOutlined className="text-orange-400 text-xl" />}</div>
+                          <div className="text-left">{row.competitionA && <CheckOutlined className="text-gray-500 text-lg" />}</div>
+                          <div className="text-left">{row.competitionB && <CheckOutlined className="text-gray-500 text-lg" />}</div>
                         </motion.div>
                     ))}
                   </motion.div>
