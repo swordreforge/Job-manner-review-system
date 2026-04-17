@@ -10,7 +10,7 @@ import LaserGradient from '../../components/LaserGradient';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
 import ScrollStack, { ScrollStackItem } from '@/components/ScrollStack';
-
+//123
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
     <svg
         className={className}
