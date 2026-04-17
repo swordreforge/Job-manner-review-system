@@ -231,8 +231,63 @@ export default function PlanPage() {
   const handleDeleteReport = async (reportId: number, event: React.MouseEvent) => {
     // 阻止事件冒泡，避免触发选中报告
     event.stopPropagation();
+    const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
 
     Modal.confirm({
+      className: 'plan-delete-modal-dark',
+      rootClassName: 'plan-delete-modal-dark-root',
+      wrapClassName: 'plan-delete-modal-dark-wrap',
+      ...(isDarkMode
+        ? {
+            modalRender: (node: React.ReactNode) => (
+              <div
+                style={{
+                  border: '3px solid #ffffff',
+                  borderRadius: 18,
+                  padding: 1,
+                  background: '#ffffff',
+                }}
+              >
+                <div
+                  style={{
+                    border: '1px solid #000000',
+                    borderRadius: 14,
+                    overflow: 'hidden',
+                    background: '#111111',
+                  }}
+                >
+                  {node}
+                </div>
+              </div>
+            ),
+            style: {
+              background: 'transparent',
+              boxShadow: 'none',
+              outline: 'none',
+            },
+            styles: {
+              root: {
+                background: 'transparent',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              wrapper: {
+                background: 'transparent',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              container: {
+                background: 'transparent',
+                boxShadow: 'none',
+                outline: 'none',
+              },
+              body: {
+                background: '#111111',
+                color: '#ffffff',
+              },
+            },
+          }
+        : {}),
       title: '确认删除',
       content: '确定要删除这条历史记录吗？删除后无法恢复。',
       okText: '删除',
@@ -425,8 +480,8 @@ export default function PlanPage() {
                       key={report.id}
                       className={`p-3 cursor-pointer rounded hover:bg-gray-100 transition-colors ${
                         selectedReportId === report.id
-                          ? 'bg-blue-50 border-2 border-blue-200'
-                          : 'border border-gray-200'
+                          ? ' border-2 border-gray-200'
+                          : 'border border-gray-200' 
                       }`}
                       onClick={() => handleSelectReport(report.id)}
                     >
