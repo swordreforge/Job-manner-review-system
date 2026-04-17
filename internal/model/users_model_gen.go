@@ -30,6 +30,7 @@ type (
 		FindOneByUsername(ctx context.Context, username string) (*Users, error)
 		Update(ctx context.Context, data *Users) error
 		Delete(ctx context.Context, id int64) error
+		UpdateFirstLogin(ctx context.Context, id int64, firstLogin int) error
 	}
 
 	defaultUsersModel struct {
@@ -119,4 +120,10 @@ func (m *defaultUsersModel) Update(ctx context.Context, newData *Users) error {
 
 func (m *defaultUsersModel) tableName() string {
 	return m.table
+}
+
+func (m *defaultUsersModel) UpdateFirstLogin(ctx context.Context, id int64, firstLogin int) error {
+	query := fmt.Sprintf("update %s set `first_login` = ? where `id` = ?", m.table)
+	_, err := m.conn.ExecCtx(ctx, query, firstLogin, id)
+	return err
 }
