@@ -167,6 +167,7 @@ func autoMigrate(dataSource string) error {
 				avatar VARCHAR(255) DEFAULT NULL,
 				role VARCHAR(20) NOT NULL DEFAULT 'student',
 				school_id BIGINT(20) DEFAULT NULL,
+				first_login TINYINT NOT NULL DEFAULT 1,
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
