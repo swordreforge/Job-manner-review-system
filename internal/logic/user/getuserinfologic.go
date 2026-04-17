@@ -65,13 +65,14 @@ func (l *GetUserInfoLogic) GetUserInfo() (resp *types.UserResp, err error) {
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.UserInfo{
-			Id:        user.Id,
-			Username:  user.Username,
-			Email:     user.Email,
-			Phone:     phone,
-			Avatar:    avatar,
-			Role:      user.Role,
-			CreatedAt: user.CreatedAt,
+			Id:         user.Id,
+			Username:   user.Username,
+			Email:      user.Email,
+			Phone:      phone,
+			Avatar:     avatar,
+			Role:       user.Role,
+			FirstLogin: user.FirstLogin == 1,
+			CreatedAt:  user.CreatedAt,
 		},
 	}, nil
 }
