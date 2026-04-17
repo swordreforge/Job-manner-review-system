@@ -154,7 +154,7 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
           onClick={() => {
             if (window.confirm('确定要退出登录吗？')) {
               logout();
-              navigate(role === 'teacher' ? '/teacher/index' : '/start');
+              navigate('/welcome', { replace: true });
             }
           }}
           className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}

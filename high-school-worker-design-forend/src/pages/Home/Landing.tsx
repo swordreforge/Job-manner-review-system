@@ -669,7 +669,7 @@ export default function Landing() {
                       size="large"
                       icon={<RightOutlined />}
                       onClick={() => navigate('/auth')}
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
+                      className="landing-cta-btn bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
                     >
                       立即开始
                     </Button>
@@ -1068,7 +1068,7 @@ export default function Landing() {
                   size="large"
                   icon={<GraduationCapIcon className="w-5 h-5" />}
                   onClick={() => navigate('/auth')}
-                  className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                  className="landing-cta-btn bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
                 >
                   立即开始 →
                 </Button>

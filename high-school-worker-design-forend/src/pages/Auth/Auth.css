@@ -110,6 +110,14 @@
   margin-bottom: 2rem;
 }
 
+.auth-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .auth-home-button {
   position: relative;
   color: #64748b;
@@ -121,6 +129,22 @@
 }
 
 .auth-home-button:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.08);
+}
+
+.auth-theme-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  color: #64748b;
+  font-size: 1rem;
+  padding: 0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.auth-theme-button:hover {
   color: #1677ff;
   background: rgba(22, 119, 255, 0.08);
 }
