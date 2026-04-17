@@ -78,7 +78,11 @@ func main() {
 				os.Exit(1)
 			}
 		} else {
-			logx.Info("使用 --skip-all 参数，跳过初始化检查")
+			logx.Info("使用 --skip-all 参数，自动初始化数据库...")
+			if err := runInteractiveInit(c); err != nil {
+				logx.Errorf("Auto initialization failed: %v", err)
+				os.Exit(1)
+			}
 		}
 	}
 

@@ -1,29 +1,19 @@
-FROM python:3.11-slim
+FROM rust:1.75-alpine AS builder
 
-# 设置工作目录
+RUN apk add --no-cache musl-dev openssl-dev pkgconfig
+
 WORKDIR /app
+COPY Cargo.toml Cargo.lock ./
+RUN mkdir .cargo && cp Cargo.toml .cargo/
 
-# 安装系统依赖
-RUN apt-get update && apt-get install -y \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+COPY src ./src
+RUN cargo build --release
 
-# 复制依赖文件
-COPY requirements-web.txt .
+FROM alpine:3.19
 
-# 安装 Python 依赖
-RUN pip install --no-cache-dir -r requirements-web.txt
+RUN apk add --no-cache ca-certificates
 
-# 复制应用代码
-COPY web_app.py .
-COPY whisper/ ./whisper/
+WORKDIR /app
+COPY --from=builder /app/target/release/xunfei-asr-server /usr/local/bin/
 
-# 暴露端口
-EXPOSE 8000
-
-# 设置环境变量
-ENV PYTHONUNBUFFERED=1
-ENV MODEL_NAME=base
-
-# 启动服务
-CMD ["uvicorn", "web_app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+CMD ["xunfei-asr-server"]

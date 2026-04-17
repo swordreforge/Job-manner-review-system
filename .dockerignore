@@ -75,6 +75,16 @@ tests/
 *.test.ts
 *.spec.ts
 
+# Rust
+teacher-app/target
+whisper-20250625/target
+
+# 其他项目
+Job-manner-review-system-lyt/
+archive/
+backup-db.sh
+career_db_backup_*.sql
+
 # 其他
 .env.local
 .env.*.local
