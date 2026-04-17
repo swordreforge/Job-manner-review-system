@@ -1374,6 +1374,180 @@ function handleQuickAction(action) {
     }
 }
 
+// 配置文件管理状态
+let configState = {
+    currentPath: null,
+    currentContent: null,
+    hasChanges: false,
+    backups: []
+};
+
+// 打开配置文件编辑器
+async function openConfigEditor(path, name) {
+    configState.currentPath = path;
+    configState.hasChanges = false;
+    
+    document.getElementById('config-editor-container').style.display = 'block';
+    document.getElementById('config-editor-title').textContent = `编辑: ${name}`;
+    document.getElementById('config-status').textContent = '加载中...';
+    document.getElementById('config-status').className = 'config-status';
+    document.getElementById('config-error').textContent = '';
+    
+    try {
+        const response = await apiRequest(`/ops/config?path=${encodeURIComponent(path)}`);
+        
+        if (response.code === 200) {
+            const data = response.data;
+            configState.currentContent = data.content;
+            
+            const editor = document.getElementById('config-editor');
+            editor.value = data.content;
+            
+            const statusEl = document.getElementById('config-status');
+            if (data.valid) {
+                statusEl.textContent = '✓ YAML 格式有效';
+                statusEl.className = 'config-status valid';
+            } else {
+                statusEl.textContent = '✗ YAML 格式无效';
+                statusEl.className = 'config-status invalid';
+                document.getElementById('config-error').textContent = data.error || '未知错误';
+            }
+            
+            await loadConfigBackups();
+        } else {
+            showToast(response.message || '加载配置文件失败', 'error');
+        }
+    } catch (error) {
+        console.error('加载配置文件失败:', error);
+        showToast('加载配置文件失败: ' + error.message, 'error');
+    }
+}
+
+// 加载自定义路径配置
+async function loadCustomConfig() {
+    const path = document.getElementById('config-custom-path').value.trim();
+    if (!path) {
+        showToast('请输入配置文件路径', 'error');
+        return;
+    }
+    
+    const name = path.split('/').pop() || path;
+    await openConfigEditor(path, name);
+}
+
+// 加载配置文件备份列表
+async function loadConfigBackups() {
+    if (!configState.currentPath) return;
+    
+    try {
+        const response = await apiRequest(`/ops/config/backups?path=${encodeURIComponent(configState.currentPath)}`);
+        
+        if (response.code === 200) {
+            configState.backups = response.data.items || [];
+            
+            const select = document.getElementById('config-backup-select');
+            select.innerHTML = '<option value="">选择备份版本...</option>';
+            
+            configState.backups.forEach(backup => {
+                const date = new Date(backup.created_at * 1000).toLocaleString('zh-CN');
+                const option = document.createElement('option');
+                option.value = backup.filename;
+                option.textContent = `${backup.filename} (${date})`;
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('加载备份列表失败:', error);
+    }
+}
+
+// 保存配置文件
+async function saveConfig() {
+    if (!configState.currentPath) return;
+    
+    const editor = document.getElementById('config-editor');
+    const content = editor.value;
+    
+    if (content === configState.currentContent) {
+        showToast('没有修改，无需保存', 'warning');
+        return;
+    }
+    
+    try {
+        const response = await apiRequest('/ops/config', {
+            method: 'PUT',
+            body: JSON.stringify({
+                path: configState.currentPath,
+                content: content
+            })
+        });
+        
+        if (response.code === 200) {
+            showToast('配置文件保存成功');
+            configState.currentContent = content;
+            configState.hasChanges = false;
+            document.getElementById('save-config-btn').disabled = true;
+            await loadConfigBackups();
+            await openConfigEditor(configState.currentPath, configState.currentPath.split('/').pop());
+        } else {
+            throw new Error(response.message || '保存失败');
+        }
+    } catch (error) {
+        console.error('保存配置文件失败:', error);
+        showToast('保存失败: ' + error.message, 'error');
+    }
+}
+
+// 回滚配置文件
+async function rollbackConfig() {
+    if (!configState.currentPath) return;
+    
+    const select = document.getElementById('config-backup-select');
+    const backupFilename = select.value;
+    
+    if (!backupFilename) {
+        showToast('请选择要回滚的备份版本', 'error');
+        return;
+    }
+    
+    if (!confirm(`确定要回滚到备份版本吗？\n\n当前配置将自动备份。\n\n备份文件: ${backupFilename}`)) {
+        return;
+    }
+    
+    try {
+        const response = await apiRequest('/ops/config/rollback', {
+            method: 'POST',
+            body: JSON.stringify({
+                path: configState.currentPath,
+                backup_filename: backupFilename
+            })
+        });
+        
+        if (response.code === 200) {
+            showToast('回滚成功');
+            await openConfigEditor(configState.currentPath, configState.currentPath.split('/').pop());
+        } else {
+            throw new Error(response.message || '回滚失败');
+        }
+    } catch (error) {
+        console.error('回滚配置文件失败:', error);
+        showToast('回滚失败: ' + error.message, 'error');
+    }
+}
+
+// 监听编辑器变化
+function initConfigEditorListener() {
+    const editor = document.getElementById('config-editor');
+    if (editor && !editor.dataset.initialized) {
+        editor.addEventListener('input', () => {
+            const hasChanges = editor.value !== configState.currentContent;
+            configState.hasChanges = hasChanges;
+            document.getElementById('save-config-btn').disabled = !hasChanges;
+        });
+        editor.dataset.initialized = 'true';
+    }
+}
+
 // 初始化
 function init() {
     // 检查登录状态
@@ -1383,6 +1557,9 @@ function init() {
         elements.dashboardPage.classList.add('active');
         switchPage('dashboard');
     }
+
+    // 初始化配置文件编辑器监听
+    initConfigEditorListener();
 
     // 事件监听
     elements.loginForm.addEventListener('submit', handleLogin);

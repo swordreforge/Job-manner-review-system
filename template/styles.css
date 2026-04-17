@@ -2110,3 +2110,188 @@ textarea {
     font-size: 13px;
     color: var(--text-secondary);
 }
+
+/* 配置文件管理样式 */
+.config-section {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-card);
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.config-section h3 {
+    margin: 0 0 1.5rem;
+    color: var(--text-primary);
+}
+
+.config-quick-access h4,
+.config-editor-section h4 {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.75rem;
+}
+
+.config-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.config-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.config-card:hover {
+    border-color: var(--primary-color);
+    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.15);
+}
+
+.config-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--primary-color);
+    color: white;
+    border-radius: 8px;
+}
+
+.config-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.config-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.config-name {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.config-path {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.config-custom-path {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.config-custom-path input {
+    flex: 1;
+    padding: 0.625rem 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 0.875rem;
+}
+
+.config-editor-container {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.config-editor-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-hover);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.config-editor-header h4 {
+    margin: 0;
+    font-size: 0.875rem;
+}
+
+.config-status {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+}
+
+.config-status.valid {
+    background: rgba(16, 185, 129, 0.1);
+    color: #10b981;
+}
+
+.config-status.invalid {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.config-editor-wrapper {
+    background: #1e1e1e;
+}
+
+.config-editor {
+    width: 100%;
+    min-height: 400px;
+    padding: 1rem;
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border: none;
+    resize: vertical;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.config-editor:focus {
+    outline: none;
+}
+
+.config-editor-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    background: var(--bg-hover);
+    border-top: 1px solid var(--border-color);
+}
+
+.config-backup-selector {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.config-backup-selector select {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+    font-size: 0.875rem;
+    min-width: 200px;
+}
+
+.config-error {
+    padding: 0.75rem 1rem;
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+    font-size: 0.75rem;
+    font-family: monospace;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
