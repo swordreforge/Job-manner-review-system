@@ -665,7 +665,7 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div id="features" className="px-6 py-16 w-full">
+                <div id="features" className="px-6 pt-16 pb-4 w-full">
                   <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -789,7 +789,7 @@ export default function Landing() {
                   </motion.div>
 
                   {/* 核心改动：横向拉宽至 1400px，纵向压窄至 55vh，优化内部间距适配新比例 */}
-                  <div className="w-full max-w-[1400px] mx-auto pt-10 pb-4 px-4 md:px-8">
+                  <div className="w-full max-w-[1400px] mx-auto pt-10 pb-0 px-4 md:px-8">
                     <ScrollStack
                         useWindowScroll={true}
                         itemDistance={100}
@@ -875,7 +875,7 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="px-6 pt-4 pb-16 max-w-5xl mx-auto">
+                <div className="px-6 pt-0 pb-16 max-w-5xl mx-auto relative z-10 -mt-[250px] md:-mt-[500px]">
                   <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
