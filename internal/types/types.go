@@ -345,7 +345,7 @@ type TeacherRegisterReq struct {
 	Email      string `json:"email" validate:"required,email"`
 	Phone      string `json:"phone,optional" validate:"omitempty,len=11"`
 	Name       string `json:"name" validate:"required,min=2,max=50"`
-	SchoolCode string `json:"schoolCode" validate:"required,len=6"`
+	SchoolCode string `json:"schoolCode" validate:"required,len=10"`
 	EmployeeId string `json:"employeeId,optional"`
 	Department string `json:"department,optional"`
 }
