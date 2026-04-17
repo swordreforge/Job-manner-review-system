@@ -50,11 +50,15 @@ services:
     command: ["xunfei-asr-server"]
 
   frontend:
-    image: akaririn/career-planner:ai
+    image: node:20-alpine
     container_name: frontend
     restart: unless-stopped
     ports:
       - "3000:3000"
+    volumes:
+      - ./high-school-worker-design-forend/dist:/app/dist
+    working_dir: /app
+    command: ["npx", "serve", "-s", "dist", "-l", "3000"]
 
   ateacher:
     image: high-school-worker-base:latest
