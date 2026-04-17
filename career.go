@@ -17,6 +17,7 @@ import (
 	"career-api/internal/config"
 	"career-api/internal/handler"
 	"career-api/internal/middleware"
+	"career-api/internal/pkg"
 	"career-api/internal/svc"
 )
 
@@ -943,17 +944,18 @@ func seedData(dataSource string) error {
 
 	// Seed test school
 	var schoolCount int
-	err = tx.QueryRow("SELECT COUNT(*) FROM schools WHERE code = 'SCH001'").Scan(&schoolCount)
+	err = tx.QueryRow("SELECT COUNT(*) FROM schools").Scan(&schoolCount)
 	if err != nil && err != sql.ErrNoRows {
 		return fmt.Errorf("failed to check school: %w", err)
 	}
 	if schoolCount == 0 {
+		schoolCode := pkg.GenerateSchoolCode()
 		_, err = tx.Exec("INSERT INTO schools (name, code, address, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-			"测试高中", "SCH001", "北京市朝阳区", "active", now, now)
+			"测试高中", schoolCode, "北京市朝阳区", "active", now, now)
 		if err != nil {
 			return fmt.Errorf("failed to insert test school: %w", err)
 		}
-		logx.Infof("Test school created: SCH001 - 测试高中")
+		logx.Infof("Test school created: %s - 测试高中", schoolCode)
 	}
 
 	var jobCount int
