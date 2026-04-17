@@ -204,7 +204,7 @@ function createAntdThemeConfig(isDark: boolean): ThemeConfig {
 function RouteLoadingFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center text-gray-400">
-      椤甸潰鍔犺浇涓?..
+      页面加载中...
     </div>
   );
 }
@@ -219,7 +219,7 @@ function RootRedirect() {
   if (!isAuthChecked) {
     return (
       <div className="flex min-h-screen items-center justify-center text-gray-400">
-        鍔犺浇涓?..
+        加载中...
       </div>
     );
   }
