@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: 123456zj
       MYSQL_DATABASE: career_db
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
@@ -29,15 +29,15 @@ services:
     ports:
       - "8088:8088"
     volumes:
-      - ./etc/career-api.yaml:/app/etc/career-api.yaml
+      - ./etc/career-api.yaml.docker:/app/etc/career-api.yaml
       - ./img:/app/img
       - ./career-api:/usr/local/bin/elf
-      - ./start-career.sh:/start.sh
+      - ./internal/pkg:/app/internal/pkg
     working_dir: /app
     depends_on:
       mysql:
         condition: service_healthy
-    command: ["sh", "/start.sh"]
+    command: ["/usr/local/bin/elf", "career-api", "-skip-all"]
 
   whisper:
     image: high-school-worker-base:latest

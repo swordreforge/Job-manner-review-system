@@ -345,7 +345,7 @@ type TeacherRegisterReq struct {
 	Email      string `json:"email" validate:"required,email"`
 	Phone      string `json:"phone,optional" validate:"omitempty,len=11"`
 	Name       string `json:"name" validate:"required,min=2,max=50"`
-	SchoolCode string `json:"schoolCode" validate:"required,len=6"`
+	SchoolCode string `json:"schoolCode" validate:"required,min=9,max=10"`
 	EmployeeId string `json:"employeeId,optional"`
 	Department string `json:"department,optional"`
 }
@@ -656,13 +656,14 @@ type ResetAvatarResp struct {
 }
 
 type UserInfo struct {
-	Id        int64  `json:"id"`
-	Username  string `json:"username"`
-	Email     string `json:"email"`
-	Phone     string `json:"phone"`
-	Avatar    string `json:"avatar"`
-	Role      string `json:"role"`
-	CreatedAt int64  `json:"createdAt"`
+	Id         int64  `json:"id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Phone      string `json:"phone"`
+	Avatar     string `json:"avatar"`
+	Role       string `json:"role"`
+	FirstLogin bool   `json:"firstLogin"`
+	CreatedAt  int64  `json:"createdAt"`
 }
 
 type UserResp struct {

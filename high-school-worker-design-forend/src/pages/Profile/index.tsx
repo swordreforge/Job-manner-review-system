@@ -356,14 +356,17 @@ export default function ProfilePage() {
         }}
       >
         <div 
-          className="px-4 py-3 font-medium text-base"
-          style={{ 
+          className="px-4 py-3 font-medium text-base flex items-center justify-between"
+          style={{
             backgroundColor: 'var(--md-sys-color-surface-container)',
             borderBottom: '1px solid var(--md-sys-color-outline-variant)',
             color: 'var(--md-sys-color-on-surface)'
           }}
         >
-          学生资料
+          <span>学生资料</span>
+          <Button type="link" className="px-0" onClick={handleEditStudent}>
+            编辑个人资料
+          </Button>
         </div>
         {loadingStudent ? (
           <div className="text-center py-8" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载中...</div>
@@ -863,3 +866,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+

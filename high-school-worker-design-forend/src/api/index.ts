@@ -85,6 +85,10 @@ uploadAvatar: (data: { fileContent: string; fileName: string }) =>
 
   updatePassword: (data: { oldPassword: string; newPassword: string }) =>
     api.put<{ code: number; msg: string }>('/user/password', data),
+
+  completeOnboarding: () =>
+    api.post<{ code: number; msg: string }>('/user/complete-onboarding'),
+
   deleteAccount: (data: { password: string }) =>
     api.delete<{ code: number; msg: string }>('/user/account', { data }),
 };
