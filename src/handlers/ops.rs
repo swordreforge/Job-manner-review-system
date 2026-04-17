@@ -7,6 +7,57 @@ use futures_util::StreamExt;
 
 static SYSTEM: Lazy<Mutex<System>> = Lazy::new(|| Mutex::new(System::new_all()));
 
+/// 读取配置请求参数
+#[derive(serde::Deserialize)]
+pub struct ReadConfigQuery {
+    pub path: String,
+}
+
+/// 写入配置请求体
+#[derive(serde::Deserialize)]
+pub struct WriteConfigRequest {
+    pub path: String,
+    pub content: String,
+}
+
+/// 回滚请求体
+#[derive(serde::Deserialize)]
+pub struct RollbackRequest {
+    pub path: String,
+    pub backup_filename: String,
+}
+
+/// 备份文件信息
+#[derive(serde::Serialize)]
+pub struct BackupInfo {
+    pub filename: String,
+    pub created_at: i64,
+    pub size: u64,
+}
+
+/// 读取配置响应数据
+#[derive(serde::Serialize)]
+pub struct ReadConfigData {
+    pub content: String,
+    pub path: String,
+    pub valid: bool,
+    pub error: Option<String>,
+}
+
+/// 写入配置响应数据
+#[derive(serde::Serialize)]
+pub struct WriteConfigData {
+    pub backup_file: String,
+    pub saved_at: i64,
+}
+
+/// 回滚响应数据
+#[derive(serde::Serialize)]
+pub struct RollbackData {
+    pub restored_from: String,
+    pub restored_at: i64,
+}
+
 #[derive(Serialize)]
 pub struct SystemStatus {
     server: String,
@@ -404,4 +455,268 @@ pub async fn upload_backup(
             "uploaded_at": chrono::Utc::now().timestamp()
         }
     }))
+}
+
+/// 读取配置文件
+pub async fn read_config(query: web::Query<ReadConfigQuery>) -> impl Responder {
+    let path = &query.path;
+    let file_path = std::path::Path::new(path);
+
+    if !file_path.exists() {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "code": 404,
+            "message": format!("File not found: {}", path),
+            "data": null
+        }));
+    }
+
+    match std::fs::read_to_string(path) {
+        Ok(content) => {
+            let yaml_result: Result<(), serde_yaml::Error> = serde_yaml::from_str(&content);
+            match yaml_result {
+                Ok(_) => {
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "code": 200,
+                        "message": "success",
+                        "data": ReadConfigData {
+                            content,
+                            path: path.clone(),
+                            valid: true,
+                            error: None
+                        }
+                    }))
+                }
+                Err(e) => {
+                    HttpResponse::Ok().json(serde_json::json!({
+                        "code": 200,
+                        "message": "success",
+                        "data": ReadConfigData {
+                            content,
+                            path: path.clone(),
+                            valid: false,
+                            error: Some(format!("Invalid YAML: {}", e))
+                        }
+                    }))
+                }
+            }
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to read file: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 写入配置文件
+pub async fn write_config(req: web::Json<WriteConfigRequest>) -> impl Responder {
+    let path = &req.path;
+    let content = &req.content;
+
+    if let Err(e) = serde_yaml::from_str::<serde_yaml::Value>(content) {
+        return HttpResponse::BadRequest().json(serde_json::json!({
+            "code": 400,
+            "message": format!("Invalid YAML content: {}", e),
+            "data": null
+        }));
+    }
+
+    let backup_result = backup_config_file(path);
+    let backup_file = match backup_result {
+        Ok(bf) => bf,
+        Err(e) => {
+            log::warn!("Failed to create backup (file may not exist): {}", e);
+            String::new()
+        }
+    };
+
+    match std::fs::write(path, content) {
+        Ok(_) => {
+            let _ = cleanup_old_backups(path, 5);
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Config file saved successfully",
+                "data": WriteConfigData {
+                    backup_file,
+                    saved_at: chrono::Utc::now().timestamp()
+                }
+            }))
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to write config file: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 列出配置文件的备份
+pub async fn list_config_backups_handler(
+    query: web::Query<ReadConfigQuery>,
+) -> impl Responder {
+    let path = &query.path;
+
+    match list_config_backups(path) {
+        Ok(backups) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "success",
+                "data": {
+                    "items": backups,
+                    "total": backups.len()
+                }
+            }))
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to list backups: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 回滚配置文件到指定版本
+pub async fn rollback_config(req: web::Json<RollbackRequest>) -> impl Responder {
+    let original_path = &req.path;
+    let backup_filename = &req.backup_filename;
+
+    let file_path = std::path::Path::new(original_path);
+    let parent = file_path.parent().unwrap_or(std::path::Path::new("."));
+    let backup_path = parent.join(backup_filename);
+
+    if !backup_path.exists() {
+        return HttpResponse::NotFound().json(serde_json::json!({
+            "code": 404,
+            "message": format!("Backup file not found: {}", backup_filename),
+            "data": null
+        }));
+    }
+
+    let backup_result = backup_config_file(original_path);
+    if backup_result.is_err() {
+        log::warn!("Failed to create backup before rollback: {:?}", backup_result.err());
+    }
+
+    match std::fs::copy(&backup_path, original_path) {
+        Ok(_) => {
+            HttpResponse::Ok().json(serde_json::json!({
+                "code": 200,
+                "message": "Config file restored successfully",
+                "data": RollbackData {
+                    restored_from: backup_path.to_string_lossy().to_string(),
+                    restored_at: chrono::Utc::now().timestamp()
+                }
+            }))
+        }
+        Err(e) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to restore config file: {}", e),
+                "data": null
+            }))
+        }
+    }
+}
+
+/// 为配置文件创建备份
+fn backup_config_file(path: &str) -> Result<String, String> {
+    let file_path = std::path::Path::new(path);
+    
+    if !file_path.exists() {
+        return Err(format!("File not found: {}", path));
+    }
+    
+    let parent = file_path.parent().unwrap_or(std::path::Path::new("."));
+    let filename = file_path.file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("config.yaml");
+    
+    let timestamp = chrono::Local::now().format("%Y%m%d_%H%M%S");
+    let backup_filename = format!("{}.backup_{}", filename, timestamp);
+    let backup_path = parent.join(&backup_filename);
+    
+    std::fs::copy(path, &backup_path)
+        .map_err(|e| format!("Failed to create backup: {}", e))?;
+    
+    Ok(backup_path.to_string_lossy().to_string())
+}
+
+/// 清理旧备份，保留最多 N 个版本
+fn cleanup_old_backups(original_path: &str, max_versions: usize) -> Result<(), String> {
+    let file_path = std::path::Path::new(original_path);
+    let parent = file_path.parent().unwrap_or(std::path::Path::new("."));
+    let filename = file_path.file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("config.yaml");
+    
+    let pattern = format!("{}.backup_", filename);
+    
+    let mut backups: Vec<_> = std::fs::read_dir(parent)
+        .map_err(|e| format!("Failed to read directory: {}", e))?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_name().to_string_lossy()
+                .starts_with(&pattern)
+        })
+        .collect();
+    
+    if backups.len() >= max_versions {
+        backups.sort_by_key(|a| std::cmp::Reverse(
+            a.metadata().and_then(|m| m.modified()).ok()
+        ));
+        
+        for backup in backups.into_iter().skip(max_versions - 1) {
+            let _ = std::fs::remove_file(backup.path());
+        }
+    }
+    
+    Ok(())
+}
+
+/// 列出配置文件的备份
+fn list_config_backups(path: &str) -> Result<Vec<BackupInfo>, String> {
+    let file_path = std::path::Path::new(path);
+    let parent = file_path.parent().unwrap_or(std::path::Path::new("."));
+    let filename = file_path.file_name()
+        .and_then(|s| s.to_str())
+        .unwrap_or("config.yaml");
+    
+    let pattern = format!("{}.backup_", filename);
+    
+    let mut backups: Vec<_> = std::fs::read_dir(parent)
+        .map_err(|e| format!("Failed to read directory: {}", e))?
+        .filter_map(|entry| entry.ok())
+        .filter(|entry| {
+            entry.file_name().to_string_lossy()
+                .starts_with(&pattern)
+        })
+        .collect();
+    
+    backups.sort_by_key(|a| std::cmp::Reverse(
+        a.metadata().and_then(|m| m.modified()).ok()
+    ));
+    
+    let result: Vec<BackupInfo> = backups
+        .into_iter()
+        .filter_map(|entry| {
+            let metadata = entry.metadata().ok()?;
+            let created_at = metadata.modified().ok()
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_secs() as i64)?;
+            
+            Some(BackupInfo {
+                filename: entry.file_name().to_string_lossy().to_string(),
+                created_at,
+                size: metadata.len(),
+            })
+        })
+        .collect();
+    
+    Ok(result)
 }

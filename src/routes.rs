@@ -25,15 +25,24 @@ fn configure_api_v1() -> Scope {
                 // 登录接口（不需要认证）
                 .route("/login", web::post().to(crate::handlers::auth::login))
                 // 刷新 Token 接口（不需要认证）
-                .route("/refresh", web::post().to(crate::handlers::auth::refresh_token))
+                .route(
+                    "/refresh",
+                    web::post().to(crate::handlers::auth::refresh_token),
+                )
                 // 修改密码接口（需要认证）
-                .route("/change-password", web::post().to(
-                    crate::handlers::auth::change_password
-                ).wrap(crate::middleware::AuthMiddleware))
+                .route(
+                    "/change-password",
+                    web::post()
+                        .to(crate::handlers::auth::change_password)
+                        .wrap(crate::middleware::AuthMiddleware),
+                )
                 // 修改用户名接口（需要认证）
-                .route("/change-username", web::post().to(
-                    crate::handlers::auth::change_username
-                ).wrap(crate::middleware::AuthMiddleware)),
+                .route(
+                    "/change-username",
+                    web::post()
+                        .to(crate::handlers::auth::change_username)
+                        .wrap(crate::middleware::AuthMiddleware),
+                ),
         )
         // 学生数据路由(需要认证)
         .service(
@@ -44,9 +53,15 @@ fn configure_api_v1() -> Scope {
                 // 学生列表
                 .route("", web::get().to(crate::handlers::student::list))
                 // 下载学生导入模板（需要在 /{id} 之前）
-                .route("/import-template", web::get().to(crate::handlers::student::download_student_template))
+                .route(
+                    "/import-template",
+                    web::get().to(crate::handlers::student::download_student_template),
+                )
                 // 批量导入学生（需要在 /{id} 之前）
-                .route("/batch-import", web::post().to(crate::handlers::student::batch_import_students))
+                .route(
+                    "/batch-import",
+                    web::post().to(crate::handlers::student::batch_import_students),
+                )
                 // 学生详情
                 .route("/{id}", web::get().to(crate::handlers::student::get))
                 // 更新学生信息
@@ -92,6 +107,20 @@ fn configure_api_v1() -> Scope {
                 .route(
                     "/backups/{filename}",
                     web::delete().to(crate::handlers::ops::delete_backup),
+                )
+                // 读取配置文件
+                .route("/config", web::get().to(crate::handlers::ops::read_config))
+                // 写入配置文件
+                .route("/config", web::put().to(crate::handlers::ops::write_config))
+                // 列出配置文件备份
+                .route(
+                    "/config/backups",
+                    web::get().to(crate::handlers::ops::list_config_backups_handler),
+                )
+                // 回滚配置文件
+                .route(
+                    "/config/rollback",
+                    web::post().to(crate::handlers::ops::rollback_config),
                 ),
         )
         // 岗位路由(需要认证)
@@ -103,9 +132,15 @@ fn configure_api_v1() -> Scope {
                 // 岗位列表
                 .route("", web::get().to(crate::handlers::job::list))
                 // 下载导入模板（需要在 /{id} 之前）
-                .route("/import-template", web::get().to(crate::handlers::job::download_template))
+                .route(
+                    "/import-template",
+                    web::get().to(crate::handlers::job::download_template),
+                )
                 // 批量导入岗位（需要在 /{id} 之前）
-                .route("/batch-import", web::post().to(crate::handlers::job::batch_import))
+                .route(
+                    "/batch-import",
+                    web::post().to(crate::handlers::job::batch_import),
+                )
                 // 岗位详情
                 .route("/{id}", web::get().to(crate::handlers::job::get))
                 // 更新岗位
@@ -122,9 +157,15 @@ fn configure_api_v1() -> Scope {
                 // 学校列表
                 .route("", web::get().to(crate::handlers::school::list))
                 // 下载导入模板（需要在 /{id} 之前）
-                .route("/import-template", web::get().to(crate::handlers::school::download_school_template))
+                .route(
+                    "/import-template",
+                    web::get().to(crate::handlers::school::download_school_template),
+                )
                 // 批量导入（需要在 /{id} 之前）
-                .route("/batch-import", web::post().to(crate::handlers::school::batch_import))
+                .route(
+                    "/batch-import",
+                    web::post().to(crate::handlers::school::batch_import),
+                )
                 // 学校详情
                 .route("/{id}", web::get().to(crate::handlers::school::get))
                 // 更新学校
@@ -141,9 +182,15 @@ fn configure_api_v1() -> Scope {
                 // 用户列表
                 .route("", web::get().to(crate::handlers::user::list))
                 // 下载导入模板（需要在 /{id} 之前）
-                .route("/import-template", web::get().to(crate::handlers::user::download_user_template))
+                .route(
+                    "/import-template",
+                    web::get().to(crate::handlers::user::download_user_template),
+                )
                 // 批量导入用户（需要在 /{id} 之前）
-                .route("/batch-import", web::post().to(crate::handlers::user::batch_import))
+                .route(
+                    "/batch-import",
+                    web::post().to(crate::handlers::user::batch_import),
+                )
                 // 用户详情
                 .route("/{id}", web::get().to(crate::handlers::user::get))
                 // 更新用户
@@ -156,24 +203,51 @@ fn configure_api_v1() -> Scope {
             web::scope("/schema")
                 .wrap(crate::middleware::AuthMiddleware)
                 // 获取所有表
-                .route("/tables", web::get().to(crate::handlers::schema::list_tables))
+                .route(
+                    "/tables",
+                    web::get().to(crate::handlers::schema::list_tables),
+                )
                 // 获取表结构
-                .route("/tables/{table_name}", web::get().to(crate::handlers::schema::get_table_schema))
+                .route(
+                    "/tables/{table_name}",
+                    web::get().to(crate::handlers::schema::get_table_schema),
+                )
                 // 添加字段
-                .route("/columns", web::post().to(crate::handlers::schema::add_column))
+                .route(
+                    "/columns",
+                    web::post().to(crate::handlers::schema::add_column),
+                )
                 // 修改字段
-                .route("/columns", web::put().to(crate::handlers::schema::modify_column))
+                .route(
+                    "/columns",
+                    web::put().to(crate::handlers::schema::modify_column),
+                )
                 // 删除字段
-                .route("/columns", web::delete().to(crate::handlers::schema::delete_column))
+                .route(
+                    "/columns",
+                    web::delete().to(crate::handlers::schema::delete_column),
+                )
                 // 执行自定义SQL
-                .route("/execute", web::post().to(crate::handlers::schema::execute_sql))
+                .route(
+                    "/execute",
+                    web::post().to(crate::handlers::schema::execute_sql),
+                )
                 // 查询表数据
-                .route("/tables/{table_name}/data", web::get().to(crate::handlers::schema::query_table_data))
+                .route(
+                    "/tables/{table_name}/data",
+                    web::get().to(crate::handlers::schema::query_table_data),
+                )
                 // 插入数据
-                .route("/data", web::post().to(crate::handlers::schema::insert_data))
+                .route(
+                    "/data",
+                    web::post().to(crate::handlers::schema::insert_data),
+                )
                 // 更新数据
                 .route("/data", web::put().to(crate::handlers::schema::update_data))
                 // 删除数据
-                .route("/data", web::delete().to(crate::handlers::schema::delete_data)),
+                .route(
+                    "/data",
+                    web::delete().to(crate::handlers::schema::delete_data),
+                ),
         )
 }
