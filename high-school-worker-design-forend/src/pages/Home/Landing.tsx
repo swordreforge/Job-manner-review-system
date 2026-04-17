@@ -9,25 +9,24 @@ import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
+import ScrollStack, { ScrollStackItem } from '@/components/ScrollStack';
 
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 10L12 5L21 10L12 15L3 10Z" />
-    <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
-    <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
-  </svg>
+    <svg
+        className={className}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+    >
+      <path d="M3 10L12 5L21 10L12 15L3 10Z" />
+      <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
+      <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
+    </svg>
 );
-
-
 
 const features = [
   {
@@ -195,8 +194,6 @@ export default function Landing() {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
-  const [activeCardIndex, setActiveCardIndex] = useState<number | null>(null);
-  const featuresContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     initialize();
@@ -210,9 +207,9 @@ export default function Landing() {
 
   if (!isAuthChecked || (isAuthChecked && isAuthenticated)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-gray-400">加载中...</div>
-      </div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-gray-400">加载中...</div>
+        </div>
     );
   }
 
@@ -239,25 +236,8 @@ export default function Landing() {
     setPreviewImageUrl(features[hoveredFeatureIndex].imageUrl);
     setImagePreviewOpen(true);
   };
-  
-    const handleCardClick = (index: number) => {
-      // 如果点击的是当前激活的卡片，则关闭
-      if (activeCardIndex === index) {
-        setActiveCardIndex(null);
-      } else {
-        // 否则激活点击的卡片
-        setActiveCardIndex(index);
-      }
-    };
-  
-    const handleContainerClick = (event: React.MouseEvent<HTMLDivElement>) => {
-      // 如果点击的是容器本身（不是卡片），则关闭
-      if (event.target === event.currentTarget) {
-        setActiveCardIndex(null);
-      }
-    };
-  
-    const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
+
+  const fallbackViewportWidth = typeof window !== 'undefined' ? Math.min(window.innerWidth, 1280) : 1024;
   const resolvedViewportWidth = viewportWidth > 0 ? viewportWidth : fallbackViewportWidth;
   const isMobileGallery = resolvedViewportWidth < 768;
   const cardGap = isMobileGallery ? 12 : 20;
@@ -382,8 +362,8 @@ export default function Landing() {
   }, []);
 
   return (
-    <>
-      <style>{`
+      <>
+        <style>{`
         @keyframes rainbow-flow {
           0% { background-position: 0% 50%; }
           50% { background-position: 100% 50%; }
@@ -420,94 +400,94 @@ export default function Landing() {
           to { transform: translate3d(calc(-100vw - 140%), 0, 0); }
         }
       `}</style>
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.8, ease: [0.2, 0.9, 0.4, 1.1] }}
-            className="fixed inset-0 z-[200] flex items-center justify-center"
-            style={{
-              background: 'radial-gradient(circle at 30% 10%, #0f1222, #03050b)',
-              backdropFilter: 'blur(2px)',
-            }}
-          >
-            <div className="text-center relative w-[280px] h-[280px] flex flex-col items-center justify-center">
-              <div className="relative w-[200px] h-[200px] mb-8 flex items-center justify-center">
-                <div
-                  className="absolute w-[180px] h-[180px] rounded-full border-2 border-transparent"
-                  style={{
-                    borderTopColor: '#3b82f6',
-                    borderRightColor: '#8b5cf6',
-                    animation: 'spin 1.4s linear infinite',
-                    filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.5))',
-                  }}
-                />
-                <div
-                  className="absolute w-[140px] h-[140px] rounded-full border-2 border-transparent"
-                  style={{
-                    borderBottomColor: '#06b6d4',
-                    borderLeftColor: '#c084fc',
-                    animation: 'spinReverse 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite',
-                    filter: 'drop-shadow(0 0 5px rgba(6,182,212,0.6))',
-                  }}
-                />
-                <div
-                  className="absolute w-[100px] h-[100px] rounded-full border-2 border-transparent opacity-80"
-                  style={{
-                    borderTopColor: '#f472b6',
-                    borderLeftColor: '#a78bfa',
-                    animation: 'spin 2.2s linear infinite',
-                    filter: 'drop-shadow(0 0 4px rgba(244,114,182,0.4))',
-                  }}
-                />
-                <motion.div
-                  className="absolute w-6 h-6 rounded-full"
-                  style={{
-                    background: 'linear-gradient(135deg, #3b82f6, #c084fc)',
-                    boxShadow: '0 0 15px #8b5cf6',
-                  }}
-                  animate={{
-                    scale: [0.8, 1.2, 0.8],
-                    opacity: [0.6, 1, 0.6],
-                  }}
-                  transition={{
-                    duration: 1.5,
-                    repeat: Infinity,
-                    ease: 'easeOut',
-                  }}
-                />
-              </div>
-              <div className="relative z-10 font-bold text-[3.2rem] tracking-wider mt-5" style={{
-                background: 'linear-gradient(135deg, #fff, #a0c4ff)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textShadow: '0 2px 10px rgba(0,0,0,0.2)',
-                fontFeatureSettings: '"tnum"',
-                fontVariantNumeric: 'tabular-nums',
-              }}>
-                {percent}
-                <span className="text-[2rem]">%</span>
-              </div>
-              <div className="mt-3 text-xs tracking-[0.2em] uppercase font-medium text-[#9ca3cf] bg-white/5 backdrop-blur-sm px-4 py-1.5 rounded-full inline-block">
-                加载中...
-              </div>
+        <AnimatePresence>
+          {loading && (
               <motion.div
-                className="absolute w-[300px] h-[300px] rounded-full -z-10"
-                style={{
-                  background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0) 70%)',
-                }}
-                animate={{
-                  opacity: [0.4, 0.8],
-                  scale: [1, 1.1],
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                  repeatType: 'reverse',
-                }}
-              />
-              <style>{`
+                  initial={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.8, ease: [0.2, 0.9, 0.4, 1.1] }}
+                  className="fixed inset-0 z-[200] flex items-center justify-center"
+                  style={{
+                    background: 'radial-gradient(circle at 30% 10%, #0f1222, #03050b)',
+                    backdropFilter: 'blur(2px)',
+                  }}
+              >
+                <div className="text-center relative w-[280px] h-[280px] flex flex-col items-center justify-center">
+                  <div className="relative w-[200px] h-[200px] mb-8 flex items-center justify-center">
+                    <div
+                        className="absolute w-[180px] h-[180px] rounded-full border-2 border-transparent"
+                        style={{
+                          borderTopColor: '#3b82f6',
+                          borderRightColor: '#8b5cf6',
+                          animation: 'spin 1.4s linear infinite',
+                          filter: 'drop-shadow(0 0 6px rgba(59,130,246,0.5))',
+                        }}
+                    />
+                    <div
+                        className="absolute w-[140px] h-[140px] rounded-full border-2 border-transparent"
+                        style={{
+                          borderBottomColor: '#06b6d4',
+                          borderLeftColor: '#c084fc',
+                          animation: 'spinReverse 1.8s cubic-bezier(0.5, 0, 0.5, 1) infinite',
+                          filter: 'drop-shadow(0 0 5px rgba(6,182,212,0.6))',
+                        }}
+                    />
+                    <div
+                        className="absolute w-[100px] h-[100px] rounded-full border-2 border-transparent opacity-80"
+                        style={{
+                          borderTopColor: '#f472b6',
+                          borderLeftColor: '#a78bfa',
+                          animation: 'spin 2.2s linear infinite',
+                          filter: 'drop-shadow(0 0 4px rgba(244,114,182,0.4))',
+                        }}
+                    />
+                    <motion.div
+                        className="absolute w-6 h-6 rounded-full"
+                        style={{
+                          background: 'linear-gradient(135deg, #3b82f6, #c084fc)',
+                          boxShadow: '0 0 15px #8b5cf6',
+                        }}
+                        animate={{
+                          scale: [0.8, 1.2, 0.8],
+                          opacity: [0.6, 1, 0.6],
+                        }}
+                        transition={{
+                          duration: 1.5,
+                          repeat: Infinity,
+                          ease: 'easeOut',
+                        }}
+                    />
+                  </div>
+                  <div className="relative z-10 font-bold text-[3.2rem] tracking-wider mt-5" style={{
+                    background: 'linear-gradient(135deg, #fff, #a0c4ff)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    textShadow: '0 2px 10px rgba(0,0,0,0.2)',
+                    fontFeatureSettings: '"tnum"',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>
+                    {percent}
+                    <span className="text-[2rem]">%</span>
+                  </div>
+                  <div className="mt-3 text-xs tracking-[0.2em] uppercase font-medium text-[#9ca3cf] bg-white/5 backdrop-blur-sm px-4 py-1.5 rounded-full inline-block">
+                    加载中...
+                  </div>
+                  <motion.div
+                      className="absolute w-[300px] h-[300px] rounded-full -z-10"
+                      style={{
+                        background: 'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0) 70%)',
+                      }}
+                      animate={{
+                        opacity: [0.4, 0.8],
+                        scale: [1, 1.1],
+                      }}
+                      transition={{
+                        duration: 3,
+                        repeat: Infinity,
+                        repeatType: 'reverse',
+                      }}
+                  />
+                  <style>{`
                 @keyframes spin {
                   0% { transform: rotate(0deg); }
                   100% { transform: rotate(360deg); }
@@ -517,611 +497,542 @@ export default function Landing() {
                   100% { transform: rotate(-360deg); }
                 }
               `}</style>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                </div>
+              </motion.div>
+          )}
+        </AnimatePresence>
 
-      <AnimatePresence mode="wait">
-        {!loading && (
-          <motion.div
-            className="min-h-screen text-white"
-            style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}
-          >
-            <motion.div
-              initial={{ y: -100, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
-              className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10"
-            >
-              <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+        <AnimatePresence mode="wait">
+          {!loading && (
+              <motion.div
+                  className="min-h-screen text-white"
+                  style={{ background: 'linear-gradient(180deg, #0a0a0a 0%, #1a1a2e 100%)' }}
+              >
                 <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  className="flex items-center gap-3 cursor-pointer"
-                  onClick={() => navigate('/welcome')}
+                    initial={{ y: -100, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
+                    className="fixed top-0 left-0 right-0 z-50 bg-black/30 backdrop-blur-md border-b border-white/10"
                 >
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
-                    <GraduationCapIcon className="w-6 h-6 text-white" />
-                  </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+                  <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+                    <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        className="flex items-center gap-3 cursor-pointer"
+                        onClick={() => navigate('/welcome')}
+                    >
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                        <GraduationCapIcon className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
                     职业规划助手
                   </span>
-                </motion.div>
-
-                <div className="flex items-center gap-4">
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/doc')}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
-                      />
-                    </svg>
-                    <span className="font-medium">文档</span>
-                  </motion.button>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => navigate('/auth')}
-                    className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
-                  >
-                    <svg
-                      className="w-5 h-5"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                      />
-                    </svg>
-                    <span className="font-medium">登录/注册</span>
-                  </motion.button>
-                </div>
-              </div>
-            </motion.div>
-
-
-
-            <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
-              <LaserGradient />
-              <LaserRay />
-              <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
-
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                {floatingIcons.map((item, idx) => {
-                  const { Icon, size, left, top, duration, delay } = item;
-                  return (
-                    <motion.div
-                      key={idx}
-                      className="absolute text-purple-400/40"
-                      style={{ left, top }}
-                      initial={{ y: 0, rotate: 0 }}
-                      animate={{ y: [0, -40, 0], rotate: [0, 8, 0] }}
-                      transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-                    >
-                      <Icon size={size} />
                     </motion.div>
-                  );
-                })}
-              </div>
 
-              <div className="relative z-10">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                  animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                  transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
-                  className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
-                >
-                  <motion.div
-                    animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
-                    transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
-                    onClick={handleShakeClick}
-                    className="cursor-pointer"
-                  >
-                    <GraduationCapIcon className="w-20 h-20 text-white" />
-                  </motion.div>
+                    <div className="flex items-center gap-4">
+                      <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => navigate('/doc')}
+                          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 transition-all duration-300"
+                      >
+                        <svg
+                            className="w-5 h-5"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                        >
+                          <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
+                          />
+                        </svg>
+                        <span className="font-medium">文档</span>
+                      </motion.button>
+                      <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => navigate('/auth')}
+                          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
+                      >
+                        <svg
+                            className="w-5 h-5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                        >
+                          <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
+                          />
+                        </svg>
+                        <span className="font-medium">登录/注册</span>
+                      </motion.button>
+                    </div>
+                  </div>
                 </motion.div>
 
-                <motion.h1
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.2 }}
-                  className="text-6xl md:text-7xl font-bold mb-12"
-                >
-                  你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
-                </motion.h1>
+                <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
+                  <LaserGradient />
+                  <LaserRay />
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
 
-                <motion.p
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.4 }}
-                  className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
-                >
-                  AI驱动的职业发展解决方案，助你找到理想工作
-                  <br />
-                  <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
-                </motion.p>
+                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    {floatingIcons.map((item, idx) => {
+                      const { Icon, size, left, top, duration, delay } = item;
+                      return (
+                          <motion.div
+                              key={idx}
+                              className="absolute text-purple-400/40"
+                              style={{ left, top }}
+                              initial={{ y: 0, rotate: 0 }}
+                              animate={{ y: [0, -40, 0], rotate: [0, 8, 0] }}
+                              transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
+                          >
+                            <Icon size={size} />
+                          </motion.div>
+                      );
+                    })}
+                  </div>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                  className="flex flex-col sm:flex-row gap-10 justify-center"
-                >
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                    <Button
-                      type="primary"
-                      size="large"
-                      icon={<RightOutlined />}
-                      onClick={() => navigate('/auth')}
-                      className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
-                    >
-                      立即开始
-                    </Button>
-                  </motion.div>
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                    <Button
-                      size="large"
-                      onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                      className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
-                    >
-                      了解更多
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              </div>
-            </div>
-
-            <div id="features" className="px-6 py-16 w-full">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6 }}
-                className="text-center mb-12"
-              >
-                <h2 className="text-4xl font-bold mb-4">
-                  核心<span className="text-orange-400">功能</span>
-                </h2>
-                <p className="text-gray-400">全方位助你职业成长</p>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="mb-12"
-              >
-                <div className="relative rounded-none border border-transparent bg-transparent p-2 md:p-4">
-                  <div className="relative">
-                    <div
-                      ref={galleryViewportRef}
-                      tabIndex={0}
-                      role="region"
-                      aria-label="核心功能轮播"
-                      onKeyDown={handleGalleryKeyDown}
-                      onPointerDown={handleGalleryPointerDown}
-                      onPointerMove={handleGalleryPointerMove}
-                      onPointerUp={finalizeGalleryDrag}
-                      onPointerCancel={finalizeGalleryDrag}
-                      className={`overflow-hidden select-none ${isDraggingGallery ? 'cursor-grabbing' : 'cursor-grab'}`}
+                  <div className="relative z-10">
+                    <motion.div
+                        initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                        animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                        transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
+                        className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
                     >
                       <motion.div
-                        className="flex"
-                        style={{ gap: `${cardGap}px` }}
-                        animate={{ x: trackX }}
-                        transition={isDraggingGallery
-                          ? { duration: 0 }
-                          : { type: 'spring', stiffness: 100, damping: 34, mass: 1.2 }}
+                          animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
+                          transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
+                          onClick={handleShakeClick}
+                          className="cursor-pointer"
                       >
-                        {features.map((item, idx) => {
-                          const isActive = idx === hoveredFeatureIndex;
-                          return (
-                            <motion.article
-                              key={item.title}
-                              style={{ width: cardWidth, minWidth: cardWidth }}
-                              className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-xl md:rounded-2xl border border-white/15 bg-[#11131a]"
-                              animate={{
-                                opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
-                                scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
-                              }}
-                              transition={{ duration: 0.35, ease: 'easeOut' }}
-                              >
-                                <button
-                                  type="button"
-                                  aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
-                                  onClick={() => handleGalleryCardClick(idx)}
-                                  className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden"
-                                >
-                                <img
-                                  src={item.imageUrl}
-                                  alt={item.title}
-                                  className="absolute inset-0 w-full h-full object-cover rounded-xl md:rounded-2xl"
-                                  draggable={false}
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
-                                <div className="absolute bottom-4 left-4 right-4 text-left">
-                                  <h3 className="text-2xl md:text-4xl font-semibold tracking-tight">{item.title}</h3>
-                                  <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">{item.desc}</p>
-                                </div>
-                              </button>
-                            </motion.article>
-                          );
-                        })}
+                        <GraduationCapIcon className="w-20 h-20 text-white" />
                       </motion.div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-5 flex justify-center">
-                  <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-white/45 bg-white/15 px-6 py-2 backdrop-blur-md">
-                    <div className="flex items-center gap-2">
-                      {features.map((_, idx) => (
-                        <motion.button
-                          key={idx}
-                          type="button"
-                          onClick={() => handleFeatureDotClick(idx)}
-                          className={`h-2.5 rounded-full transition-all duration-300 ${
-                            idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-white/30' : 'w-2.5 bg-white/60'
-                          }`}
-                          whileHover={{ scale: 1.2 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          {idx === hoveredFeatureIndex ? (
-                            <span
-                              key={`${hoveredFeatureIndex}-${isFeatureAutoPlay ? 'play' : 'pause'}`}
-                              className="feature-dot-progress absolute inset-y-0 left-0 rounded-full bg-white/95"
-                              style={{
-                                animationDuration: `${FEATURE_ROTATE_INTERVAL_MS}ms`,
-                                animationPlayState: isFeatureAutoPlay ? 'running' : 'paused',
-                              }}
-                            />
-                          ) : null}
-                        </motion.button>
-                      ))}
-                    </div>
-                    <motion.button
-                      type="button"
-                      aria-label={isFeatureAutoPlay ? '关闭自动轮换' : '开启自动轮换'}
-                      onClick={() => setIsFeatureAutoPlay((prev) => !prev)}
-                      className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
-                        isFeatureAutoPlay ? 'bg-white/35 border-white/90 text-white' : 'bg-white/20 border-white/60 text-white/90'
-                      }`}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      {isFeatureAutoPlay ? <PauseOutlined /> : <CaretRightOutlined />}
-                    </motion.button>
-                  </div>
-                </div>
-              </motion.div>
-
-              <div className="relative h-[50vh] max-w-5xl mx-auto">
-                <div 
-                  ref={featuresContainerRef}
-                  className="relative w-full h-full grid grid-cols-1 md:grid-cols-2 gap-6"
-                  onClick={handleContainerClick}
-                >
-                  {features.map((item, idx) => (
-                    <motion.div
-                      key={idx}
-                      initial={{ opacity: 0, y: 50 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      animate={activeCardIndex === idx ? {
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        zIndex: 20,
-                        borderRadius: '1.5rem',
-                        padding: '2.5rem',
-                        boxShadow: '0 40px 80px rgba(251, 146, 60, 0.4)',
-                        border: '1px solid rgba(251, 146, 60, 0.9)',
-                        background: 'rgba(17, 19, 26, 0.98)',
-                      } : activeCardIndex !== null ? {
-                        opacity: 0,
-                        pointerEvents: 'none',
-                      } : { opacity: 1 }}
-                      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-                      className="p-6 rounded-2xl cursor-pointer relative overflow-hidden"
-                      style={{
-                        background: activeCardIndex === null && activeCardIndex !== idx ? 'rgba(255,255,255,0.05)' : '',
-                        border: activeCardIndex === null && activeCardIndex !== idx ? '1px solid rgba(255,255,255,0.1)' : '',
-                      }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleCardClick(idx);
-                      }}
-                    >
-                      {activeCardIndex !== idx && (
-                        <>
-                          <div
-                            className="absolute inset-0 rounded-2xl pointer-events-none"
-                            style={{
-                              background: 'rgba(255,255,255,0.05)',
-                              border: '1px solid rgba(255,255,255,0.1)',
-                            }}
-                          />
-                          
-                          {/* 简略信息 */}
-                          <div className="relative z-10">
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              whileInView={{ scale: 1 }}
-                              whileHover={{ scale: 1.1, rotate: [0, -5, 5, 0] }}
-                              transition={{ type: "spring", delay: idx * 0.1 + 0.2 }}
-                              className="text-4xl mb-4"
-                            >
-                              {item.icon}
-                            </motion.div>
-                            <h3 className="text-xl font-semibold mb-2">{item.title}</h3>
-                            <p className="text-gray-400">{item.desc}</p>
-                          </div>
-                        </>
-                      )}
-                      
-                      {activeCardIndex === idx && (
-                        <>
-                          <div
-                            className="absolute inset-0 rounded-2xl pointer-events-none"
-                            style={{
-                              background: "linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 100%)"
-                            }}
-                          />
-                          
-                          {/* 关闭按钮 */}
-                          <motion.button
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            transition={{ delay: 0.2 }}
-                            onClick={() => handleCardClick(idx)}
-                            className="absolute top-4 right-4 w-8 h-8 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white hover:text-orange-400 transition-all duration-300 z-20"
-                          >
-                            <CloseOutlined />
-                          </motion.button>
-                          
-                          {/* 详情信息 */}
-                          <div className="absolute inset-0 px-8 pt-4 pb-8 flex flex-col justify-start relative z-10 overflow-y-auto">
-                            <h3 className="text-4xl font-bold mb-2">{item.title}</h3>
-                            <p className="text-gray-400 text-xl mb-6 leading-snug">{item.desc}</p>
-                            
-                            {/* 视觉分隔 */}
-                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4" />
-                            
-                            {/* 详细介绍 */}
-                            <motion.div
-                              initial={{ opacity: 0, y: 10 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              transition={{ delay: 0.3 }}
-                              className="mb-4"
-                            >
-                              <p className="text-gray-300 text-lg leading-snug">{item.detailDesc}</p>
-                            </motion.div>
-                            
-                            {/* 视觉分隔 */}
-                            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/20 to-transparent mb-4" />
-                            
-                            {/* 使用场景标签 */}
-                            <div className="mb-4">
-                              <h4 className="text-sm font-semibold text-orange-400 mb-2 uppercase tracking-wider">适用场景</h4>
-                              <div className="flex flex-wrap gap-2">
-                                {item.scenarios.map((scenario, sIdx) => (
-                                  <motion.span
-                                    key={sIdx}
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 0.4 + sIdx * 0.05 }}
-                                    className="px-3 py-2 bg-white/10 border border-white/20 rounded-full text-sm text-gray-300 hover:bg-white/20 transition-colors"
-                                  >
-                                    {scenario}
-                                  </motion.span>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            {/* 数据指标 */}
-                            <div className="mb-2">
-                              <h4 className="text-sm font-semibold text-orange-400 mb-2 uppercase tracking-wider">效果数据</h4>
-                              <div className="grid grid-cols-3 gap-3">
-                                {item.stats.map((stat, stIdx) => (
-                                  <motion.div
-                                    key={stIdx}
-                                    initial={{ opacity: 0, y: 20 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: 0.5 + stIdx * 0.1 }}
-                                    className="text-center p-3 bg-white/5 border border-white/10 rounded-lg"
-                                  >
-                                    <div className="text-2xl font-bold text-orange-400 mb-1">{stat.value}</div>
-                                    <div className="text-xs text-white">{stat.label}</div>
-                                  </motion.div>
-                                ))}
-                              </div>
-                            </div>
-                            
-                            </div>
-                        </>
-                      )}
                     </motion.div>
-                  ))}
+
+                    <motion.h1
+                        initial={{ opacity: 0, y: 30 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        className="text-6xl md:text-7xl font-bold mb-12"
+                    >
+                      你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
+                    </motion.h1>
+
+                    <motion.p
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
+                    >
+                      AI驱动的职业发展解决方案，助你找到理想工作
+                      <br />
+                      <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
+                    </motion.p>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.6, delay: 0.6 }}
+                        className="flex flex-col sm:flex-row gap-10 justify-center"
+                    >
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                        <Button
+                            type="primary"
+                            size="large"
+                            icon={<RightOutlined />}
+                            onClick={() => navigate('/auth')}
+                            className="bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
+                        >
+                          立即开始
+                        </Button>
+                      </motion.div>
+                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                        <Button
+                            size="large"
+                            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
+                            className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+                        >
+                          了解更多
+                        </Button>
+                      </motion.div>
+                    </motion.div>
+                  </div>
                 </div>
-              </div>
-            </div>
 
-            <div className="px-6 py-16 max-w-4xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ margin: "-100px" }}
-                transition={{ duration: 0.6 }}
-                className="text-center mb-12"
-              >
-                <h2 className="text-4xl font-bold mb-4">
-                  与市面<span className="text-orange-400">产品对比</span>
-                </h2>
-                <p className="text-gray-400">功能全面领先，让求职更简单</p>
+                <div id="features" className="px-6 py-16 w-full">
+                  <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6 }}
+                      className="text-center mb-12"
+                  >
+                    <h2 className="text-4xl font-bold mb-4">
+                      核心<span className="text-orange-400">功能</span>
+                    </h2>
+                    <p className="text-gray-400">全方位助你职业成长</p>
+                  </motion.div>
+
+                  <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      className="mb-12"
+                  >
+                    <div className="relative rounded-none border border-transparent bg-transparent p-2 md:p-4">
+                      <div className="relative">
+                        <div
+                            ref={galleryViewportRef}
+                            tabIndex={0}
+                            role="region"
+                            aria-label="核心功能轮播"
+                            onKeyDown={handleGalleryKeyDown}
+                            onPointerDown={handleGalleryPointerDown}
+                            onPointerMove={handleGalleryPointerMove}
+                            onPointerUp={finalizeGalleryDrag}
+                            onPointerCancel={finalizeGalleryDrag}
+                            className={`overflow-hidden select-none ${isDraggingGallery ? 'cursor-grabbing' : 'cursor-grab'}`}
+                        >
+                          <motion.div
+                              className="flex"
+                              style={{ gap: `${cardGap}px` }}
+                              animate={{ x: trackX }}
+                              transition={isDraggingGallery
+                                  ? { duration: 0 }
+                                  : { type: 'spring', stiffness: 100, damping: 34, mass: 1.2 }}
+                          >
+                            {features.map((item, idx) => {
+                              const isActive = idx === hoveredFeatureIndex;
+                              return (
+                                  <motion.article
+                                      key={item.title}
+                                      style={{ width: cardWidth, minWidth: cardWidth }}
+                                      className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-xl md:rounded-2xl border border-white/15 bg-[#11131a]"
+                                      animate={{
+                                        opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
+                                        scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
+                                      }}
+                                      transition={{ duration: 0.35, ease: 'easeOut' }}
+                                  >
+                                    <button
+                                        type="button"
+                                        aria-label={isActive ? `预览${item.title}` : `切换到${item.title}`}
+                                        onClick={() => handleGalleryCardClick(idx)}
+                                        className="absolute inset-0 rounded-xl md:rounded-2xl overflow-hidden w-full h-full"
+                                    >
+                                      <img
+                                          src={item.imageUrl}
+                                          alt={item.title}
+                                          className="absolute inset-0 w-full h-full object-cover rounded-xl md:rounded-2xl"
+                                          draggable={false}
+                                      />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                                      <div className="absolute bottom-4 left-4 right-4 text-left">
+                                        <h3 className="text-2xl md:text-4xl font-semibold tracking-tight">{item.title}</h3>
+                                        <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">{item.desc}</p>
+                                      </div>
+                                    </button>
+                                  </motion.article>
+                              );
+                            })}
+                          </motion.div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-5 flex justify-center">
+                      <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-white/45 bg-white/15 px-6 py-2 backdrop-blur-md">
+                        <div className="flex items-center gap-2">
+                          {features.map((_, idx) => (
+                              <motion.button
+                                  key={idx}
+                                  type="button"
+                                  onClick={() => handleFeatureDotClick(idx)}
+                                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                                      idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-white/30' : 'w-2.5 bg-white/60'
+                                  }`}
+                                  whileHover={{ scale: 1.2 }}
+                                  whileTap={{ scale: 0.9 }}
+                              >
+                                {idx === hoveredFeatureIndex ? (
+                                    <span
+                                        key={`${hoveredFeatureIndex}-${isFeatureAutoPlay ? 'play' : 'pause'}`}
+                                        className="feature-dot-progress absolute inset-y-0 left-0 rounded-full bg-white/95"
+                                        style={{
+                                          animationDuration: `${FEATURE_ROTATE_INTERVAL_MS}ms`,
+                                          animationPlayState: isFeatureAutoPlay ? 'running' : 'paused',
+                                        }}
+                                    />
+                                ) : null}
+                              </motion.button>
+                          ))}
+                        </div>
+                        <motion.button
+                            type="button"
+                            aria-label={isFeatureAutoPlay ? '关闭自动轮换' : '开启自动轮换'}
+                            onClick={() => setIsFeatureAutoPlay((prev) => !prev)}
+                            className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
+                                isFeatureAutoPlay ? 'bg-white/35 border-white/90 text-white' : 'bg-white/20 border-white/60 text-white/90'
+                            }`}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                          {isFeatureAutoPlay ? <PauseOutlined /> : <CaretRightOutlined />}
+                        </motion.button>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  {/* === 卡片滚动堆叠动画 核心区 === */}
+                  {/* 这里使用上面修复后的全局滚动(useWindowScroll={true})，同时 itemStackDistance 设为 0。 */}
+                  <div className="w-full max-w-6xl mx-auto py-10 px-4">
+                    <ScrollStack
+                        useWindowScroll={true}
+                        itemDistance={100}
+                        itemStackDistance={0}
+                        stackPosition="15%"
+                        baseScale={0.85}
+                        rotationAmount={0}
+                        blurAmount={0}
+                    >
+                      {features.map((item, idx) => (
+                          <ScrollStackItem
+                              key={idx}
+                              itemClassName="max-w-5xl mx-auto !bg-[#11131a] !border !border-gray-700/60 !rounded-[2rem] !p-8 md:!p-12 !shadow-[0_-10px_40px_rgba(0,0,0,0.8)] !h-[70vh] w-full flex flex-col justify-start relative overflow-hidden"
+                          >
+                            <div
+                                className="absolute top-0 inset-x-0 h-1 pointer-events-none"
+                                style={{ background: "linear-gradient(90deg, transparent, rgba(251,146,60,0.4), transparent)" }}
+                            />
+
+                            <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-2 custom-scrollbar">
+                              <div className="flex items-center gap-6 mb-6">
+                                <div className="text-5xl bg-white/5 p-4 rounded-2xl border border-white/10 shadow-inner shrink-0">
+                                  {item.icon}
+                                </div>
+                                <div>
+                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 text-white">{item.title}</h3>
+                                  <p className="text-gray-400 text-lg md:text-xl leading-snug">{item.desc}</p>
+                                </div>
+                              </div>
+
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6 shrink-0" />
+
+                              <div className="mb-6 flex-grow">
+                                <p className="text-gray-300 text-lg md:text-xl leading-relaxed">{item.detailDesc}</p>
+                              </div>
+
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mb-6 shrink-0" />
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 shrink-0">
+                                <div>
+                                  <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                                    适用场景
+                                  </h4>
+                                  <div className="flex flex-wrap gap-2">
+                                    {item.scenarios.map((scenario, sIdx) => (
+                                        <span
+                                            key={sIdx}
+                                            className="px-4 py-2 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 cursor-default"
+                                        >
+                                  {scenario}
+                                </span>
+                                    ))}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <h4 className="text-sm font-semibold text-orange-400 mb-3 uppercase tracking-wider flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-orange-400"></span>
+                                    效果数据
+                                  </h4>
+                                  <div className="grid grid-cols-3 gap-4">
+                                    {item.stats.map((stat, stIdx) => (
+                                        <div
+                                            key={stIdx}
+                                            className="text-center p-3 bg-white/5 border border-white/10 rounded-xl"
+                                        >
+                                          <div className="text-2xl md:text-3xl font-bold text-orange-400 mb-1">{stat.value}</div>
+                                          <div className="text-xs md:text-sm text-gray-400">{stat.label}</div>
+                                        </div>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                          </ScrollStackItem>
+                      ))}
+                    </ScrollStack>
+                  </div>
+                </div>
+
+                <div className="px-6 py-16 max-w-4xl mx-auto">
+                  <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ margin: "-100px" }}
+                      transition={{ duration: 0.6 }}
+                      className="text-center mb-12"
+                  >
+                    <h2 className="text-4xl font-bold mb-4">
+                      与市面<span className="text-orange-400">产品对比</span>
+                    </h2>
+                    <p className="text-gray-400">功能全面领先，让求职更简单</p>
+                  </motion.div>
+
+                  <motion.div
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      viewport={{ margin: "-50px" }}
+                      transition={{ duration: 0.6 }}
+                      className="space-y-0"
+                  >
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                        className="grid grid-cols-4 gap-4 pb-4 border-b border-gray-700 text-sm font-semibold"
+                    >
+                      <div className="text-left text-gray-400">功能</div>
+                      <div className="text-left text-orange-400">我们</div>
+                      <div className="text-left text-gray-400">竞品A</div>
+                      <div className="text-left text-gray-400">竞品B</div>
+                    </motion.div>
+                    {compareData.map((row, idx) => (
+                        <motion.div
+                            key={idx}
+                            initial={{ opacity: 0, x: -20 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.4, delay: idx * 0.08 }}
+                            className="grid grid-cols-4 gap-4 py-4 border-b border-gray-800 items-center"
+                        >
+                          <div className="text-left">{row.feature}</div>
+                          <div className="text-left">{row.us && <CheckOutlined className="text-green-400" />}</div>
+                          <div className="text-left">{row.competitionA && <CheckOutlined className="text-green-400" />}</div>
+                          <div className="text-left">{row.competitionB && <CheckOutlined className="text-green-400" />}</div>
+                        </motion.div>
+                    ))}
+                  </motion.div>
+                </div>
+
+                <div className="px-6 py-12 max-w-6xl mx-auto">
+                  <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ margin: "-100px" }}
+                      transition={{ duration: 0.6 }}
+                      className="text-center mb-8"
+                  >
+                    <h2 className="text-3xl font-bold mb-3">
+                      用户<span className="text-orange-400">真实评价</span>
+                    </h2>
+                    <p className="text-gray-400">听听他们的使用体验</p>
+                  </motion.div>
+
+                  <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
+                    <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={200} spawnInterval={200} />
+                    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                  </div>
+                </div>
+
+                <motion.div
+                    initial={{ opacity: 0, y: 50 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ margin: "-100px" }}
+                    transition={{ duration: 0.8 }}
+                    className="px-6 py-20 text-center"
+                >
+                  <motion.h2
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      whileInView={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      className="text-3xl font-bold mb-6"
+                  >
+                    准备好开启你的职业之旅了吗？
+                  </motion.h2>
+                  <motion.p
+                      initial={{ opacity: 0 }}
+                      whileInView={{ opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="text-gray-400 mb-8"
+                  >
+                    5分钟了解适合自己的职业方向
+                  </motion.p>
+                  <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.6, delay: 0.6 }}
+                      whileHover={{ scale: 1.08 }}
+                      whileTap={{ scale: 0.98 }}
+                  >
+                    <Button
+                        type="primary"
+                        size="large"
+                        icon={<GraduationCapIcon className="w-5 h-5" />}
+                        onClick={() => navigate('/auth')}
+                        className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
+                    >
+                      立即开始 →
+                    </Button>
+                  </motion.div>
+                </motion.div>
+
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    transition={{ duration: 0.6 }}
+                    className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
+                >
+                  <p>© 2026 职业规划助手. All rights reserved.</p>
+                </motion.div>
               </motion.div>
+          )}
+        </AnimatePresence>
 
+        <AnimatePresence>
+          {imagePreviewOpen && (
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ margin: "-50px" }}
-                transition={{ duration: 0.6 }}
-                className="space-y-0"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
+                  onClick={() => setImagePreviewOpen(false)}
               >
                 <motion.div
-                  initial={{ opacity: 0, y: -20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="grid grid-cols-4 gap-4 pb-4 border-b border-gray-700 text-sm font-semibold"
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.8, opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="relative max-w-7xl max-h-[90vh] w-full mx-auto p-4"
+                    onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="text-left text-gray-400">功能</div>
-                  <div className="text-left text-orange-400">我们</div>
-                  <div className="text-left text-gray-400">竞品A</div>
-                  <div className="text-left text-gray-400">竞品B</div>
-                </motion.div>
-                {compareData.map((row, idx) => (
-                  <motion.div
-                    key={idx}
-                    initial={{ opacity: 0, x: -20 }}
-                    whileInView={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: idx * 0.08 }}
-                    className="grid grid-cols-4 gap-4 py-4 border-b border-gray-800 items-center"
+                  <motion.button
+                      onClick={() => setImagePreviewOpen(false)}
+                      className="absolute -top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                   >
-                    <div className="text-left">{row.feature}</div>
-                    <div className="text-left">{row.us && <CheckOutlined className="text-green-400" />}</div>
-                    <div className="text-left">{row.competitionA && <CheckOutlined className="text-green-400" />}</div>
-                    <div className="text-left">{row.competitionB && <CheckOutlined className="text-green-400" />}</div>
-                  </motion.div>
-                ))}
+                    ✕
+                  </motion.button>
+                  <img
+                      src={previewImageUrl}
+                      alt="预览"
+                      className="w-full h-full object-contain rounded-lg shadow-2xl"
+                  />
+                </motion.div>
               </motion.div>
-            </div>
-
-            <div className="px-6 py-12 max-w-6xl mx-auto">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ margin: "-100px" }}
-                transition={{ duration: 0.6 }}
-                className="text-center mb-8"
-              >
-                <h2 className="text-3xl font-bold mb-3">
-                  用户<span className="text-orange-400">真实评价</span>
-                </h2>
-                <p className="text-gray-400">听听他们的使用体验</p>
-              </motion.div>
-
-              <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
-                <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={200} spawnInterval={200} />
-                <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
-              </div>
-            </div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ margin: "-100px" }}
-              transition={{ duration: 0.8 }}
-              className="px-6 py-20 text-center"
-            >
-              <motion.h2
-                initial={{ opacity: 0, scale: 0.9 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-                className="text-3xl font-bold mb-6"
-              >
-                准备好开启你的职业之旅了吗？
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0 }}
-                whileInView={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                className="text-gray-400 mb-8"
-              >
-                5分钟了解适合自己的职业方向
-              </motion.p>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                whileHover={{ scale: 1.08 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <Button
-                  type="primary"
-                  size="large"
-                  icon={<GraduationCapIcon className="w-5 h-5" />}
-                  onClick={() => navigate('/auth')}
-                  className="bg-gradient-to-r from-orange-500 to-pink-500 border-0 h-14 px-10 text-lg rounded-full shadow-lg shadow-orange-500/30 hover:shadow-orange-500/50 transition-all duration-300"
-                >
-                  立即开始 →
-                </Button>
-              </motion.div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0 }}
-              whileInView={{ opacity: 1 }}
-              transition={{ duration: 0.6 }}
-              className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
-            >
-              <p>© 2026 职业规划助手. All rights reserved.</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {imagePreviewOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm"
-            onClick={() => setImagePreviewOpen(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className="relative max-w-7xl max-h-[90vh] w-full mx-auto p-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <motion.button
-                onClick={() => setImagePreviewOpen(false)}
-                className="absolute -top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-              >
-                ✕
-              </motion.button>
-              <img
-                src={previewImageUrl}
-                alt="预览"
-                className="w-full h-full object-contain rounded-lg shadow-2xl"
-              />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </>
+          )}
+        </AnimatePresence>
+      </>
   );
 }
