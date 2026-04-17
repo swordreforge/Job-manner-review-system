@@ -18,7 +18,7 @@ type QuickFeature = {
   desc: string;
   path: string;
   icon: React.ReactNode;
-  accentClass: string;
+  accentColor: string;
   bgClass: string;
 };
 
@@ -26,12 +26,12 @@ function InsightIconCluster({ className = '' }: { className?: string }) {
   return (
     <div className={`relative h-24 w-36 sm:h-28 sm:w-44 md:h-32 md:w-48 ${className}`}>
       <svg className="absolute inset-0 h-full w-full" viewBox="0 0 224 144" aria-hidden>
-        <g stroke="rgba(11,87,208,0.4)" strokeWidth="1.5" fill="none" strokeLinecap="round">
+        <g stroke="var(--home-insight-link-color)" strokeWidth="2" fill="none" strokeLinecap="round">
           <path d="M58 36 C98 40, 130 52, 166 72" />
           <path d="M58 36 C88 66, 108 90, 114 108" />
           <path d="M114 108 C132 98, 148 86, 166 72" />
         </g>
-        <g fill="rgba(11,87,208,0.5)">
+        <g fill="var(--home-insight-dot-color)">
           <circle cx="58" cy="36" r="3" />
           <circle cx="166" cy="72" r="3" />
           <circle cx="114" cy="108" r="3" />
@@ -107,7 +107,7 @@ export default function HomePage() {
       desc: '5分钟识别你的优势画像与适配方向',
       path: '/holland',
       icon: <CompassOutlined />,
-      accentClass: 'text-[var(--md-sys-color-primary)]',
+      accentColor: 'var(--md-sys-color-primary)',
       bgClass: 'from-[var(--md-sys-color-primary-container)] to-[rgba(211,228,255,0.4)]',
     },
     {
@@ -117,7 +117,7 @@ export default function HomePage() {
       desc: '按目标岗位给出结构化修改建议',
       path: '/resume',
       icon: <FileTextOutlined />,
-      accentClass: 'text-[#1B8C3B]',
+      accentColor: '#1B8C3B',
       bgClass: 'from-[#D4EDDA] to-[rgba(212,237,218,0.4)]',
     },
     {
@@ -127,7 +127,7 @@ export default function HomePage() {
       desc: '阶段化任务与学习目标一键生成',
       path: '/plan',
       icon: <SolutionOutlined />,
-      accentClass: 'text-[#6B5DD3]',
+      accentColor: '#6B5DD3',
       bgClass: 'from-[#E8E5F9] to-[rgba(232,229,249,0.4)]',
     },
     {
@@ -137,7 +137,7 @@ export default function HomePage() {
       desc: '大厂/国企双模式，实时反馈改进点',
       path: '/interview',
       icon: <MessageOutlined />,
-      accentClass: 'text-[#9C27B0]',
+      accentColor: '#9C27B0',
       bgClass: 'from-[#F3E5F5] to-[rgba(243,229,245,0.4)]',
     },
   ];
@@ -148,21 +148,24 @@ export default function HomePage() {
       title: '岗位图谱探索',
       desc: '查看不同岗位的发展路径、技能要求与转岗关系。',
       path: '/jobs',
-      icon: <ApartmentOutlined className="text-2xl text-[var(--md-sys-color-primary)]" />,
+      icon: <ApartmentOutlined className="text-2xl" />,
+      iconColor: 'var(--md-sys-color-primary)',
     },
     {
       key: 'resume',
       title: '简历深度优化',
       desc: '从结构完整度到竞争力，生成可执行的优化建议。',
       path: '/resume',
-      icon: <FileTextOutlined className="text-2xl text-[#1B8C3B]" />,
+      icon: <FileTextOutlined className="text-2xl" />,
+      iconColor: '#1B8C3B',
     },
     {
       key: 'interview',
       title: 'AI 模拟面试',
       desc: '围绕目标岗位生成问题并给出表达和逻辑反馈。',
       path: '/interview',
-      icon: <MessageOutlined className="text-2xl text-[#9C27B0]" />,
+      icon: <MessageOutlined className="text-2xl" />,
+      iconColor: '#9C27B0',
     },
   ];
 
@@ -220,7 +223,7 @@ export default function HomePage() {
                   className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg shadow-sm"
                   style={{ backgroundColor: 'var(--md-sys-color-surface-container)' }}
                 >
-                  <span className="text-lg">{item.icon}</span>
+                  <span className="text-lg" style={{ color: item.accentColor }}>{item.icon}</span>
                 </div>
                 <div className="text-base font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.title}</div>
                 <div className="mt-1 text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.desc}</div>
@@ -292,7 +295,10 @@ export default function HomePage() {
               >
                 <div 
                   className="mb-3 inline-flex h-11 w-11 items-center justify-center rounded-lg"
-                  style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}
+                  style={{
+                    backgroundColor: 'var(--md-sys-color-surface-container-high)',
+                    color: item.iconColor,
+                  }}
                 >
                   {item.icon}
                 </div>

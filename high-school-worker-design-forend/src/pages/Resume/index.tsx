@@ -370,7 +370,7 @@ export default function ResumePage() {
   };
 
   return (
-    <div className="min-h-screen relative z-10 p-4 md:p-6">
+    <div className="resume-page min-h-screen relative z-10 p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex justify-between items-center mb-4">
           <h1 className="text-2xl font-bold">简历解析</h1>
@@ -395,7 +395,20 @@ export default function ResumePage() {
 
           {!parsed ? (
             <>
-              <Card title="上传简历" className="shadow-sm">
+              <Card
+                title="上传简历"
+                className="resume-upload-card shadow-sm"
+                styles={{
+                  header: {
+                    backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                    color: 'var(--md-sys-color-on-surface)',
+                    borderBottom: '1px solid var(--md-sys-color-outline-variant)',
+                  },
+                  body: {
+                    backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                  },
+                }}
+              >
                 <Upload.Dragger
                   fileList={fileList}
                   onChange={({ fileList }) => setFileList(fileList)}
@@ -403,7 +416,7 @@ export default function ResumePage() {
                   accept=".pdf,.docx"
                   multiple
                   onRemove={() => setError(null)}
-                  className="[&.ant-upload-wrapper_.ant-upload-drag]:border-2! [&.ant-upload-wrapper_.ant-upload-drag]:border-dashed! [&.ant-upload-wrapper_.ant-upload-drag]:border-slate-300! [&.ant-upload-wrapper_.ant-upload-drag]:bg-slate-50!"
+                  className="resume-upload-dragger [&.ant-upload-wrapper_.ant-upload-drag]:border-2! [&.ant-upload-wrapper_.ant-upload-drag]:border-dashed! [&.ant-upload-wrapper_.ant-upload-drag]:border-[var(--md-sys-color-outline-variant)]! [&.ant-upload-wrapper_.ant-upload-drag]:bg-[var(--md-sys-color-surface-container)]!"
                 >
                   <p className="ant-upload-drag-icon mb-3!">
                     <InboxOutlined className="text-5xl text-blue-500" />

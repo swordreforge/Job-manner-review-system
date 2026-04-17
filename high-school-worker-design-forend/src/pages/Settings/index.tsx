@@ -626,12 +626,18 @@ export default function SettingsPage() {
   ];
 
   return (
-    <div className="min-h-screen relative z-10 p-4">
-      <div className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 bg-white/90 backdrop-blur border-b border-gray-100 flex items-center gap-2">
+    <div className="settings-page min-h-screen relative z-10 p-4">
+      <div
+        className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 backdrop-blur border-b border-gray-100 flex items-center gap-2"
+        style={{
+          backgroundColor: 'color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent)',
+          borderBottomColor: 'var(--md-sys-color-outline-variant)',
+        }}
+      >
         <Button onClick={() => navigate(user?.role === 'teacher' ? '/teacher/profile' : '/profile')} icon={<ArrowLeftOutlined />}>返回{user?.role === 'teacher' ? '工作台' : '个人中心'}</Button>
-        <h1 className="text-xl font-bold">设置</h1>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--md-sys-color-on-surface)' }}>设置</h1>
       </div>
-      <Tabs items={userInfoItems} defaultActiveKey="user-info" />
+      <Tabs className="settings-tabs" items={userInfoItems} defaultActiveKey="user-info" />
 
       <Modal
         title="确认注销账号"
