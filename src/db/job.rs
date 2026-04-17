@@ -3,6 +3,13 @@ use sqlx::MySqlPool;
 use std::sync::Arc;
 use anyhow::Result;
 
+const JOB_SELECT_SQL: &str = concat!(
+    "SELECT id, name, description, company, industry, category, location, salary_range, ",
+    "skills, certificates, soft_skills, requirements, ",
+    "CAST(growth_potential AS CHAR) AS growth_potential, created_at, updated_at ",
+    "FROM jobs"
+);
+
 pub struct JobRepository {
     pool: Arc<MySqlPool>,
 }
@@ -42,9 +49,8 @@ impl JobRepository {
         .execute(&*self.pool)
         .await?;
 
-        let job = sqlx::query_as::<_, Job>(
-            "SELECT * FROM jobs ORDER BY id DESC LIMIT 1"
-        )
+        let latest_job_sql = format!("{} ORDER BY id DESC LIMIT 1", JOB_SELECT_SQL);
+        let job = sqlx::query_as::<_, Job>(&latest_job_sql)
         .fetch_one(&*self.pool)
         .await?;
 
@@ -52,9 +58,8 @@ impl JobRepository {
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Job>> {
-        let job = sqlx::query_as::<_, Job>(
-            "SELECT * FROM jobs WHERE id = ?"
-        )
+        let find_by_id_sql = format!("{} WHERE id = ?", JOB_SELECT_SQL);
+        let job = sqlx::query_as::<_, Job>(&find_by_id_sql)
         .bind(id)
         .fetch_optional(&*self.pool)
         .await?;
@@ -67,7 +72,7 @@ impl JobRepository {
         let page_size = query.page_size.unwrap_or(20);
         let offset = (page - 1) * page_size;
 
-        let base_select = "SELECT * FROM jobs";
+        let base_select = JOB_SELECT_SQL;
 
         let mut sql = base_select.to_string();
         let mut count_sql = "SELECT COUNT(*) as count FROM jobs".to_string();
@@ -188,5 +193,20 @@ impl JobRepository {
             .await?;
 
         Ok(result.0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::JOB_SELECT_SQL;
+
+    #[test]
+    fn job_select_sql_casts_growth_potential_to_char() {
+        assert!(JOB_SELECT_SQL.contains("CAST(growth_potential AS CHAR) AS growth_potential"));
+    }
+
+    #[test]
+    fn job_select_sql_avoids_select_star() {
+        assert!(!JOB_SELECT_SQL.contains("SELECT *"));
     }
 }

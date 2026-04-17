@@ -3,8 +3,31 @@ use sqlx::MySqlPool;
 use std::sync::Arc;
 use anyhow::Result;
 
+const MYSQL_USER_SELECT_SQL: &str = concat!(
+    "SELECT id, username, password, email, phone, avatar, role, ",
+    "COALESCE(created_at, 0) AS created_at, ",
+    "COALESCE(updated_at, 0) AS updated_at ",
+    "FROM users"
+);
+
 pub struct MySqlUserRepository {
     pool: Arc<MySqlPool>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::MYSQL_USER_SELECT_SQL;
+
+    #[test]
+    fn mysql_user_select_sql_handles_null_timestamps() {
+        assert!(MYSQL_USER_SELECT_SQL.contains("COALESCE(created_at, 0) AS created_at"));
+        assert!(MYSQL_USER_SELECT_SQL.contains("COALESCE(updated_at, 0) AS updated_at"));
+    }
+
+    #[test]
+    fn mysql_user_select_sql_avoids_select_star() {
+        assert!(!MYSQL_USER_SELECT_SQL.contains("SELECT *"));
+    }
 }
 
 impl MySqlUserRepository {
@@ -18,9 +41,8 @@ impl MySqlUserRepository {
             .fetch_one(&*self.pool)
             .await?;
 
-        let users = sqlx::query_as::<_, MySqlUser>(
-            "SELECT * FROM users ORDER BY id DESC LIMIT ? OFFSET ?"
-        )
+        let find_all_sql = format!("{} ORDER BY id DESC LIMIT ? OFFSET ?", MYSQL_USER_SELECT_SQL);
+        let users = sqlx::query_as::<_, MySqlUser>(&find_all_sql)
         .bind(page_size)
         .bind(offset)
         .fetch_all(&*self.pool)
@@ -30,9 +52,8 @@ impl MySqlUserRepository {
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<MySqlUser>> {
-        let user = sqlx::query_as::<_, MySqlUser>(
-            "SELECT * FROM users WHERE id = ?"
-        )
+        let find_by_id_sql = format!("{} WHERE id = ?", MYSQL_USER_SELECT_SQL);
+        let user = sqlx::query_as::<_, MySqlUser>(&find_by_id_sql)
         .bind(id)
         .fetch_optional(&*self.pool)
         .await?;
@@ -57,7 +78,8 @@ impl MySqlUserRepository {
         .execute(&*self.pool)
         .await?;
 
-        let user = sqlx::query_as::<_, MySqlUser>("SELECT * FROM users ORDER BY id DESC LIMIT 1")
+        let create_fetch_sql = format!("{} ORDER BY id DESC LIMIT 1", MYSQL_USER_SELECT_SQL);
+        let user = sqlx::query_as::<_, MySqlUser>(&create_fetch_sql)
             .fetch_one(&*self.pool)
             .await?;
 

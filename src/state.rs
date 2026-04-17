@@ -3,6 +3,18 @@ use std::sync::Arc;
 use std::path::Path;
 use anyhow::{Context, Result};
 
+fn replace_unsupported_collations(input: &str) -> String {
+    let replaced_eq = regex::Regex::new(r"(?i)COLLATE\s*=\s*utf8mb4_uca[0-9a-z_]*")
+        .unwrap()
+        .replace_all(input, "COLLATE=utf8mb4_unicode_ci")
+        .to_string();
+
+    regex::Regex::new(r"(?i)COLLATE\s+utf8mb4_uca[0-9a-z_]*")
+        .unwrap()
+        .replace_all(&replaced_eq, "COLLATE utf8mb4_unicode_ci")
+        .to_string()
+}
+
 /// 应用状态，统一管理所有共享依赖
 #[derive(Clone)]
 pub struct AppState {
@@ -106,9 +118,9 @@ impl AppState {
                 .arg(port.to_string())
                 .arg("-u")
                 .arg(user)
-                .arg(format!("-p{}", password))
                 .arg("--default-character-set=utf8mb4")
                 .arg(db_name);
+            cmd.env("MYSQL_PWD", password);
             cmd.output()
                 .await
                 .context("Failed to execute mysqldump command")?
@@ -175,10 +187,8 @@ impl AppState {
                 .replace_all(&cleaned_line, "")
                 .to_string();
             
-            // 移除特定 COLLATE（utf8mb4_uca1400_ai_ci 等）
-            cleaned_line = regex::Regex::new(r"COLLATE\s+utf8mb4_uca\w*").unwrap()
-                .replace_all(&cleaned_line, "")
-                .to_string();
+            // 统一不兼容排序规则到 utf8mb4_unicode_ci
+            cleaned_line = replace_unsupported_collations(&cleaned_line);
             cleaned_line = cleaned_line.replace("COLLATE=utf8mb4_bin", "");
             
             // 移除 CHECK (json_valid(...)) 约束
@@ -264,10 +274,13 @@ impl AppState {
         let backup_content = std::fs::read_to_string(backup_file)
             .context("Failed to read backup file")?;
 
+        // 恢复前统一不兼容排序规则，避免 MySQL 8.0 导入失败
+        let normalized_backup_content = replace_unsupported_collations(&backup_content);
+
         // 在备份内容前添加字符集设置
         let restored_content = format!(
             "SET NAMES utf8mb4;\nSET CHARACTER SET utf8mb4;\n{}",
-            backup_content
+            normalized_backup_content
         );
 
         let mut cmd = tokio::process::Command::new("mysql");
@@ -277,10 +290,10 @@ impl AppState {
             .arg(port.to_string())
             .arg("-u")
             .arg(user)
-            .arg(format!("-p{}", password))
             .arg("--default-character-set=utf8mb4")
             .arg("--binary-mode=1")
             .arg(db_name);
+        cmd.env("MYSQL_PWD", password);
 
         // 写入备份内容到 stdin
         let mut child = cmd
@@ -303,6 +316,12 @@ impl AppState {
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
+            if error.contains("Unknown collation") {
+                anyhow::bail!(
+                    "mysql restore failed: {}\nHint: restore now auto-normalizes utf8mb4_uca* to utf8mb4_unicode_ci; please verify the input SQL content and retry.",
+                    error.trim()
+                );
+            }
             anyhow::bail!("mysql restore failed: {}", error);
         }
 
@@ -376,4 +395,35 @@ pub struct BackupInfo {
     pub file_size: u64,
     pub created_at: Option<i64>,
     pub file_path: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_replace_unsupported_collation_with_equals_syntax() {
+        let input = "CREATE TABLE t(id bigint) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;";
+        let output = replace_unsupported_collations(input);
+
+        assert!(!output.contains("utf8mb4_uca1400_ai_ci"));
+        assert!(output.contains("COLLATE=utf8mb4_unicode_ci"));
+    }
+
+    #[test]
+    fn test_replace_unsupported_collation_with_space_syntax() {
+        let input = "CREATE TABLE t(id bigint) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE utf8mb4_uca1400_ai_ci;";
+        let output = replace_unsupported_collations(input);
+
+        assert!(!output.contains("utf8mb4_uca1400_ai_ci"));
+        assert!(output.contains("COLLATE utf8mb4_unicode_ci"));
+    }
+
+    #[test]
+    fn test_keep_supported_collation_unchanged() {
+        let input = "CREATE TABLE t(id bigint) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+        let output = replace_unsupported_collations(input);
+
+        assert_eq!(output, input);
+    }
 }

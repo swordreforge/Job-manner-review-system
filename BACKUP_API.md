@@ -213,7 +213,7 @@ curl -X GET "http://localhost:8081/api/v1/ops/backups/career_db_backup_20260413_
 
 1. 从配置中获取数据库连接信息
 2. 验证备份文件是否存在
-3. 读取备份文件内容
+3. 读取备份文件内容，并自动将不兼容的 `utf8mb4_uca*` 排序规则规范化为 `utf8mb4_unicode_ci`
 4. 使用 `mysql` 命令将 SQL 内容导入数据库
 5. 返回恢复结果
 

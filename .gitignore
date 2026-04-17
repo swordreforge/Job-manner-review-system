@@ -14,6 +14,9 @@ report.json
 *.swo
 *~
 
+# Local git worktrees
+.worktrees/
+
 # 日志
 *.log
 

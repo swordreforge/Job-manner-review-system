@@ -61,7 +61,8 @@ fi
     -e 's/  */ /g' \
     -e 's/TYPE=InnoDB/ENGINE=InnoDB/g' \
     -e "s/COMMENT '[^']*'//g" \
-    -e 's/COLLATE utf8mb4_uca\w*//g' \
+    -e 's/COLLATE utf8mb4_uca[[:alnum:]_]*/COLLATE utf8mb4_unicode_ci/g' \
+    -e 's/COLLATE=utf8mb4_uca[[:alnum:]_]*/COLLATE=utf8mb4_unicode_ci/g' \
     -e 's/COLLATE=utf8mb4_bin//g' \
     -e 's/CHARACTER SET utf8mb4 COLLATE utf8mb4_bin//g' \
     -e 's/CHECK (json_valid([^)]*))//g' \
