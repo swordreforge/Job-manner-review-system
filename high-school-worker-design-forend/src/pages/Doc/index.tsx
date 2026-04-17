@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
 import DocSearch from '../../components/DocSearch';
+import { useAuthStore } from '../../stores';
 
 type DocConfig = {
   id: string;
@@ -174,6 +175,7 @@ function DocContent({ content }: { content: string }) {
 
 export default function DocPage() {
   const navigate = useNavigate();
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
   const [tocOpen, setTocOpen] = useState(false);
@@ -288,7 +290,7 @@ export default function DocPage() {
           <Button
             type="text"
             icon={<HomeOutlined />}
-            onClick={() => navigate('/start')}
+            onClick={() => navigate(isAuthenticated ? '/start' : '/welcome')}
             className="text-gray-600 hover:text-orange-500"
           />
           <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>

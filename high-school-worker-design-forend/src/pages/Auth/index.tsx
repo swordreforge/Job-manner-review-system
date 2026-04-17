@@ -1,10 +1,10 @@
 import { useState, useCallback } from 'react';
 import { Form, Input, Button, Card, Tabs, message } from 'antd';
-import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined, BankOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined, BankOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userApi, teacherApi } from '../../api';
-import { useAuthStore } from '../../stores';
+import { useAuthStore, useThemeStore } from '../../stores';
 import LaserGradient from '../../components/LaserGradient';
 import LaserRay from '../../components/LaserRay';
 import './Auth.css';
@@ -40,6 +40,7 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const setToken = useAuthStore((state) => state.setToken);
   const setUser = useAuthStore((state) => state.setUser);
+  const { theme, toggleTheme } = useThemeStore();
 
   const handleLogin = async (values: { username: string; password: string }) => {
     setLoading(true);
@@ -656,6 +657,7 @@ export default function AuthPage() {
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.3 }}
+            className="auth-top-actions"
           >
             <Button
               type="text"
@@ -665,6 +667,14 @@ export default function AuthPage() {
             >
               返回首页
             </Button>
+            <Button
+              type="text"
+              onClick={toggleTheme}
+              className="auth-theme-button"
+              icon={theme === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+              aria-label={theme === 'dark' ? '切换为浅色模式' : '切换为深色模式'}
+              title={theme === 'dark' ? '切换为浅色模式' : '切换为深色模式'}
+            />
           </motion.div>
 
           <motion.div

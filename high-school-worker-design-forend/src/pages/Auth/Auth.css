@@ -110,6 +110,14 @@
   margin-bottom: 2rem;
 }
 
+.auth-top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
 .auth-home-button {
   position: relative;
   color: #64748b;
@@ -121,6 +129,22 @@
 }
 
 .auth-home-button:hover {
+  color: #1677ff;
+  background: rgba(22, 119, 255, 0.08);
+}
+
+.auth-theme-button {
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  color: #64748b;
+  font-size: 1rem;
+  padding: 0;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.auth-theme-button:hover {
   color: #1677ff;
   background: rgba(22, 119, 255, 0.08);
 }
@@ -188,6 +212,48 @@
   box-shadow: 0 0 0 3px rgba(22, 119, 255, 0.1) !important;
 }
 
+/* Remove AntD inner colored frame for affix inputs (password/prefix fields) */
+.auth-form .auth-input .ant-input {
+  border: none !important;
+  outline: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Keep auth fields visually consistent when AntD applies status classes */
+.auth-form .auth-input.ant-input-status-error,
+.auth-form .auth-input.ant-input-affix-wrapper-status-error,
+.auth-form .auth-input.ant-input-status-warning,
+.auth-form .auth-input.ant-input-affix-wrapper-status-warning,
+.auth-form .auth-input.ant-input-status-success,
+.auth-form .auth-input.ant-input-affix-wrapper-status-success {
+  box-shadow: none !important;
+}
+
+.auth-form .auth-input.ant-input-status-error .ant-input,
+.auth-form .auth-input.ant-input-affix-wrapper-status-error .ant-input,
+.auth-form .auth-input.ant-input-status-warning .ant-input,
+.auth-form .auth-input.ant-input-affix-wrapper-status-warning .ant-input,
+.auth-form .auth-input.ant-input-status-success .ant-input,
+.auth-form .auth-input.ant-input-affix-wrapper-status-success .ant-input {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Remove browser autofill inner colored frames in auth form fields */
+.auth-form .auth-input:-webkit-autofill,
+.auth-form .auth-input:-webkit-autofill:hover,
+.auth-form .auth-input:-webkit-autofill:focus,
+.auth-form .auth-input .ant-input:-webkit-autofill,
+.auth-form .auth-input .ant-input:-webkit-autofill:hover,
+.auth-form .auth-input .ant-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  border-radius: 10px !important;
+  transition: background-color 9999s ease-out 0s;
+}
+
 .auth-input .ant-input-prefix {
   margin-right: 12px;
 }
@@ -196,6 +262,21 @@
   font-size: 18px;
   color: #94a3b8;
   transition: all 0.3s ease;
+}
+
+/* Improve readability in dark mode: keep entered text clearly visible on light auth inputs */
+[data-theme="dark"] .auth-form .auth-input,
+[data-theme="dark"] .auth-form .auth-input .ant-input,
+[data-theme="dark"] .auth-form .auth-input input {
+  color: #000000 !important;
+  -webkit-text-fill-color: #000000 !important;
+}
+
+[data-theme="dark"] .auth-form .auth-input::placeholder,
+[data-theme="dark"] .auth-form .auth-input .ant-input::placeholder,
+[data-theme="dark"] .auth-form .auth-input input::placeholder {
+  color: #666666 !important;
+  -webkit-text-fill-color: #666666 !important;
 }
 
 .auth-input:focus .anticon,

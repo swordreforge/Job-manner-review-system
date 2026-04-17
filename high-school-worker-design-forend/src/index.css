@@ -887,7 +887,10 @@ body {
 .landing-cta-btn.ant-btn-primary:focus,
 .landing-cta-btn.ant-btn-primary:focus-visible {
   border: none !important;
+  border-color: transparent !important;
   outline: none !important;
+  /* Remove all button shadow layers to avoid colored bottom ghosting in light mode */
+  box-shadow: none !important;
 }
 
 .landing-cta-btn.ant-btn::before,
