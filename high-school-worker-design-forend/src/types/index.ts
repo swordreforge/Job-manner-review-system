@@ -62,6 +62,7 @@ export interface User {
   phone?: string;
   avatar?: string;
   role: string;
+  firstLogin?: boolean;
   createdAt: number;
 }
 

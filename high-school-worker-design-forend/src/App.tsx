@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme, type ThemeConfig } from 'antd';
@@ -6,6 +6,7 @@ import zhCN from 'antd/locale/zh_CN';
 import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import GlobalBackground from './components/GlobalBackground';
+import OnboardingWizardModal from './components/OnboardingWizardModal';
 import { useAuthStore, useThemeStore } from './stores';
 
 const Landing = lazy(() => import('./pages/Home/Landing'));
@@ -210,11 +211,18 @@ function RouteLoadingFallback() {
 }
 
 function RootRedirect() {
-  const { isAuthenticated, isAuthChecked, initialize, role } = useAuthStore();
+  const { isAuthenticated, isAuthChecked, initialize, role, user } = useAuthStore();
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     initialize();
   }, [initialize]);
+
+  useEffect(() => {
+    if (isAuthenticated && user?.firstLogin) {
+      setShowOnboarding(true);
+    }
+  }, [isAuthenticated, user]);
 
   if (!isAuthChecked) {
     return (
@@ -225,7 +233,15 @@ function RootRedirect() {
   }
 
   const targetPath = isAuthenticated ? (role === 'teacher' ? '/teacher/index' : '/start') : '/welcome';
-  return <Navigate to={targetPath} replace />;
+  return (
+    <>
+      <OnboardingWizardModal
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
+      <Navigate to={targetPath} replace />
+    </>
+  );
 }
 
 export default function App() {
