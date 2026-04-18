@@ -20,7 +20,28 @@ impl JobService {
     }
 
     pub async fn import_jobs(&self, reqs: Vec<CreateJobRequest>) -> Result<(u32, u32)> {
-        self.job_repo.create_many(reqs).await
+        let mut filtered = Vec::new();
+        let mut duplicate_count = 0u32;
+
+        for req in reqs {
+            if let Some(ref code) = req.job_code {
+                if !code.is_empty() {
+                    if self.job_repo.exists_by_job_code(code).await? {
+                        log::info!("岗位编码 {} 已存在，跳过", code);
+                        duplicate_count += 1;
+                        continue;
+                    }
+                }
+            }
+            filtered.push(req);
+        }
+
+        if duplicate_count > 0 {
+            log::info!("跳过已存在的岗位编码: {} 条", duplicate_count);
+        }
+
+        let (success, failed) = self.job_repo.create_many(filtered).await?;
+        Ok((success, failed + duplicate_count))
     }
 
     pub async fn get_job(&self, id: i64) -> Result<JobResponse> {

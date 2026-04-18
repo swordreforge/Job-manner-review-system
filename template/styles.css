@@ -785,6 +785,43 @@ textarea {
     color: var(--text-secondary);
 }
 
+.page-jump {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+.page-jump-input {
+    width: 56px;
+    padding: 4px 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    text-align: center;
+    font-size: 14px;
+    outline: none;
+    -moz-appearance: textfield;
+}
+
+.page-jump-input::-webkit-inner-spin-button,
+.page-jump-input::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.page-jump-input:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.btn-sm {
+    padding: 4px 10px;
+    font-size: 13px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 /* 系统状态 */
 .system-status-grid {
     display: grid;
@@ -1867,6 +1904,11 @@ textarea {
     border: 1px solid rgba(239, 68, 68, 0.3);
 }
 
+.result-item.skipped {
+    background: rgba(234, 179, 8, 0.1);
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
 .result-icon {
     width: 32px;
     height: 32px;
@@ -1888,6 +1930,11 @@ textarea {
     color: white;
 }
 
+.result-item.skipped .result-icon {
+    background: #eab308;
+    color: white;
+}
+
 .result-value {
     font-size: 24px;
     font-weight: 600;
@@ -1900,6 +1947,10 @@ textarea {
 
 .result-item.failed .result-value {
     color: var(--danger-color);
+}
+
+.result-item.skipped .result-value {
+    color: #eab308;
 }
 
 .result-label {

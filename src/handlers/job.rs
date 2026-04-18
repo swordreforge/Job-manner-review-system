@@ -6,8 +6,9 @@ use crate::models::{JobQuery, CreateJobRequest, UpdateJobRequest, BatchImportJob
 use crate::services::JobService;
 use crate::state::AppState;
 use crate::utils::response::{ApiResponse, ErrorResponse};
-use calamine::{Reader, Xlsx, Xls, open_workbook};
+use calamine::{Reader, Xlsx, Xls};
 use base64::{Engine as _, engine::general_purpose};
+use chrono::Datelike;
 use std::io::Cursor;
 
 #[derive(serde::Deserialize)]
@@ -258,6 +259,8 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
 
     let mut col_mapping: Option<std::collections::HashMap<String, usize>> = None;
     let mut job_requests = Vec::new();
+    let mut seen_job_codes = std::collections::HashSet::new();
+    let mut skipped = 0u32;
 
     for (row_idx, row) in range.rows().enumerate() {
         if row_idx == 0 {
@@ -274,24 +277,42 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
                 errors.push(ImportError {
                     row: row_num,
                     message: "缺少列映射".to_string(),
+                    severity: Some("error".to_string()),
                 });
                 continue;
             }
         };
 
         match parse_job_row_from_vec(row, mapping) {
-            Ok(req) => job_requests.push(req),
+            Ok(req) => {
+                if let Some(ref code) = req.job_code {
+                    if !code.is_empty() {
+                        if seen_job_codes.contains(code) {
+                            skipped += 1;
+                            errors.push(ImportError {
+                                row: row_num,
+                                message: format!("岗位编码 {} 在文件中重复，跳过", code),
+                                severity: Some("warning".to_string()),
+                            });
+                            continue;
+                        }
+                        seen_job_codes.insert(code.clone());
+                    }
+                }
+                job_requests.push(req)
+            }
             Err(e) => {
                 errors.push(ImportError {
                     row: row_num,
                     message: e,
+                    severity: Some("error".to_string()),
                 });
             }
         }
     }
 
     let mut success = job_requests.len() as u32;
-    let mut failed = total - success;
+    let mut failed = total - success - skipped;
 
     if !job_requests.is_empty() {
         log::info!("准备入库的数据条数: {}", job_requests.len());
@@ -302,7 +323,7 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
         
         match job_service.import_jobs(job_requests).await {
             Ok((s, f)) => {
-                log::info!("批量导入完成: 总数={}, 成功={}, 失败={}", total, s, f);
+                log::info!("批量导入完成: 总数={}, 成功={}, 失败={}, 跳过={}", total, s, f, skipped);
                 success = s;
                 failed = f;
             }
@@ -311,8 +332,9 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
                 errors.push(ImportError {
                     row: 0,
                     message: format!("批量导入数据库失败: {}", e),
+                    severity: Some("error".to_string()),
                 });
-                failed = total;
+                failed = total - skipped;
             }
         }
     }
@@ -321,6 +343,7 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
         total,
         success,
         failed,
+        skipped,
         errors,
     };
 
@@ -372,11 +395,11 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
             .filter(|s| !s.is_empty())
     };
 
-    // 字符串截断辅助函数
-    let truncate = |s: Option<String>, max_len: usize| -> Option<String> {
+    let truncate_chars = |s: Option<String>, max_chars: usize| -> Option<String> {
         s.map(|v| {
-            if v.len() > max_len {
-                v[..max_len].to_string()
+            let chars: Vec<char> = v.chars().collect();
+            if chars.len() > max_chars {
+                chars[..max_chars].iter().collect()
             } else {
                 v
             }
@@ -387,13 +410,94 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
         col_mapping.get(field).and_then(|&idx| get_string(idx))
     };
 
+    let strip_html = |html: &str| -> String {
+        let re = regex::Regex::new(r"<[^>]+>").unwrap();
+        let text = re.replace(html, " ").to_string();
+        let whitespace_re = regex::Regex::new(r"\s+").unwrap();
+        whitespace_re.replace(&text.trim(), " ").to_string()
+    };
+
+    let parse_update_date = |raw: Option<String>| -> Option<String> {
+        raw.and_then(|s| {
+            let s = s.trim();
+            if s.is_empty() {
+                return None;
+            }
+            if regex::Regex::new(r"^\d{4}-\d{1,2}-\d{1,2}$").unwrap().is_match(s) {
+                let parts: Vec<&str> = s.split('-').collect();
+                if parts.len() == 3 {
+                    let y: i32 = parts[0].parse().ok()?;
+                    let m: u32 = parts[1].parse().ok()?;
+                    let d: u32 = parts[2].parse().ok()?;
+                    if let Some(valid) = chrono::NaiveDate::from_ymd_opt(y, m, d) {
+                        return Some(valid.format("%Y-%m-%d").to_string());
+                    }
+                    let clamped = chrono::NaiveDate::from_ymd_opt(y, m, 1)
+                        .and_then(|first_day| {
+                            let last_day = if m == 12 {
+                                chrono::NaiveDate::from_ymd_opt(y + 1, 1, 1)
+                            } else {
+                                chrono::NaiveDate::from_ymd_opt(y, m + 1, 1)
+                            };
+                            last_day.map(|next| (next - chrono::Duration::days(1)).day())
+                        });
+                    if let Some(max_d) = clamped {
+                        let corrected = chrono::NaiveDate::from_ymd_opt(y, m, std::cmp::min(d, max_d))
+                            .unwrap_or_else(|| chrono::NaiveDate::from_ymd_opt(y, m, 1).unwrap());
+                        return Some(corrected.format("%Y-%m-%d").to_string());
+                    }
+                    return Some(s.to_string());
+                }
+                return Some(s.to_string());
+            }
+            let re = regex::Regex::new(r"(\d{1,2})月(\d{1,2})日").unwrap();
+            if let Some(caps) = re.captures(s) {
+                let month: u32 = caps.get(1).unwrap().as_str().parse().ok()?;
+                let day: u32 = caps.get(2).unwrap().as_str().parse().ok()?;
+                let year = chrono::Local::now().year();
+                if let Some(valid) = chrono::NaiveDate::from_ymd_opt(year, month, day) {
+                    return Some(valid.format("%Y-%m-%d").to_string());
+                }
+                if let Some(first_day) = chrono::NaiveDate::from_ymd_opt(year, month, 1) {
+                    let next_month = if month == 12 {
+                        chrono::NaiveDate::from_ymd_opt(year + 1, 1, 1)
+                    } else {
+                        chrono::NaiveDate::from_ymd_opt(year, month + 1, 1)
+                    };
+                    if let Some(nm) = next_month {
+                        let last_day = (nm - chrono::Duration::days(1)).day();
+                        let clamped_day = std::cmp::min(day, last_day);
+                        let corrected = chrono::NaiveDate::from_ymd_opt(year, month, clamped_day)
+                            .unwrap_or(first_day);
+                        return Some(corrected.format("%Y-%m-%d").to_string());
+                    }
+                }
+                let fallback = chrono::NaiveDate::from_ymd_opt(year, month, 1)?;
+                return Some(fallback.format("%Y-%m-%d").to_string());
+            }
+            None
+        })
+    };
+
     let name = get_mapped_string("岗位名称").ok_or("岗位名称不能为空")?;
-    let description = get_mapped_string("岗位详情");
-    let company = truncate(get_mapped_string("公司名称"), 100);
-    let industry = truncate(get_mapped_string("所属行业"), 100);
+    let job_detail_raw = get_mapped_string("岗位详情");
+    let job_detail = job_detail_raw.clone();
+    let description = job_detail_raw.as_ref().map(|raw| {
+        let plain = strip_html(raw);
+        let truncated = truncate_chars(Some(plain), 500);
+        truncated.unwrap_or_default()
+    });
+    let company = truncate_chars(get_mapped_string("公司名称"), 200);
+    let industry = truncate_chars(get_mapped_string("所属行业"), 100);
     let category = None;
-    let location = truncate(get_mapped_string("地址"), 100);
-    let salary_range = truncate(get_mapped_string("薪资范围"), 100);
+    let location = truncate_chars(get_mapped_string("地址"), 100);
+    let salary_range = truncate_chars(get_mapped_string("薪资范围"), 100);
+    let job_code = truncate_chars(get_mapped_string("岗位编码"), 50);
+    let company_scale = truncate_chars(get_mapped_string("公司规模"), 50);
+    let company_funding_status = truncate_chars(get_mapped_string("公司类型"), 50);
+    let company_description = get_mapped_string("公司详情");
+    let source_url = truncate_chars(get_mapped_string("岗位来源地址"), 500);
+    let update_date = parse_update_date(get_mapped_string("更新日期"));
     let skills = None;
     let certificates = None;
     let soft_skills = None;
@@ -408,6 +512,13 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
         category,
         location,
         salary_range,
+        job_code,
+        company_scale,
+        company_funding_status,
+        company_description,
+        source_url,
+        update_date,
+        job_detail,
         skills,
         certificates,
         soft_skills,
@@ -423,8 +534,9 @@ pub async fn download_template() -> impl Responder {
     let worksheet = workbook.add_worksheet();
 
     let headers = vec![
-        "岗位名称", "描述", "公司", "行业", "类别", "地点",
-        "薪资范围", "技能要求", "证书要求", "软技能", "岗位要求", "成长潜力"
+        "岗位名称", "岗位详情", "公司名称", "所属行业", "类别", "地点",
+        "薪资范围", "岗位编码", "公司规模", "公司类型(融资状态)", "公司详情",
+        "岗位来源地址", "更新日期", "技能要求", "证书要求", "软技能", "岗位要求", "成长潜力"
     ];
 
     for (col, header) in headers.iter().enumerate() {
@@ -433,7 +545,9 @@ pub async fn download_template() -> impl Responder {
 
     let example = vec![
         "Golang后端开发工程师", "负责公司后端服务开发", "字节跳动", "技术", "开发",
-        "北京", "15000-30000", "Golang,MySQL,Redis", "无", "团队协作", "3年经验", "极高"
+        "北京", "15000-30000", "CC123456789", "1000-9999人", "已上市",
+        "字节跳动是一家科技公司", "https://example.com/job/123", "2026-05-19",
+        "Golang,MySQL,Redis", "无", "团队协作", "3年经验", "极高"
     ];
 
     for (col, value) in example.iter().enumerate() {

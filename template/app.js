@@ -220,6 +220,8 @@ function updateSchoolPagination() {
     elements.schoolPageInfo.textContent = `第 ${state.currentSchoolPage} / ${totalPages || 1} 页`;
     elements.schoolPrevPageBtn.disabled = state.currentSchoolPage <= 1;
     elements.schoolNextPageBtn.disabled = state.currentSchoolPage >= totalPages;
+    const schoolJumpInput = document.getElementById('school-page-jump-input');
+    if (schoolJumpInput) schoolJumpInput.value = state.currentSchoolPage;
 }
 
 async function createSchool(data) {
@@ -331,6 +333,11 @@ function switchPage(page) {
     const activeSection = elements.contentSections[page];
     if (activeSection) {
         activeSection.classList.add('active');
+    }
+
+    // 更新URL hash（不触发hashchange）
+    if (window.location.hash !== '#' + page) {
+        history.replaceState(null, '', '#' + page);
     }
 
     // 加载对应页面数据
@@ -531,6 +538,8 @@ function updatePagination() {
     elements.pageInfo.textContent = `第 ${state.currentPage} / ${totalPages || 1} 页`;
     elements.prevPageBtn.disabled = state.currentPage <= 1;
     elements.nextPageBtn.disabled = state.currentPage >= totalPages;
+    const studentJumpInput = document.getElementById('page-jump-input');
+    if (studentJumpInput) studentJumpInput.value = state.currentPage;
 }
 
 // 加载系统状态
@@ -1555,8 +1564,24 @@ function init() {
         elements.currentUser.textContent = state.user?.name || '教师';
         elements.loginPage.classList.remove('active');
         elements.dashboardPage.classList.add('active');
-        switchPage('dashboard');
+        const hashPage = window.location.hash.slice(1);
+        const validPages = ['dashboard', 'students', 'jobs', 'schools', 'users', 'schema', 'system'];
+        if (hashPage && validPages.includes(hashPage)) {
+            switchPage(hashPage);
+        } else {
+            switchPage('dashboard');
+        }
     }
+
+    // hash变化时跳转页面
+    window.addEventListener('hashchange', () => {
+        if (!state.token) return;
+        const hashPage = window.location.hash.slice(1);
+        const validPages = ['dashboard', 'students', 'jobs', 'schools', 'users', 'schema', 'system'];
+        if (hashPage && validPages.includes(hashPage)) {
+            switchPage(hashPage);
+        }
+    });
 
     // 初始化配置文件编辑器监听
     initConfigEditorListener();
@@ -1570,7 +1595,7 @@ function init() {
             e.preventDefault();
             const page = item.dataset.page;
             if (page) {
-                switchPage(page);
+                window.location.hash = page;
             }
         });
     });
@@ -1595,6 +1620,27 @@ function init() {
             loadStudents(state.currentPage + 1);
         }
     });
+
+    const studentJumpInput = document.getElementById('page-jump-input');
+    const studentJumpBtn = document.getElementById('page-jump-btn');
+    if (studentJumpBtn) {
+        studentJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalStudents / state.pageSize) || 1;
+            const target = parseInt(studentJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadStudents(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (studentJumpInput) {
+        studentJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                studentJumpBtn?.click();
+            }
+        });
+    }
 
     elements.refreshStatusBtn.addEventListener('click', loadSystemStatus);
     elements.backupBtn.addEventListener('click', backupData);
@@ -1649,6 +1695,24 @@ function init() {
         elements.schoolNextPageBtn.addEventListener('click', () => {
             const totalPages = Math.ceil(state.totalSchools / state.pageSize);
             if (state.currentSchoolPage < totalPages) loadSchools(state.currentSchoolPage + 1);
+        });
+    }
+    const schoolJumpInput = document.getElementById('school-page-jump-input');
+    const schoolJumpBtn = document.getElementById('school-page-jump-btn');
+    if (schoolJumpBtn) {
+        schoolJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalSchools / state.pageSize) || 1;
+            const target = parseInt(schoolJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadSchools(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (schoolJumpInput) {
+        schoolJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') schoolJumpBtn?.click();
         });
     }
     if (elements.closeSchoolModalBtn) {
@@ -1752,6 +1816,24 @@ function init() {
         const totalPages = Math.ceil(state.totalJobs / state.pageSize);
         if (state.currentJobPage < totalPages) loadJobs(state.currentJobPage + 1);
     });
+    const jobJumpInput = document.getElementById('job-page-jump-input');
+    const jobJumpBtn = document.getElementById('job-page-jump-btn');
+    if (jobJumpBtn) {
+        jobJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalJobs / state.pageSize) || 1;
+            const target = parseInt(jobJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadJobs(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (jobJumpInput) {
+        jobJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') jobJumpBtn?.click();
+        });
+    }
     document.getElementById('close-job-detail-modal').addEventListener('click', closeJobDetailModal);
     document.getElementById('close-job-detail-btn').addEventListener('click', closeJobDetailModal);
     document.getElementById('edit-from-job-detail-btn').addEventListener('click', () => {
@@ -1825,6 +1907,8 @@ function updateJobPagination() {
     document.getElementById('job-page-info').textContent = `第 ${state.currentJobPage} / ${totalPages} 页`;
     document.getElementById('job-prev-page').disabled = state.currentJobPage <= 1;
     document.getElementById('job-next-page').disabled = state.currentJobPage >= totalPages;
+    const jobJumpInput = document.getElementById('job-page-jump-input');
+    if (jobJumpInput) jobJumpInput.value = state.currentJobPage;
 }
 
 function viewJob(jobId) {
@@ -1952,6 +2036,24 @@ document.getElementById('user-next-page').addEventListener('click', () => {
     const totalPages = Math.ceil(state.totalUsers / state.pageSize);
     if (state.currentUserPage < totalPages) loadUsers(state.currentUserPage + 1);
 });
+const userJumpInput = document.getElementById('user-page-jump-input');
+const userJumpBtn = document.getElementById('user-page-jump-btn');
+if (userJumpBtn) {
+    userJumpBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(state.totalUsers / state.pageSize) || 1;
+        const target = parseInt(userJumpInput.value);
+        if (target >= 1 && target <= totalPages) {
+            loadUsers(target);
+        } else {
+            showToast(`请输入1-${totalPages}之间的页码`, 'error');
+        }
+    });
+}
+if (userJumpInput) {
+    userJumpInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') userJumpBtn?.click();
+    });
+}
 document.getElementById('close-user-modal').addEventListener('click', closeUserModal);
 document.getElementById('cancel-user-btn').addEventListener('click', closeUserModal);
 document.getElementById('user-form').addEventListener('submit', saveUser);
@@ -2037,6 +2139,8 @@ function updateUserPagination() {
     document.getElementById('user-page-info').textContent = `第 ${state.currentUserPage} / ${totalPages} 页`;
     document.getElementById('user-prev-page').disabled = state.currentUserPage <= 1;
     document.getElementById('user-next-page').disabled = state.currentUserPage >= totalPages;
+    const userJumpInput = document.getElementById('user-page-jump-input');
+    if (userJumpInput) userJumpInput.value = state.currentUserPage;
 }
 
 function openUserModal(mode = 'add', userId = null) {
@@ -3352,15 +3456,29 @@ async function startBatchImportJobs() {
             
             document.getElementById('job-success-count').textContent = result.success;
             document.getElementById('job-failed-count').textContent = result.failed;
+            document.getElementById('job-skipped-count').textContent = result.skipped || 0;
             
             const errorList = document.getElementById('job-error-list');
             const errorItems = document.getElementById('job-error-items');
             
             if (result.errors && result.errors.length > 0) {
                 errorList.style.display = 'block';
-                errorItems.innerHTML = result.errors.map(error => 
-                    `<li>第 ${error.row} 行: ${error.message}</li>`
-                ).join('');
+                const warningErrors = result.errors.filter(e => e.severity === 'warning');
+                const realErrors = result.errors.filter(e => e.severity !== 'warning');
+                let html = '';
+                if (warningErrors.length > 0) {
+                    html += '<h4 style="color: #eab308;">重复跳过 (' + warningErrors.length + '条)</h4>';
+                    html += warningErrors.map(error => 
+                        `<li style="color: #a16207;">第 ${error.row} 行: ${error.message}</li>`
+                    ).join('');
+                }
+                if (realErrors.length > 0) {
+                    html += '<h4 style="color: #ef4444;">导入错误 (' + realErrors.length + '条)</h4>';
+                    html += realErrors.map(error => 
+                        `<li style="color: #dc2626;">第 ${error.row} 行: ${error.message}</li>`
+                    ).join('');
+                }
+                errorItems.innerHTML = html;
             } else {
                 errorList.style.display = 'none';
             }
