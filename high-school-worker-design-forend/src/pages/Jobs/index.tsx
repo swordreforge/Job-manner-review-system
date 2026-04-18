@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions } from 'antd';
-import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space } from 'antd';
+import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
 import type { Job, PromotionPath, TransferPath } from '../../types';
@@ -29,6 +29,82 @@ export default function JobsPage() {
   const [pathsLoading, setPathsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('graph');
   const [activeCategory, setActiveCategory] = useState('tech');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // 筛选状态
+  const [searchKeyword, setSearchKeyword] = useState('');
+  const [filterIndustry, setFilterIndustry] = useState<string | null>(null);
+  const [filterLocation, setFilterLocation] = useState<string | null>(null);
+  const [filterCompanyScale, setFilterCompanyScale] = useState<string | null>(null);
+  const [filterSalaryMin, setFilterSalaryMin] = useState<number>(0);
+  const [filterSalaryMax, setFilterSalaryMax] = useState<number>(100);
+
+  // 从数据中提取筛选选项
+  const industries = useMemo(() => {
+    const set = new Set<string>();
+    jobs.forEach(job => {
+      if (job.industry) {
+        job.industry.split(',').forEach(i => set.add(i.trim()));
+      }
+    });
+    return Array.from(set).sort();
+  }, [jobs]);
+
+  const locations = useMemo(() => {
+    const set = new Set<string>();
+    jobs.forEach(job => {
+      if (job.location) {
+        const city = job.location.split('-')[0];
+        if (city) set.add(city);
+      }
+    });
+    return Array.from(set).sort();
+  }, [jobs]);
+
+  const companyScales = ['20人以下', '20-99人', '100-299人', '300-499人', '500-999人', '1000-9999人', '10000人以上'];
+
+  // 筛选后的岗位列表
+  const filteredJobs = useMemo(() => {
+    return jobs.filter(job => {
+      // 关键词搜索
+      if (searchKeyword) {
+        const keyword = searchKeyword.toLowerCase();
+        const matchName = job.name?.toLowerCase().includes(keyword);
+        const matchCompany = job.company?.toLowerCase().includes(keyword);
+        const matchIndustry = job.industry?.toLowerCase().includes(keyword);
+        if (!matchName && !matchCompany && !matchIndustry) return false;
+      }
+      // 行业筛选
+      if (filterIndustry && !job.industry?.includes(filterIndustry)) return false;
+      // 地点筛选
+      if (filterLocation) {
+        const jobCity = job.location?.split('-')[0];
+        if (jobCity !== filterLocation) return false;
+      }
+      // 公司规模筛选
+      if (filterCompanyScale && job.companyScale !== filterCompanyScale) return false;
+      // 薪资筛选 (简化处理，提取最低薪资)
+      if (job.salaryRange) {
+        const salaryMatch = job.salaryRange.match(/(\d+)[kK万]/);
+        if (salaryMatch) {
+          const salary = parseInt(salaryMatch[1]);
+          const salaryInK = job.salaryRange.includes('万') ? salary * 10 : salary;
+          if (salaryInK < filterSalaryMin || salaryInK > filterSalaryMax) return false;
+        }
+      }
+      return true;
+    });
+  }, [jobs, searchKeyword, filterIndustry, filterLocation, filterCompanyScale, filterSalaryMin, filterSalaryMax]);
+
+  // 重置筛选
+  const resetFilters = () => {
+    setSearchKeyword('');
+    setFilterIndustry(null);
+    setFilterLocation(null);
+    setFilterCompanyScale(null);
+    setFilterSalaryMin(0);
+    setFilterSalaryMax(100);
+  };
 
   const popularJobs = ['Golang后端开发工程师 (技术)', '高级Java开发工程师', '产品经理'];
 
@@ -69,7 +145,7 @@ export default function JobsPage() {
   const loadJobs = async () => {
     try {
       setLoading(true);
-      const response = await jobApi.list({ page: 1, pageSize: 100 });
+      const response = await jobApi.list({ page: 1, pageSize: 200 });
       if (response.data?.list) {
         setJobs(response.data.list);
       }
@@ -455,6 +531,105 @@ export default function JobsPage() {
             ]}
           />
 
+          {/* 搜索和筛选区域 */}
+          <div className="space-y-3 mb-4">
+            {/* 关键词搜索 */}
+            <Input
+              placeholder="搜索岗位名称、公司或行业..."
+              prefix={<SearchOutlined />}
+              value={searchKeyword}
+              onChange={(e) => setSearchKeyword(e.target.value)}
+              allowClear
+              style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+            />
+
+            {/* 筛选按钮和筛选面板 */}
+            <div className="flex items-center gap-2">
+              <Button
+                icon={<FilterOutlined />}
+                onClick={() => setShowFilters(!showFilters)}
+                style={{
+                  borderRadius: 'var(--md-sys-shape-corner-full)',
+                  backgroundColor: showFilters ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container)'
+                }}
+              >
+                高级筛选 {filteredJobs.length !== jobs.length && `(${filteredJobs.length})`}
+              </Button>
+              {(searchKeyword || filterIndustry || filterLocation || filterCompanyScale) && (
+                <Button onClick={resetFilters} size="small">
+                  重置筛选
+                </Button>
+              )}
+            </div>
+
+            {/* 高级筛选面板 */}
+            {showFilters && (
+              <div
+                className="p-4 rounded-lg"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-surface-container)',
+                  border: '1px solid var(--md-sys-color-outline-variant)'
+                }}
+              >
+                <Space direction="vertical" style={{ width: '100%' }} size="middle">
+                  <div>
+                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>行业</div>
+                    <Select
+                      placeholder="选择行业"
+                      style={{ width: '100%' }}
+                      value={filterIndustry}
+                      onChange={setFilterIndustry}
+                      allowClear
+                      options={industries.slice(0, 50).map(i => ({ value: i, label: i }))}
+                      showSearch
+                      optionFilterProp="children"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>工作地点</div>
+                    <Select
+                      placeholder="选择城市"
+                      style={{ width: '100%' }}
+                      value={filterLocation}
+                      onChange={setFilterLocation}
+                      allowClear
+                      options={locations.map(l => ({ value: l, label: l }))}
+                      showSearch
+                      optionFilterProp="children"
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>公司规模</div>
+                    <Select
+                      placeholder="选择公司规模"
+                      style={{ width: '100%' }}
+                      value={filterCompanyScale}
+                      onChange={setFilterCompanyScale}
+                      allowClear
+                      options={companyScales.map(s => ({ value: s, label: s }))}
+                    />
+                  </div>
+                  <div>
+                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      薪资范围: {filterSalaryMin}K - {filterSalaryMax}K
+                    </div>
+                    <Slider
+                      range
+                      min={0}
+                      max={100}
+                      value={[filterSalaryMin, filterSalaryMax]}
+                      onChange={(value) => {
+                        setFilterSalaryMin(value[0]);
+                        setFilterSalaryMax(value[1]);
+                      }}
+                      marks={{ 0: '0K', 50: '50K', 100: '100K+' }}
+                    />
+                  </div>
+                </Space>
+              </div>
+            )}
+          </div>
+
           <div className="flex flex-wrap gap-3 items-center">
             <Select
               style={{ width: '100%', maxWidth: 320 }}
@@ -463,10 +638,20 @@ export default function JobsPage() {
               value={selectedJobId}
               onChange={setSelectedJobId}
               allowClear
-              options={jobs.map((job) => ({
+              options={filteredJobs.map((job) => ({
                 value: job.id,
-                label: `${job.name ?? ''}${job.industry ? ` (${job.industry})` : ''}`,
+                label: `${job.name ?? ''}${job.industry ? ` (${job.industry.split(',')[0]})` : ''} - ${job.company ?? ''}`,
               }))}
+              showSearch
+              optionFilterProp="label"
+              dropdownRender={(menu) => (
+                <>
+                  {menu}
+                  <div className="p-2 text-xs text-gray-500 text-center">
+                    共 {filteredJobs.length} 个岗位
+                  </div>
+                </>
+              )}
             />
             <Button
               icon={<ReloadOutlined />}
@@ -580,12 +765,34 @@ export default function JobsPage() {
               >
                 岗位详情
               </div>
-              <Descriptions column={1} size="small" bordered>
+              <Descriptions column={2} size="small" bordered>
                 <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
                 <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
                 <Descriptions.Item label="公司">{selectedJob.company || '-'}</Descriptions.Item>
+                <Descriptions.Item label="公司规模">{selectedJob.companyScale || '-'}</Descriptions.Item>
+                <Descriptions.Item label="融资状态">{selectedJob.companyFundingStatus || '-'}</Descriptions.Item>
                 <Descriptions.Item label="地点">{selectedJob.location || '-'}</Descriptions.Item>
-                <Descriptions.Item label="薪资范围">{selectedJob.salaryRange || '-'}</Descriptions.Item>
+                <Descriptions.Item label="薪资范围" span={2}>{selectedJob.salaryRange || '-'}</Descriptions.Item>
+                <Descriptions.Item label="岗位编码" span={2}>{selectedJob.jobCode || '-'}</Descriptions.Item>
+                <Descriptions.Item label="岗位分类">{selectedJob.category || '-'}</Descriptions.Item>
+                <Descriptions.Item label="更新日期">{selectedJob.updateDate || '-'}</Descriptions.Item>
+                <Descriptions.Item label="公司简介" span={2}>
+                  <div className="max-h-32 overflow-y-auto text-sm">
+                    {selectedJob.companyDescription || '-'}
+                  </div>
+                </Descriptions.Item>
+                <Descriptions.Item label="详细职责" span={2}>
+                  <div className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
+                    {selectedJob.jobDetail || selectedJob.description || '-'}
+                  </div>
+                </Descriptions.Item>
+                {selectedJob.sourceUrl && (
+                  <Descriptions.Item label="来源链接" span={2}>
+                    <a href={selectedJob.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                      查看原始职位信息
+                    </a>
+                  </Descriptions.Item>
+                )}
               </Descriptions>
               {selectedJob.skills && selectedJob.skills.length > 0 && (
                 <div className="mt-4">

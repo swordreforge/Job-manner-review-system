@@ -123,13 +123,23 @@ export interface Job {
   description?: string;
   company?: string;
   industry?: string;
+  category?: string;
   location?: string;
   salaryRange?: string;
+  jobCode?: string;
+  companyScale?: string;
+  companyFundingStatus?: string;
+  companyDescription?: string;
+  sourceUrl?: string;
+  updateDate?: string;
+  jobDetail?: string;
   skills?: string[];
   certificates?: string[];
   softSkills?: Record<string, unknown>;
   requirements?: Record<string, unknown>;
+  growthPotential?: string;
   createdAt?: number;
+  updatedAt?: number;
 }
 
 export interface MatchResult {
