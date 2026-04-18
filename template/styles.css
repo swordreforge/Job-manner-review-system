@@ -1762,6 +1762,19 @@ textarea {
     font-size: 14px;
 }
 
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.progress-percent {
+    color: var(--primary-color);
+    font-size: 14px;
+    font-weight: 600;
+}
+
 .import-result {
     background: var(--bg-card);
     border-radius: 8px;

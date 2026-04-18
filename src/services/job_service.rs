@@ -19,6 +19,10 @@ impl JobService {
         Ok(job.into())
     }
 
+    pub async fn import_jobs(&self, reqs: Vec<CreateJobRequest>) -> Result<(u32, u32)> {
+        self.job_repo.create_many(reqs).await
+    }
+
     pub async fn get_job(&self, id: i64) -> Result<JobResponse> {
         let job = self.job_repo
             .find_by_id(id)

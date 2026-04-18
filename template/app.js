@@ -2960,6 +2960,165 @@ function removeJobFile() {
     resetJobImportForm();
 }
 
+// 批量导入岗位 - 分块上传配置
+const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
+const MAX_CONCURRENT = 3; // 最大并发数
+const RETRY_TIMES = 3; // 重试次数
+
+// 分块上传状态
+let chunkUploadState = {
+    uploadId: null,
+    filename: '',
+    file: null,
+    totalChunks: 0,
+    uploadedChunks: new Set(),
+    failedChunks: []
+};
+
+// 初始化分块上传
+async function initChunkUpload(file) {
+    const totalSize = file.size;
+    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    
+    const response = await apiRequest('/jobs/chunk-upload-init', {
+        method: 'POST',
+        body: JSON.stringify({
+            filename: file.name,
+            total_size: totalSize,
+            chunk_size: CHUNK_SIZE,
+            total_chunks: totalChunks
+        })
+    });
+    
+    if (response.code !== 200) {
+        throw new Error(response.message || '初始化上传失败');
+    }
+    
+    return response.data;
+}
+
+// 上传单个分块
+async function uploadChunk(uploadId, chunkIndex, chunk, retries = RETRY_TIMES) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const formData = new FormData();
+            formData.append('chunk', new Blob([chunk]), 'chunk');
+            
+            const response = await fetch(`${API_BASE}/jobs/chunk-upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.token}`
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(data.message || '上传分块失败');
+            }
+            
+            return data.data;
+        } catch (error) {
+            if (i === retries - 1) {
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+    }
+}
+
+// 合并分块
+async function mergeChunks(uploadId) {
+    const response = await apiRequest('/jobs/chunk-merge', {
+        method: 'POST',
+        body: JSON.stringify({
+            upload_id: uploadId
+        })
+    });
+    
+    if (response.code !== 200) {
+        throw new Error(response.message || '合并分块失败');
+    }
+    
+    return response.data;
+}
+
+// 并发上传分块
+async function uploadChunksConcurrently(file, uploadId, onProgress) {
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    let completed = 0;
+    let uploading = 0;
+    let currentIndex = 0;
+    
+    return new Promise((resolve, reject) => {
+        const uploadNext = async () => {
+            if (currentIndex >= totalChunks) {
+                if (completed >= totalChunks) {
+                    resolve();
+                }
+                return;
+            }
+            
+            const chunkIndex = currentIndex++;
+            const start = chunkIndex * CHUNK_SIZE;
+            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const chunk = file.slice(start, end);
+            
+            uploading++;
+            
+            try {
+                await uploadChunk(uploadId, chunkIndex, chunk);
+                completed++;
+                uploading--;
+                chunkUploadState.uploadedChunks.add(chunkIndex);
+                onProgress(completed, totalChunks);
+                uploadNext();
+            } catch (error) {
+                uploading--;
+                chunkUploadState.failedChunks.push(chunkIndex);
+                console.error(`分块 ${chunkIndex} 上传失败:`, error);
+                onProgress(completed, totalChunks, error.message);
+                uploadNext();
+            }
+        };
+        
+        // 启动并发上传
+        const startConcurrency = Math.min(MAX_CONCURRENT, totalChunks);
+        for (let i = 0; i < startConcurrency; i++) {
+            uploadNext();
+        }
+    });
+}
+
+// 恢复未完成的分块上传
+async function resumeChunkUpload(file, uploadId, onProgress) {
+    // 获取已上传的分块信息（这里简化为重新检测）
+    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    
+    let completed = 0;
+    const chunkStates = [];
+    
+    // 尝试上传所有分块，服务器会告诉我们哪些已经存在
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
+        
+        try {
+            await uploadChunk(uploadId, i, chunk);
+            completed++;
+            chunkUploadState.uploadedChunks.add(i);
+            onProgress(completed, totalChunks);
+        } catch (error) {
+            chunkUploadState.failedChunks.push(i);
+            console.warn(`分块 ${i} 上传失败，继续尝试其他分块`);
+        }
+    }
+    
+    return completed;
+}
+
 // 开始批量导入岗位
 async function startBatchImportJobs() {
     const fileInput = document.getElementById('job-import-file');
@@ -2974,27 +3133,72 @@ async function startBatchImportJobs() {
     const importResult = document.getElementById('job-import-result');
     const progressFill = document.getElementById('job-progress-fill');
     const progressText = document.getElementById('job-progress-text');
+    const progressPercent = document.getElementById('job-progress-percent');
     
     // 显示进度
     importProgress.style.display = 'block';
     importResult.style.display = 'none';
-    progressFill.style.width = '10%';
-    progressText.textContent = '正在读取文件...';
+    progressFill.style.width = '0%';
+    progressText.textContent = '正在初始化上传...';
     
     try {
-        // 读取文件并转换为 Base64
-        const base64Data = await fileToBase64(file);
+        // 重置状态
+        chunkUploadState = {
+            uploadId: null,
+            filename: file.name,
+            file: file,
+            totalChunks: Math.ceil(file.size / CHUNK_SIZE),
+            uploadedChunks: new Set(),
+            failedChunks: []
+        };
         
-        progressFill.style.width = '30%';
-        progressText.textContent = '正在上传文件...';
+        // 初始化分块上传
+        progressText.textContent = '正在初始化分块上传...';
+        const initData = await initChunkUpload(file);
+        chunkUploadState.uploadId = initData.upload_id;
         
-        // 调用批量导入 API
-        const response = await apiRequest('/jobs/batch-import', {
-            method: 'POST',
-            body: JSON.stringify({
-                file: base64Data
-            })
+        progressFill.style.width = '10%';
+        progressText.textContent = `正在上传分块 (0/${chunkUploadState.totalChunks})...`;
+        
+        // 并发上传分块
+        await uploadChunksConcurrently(file, initData.upload_id, (completed, total, error) => {
+            const percent = Math.round((completed / total) * 90) + 10;
+            progressFill.style.width = `${percent}%`;
+            
+            if (error) {
+                progressText.textContent = `正在上传分块 (${completed}/${total}) - 部分失败`;
+            } else {
+                progressText.textContent = `正在上传分块 (${completed}/${total})...`;
+            }
+            
+            if (progressPercent) {
+                progressPercent.textContent = `${percent}%`;
+            }
         });
+        
+        // 检查是否有失败的分块
+        if (chunkUploadState.failedChunks.length > 0) {
+            // 重试失败的分块
+            progressText.textContent = `正在重试失败的分块 (${chunkUploadState.failedChunks.length}个)...`;
+            for (const idx of chunkUploadState.failedChunks) {
+                const start = idx * CHUNK_SIZE;
+                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const chunk = file.slice(start, end);
+                
+                try {
+                    await uploadChunk(initData.upload_id, idx, chunk);
+                    chunkUploadState.uploadedChunks.add(idx);
+                } catch (e) {
+                    console.error(`重试分块 ${idx} 失败:`, e);
+                }
+            }
+        }
+        
+        progressFill.style.width = '95%';
+        progressText.textContent = '正在合并分块...';
+        
+        // 合并分块
+        const result = await mergeChunks(initData.upload_id);
         
         progressFill.style.width = '100%';
         progressText.textContent = '导入完成';
@@ -3004,7 +3208,6 @@ async function startBatchImportJobs() {
             importProgress.style.display = 'none';
             importResult.style.display = 'block';
             
-            const result = response.data;
             document.getElementById('job-success-count').textContent = result.success;
             document.getElementById('job-failed-count').textContent = result.failed;
             
@@ -3020,7 +3223,6 @@ async function startBatchImportJobs() {
                 errorList.style.display = 'none';
             }
             
-            // 刷新岗位列表
             loadJobs();
         }, 500);
         

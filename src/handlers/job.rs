@@ -1,9 +1,12 @@
 use actix_web::{web, HttpResponse, Responder};
+use actix_multipart::Multipart;
+use futures_util::StreamExt;
+use serde::{Deserialize, Serialize};
 use crate::models::{JobQuery, CreateJobRequest, UpdateJobRequest, BatchImportJobsRequest, ImportResult, ImportError};
 use crate::services::JobService;
 use crate::state::AppState;
 use crate::utils::response::{ApiResponse, ErrorResponse};
-use calamine::{Reader, Xlsx, Data};
+use calamine::{Reader, Xlsx};
 use base64::{Engine as _, engine::general_purpose};
 use std::io::Cursor;
 
@@ -123,7 +126,68 @@ pub async fn batch_import(
         }
     };
 
+    process_import(state.clone(), file_data).await
+}
+
+pub async fn batch_import_file(
+    mut payload: Multipart,
+    state: web::Data<AppState>,
+) -> impl Responder {
+    log::info!("开始通过文件上传批量导入岗位");
+
+    let mut file_data: Option<Vec<u8>> = None;
+    let mut filename = String::new();
+
+    while let Some(item) = payload.next().await {
+        match item {
+            Ok(mut field) => {
+                let content_disposition = field.content_disposition();
+                if let Some(cd) = content_disposition {
+                    if let Some(name) = cd.get_name() {
+                        if name == "file" {
+                            if let Some(fname) = cd.get_filename() {
+                                filename = fname.to_string();
+                            }
+                            let mut data = Vec::new();
+                            while let Some(chunk_result) = field.next().await {
+                                match chunk_result {
+                                    Ok(bytes) => data.extend_from_slice(&bytes),
+                                    Err(e) => {
+                                        log::error!("读取上传文件失败: {}", e);
+                                        return HttpResponse::BadRequest()
+                                            .json(ErrorResponse::error("读取上传文件失败", Some(e.to_string())));
+                                    }
+                                }
+                            }
+                            file_data = Some(data);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("读取上传文件失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("读取上传文件失败", Some(e.to_string())));
+            }
+        }
+    }
+
+    let data = match file_data {
+        Some(d) => d,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("未找到上传文件", None));
+        }
+    };
+
+    log::info!("接收到文件: {}, 大小: {} bytes", filename, data.len());
+
+    process_import(state.clone(), data).await
+}
+
+async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpResponse {
     let cursor = Cursor::new(file_data);
+
     let mut workbook: Xlsx<Cursor<Vec<u8>>> = match Xlsx::new(cursor) {
         Ok(wb) => wb,
         Err(e) => {
@@ -148,34 +212,56 @@ pub async fn batch_import(
     };
 
     let mut total = 0u32;
-    let mut success = 0u32;
-    let mut failed = 0u32;
     let mut errors = Vec::new();
     let job_service = JobService::new(&state);
 
-    for (row_idx, row) in range.rows().skip(1).enumerate() {
-        total += 1;
-        let row_num = (row_idx + 2) as u32;
+    let mut col_mapping: Option<std::collections::HashMap<String, usize>> = None;
+    let mut job_requests = Vec::new();
 
-        let job_request = match parse_job_row_from_vec(row) {
-            Ok(j) => j,
-            Err(e) => {
-                failed += 1;
+    for (row_idx, row) in range.rows().enumerate() {
+        if row_idx == 0 {
+            col_mapping = Some(build_column_mapping(row));
+            continue;
+        }
+
+        total += 1;
+        let row_num = (row_idx + 1) as u32;
+
+        let mapping = match col_mapping.as_ref() {
+            Some(m) => m,
+            None => {
                 errors.push(ImportError {
                     row: row_num,
-                    message: e,
+                    message: "缺少列映射".to_string(),
                 });
                 continue;
             }
         };
 
-        match job_service.create_job(job_request).await {
-            Ok(_) => success += 1,
+        match parse_job_row_from_vec(row, mapping) {
+            Ok(req) => job_requests.push(req),
             Err(e) => {
-                failed += 1;
                 errors.push(ImportError {
                     row: row_num,
-                    message: format!("插入数据库失败: {}", e),
+                    message: e,
+                });
+            }
+        }
+    }
+
+    let success = job_requests.len() as u32;
+    let failed = total - success;
+
+    if !job_requests.is_empty() {
+        match job_service.import_jobs(job_requests).await {
+            Ok((s, f)) => {
+                log::info!("批量导入完成: 总数={}, 成功={}, 失败={}", total, s, f);
+            }
+            Err(e) => {
+                log::error!("批量导入数据库失败: {}", e);
+                errors.push(ImportError {
+                    row: 0,
+                    message: format!("批量导入数据库失败: {}", e),
                 });
             }
         }
@@ -192,11 +278,37 @@ pub async fn batch_import(
     HttpResponse::Ok().json(ApiResponse::success(result))
 }
 
-pub fn parse_job_row_from_vec(row: &[calamine::Data]) -> Result<CreateJobRequest, String> {
-    if row.len() < 12 {
-        return Err("列数不足，需要12列".to_string());
-    }
+fn build_column_mapping(headers: &[calamine::Data]) -> std::collections::HashMap<String, usize> {
+    let mut mapping = std::collections::HashMap::new();
+    let field_names = vec![
+        ("岗位名称", 0),
+        ("岗位详情", 1),
+        ("公司名称", 2),
+        ("所属行业", 3),
+        ("地址", 4),
+        ("薪资范围", 5),
+        ("公司详情", 6),
+        ("岗位编码", 7),
+        ("公司规模", 8),
+        ("公司类型", 9),
+        ("更新日期", 10),
+        ("岗位来源地址", 11),
+    ];
 
+    for (idx, header) in headers.iter().enumerate() {
+        if let calamine::Data::String(s) = header {
+            for (field, _) in field_names.iter() {
+                if s.contains(field) || field.contains(s) {
+                    mapping.insert(field.to_string(), idx);
+                    break;
+                }
+            }
+        }
+    }
+    mapping
+}
+
+pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collections::HashMap<String, usize>) -> Result<CreateJobRequest, String> {
     let get_string = |idx: usize| -> Option<String> {
         row.get(idx)
             .and_then(|cell| match cell {
@@ -210,18 +322,22 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data]) -> Result<CreateJobRequest
             .filter(|s| !s.is_empty())
     };
 
-    let name = get_string(0).ok_or("岗位名称不能为空")?;
-    let description = get_string(1);
-    let company = get_string(2);
-    let industry = get_string(3);
-    let category = get_string(4);
-    let location = get_string(5);
-    let salary_range = get_string(6);
-    let skills = get_string(7);
-    let certificates = get_string(8);
-    let soft_skills = get_string(9);
-    let requirements = get_string(10);
-    let growth_potential = get_string(11);
+    let get_mapped_string = |field: &str| -> Option<String> {
+        col_mapping.get(field).and_then(|&idx| get_string(idx))
+    };
+
+    let name = get_mapped_string("岗位名称").ok_or("岗位名称不能为空")?;
+    let description = get_mapped_string("岗位详情");
+    let company = get_mapped_string("公司名称");
+    let industry = get_mapped_string("所属行业");
+    let category = None;
+    let location = get_mapped_string("地址");
+    let salary_range = get_mapped_string("薪资范围");
+    let skills = None;
+    let certificates = None;
+    let soft_skills = None;
+    let requirements = None;
+    let growth_potential = None;
 
     Ok(CreateJobRequest {
         name,
@@ -269,4 +385,207 @@ pub async fn download_template() -> impl Responder {
         .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
         .append_header(("Content-Disposition", "attachment; filename=job_import_template.xlsx"))
         .body(buffer)
+}
+
+// 分块上传请求结构
+#[derive(Debug, Deserialize)]
+pub struct ChunkUploadInitRequest {
+    pub filename: String,
+    pub total_size: u64,
+    pub chunk_size: u64,
+    pub total_chunks: u32,
+}
+
+#[derive(Debug, Serialize)]
+pub struct ChunkUploadInitResponse {
+    pub upload_id: String,
+    pub chunk_size: u64,
+    pub total_chunks: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChunkUploadRequest {
+    pub upload_id: String,
+    pub chunk_index: u32,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ChunkMergeRequest {
+    pub upload_id: String,
+}
+
+static CHUNK_UPLOAD_STATE: once_cell::sync::Lazy<tokio::sync::RwLock<ChunkUploadState>> =
+    once_cell::sync::Lazy::new(|| {
+        tokio::sync::RwLock::new(ChunkUploadState::default())
+    });
+
+#[derive(Default)]
+struct ChunkUploadState {
+    uploads: std::collections::HashMap<String, ChunkUploadInfo>,
+}
+
+struct ChunkUploadInfo {
+    filename: String,
+    total_size: u64,
+    chunk_size: u64,
+    total_chunks: u32,
+    received_chunks: std::collections::HashSet<u32>,
+    chunks: Vec<Vec<u8>>,
+    created_at: i64,
+}
+
+const CHUNK_UPLOAD_EXPIRE_SECONDS: i64 = 3600;
+
+pub async fn chunk_upload_init(
+    req: web::Json<ChunkUploadInitRequest>,
+) -> impl Responder {
+    let upload_id = uuid::Uuid::new_v4().to_string();
+    let now = chrono::Utc::now().timestamp();
+
+    let info = ChunkUploadInfo {
+        filename: req.filename.clone(),
+        total_size: req.total_size,
+        chunk_size: req.chunk_size,
+        total_chunks: req.total_chunks,
+        received_chunks: std::collections::HashSet::new(),
+        chunks: Vec::with_capacity(req.total_chunks as usize),
+        created_at: now,
+    };
+
+    let mut state = CHUNK_UPLOAD_STATE.write().await;
+    state.uploads.insert(upload_id.clone(), info);
+
+    log::info!("分块上传初始化: upload_id={}, filename={}, chunks={}", 
+        upload_id, req.filename, req.total_chunks);
+
+    HttpResponse::Ok().json(ApiResponse::success(ChunkUploadInitResponse {
+        upload_id,
+        chunk_size: req.chunk_size,
+        total_chunks: req.total_chunks,
+    }))
+}
+
+pub async fn chunk_upload(
+    mut payload: Multipart,
+    req: web::Json<ChunkUploadRequest>,
+    state: web::Data<AppState>,
+) -> impl Responder {
+    let upload_id = req.upload_id.clone();
+    let chunk_index = req.chunk_index;
+
+    let mut file_data: Option<Vec<u8>> = None;
+
+    while let Some(item) = payload.next().await {
+        match item {
+            Ok(mut field) => {
+                let content_disposition = field.content_disposition();
+                if let Some(cd) = content_disposition {
+                    if let Some(name) = cd.get_name() {
+                        if name == "chunk" {
+                            let mut data = Vec::new();
+                            while let Some(chunk_result) = field.next().await {
+                                match chunk_result {
+                                    Ok(bytes) => data.extend_from_slice(&bytes),
+                                    Err(e) => {
+                                        log::error!("读取分块失败: {}", e);
+                                        return HttpResponse::BadRequest()
+                                            .json(ErrorResponse::error("读取分块失败", Some(e.to_string())));
+                                    }
+                                }
+                            }
+                            file_data = Some(data);
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("读取上传文件失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("读取上传文件失败", Some(e.to_string())));
+            }
+        }
+    }
+
+    let data = match file_data {
+        Some(d) => d,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("未找到分块数据", None));
+        }
+    };
+
+    let mut state_lock = CHUNK_UPLOAD_STATE.write().await;
+
+    let upload_info = match state_lock.uploads.get_mut(&upload_id) {
+        Some(info) => {
+            let now = chrono::Utc::now().timestamp();
+            if now - info.created_at > CHUNK_UPLOAD_EXPIRE_SECONDS {
+                state_lock.uploads.remove(&upload_id);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("上传会话已过期", None));
+            }
+            info
+        }
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("上传ID不存在", None));
+        }
+    };
+
+    if chunk_index >= upload_info.total_chunks {
+        return HttpResponse::BadRequest()
+            .json(ErrorResponse::error("分块索引超出范围", None));
+    }
+
+    upload_info.received_chunks.insert(chunk_index);
+    
+    while upload_info.chunks.len() < upload_info.total_chunks as usize {
+        upload_info.chunks.push(Vec::new());
+    }
+    upload_info.chunks[chunk_index as usize] = data;
+
+    let progress = upload_info.received_chunks.len() as u32;
+    log::info!("分块上传: upload_id={}, chunk={}/{}", upload_id, chunk_index + 1, upload_info.total_chunks);
+
+    HttpResponse::Ok().json(ApiResponse::success(serde_json::json!({
+        "chunk_index": chunk_index,
+        "received_chunks": progress,
+        "total_chunks": upload_info.total_chunks,
+        "complete": progress == upload_info.total_chunks
+    })))
+}
+
+pub async fn chunk_merge(
+    req: web::Json<ChunkMergeRequest>,
+    state: web::Data<AppState>,
+) -> impl Responder {
+    let upload_id = req.upload_id.clone();
+
+    let mut state_lock = CHUNK_UPLOAD_STATE.write().await;
+
+    let upload_info = match state_lock.uploads.remove(&upload_id) {
+        Some(info) => info,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("上传ID不存在", None));
+        }
+    };
+
+    if upload_info.received_chunks.len() != upload_info.total_chunks as usize {
+        return HttpResponse::BadRequest()
+            .json(ErrorResponse::error(&format!("分块未全部上传，已收到 {}/{} 个分块", 
+                upload_info.received_chunks.len(), upload_info.total_chunks), None));
+    }
+
+    let mut file_data = Vec::with_capacity(upload_info.total_size as usize);
+    for chunk in upload_info.chunks {
+        file_data.extend_from_slice(&chunk);
+    }
+
+    log::info!("分块合并完成: upload_id={}, filename={}, size={}", 
+        upload_id, upload_info.filename, file_data.len());
+
+    drop(state_lock);
+
+    process_import(state, file_data).await
 }

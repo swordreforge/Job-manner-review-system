@@ -57,6 +57,51 @@ impl JobRepository {
         Ok(job)
     }
 
+    pub async fn create_many(&self, reqs: Vec<CreateJobRequest>) -> Result<(u32, u32)> {
+        let now = chrono::Utc::now().timestamp();
+        let mut success = 0u32;
+        let mut failed = 0u32;
+
+        for req in reqs {
+            let result = sqlx::query(
+                r#"
+                INSERT INTO jobs (
+                    name, description, company, industry, category, location, salary_range,
+                    skills, certificates, soft_skills, requirements, growth_potential,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#
+            )
+            .bind(&req.name)
+            .bind(&req.description)
+            .bind(&req.company)
+            .bind(&req.industry)
+            .bind(&req.category)
+            .bind(&req.location)
+            .bind(&req.salary_range)
+            .bind(&req.skills)
+            .bind(&req.certificates)
+            .bind(&req.soft_skills)
+            .bind(&req.requirements)
+            .bind(&req.growth_potential)
+            .bind(now)
+            .bind(now)
+            .execute(&*self.pool)
+            .await;
+
+            match result {
+                Ok(_) => success += 1,
+                Err(e) => {
+                    log::warn!("插入岗位失败: {}, 错误: {}", req.name, e);
+                    failed += 1;
+                }
+            }
+        }
+
+        Ok((success, failed))
+    }
+
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Job>> {
         let find_by_id_sql = format!("{} WHERE id = ?", JOB_SELECT_SQL);
         let job = sqlx::query_as::<_, Job>(&find_by_id_sql)
