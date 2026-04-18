@@ -290,13 +290,15 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
         }
     }
 
-    let success = job_requests.len() as u32;
-    let failed = total - success;
+    let mut success = job_requests.len() as u32;
+    let mut failed = total - success;
 
     if !job_requests.is_empty() {
         match job_service.import_jobs(job_requests).await {
             Ok((s, f)) => {
                 log::info!("批量导入完成: 总数={}, 成功={}, 失败={}", total, s, f);
+                success = s;
+                failed = f;
             }
             Err(e) => {
                 log::error!("批量导入数据库失败: {}", e);
@@ -304,6 +306,7 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
                     row: 0,
                     message: format!("批量导入数据库失败: {}", e),
                 });
+                failed = total;
             }
         }
     }
