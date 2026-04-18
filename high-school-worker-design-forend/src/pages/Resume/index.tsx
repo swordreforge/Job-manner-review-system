@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
-import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined } from '@ant-design/icons';
+import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined, ExportOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { studentApi } from '../../api';
 import type { Student, ResumeHistoryRecord } from '../../types';
@@ -916,6 +916,18 @@ export default function ResumePage() {
                 >
                   查看
                 </Button>,
+                item.parsedProfile ? (
+                  <Button
+                    type="link"
+                    icon={<ExportOutlined />}
+                    onClick={() => {
+                      setHistoryVisible(false);
+                      navigate('/resume/editor', { state: { profile: item.parsedProfile } });
+                    }}
+                  >
+                    优化导出
+                  </Button>
+                ) : null,
                 <Popconfirm
                   title="确定删除这条历史记录吗？"
                   onConfirm={() => handleDeleteHistory(item.id)}
@@ -1068,6 +1080,22 @@ export default function ResumePage() {
                   </div>
                 )}
               </Card>
+            )}
+
+            {detailRecord.parsedProfile && (
+              <div className="mt-4 flex justify-center">
+                <Button
+                  type="primary"
+                  icon={<ExportOutlined />}
+                  onClick={() => {
+                    setDetailVisible(false);
+                    setHistoryVisible(false);
+                    navigate('/resume/editor', { state: { profile: detailRecord.parsedProfile } });
+                  }}
+                >
+                  优化并导出简历
+                </Button>
+              </div>
             )}
           </div>
         )}
