@@ -30,6 +30,8 @@ Thumbs.db
 # Logs
 *.log
 
+src-tauri/gen/
+
 # Environment
 .env
 .env.local
@@ -58,3 +60,12 @@ api-for-voice.txt
 
 # Worktrees
 .worktrees/
+
+# Node modules
+node_modules/
+high-school-worker-design-forend/node_modules/
+
+# Lenis fix dependency
+
+# Logs folder
+logs/

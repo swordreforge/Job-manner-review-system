@@ -1,0 +1,31 @@
+# Dependencies and build outputs
+node_modules/
+dist/
+
+# Heavy local artifacts
+src-tauri/target/
+职业规划智能系统-release-unsigned.apk
+
+# Reports and tests
+playwright-report/
+test-results/
+tests/
+
+# Local docs and backups not needed for image build
+docs/
+backup/
+README.md
+DARK_MODE_ADAPTATION.md
+api.md
+career_db_table_structures.md
+
+# VCS and IDE
+.git/
+.vscode/
+.idea/
+
+# Logs and temp
+npm-debug.log*
+yarn-error.log*
+*.log
+*.tmp
