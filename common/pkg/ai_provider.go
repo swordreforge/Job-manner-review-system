@@ -531,49 +531,33 @@ func (p *OpenAIProvider) GenerateTransferTargets(ctx context.Context, jobInfo, s
 
 func (p *OpenAIProvider) PolishResume(ctx context.Context, profileJSON, suggestions string) (string, error) {
 	bt := "`" + "`" + "`"
-	prompt := `你是一名专业的简历优化师。请根据以下学生档案信息和优化建议，生成一份结构完整、语言专业的中文简历HTML内容。
+	prompt := `根据以下学生档案和优化建议，生成极简中文简历HTML。
 
-要求：
-1. 使用经典单栏简历格式，适合A4纸打印
-2. 根据优化建议补充和改进内容
-3. 语言精炼、专业，避免冗余
-4. 如实反映已有信息，不编造不存在的内容
-5. 使用内联CSS样式，不依赖外部CSS文件
-6. 使用以下HTML结构（使用内联样式）：
+规则：
+- 只用 h1 h2 h3 p ul li 标签，不使用任何style属性或class属性
+- 不使用div标签，不使用span标签
+- h1=姓名，h2=板块标题（技能/证书/实习/项目），h3=子标题
+- 如果某项数据为空则跳过该板块
+- 根据优化建议润色表达，但不编造内容
+- 不包含` + bt + `html标记，不包含任何说明文字，只输出HTML
 
-<div style="max-width:800px;margin:0 auto;padding:40px;font-family:'Microsoft YaHei','SimSun',sans-serif;color:#333;line-height:1.6;">
-  <div style="text-align:center;margin-bottom:30px;">
-    <h1 style="margin:0;font-size:24px;color:#1a1a1a;">{姓名}</h1>
-    <p style="margin:5px 0 0;color:#666;font-size:14px;">{学历} · {专业} · {毕业年份}届</p>
-  </div>
-  <div style="margin-bottom:20px;">
-    <h2 style="font-size:16px;border-bottom:2px solid #1a73e8;padding-bottom:5px;color:#1a73e8;">技能</h2>
-    <div style="display:flex;flex-wrap:wrap;gap:8px;">
-      {对每个技能: <span style="background:#e8f0fe;padding:4px 12px;border-radius:4px;font-size:13px;">{技能名} ({level}分)</span>}
-    </div>
-  </div>
-  <div style="margin-bottom:20px;">
-    <h2 style="font-size:16px;border-bottom:2px solid #1a73e8;padding-bottom:5px;color:#1a73e8;">证书</h2>
-    <ul style="padding-left:20px;">
-      {对每个证书: <li style="margin-bottom:4px;">{证书名} · {等级} · {获得年份}年</li>}
-    </ul>
-  </div>
-  <div style="margin-bottom:20px;">
-    <h2 style="font-size:16px;border-bottom:2px solid #1a73e8;padding-bottom:5px;color:#1a73e8;">实习经历</h2>
-    {对每段实习: <div style="margin-bottom:12px;"><h3 style="margin:0;font-size:14px;">{公司} · {职位}</h3><p style="margin:2px 0;color:#888;font-size:12px;">{时长}个月</p><p style="margin:4px 0;font-size:13px;">{描述}</p></div>}
-  </div>
-  <div style="margin-bottom:20px;">
-    <h2 style="font-size:16px;border-bottom:2px solid #1a73e8;padding-bottom:5px;color:#1a73e8;">项目经历</h2>
-    {对每个项目: <div style="margin-bottom:12px;"><h3 style="margin:0;font-size:14px;">{项目名} · {角色}</h3><p style="margin:4px 0;font-size:13px;">{描述}</p><div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:4px;">{对每个技术: <span style="background:#e8f5e9;padding:2px 8px;border-radius:3px;font-size:12px;">{技术}</span>}</div></div>}
-  </div>
-</div>
+模板：
+<h1>姓名</h1>
+<p>学历 · 专业 · 毕业年份</p>
+<h2>技能</h2>
+<ul><li>技能名 掌握程度</li></ul>
+<h2>证书</h2>
+<ul><li>证书名 等级 年份</li></ul>
+<h2>实习经历</h2>
+<h3>公司 · 职位</h3>
+<p>时长: X个月</p>
+<p>工作描述</p>
+<h2>项目经历</h2>
+<h3>项目名 · 角色</h3>
+<p>项目描述</p>
+<ul><li>技术栈</li></ul>
 
-7. 不要包含 ` + bt + `html 代码块标记，直接返回纯HTML
-8. 不要在HTML外部添加任何文字说明
-9. 确保中文内容准确、表达专业
-10. 如果某些字段为空或null，则跳过该部分不显示
-
-学生档案数据：
+学生档案：
 %s
 
 优化建议：
@@ -582,11 +566,11 @@ func (p *OpenAIProvider) PolishResume(ctx context.Context, profileJSON, suggesti
 	req := OpenAIRequest{
 		Model: p.model,
 		Messages: []ChatMessage{
-			{Role: "system", Content: "你是一名专业的简历优化师，擅长将结构化数据转化为专业、美观的简历内容。只返回纯HTML，不包含任何其他文字。"},
+			{Role: "system", Content: "你生成极简简历HTML。只用h1/h2/h3/p/ul/li标签，不加任何样式。不编造数据，不输出代码块标记，只输出纯HTML。"},
 			{Role: "user", Content: fmt.Sprintf(prompt, profileJSON, suggestions)},
 		},
-		MaxTokens:   4000,
-		Temperature: 0.6,
+		MaxTokens:   2000,
+		Temperature: 0.5,
 	}
 
 	content, err := p.callAPI(ctx, req)

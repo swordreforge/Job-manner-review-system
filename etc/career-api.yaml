@@ -33,7 +33,7 @@ AI:
     ApiKey: sk-051d706209c64a70bcba47ed0d1eb6c9
     Model: deepseek-chat
     BaseURL: https://api.deepseek.com/v1
-    Timeout: 60
+    Timeout: 180
 Prometheus:
     Host: 0.0.0.0
     Port: 9091
