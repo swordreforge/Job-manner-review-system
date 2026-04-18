@@ -299,6 +299,9 @@ export default function ResumePage() {
           )
         );
         message.success(summaryMsg);
+        // Set profile and parsed state for the first successful result
+        setProfile(response.data);
+        setParsed(true);
       } else {
         throw new Error(response?.msg || '解析失败');
       }
