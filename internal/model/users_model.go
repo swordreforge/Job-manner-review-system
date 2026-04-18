@@ -46,9 +46,12 @@ func (m *customUsersModel) Insert(ctx context.Context, data *Users) (sql.Result,
 	if data.UpdatedAt == 0 {
 		data.UpdatedAt = now
 	}
+	if data.FirstLogin == 0 {
+		data.FirstLogin = 1
+	}
 
-	query := fmt.Sprintf("insert into %s (`username`, `password`, `email`, `phone`, `role`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?)", m.table)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Username, data.Password, data.Email, data.Phone, data.Role, data.CreatedAt, data.UpdatedAt)
+	query := fmt.Sprintf("insert into %s (`username`, `password`, `email`, `phone`, `role`, `first_login`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?)", m.table)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Username, data.Password, data.Email, data.Phone, data.Role, data.FirstLogin, data.CreatedAt, data.UpdatedAt)
 	return ret, err
 }
 

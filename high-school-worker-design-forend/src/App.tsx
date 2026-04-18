@@ -238,7 +238,7 @@ export default function App() {
 
   useEffect(() => {
     console.log('[App] check onboarding:', { isAuthChecked, isAuthenticated, firstLogin: user?.firstLogin, role: user?.role });
-    if (isAuthChecked && isAuthenticated && user?.firstLogin && user?.role === 'student') {
+    if (isAuthChecked && isAuthenticated && user?.firstLogin && user?.role !== 'teacher') {
       console.log('[App] show onboarding!');
       setShowOnboarding(true);
     }

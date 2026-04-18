@@ -78,11 +78,12 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.UserResp, 
 
 	// 创建用户（时间戳由Model的Insert方法自动设置）
 	user := &model.Users{
-		Username: req.Username,
-		Password: hashedPassword,
-		Email:    req.Email,
-		Phone:    sql.NullString{String: req.Phone, Valid: req.Phone != ""},
-		Role:     "user",
+		Username:   req.Username,
+		Password:   hashedPassword,
+		Email:      req.Email,
+		Phone:      sql.NullString{String: req.Phone, Valid: req.Phone != ""},
+		Role:       "user",
+		FirstLogin: 1,
 	}
 
 	result, err := l.svcCtx.UserModel.Insert(l.ctx, user)
@@ -124,12 +125,13 @@ func (l *RegisterLogic) Register(req *types.RegisterReq) (resp *types.UserResp, 
 		Code: errors.CodeSuccess,
 		Msg:  "success",
 		Data: &types.UserInfo{
-			Id:        userId,
-			Username:  req.Username,
-			Email:     req.Email,
-			Phone:     phone,
-			Role:      userInfo.Role,
-			CreatedAt: userInfo.CreatedAt,
+			Id:         userId,
+			Username:   req.Username,
+			Email:      req.Email,
+			Phone:      phone,
+			Role:       userInfo.Role,
+			FirstLogin: userInfo.FirstLogin == 1,
+			CreatedAt:  userInfo.CreatedAt,
 		},
 	}, nil
 }

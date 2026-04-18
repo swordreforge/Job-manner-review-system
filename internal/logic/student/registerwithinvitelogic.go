@@ -91,12 +91,13 @@ func (l *RegisterWithInviteLogic) RegisterWithInvite(req *types.RegisterWithInvi
 
 	now := time.Now().Unix()
 	user := &model.Users{
-		Username:  req.Username,
-		Password:  hashedPassword,
-		Email:     req.Email,
-		Role:      "student",
-		CreatedAt: now,
-		UpdatedAt: now,
+		Username:   req.Username,
+		Password:   hashedPassword,
+		Email:      req.Email,
+		Role:       "student",
+		FirstLogin: 1,
+		CreatedAt:  now,
+		UpdatedAt:  now,
 	}
 
 	result, err := l.svcCtx.UserModel.Insert(l.ctx, user)
