@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, LogoutOutlined, TeamOutlined, FileAddOutlined, AlertOutlined, MessageOutlined } from '@ant-design/icons';
 import { useState, useEffect } from 'react';
+import { Modal, message } from 'antd';
 import { useAuthStore } from '../../stores';
 
 interface SidebarNavProps {
@@ -152,10 +153,19 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
       <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
         <button
           onClick={() => {
-            if (window.confirm('确定要退出登录吗？')) {
-              logout();
-              navigate('/welcome', { replace: true });
-            }
+            Modal.confirm({
+              title: '确认退出',
+              icon: <LogoutOutlined />,
+              content: '确定要退出登录吗？',
+              okText: '退出',
+              okType: 'danger',
+              cancelText: '取消',
+              onOk() {
+                logout();
+                message.success('已退出登录');
+                navigate('/welcome', { replace: true });
+              },
+            });
           }}
           className={`w-full flex items-center gap-3 px-4 py-3 transition-all duration-200 ${isCollapsed ? 'justify-center' : ''}`}
           style={{
