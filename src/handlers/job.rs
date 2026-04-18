@@ -294,6 +294,12 @@ async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpR
     let mut failed = total - success;
 
     if !job_requests.is_empty() {
+        log::info!("准备入库的数据条数: {}", job_requests.len());
+        for (i, req) in job_requests.iter().take(3).enumerate() {
+            log::debug!("第{}条: name={}, company={}, location={}", 
+                i+1, req.name, req.company.as_ref().unwrap_or(&"无".to_string()), req.location.as_ref().unwrap_or(&"无".to_string()));
+        }
+        
         match job_service.import_jobs(job_requests).await {
             Ok((s, f)) => {
                 log::info!("批量导入完成: 总数={}, 成功={}, 失败={}", total, s, f);
@@ -366,17 +372,28 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
             .filter(|s| !s.is_empty())
     };
 
+    // 字符串截断辅助函数
+    let truncate = |s: Option<String>, max_len: usize| -> Option<String> {
+        s.map(|v| {
+            if v.len() > max_len {
+                v[..max_len].to_string()
+            } else {
+                v
+            }
+        })
+    };
+
     let get_mapped_string = |field: &str| -> Option<String> {
         col_mapping.get(field).and_then(|&idx| get_string(idx))
     };
 
     let name = get_mapped_string("岗位名称").ok_or("岗位名称不能为空")?;
     let description = get_mapped_string("岗位详情");
-    let company = get_mapped_string("公司名称");
-    let industry = get_mapped_string("所属行业");
+    let company = truncate(get_mapped_string("公司名称"), 100);
+    let industry = truncate(get_mapped_string("所属行业"), 100);
     let category = None;
-    let location = get_mapped_string("地址");
-    let salary_range = get_mapped_string("薪资范围");
+    let location = truncate(get_mapped_string("地址"), 100);
+    let salary_range = truncate(get_mapped_string("薪资范围"), 100);
     let skills = None;
     let certificates = None;
     let soft_skills = None;
