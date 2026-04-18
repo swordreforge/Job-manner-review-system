@@ -2,6 +2,7 @@ package student
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"strings"
 
@@ -46,15 +47,36 @@ func (l *PolishResumeLogic) PolishResume(req *types.ResumePolishReq) (*types.Res
 		}, nil
 	}
 
+	safeJSON := func(ns sql.NullString) json.RawMessage {
+		if !ns.Valid || ns.String == "" {
+			return json.RawMessage("[]")
+		}
+		return json.RawMessage(ns.String)
+	}
+
+	safeStr := func(ns sql.NullString) string {
+		if !ns.Valid {
+			return ""
+		}
+		return ns.String
+	}
+
+	safeInt := func(ni sql.NullInt64) int64 {
+		if !ni.Valid {
+			return 0
+		}
+		return ni.Int64
+	}
+
 	profileData := map[string]interface{}{
-		"name":             student.Name,
-		"education":        student.Education.String,
-		"major":            student.Major.String,
-		"graduationYear":   student.GraduationYear.Int64,
-		"skills":           json.RawMessage(student.Skills.String),
-		"certificates":     json.RawMessage(student.Certificates.String),
-		"internship":       json.RawMessage(student.Internship.String),
-		"projects":         json.RawMessage(student.Projects.String),
+		"name":              student.Name,
+		"education":        safeStr(student.Education),
+		"major":            safeStr(student.Major),
+		"graduationYear":   safeInt(student.GraduationYear),
+		"skills":           safeJSON(student.Skills),
+		"certificates":     safeJSON(student.Certificates),
+		"internship":       safeJSON(student.Internship),
+		"projects":         safeJSON(student.Projects),
 		"completeness":     student.CompletenessScore,
 		"competitiveness":  student.CompetitivenessScore,
 	}
