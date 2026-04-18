@@ -313,6 +313,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/schools",
 				Handler: student.ListSchoolsHandler(serverCtx),
 			},
+			{
+				// Polish resume with AI
+				Method:  http.MethodPost,
+				Path:    "/students/resume/polish",
+				Handler: student.PolishResumeHandler(serverCtx),
+			},
 		},
 		rest.WithPrefix("/api/v1"),
 	)
