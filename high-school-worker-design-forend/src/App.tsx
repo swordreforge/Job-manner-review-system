@@ -13,6 +13,7 @@ const Landing = lazy(() => import('./pages/Home/Landing'));
 const HomePage = lazy(() => import('./pages/Home'));
 const PlanPage = lazy(() => import('./pages/Plan'));
 const ResumePage = lazy(() => import('./pages/Resume'));
+const ResumeEditorPage = lazy(() => import('./pages/ResumeEditor'));
 const ProfilePage = lazy(() => import('./pages/Profile'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const StudentPage = lazy(() => import('./pages/Student'));
@@ -280,6 +281,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <ResumePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="resume/editor"
+                element={
+                  <ProtectedRoute>
+                    <ResumeEditorPage />
                   </ProtectedRoute>
                 }
               />

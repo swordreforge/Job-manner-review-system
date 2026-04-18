@@ -418,3 +418,13 @@ export interface InterviewStreamEvent {
     msg?: string;
   };
 }
+
+export interface ResumePolishResult {
+  htmlContent: string;
+  plainText: string;
+}
+
+export interface ResumeExportOptions {
+  format: 'pdf' | 'docx';
+  template: 'classic';
+}

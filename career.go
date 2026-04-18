@@ -857,7 +857,7 @@ func migrateColumns(dataSource string) error {
 	}{
 		// users table - add school_id
 		{"users", "school_id", "ALTER TABLE users ADD COLUMN school_id BIGINT(20) DEFAULT NULL"},
-		{"users", "school_id_idx", "ALTER TABLE users ADD KEY idx_school_id (school_id)"},
+		{"users", "idx_school_id", "ALTER TABLE users ADD KEY idx_school_id (school_id)"},
 		// students table - add task_completion_rate and last_activity_at
 		{"students", "task_completion_rate", "ALTER TABLE students ADD COLUMN task_completion_rate DECIMAL(5,2) NOT NULL DEFAULT 0.00 COMMENT '8系列任务总完成度'"},
 		{"students", "last_activity_at", "ALTER TABLE students ADD COLUMN last_activity_at BIGINT(20) DEFAULT NULL COMMENT '最后活动时间'"},
@@ -865,9 +865,9 @@ func migrateColumns(dataSource string) error {
 		{"student_schools", "teacher_id", "ALTER TABLE student_schools ADD COLUMN teacher_id BIGINT(20) DEFAULT NULL COMMENT '教师ID'"},
 		// jobs table - add new fields from Excel data
 		{"jobs", "job_code", "ALTER TABLE jobs ADD COLUMN job_code VARCHAR(50) DEFAULT NULL COMMENT '外部岗位编码'"},
-		{"jobs", "job_code_idx", "ALTER TABLE jobs ADD KEY idx_job_code (job_code)"},
+		{"jobs", "idx_job_code", "ALTER TABLE jobs ADD KEY idx_job_code (job_code)"},
 		{"jobs", "company_scale", "ALTER TABLE jobs ADD COLUMN company_scale VARCHAR(50) DEFAULT NULL COMMENT '公司规模'"},
-		{"jobs", "company_scale_idx", "ALTER TABLE jobs ADD KEY idx_company_scale (company_scale)"},
+		{"jobs", "idx_company_scale", "ALTER TABLE jobs ADD KEY idx_company_scale (company_scale)"},
 		{"jobs", "company_funding_status", "ALTER TABLE jobs ADD COLUMN company_funding_status VARCHAR(50) DEFAULT NULL COMMENT '融资状态'"},
 		{"jobs", "company_description", "ALTER TABLE jobs ADD COLUMN company_description TEXT DEFAULT NULL COMMENT '公司详情'"},
 		{"jobs", "source_url", "ALTER TABLE jobs ADD COLUMN source_url VARCHAR(500) DEFAULT NULL COMMENT '来源URL'"},

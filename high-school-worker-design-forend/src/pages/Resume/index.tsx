@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
 import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
@@ -29,6 +30,7 @@ export default function ResumePage() {
   };
 
   const [fileList, setFileList] = useState<UploadFile[]>([]);
+  const navigate = useNavigate();
   const [parsing] = useState(false);
   const [parsed, setParsed] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -658,6 +660,12 @@ export default function ResumePage() {
                         }}
                       >
                         查看优化建议
+                      </Button>,
+                      <Button
+                        key="export"
+                        onClick={() => navigate('/resume/editor', { state: { profile } })}
+                      >
+                        优化并导出简历
                       </Button>,
                       <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
                         重新上传
