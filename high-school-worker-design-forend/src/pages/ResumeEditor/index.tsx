@@ -20,7 +20,8 @@ export default function ResumeEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const profile = (location.state as any)?.profile as Student | null;
-  const [editorState, setEditorState] = useState<EditorState>(profile ? 'editing' : 'loading');
+  const historyId = (location.state as any)?.historyId as number | undefined;
+  const [editorState, setEditorState] = useState<EditorState>(profile || historyId ? 'editing' : 'loading');
   const [polishLoading, setPolishLoading] = useState(false);
 
   const editor = useEditor({
@@ -40,12 +41,12 @@ export default function ResumeEditorPage() {
   });
 
   useEffect(() => {
-    if (!profile) {
+    if (!profile && !historyId) {
       message.error('请先上传简历');
       navigate('/resume');
       return;
     }
-  }, [profile, navigate]);
+  }, [profile, historyId, navigate]);
 
   const handlePolish = useCallback(async () => {
     if (!profile) return;
@@ -53,8 +54,8 @@ export default function ResumeEditorPage() {
     setEditorState('polishing');
     try {
       const userIdStr = localStorage.getItem('userId');
-      const studentId = userIdStr ? parseInt(userIdStr, 10) : (profile.id || 0);
-      const response = await studentApi.polishResume({ studentId });
+      const studentId = userIdStr ? parseInt(userIdStr, 10) : (profile?.id || 0);
+      const response = await studentApi.polishResume({ studentId, historyId });
       if (response.code === 0 && response.htmlContent) {
         editor?.commands.setContent(response.htmlContent);
         setEditorState('ready');

@@ -115,7 +115,7 @@ export const studentApi = {
     api.get<{ code: number; msg: string; data: import('../types').ResumeHistoryRecord }>(`/students/resume/history/${id}`),
   deleteResumeHistory: (id: number) =>
     api.delete<{ code: number; msg: string }>(`/students/resume/history/${id}`),
-  polishResume: (data: { studentId: number }) =>
+  polishResume: (data: { studentId: number; historyId?: number }) =>
     api.post<{ code: number; msg: string; htmlContent?: string; plainText?: string }>('/students/resume/polish', data, { timeout: 120000 }),
   joinSchool: (data: { inviteCode: string; name: string }) =>
     api.post<{ code: number; msg: string; data: { schoolId: number; schoolName: string; joinedAt: number } }>('/students/join-school', data),

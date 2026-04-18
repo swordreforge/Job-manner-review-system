@@ -922,7 +922,7 @@ export default function ResumePage() {
                     icon={<ExportOutlined />}
                     onClick={() => {
                       setHistoryVisible(false);
-                      navigate('/resume/editor', { state: { profile: item.parsedProfile } });
+                      navigate('/resume/editor', { state: { profile: item.parsedProfile, historyId: item.id } });
                     }}
                   >
                     优化导出
@@ -1090,7 +1090,7 @@ export default function ResumePage() {
                   onClick={() => {
                     setDetailVisible(false);
                     setHistoryVisible(false);
-                    navigate('/resume/editor', { state: { profile: detailRecord.parsedProfile } });
+                    navigate('/resume/editor', { state: { profile: detailRecord.parsedProfile, historyId: detailRecord.id } });
                   }}
                 >
                   优化并导出简历

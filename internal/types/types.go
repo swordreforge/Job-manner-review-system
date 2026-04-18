@@ -1147,6 +1147,7 @@ type ReadMessageReq struct {
 
 type ResumePolishReq struct {
 	StudentId int64  `json:"studentId,validate:"required,gt=0"`
+	HistoryId int64  `json:"historyId,optional"`
 	Template  string `json:"template,optional"`
 }
 
