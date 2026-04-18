@@ -1144,3 +1144,15 @@ type SendChatMessageReq struct {
 type ReadMessageReq struct {
 	Id int64 `path:"id" validate:"required,gt=0"`
 }
+
+type ResumePolishReq struct {
+	StudentId int64  `json:"studentId,validate:"required,gt=0"`
+	Template  string `json:"template,optional"`
+}
+
+type ResumePolishResp struct {
+	Code        int    `json:"code"`
+	Msg         string `json:"msg"`
+	HtmlContent string `json:"htmlContent,optional"`
+	PlainText   string `json:"plainText,optional"`
+}
