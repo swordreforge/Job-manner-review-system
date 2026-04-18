@@ -313,6 +313,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Path:    "/students/schools",
 				Handler: student.ListSchoolsHandler(serverCtx),
 			},
+		},
+		rest.WithPrefix("/api/v1"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
 			{
 				// Polish resume with AI
 				Method:  http.MethodPost,
@@ -321,6 +327,7 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/api/v1"),
+		rest.WithTimeout(120000*time.Millisecond),
 	)
 
 	server.AddRoutes(
