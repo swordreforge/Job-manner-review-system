@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined, CloseOutlined } from '@ant-design/icons';
+import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -9,7 +9,7 @@ import LaserRay from '../../components/LaserRay';
 import LaserGradient from '../../components/LaserGradient';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
-import ScrollStack, { ScrollStackItem } from '@/components/ScrollStack';
+import ScrollStack, { ScrollStackItem } from '../../components/ScrollStack';
 //123
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
     <svg

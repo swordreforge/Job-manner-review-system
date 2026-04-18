@@ -69,3 +69,19 @@ high-school-worker-design-forend/node_modules/
 
 # Logs folder
 logs/
+
+# LibreOffice lock files
+.~lock*
+
+# APK files
+*.apk
+
+# DEB packages
+*.deb
+
+# Data files
+*.xls
+*.csv
+
+# Cargo lock (generated)
+high-school-worker-design-forend/src-tauri/Cargo.lock

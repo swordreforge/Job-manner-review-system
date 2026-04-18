@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 
 	"career-api/common/errors"
+	"career-api/internal/model"
 	"career-api/internal/svc"
 	"career-api/internal/types"
 
@@ -39,14 +40,44 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (resp *types.JobListResu
 		pageSize = 10
 	}
 
-	// 从数据库查询职位列表
-	jobs, total, err := l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, req.Industry, req.Category)
-	if err != nil {
-		logx.Errorf("FindAll failed: %v", err)
-		return &types.JobListResultResp{
-			Code: errors.CodeInternalError,
-			Msg:  "failed to list jobs",
-		}, nil
+	// 检查是否有高级筛选条件
+	hasFilters := req.Keyword != "" || req.Location != "" || req.CompanyScale != "" ||
+		req.SalaryMin > 0 || req.SalaryMax > 0
+
+	var jobs []*model.Jobs
+	var total int64
+
+	if hasFilters {
+		// 使用高级搜索
+		searchReq := &model.JobSearchReq{
+			Page:         page,
+			PageSize:     pageSize,
+			Keyword:      req.Keyword,
+			Industry:     req.Industry,
+			Category:     req.Category,
+			Location:     req.Location,
+			CompanyScale: req.CompanyScale,
+			SalaryMin:    req.SalaryMin,
+			SalaryMax:    req.SalaryMax,
+		}
+		jobs, total, err = l.svcCtx.JobModel.Search(l.ctx, searchReq)
+		if err != nil {
+			logx.Errorf("Search failed: %v", err)
+			return &types.JobListResultResp{
+				Code: errors.CodeInternalError,
+				Msg:  "搜索岗位失败",
+			}, nil
+		}
+	} else {
+		// 原有分页查询
+		jobs, total, err = l.svcCtx.JobModel.FindAll(l.ctx, page, pageSize, req.Industry, req.Category)
+		if err != nil {
+			logx.Errorf("FindAll failed: %v", err)
+			return &types.JobListResultResp{
+				Code: errors.CodeInternalError,
+				Msg:  "failed to list jobs",
+			}, nil
+		}
 	}
 
 	// 转换为响应格式

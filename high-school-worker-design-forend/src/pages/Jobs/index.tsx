@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
-import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space } from 'antd';
-import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined } from '@ant-design/icons';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space, Pagination, Card, Row, Col } from 'antd';
+import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { jobApi, jobPathApi } from '../../api';
 import type { Job, PromotionPath, TransferPath } from '../../types';
@@ -21,6 +21,9 @@ type GraphTooltipParam = {
 export default function JobsPage() {
   const chartRef = useRef<ReactECharts | null>(null);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
@@ -28,89 +31,50 @@ export default function JobsPage() {
   const [transferPaths, setTransferPaths] = useState<TransferPath[]>([]);
   const [pathsLoading, setPathsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('graph');
-  const [activeCategory, setActiveCategory] = useState('tech');
   const [showFilters, setShowFilters] = useState(false);
 
-  // 筛选状态
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [filterIndustry, setFilterIndustry] = useState<string | null>(null);
-  const [filterLocation, setFilterLocation] = useState<string | null>(null);
-  const [filterCompanyScale, setFilterCompanyScale] = useState<string | null>(null);
-  const [filterSalaryMin, setFilterSalaryMin] = useState<number>(0);
-  const [filterSalaryMax, setFilterSalaryMax] = useState<number>(100);
-
-  // 从数据中提取筛选选项
-  const industries = useMemo(() => {
-    const set = new Set<string>();
-    jobs.forEach(job => {
-      if (job.industry) {
-        job.industry.split(',').forEach(i => set.add(i.trim()));
-      }
-    });
-    return Array.from(set).sort();
-  }, [jobs]);
-
-  const locations = useMemo(() => {
-    const set = new Set<string>();
-    jobs.forEach(job => {
-      if (job.location) {
-        const city = job.location.split('-')[0];
-        if (city) set.add(city);
-      }
-    });
-    return Array.from(set).sort();
-  }, [jobs]);
+  const [filterIndustry, setFilterIndustry] = useState<string | undefined>(undefined);
+  const [filterLocation, setFilterLocation] = useState<string | undefined>(undefined);
+  const [filterCompanyScale, setFilterCompanyScale] = useState<string | undefined>(undefined);
+  const [filterSalaryMin, setFilterSalaryMin] = useState(0);
+  const [filterSalaryMax, setFilterSalaryMax] = useState(100);
 
   const companyScales = ['20人以下', '20-99人', '100-299人', '300-499人', '500-999人', '1000-9999人', '10000人以上'];
 
-  // 筛选后的岗位列表
-  const filteredJobs = useMemo(() => {
-    return jobs.filter(job => {
-      // 关键词搜索
-      if (searchKeyword) {
-        const keyword = searchKeyword.toLowerCase();
-        const matchName = job.name?.toLowerCase().includes(keyword);
-        const matchCompany = job.company?.toLowerCase().includes(keyword);
-        const matchIndustry = job.industry?.toLowerCase().includes(keyword);
-        if (!matchName && !matchCompany && !matchIndustry) return false;
-      }
-      // 行业筛选
-      if (filterIndustry && !job.industry?.includes(filterIndustry)) return false;
-      // 地点筛选
-      if (filterLocation) {
-        const jobCity = job.location?.split('-')[0];
-        if (jobCity !== filterLocation) return false;
-      }
-      // 公司规模筛选
-      if (filterCompanyScale && job.companyScale !== filterCompanyScale) return false;
-      // 薪资筛选 (简化处理，提取最低薪资)
-      if (job.salaryRange) {
-        const salaryMatch = job.salaryRange.match(/(\d+)[kK万]/);
-        if (salaryMatch) {
-          const salary = parseInt(salaryMatch[1]);
-          const salaryInK = job.salaryRange.includes('万') ? salary * 10 : salary;
-          if (salaryInK < filterSalaryMin || salaryInK > filterSalaryMax) return false;
-        }
-      }
-      return true;
-    });
-  }, [jobs, searchKeyword, filterIndustry, filterLocation, filterCompanyScale, filterSalaryMin, filterSalaryMax]);
+  const popularJobs = ['Golang后端开发工程师', '高级Java开发工程师', '产品经理'];
 
-  // 重置筛选
-  const resetFilters = () => {
-    setSearchKeyword('');
-    setFilterIndustry(null);
-    setFilterLocation(null);
-    setFilterCompanyScale(null);
-    setFilterSalaryMin(0);
-    setFilterSalaryMax(100);
-  };
-
-  const popularJobs = ['Golang后端开发工程师 (技术)', '高级Java开发工程师', '产品经理'];
+  const loadJobs = useCallback(async (page: number, size: number) => {
+    try {
+      setLoading(true);
+      const response = await jobApi.list({
+        page,
+        pageSize: size,
+        keyword: searchKeyword || undefined,
+        industry: filterIndustry,
+        location: filterLocation,
+        companyScale: filterCompanyScale,
+        salaryMin: filterSalaryMin > 0 ? filterSalaryMin : undefined,
+        salaryMax: filterSalaryMax < 100 ? filterSalaryMax : undefined,
+      });
+      if (response.data?.list) {
+        setJobs(response.data.list);
+        setTotal(response.data.total);
+      } else {
+        setJobs([]);
+        setTotal(0);
+      }
+    } catch (error) {
+      console.error('获取岗位列表失败:', error);
+      message.error('获取岗位列表失败');
+    } finally {
+      setLoading(false);
+    }
+  }, [searchKeyword, filterIndustry, filterLocation, filterCompanyScale, filterSalaryMin, filterSalaryMax]);
 
   useEffect(() => {
-    void loadJobs();
-  }, [activeCategory]);
+    void loadJobs(currentPage, pageSize);
+  }, [currentPage, pageSize, loadJobs]);
 
   useEffect(() => {
     if (selectedJobId) {
@@ -141,21 +105,6 @@ export default function JobsPage() {
     }, 120);
     return () => window.clearTimeout(timer);
   }, [selectedJobId, activeTab]);
-
-  const loadJobs = async () => {
-    try {
-      setLoading(true);
-      const response = await jobApi.list({ page: 1, pageSize: 200 });
-      if (response.data?.list) {
-        setJobs(response.data.list);
-      }
-    } catch (error) {
-      console.error('获取岗位列表失败:', error);
-      message.error('获取岗位列表失败');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadJobDetail = async (jobId: number) => {
     try {
@@ -240,13 +189,9 @@ export default function JobsPage() {
       return;
     }
     
-    // 先加载路径数据
     await loadJobPaths(selectedJobId);
-    
-    // 等待状态更新
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // 如果没有路径数据，调用AI生成晋升目标
     if (!promotionPath || promotionPath.nextJobs.length === 0) {
       message.loading('正在生成晋升目标，请稍候...', 0);
       try {
@@ -255,7 +200,6 @@ export default function JobsPage() {
         });
         message.destroy();
         message.success('晋升目标生成成功');
-        // 刷新路径数据
         await loadJobPaths(selectedJobId);
       } catch (error) {
         message.destroy();
@@ -267,19 +211,15 @@ export default function JobsPage() {
     
     const promises: Promise<void>[] = [];
     
-    // 对每个晋升路径目标调用AI分析
     if (promotionPath?.nextJobs && promotionPath.nextJobs.length > 0) {
       for (const nextJob of promotionPath.nextJobs) {
-        // 跳过自引用路径
         if (nextJob.id === selectedJobId) continue;
         promises.push(handleGenerateAnalysis(nextJob.id, 'promotion'));
       }
     }
     
-    // 对每个换岗路径目标调用AI分析
     if (transferPaths.length > 0) {
       for (const transferPath of transferPaths) {
-        // 跳过自引用路径
         if (transferPath.toJob.id === selectedJobId) continue;
         promises.push(handleGenerateAnalysis(transferPath.toJob.id, 'transfer'));
       }
@@ -291,24 +231,53 @@ export default function JobsPage() {
     }
     
     message.loading('正在分析路径，请稍候...', 0);
-    
-    // 并行执行所有分析
     await Promise.all(promises);
-    
-    // 刷新显示
     await loadJobPaths(selectedJobId);
     message.destroy();
     message.success('路径分析完成');
   };
 
+  const handleSearch = () => {
+    setCurrentPage(1);
+    void loadJobs(1, pageSize);
+  };
+
+  const resetFilters = () => {
+    setSearchKeyword('');
+    setFilterIndustry(undefined);
+    setFilterLocation(undefined);
+    setFilterCompanyScale(undefined);
+    setFilterSalaryMin(0);
+    setFilterSalaryMax(100);
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page: number, size: number) => {
+    setCurrentPage(page);
+    setPageSize(size);
+  };
+
+  const handleQuickPick = (jobName: string) => {
+    const target = jobs.find((job) => {
+      const name = job.name ?? '';
+      return name.includes(jobName) || jobName.includes(name);
+    });
+
+    if (!target) {
+      message.info(`未找到岗位: ${jobName}，请尝试搜索`);
+      return;
+    }
+
+    setSelectedJobId(target.id);
+    message.success(`已选择: ${target.name}`);
+  };
+
   const getGraphOption = () => {
     if (!selectedJob) return {};
 
-    // 使用 Map 来追踪已添加的节点，避免重复
     const nodeMap = new Map<number, Record<string, unknown>>();
     const links: GraphLink[] = [];
 
-    // 添加当前岗位节点
     nodeMap.set(selectedJob.id, {
       id: selectedJob.id,
       name: selectedJob.name,
@@ -317,7 +286,6 @@ export default function JobsPage() {
       itemStyle: { color: '#1890ff' },
     });
 
-    // 添加晋升路径节点（按适配度从大到小排序，形成链式路径）
     if (promotionPath?.nextJobs) {
       const sortedJobs = [...promotionPath.nextJobs]
         .filter(nextJob => nextJob.id !== selectedJob.id)
@@ -326,7 +294,6 @@ export default function JobsPage() {
       let prevJobId = selectedJob.id;
       
       sortedJobs.forEach((nextJob) => {
-        // 显示标签：名称 + 匹配分数
         const rawScore = nextJob.matchScore ?? 0;
         const displayScore = rawScore > 1
           ? Math.round(rawScore)
@@ -345,7 +312,6 @@ export default function JobsPage() {
           });
         }
 
-        // 从上一个节点连接到当前节点（形成链式）
         links.push({
           source: prevJobId,
           target: nextJob.id,
@@ -358,12 +324,10 @@ export default function JobsPage() {
           },
         });
         
-        // 更新上一个节点 ID
         prevJobId = nextJob.id;
       });
     }
 
-    // 添加换岗路径节点（按适配度从大到小排序，形成链式路径）
     const sortedTransferPaths = transferPaths
       .filter(tp => tp.fromJob.id === selectedJob.id && tp.toJob.id !== selectedJob.id)
       .sort((a, b) => b.matchScore - a.matchScore);
@@ -371,7 +335,6 @@ export default function JobsPage() {
     let prevTransferJobId = selectedJob.id;
     
     sortedTransferPaths.forEach((transferPath) => {
-      // 添加目标岗位节点
       if (!nodeMap.has(transferPath.toJob.id)) {
         const tsScore = transferPath.matchScore > 1 
           ? Math.round(transferPath.matchScore) 
@@ -386,7 +349,6 @@ export default function JobsPage() {
         });
       }
 
-      // 从上一个节点连接到当前节点（形成链式）
       links.push({
         source: prevTransferJobId,
         target: transferPath.toJob.id,
@@ -399,32 +361,21 @@ export default function JobsPage() {
         },
       });
       
-      // 更新上一个节点 ID
       prevTransferJobId = transferPath.toJob.id;
     });
 
     const nodes = Array.from(nodeMap.values());
     
-    // 创建节点 ID 到索引的映射
     const idToIndex = new Map<number, number>();
     nodes.forEach((node, index) => {
       idToIndex.set(node.id as number, index);
     });
     
-    // 调试信息
-    console.log('=== 图谱数据 ===');
-    console.log('节点数量:', nodes.length);
-    console.log('节点ID到索引的映射:', Object.fromEntries(idToIndex));
-    
-    // 将 links 中的 source 和 target 从 ID 转换为索引
     const fixedLinks = links.map(link => ({
       ...link,
       source: idToIndex.get(link.source as number),
       target: idToIndex.get(link.target as number),
     })).filter(link => link.source !== undefined && link.target !== undefined);
-    
-    console.log('修正后的连线数量:', fixedLinks.length);
-    console.log('修正后的连线详情:', JSON.stringify(fixedLinks, null, 2));
 
     return {
       title: {
@@ -486,21 +437,6 @@ export default function JobsPage() {
     return '#ff4d4f';
   };
 
-  const handleQuickPick = (jobName: string) => {
-    const target = jobs.find((job) => {
-      const name = job.name ?? '';
-      return name.includes(jobName) || jobName.includes(name);
-    });
-
-    if (!target) {
-      message.info(`未找到岗位: ${jobName}`);
-      return;
-    }
-
-    setSelectedJobId(target.id);
-    message.success(`已选择: ${target.name}`);
-  };
-
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4 md:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <div className="w-full space-y-4">
@@ -519,31 +455,29 @@ export default function JobsPage() {
           >
             岗位发展路径图谱
           </div>
-          <Tabs
-            activeKey={activeCategory}
-            onChange={setActiveCategory}
-            className="mb-4"
-            items={[
-              { key: 'tech', label: '技术研发' },
-              { key: 'design', label: '产品设计' },
-              { key: 'ops', label: '运营' },
-              { key: 'sales', label: '销售' },
-            ]}
-          />
 
           {/* 搜索和筛选区域 */}
           <div className="space-y-3 mb-4">
-            {/* 关键词搜索 */}
-            <Input
-              placeholder="搜索岗位名称、公司或行业..."
-              prefix={<SearchOutlined />}
-              value={searchKeyword}
-              onChange={(e) => setSearchKeyword(e.target.value)}
-              allowClear
-              style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
-            />
+            <div className="flex gap-2">
+              <Input
+                placeholder="搜索岗位名称、公司或行业..."
+                prefix={<SearchOutlined />}
+                value={searchKeyword}
+                onChange={(e) => setSearchKeyword(e.target.value)}
+                onPressEnter={handleSearch}
+                allowClear
+                style={{ borderRadius: 'var(--md-sys-shape-corner-full)', flex: 1 }}
+              />
+              <Button
+                type="primary"
+                icon={<SearchOutlined />}
+                onClick={handleSearch}
+                style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+              >
+                搜索
+              </Button>
+            </div>
 
-            {/* 筛选按钮和筛选面板 */}
             <div className="flex items-center gap-2">
               <Button
                 icon={<FilterOutlined />}
@@ -553,16 +487,28 @@ export default function JobsPage() {
                   backgroundColor: showFilters ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container)'
                 }}
               >
-                高级筛选 {filteredJobs.length !== jobs.length && `(${filteredJobs.length})`}
+                高级筛选 {total > 0 && `(${total})`}
               </Button>
-              {(searchKeyword || filterIndustry || filterLocation || filterCompanyScale) && (
+              {(searchKeyword || filterIndustry || filterLocation || filterCompanyScale || filterSalaryMin > 0 || filterSalaryMax < 100) && (
                 <Button onClick={resetFilters} size="small">
                   重置筛选
                 </Button>
               )}
+              {selectedJobId && (
+                <Button
+                  icon={<ReloadOutlined />}
+                  onClick={handleRefresh}
+                  loading={pathsLoading}
+                  style={{ 
+                    borderRadius: 'var(--md-sys-shape-corner-full)',
+                    backgroundColor: 'var(--md-sys-color-surface-container)'
+                  }}
+                >
+                  刷新
+                </Button>
+              )}
             </div>
 
-            {/* 高级筛选面板 */}
             {showFilters && (
               <div
                 className="p-4 rounded-lg"
@@ -578,11 +524,26 @@ export default function JobsPage() {
                       placeholder="选择行业"
                       style={{ width: '100%' }}
                       value={filterIndustry}
-                      onChange={setFilterIndustry}
+                      onChange={(v) => setFilterIndustry(v)}
                       allowClear
-                      options={industries.slice(0, 50).map(i => ({ value: i, label: i }))}
                       showSearch
-                      optionFilterProp="children"
+                      options={[
+                        { value: '互联网', label: '互联网' },
+                        { value: '金融', label: '金融' },
+                        { value: '教育', label: '教育' },
+                        { value: '医疗', label: '医疗' },
+                        { value: '制造业', label: '制造业' },
+                        { value: '房地产', label: '房地产' },
+                        { value: '能源', label: '能源' },
+                        { value: '电商', label: '电商' },
+                        { value: '游戏', label: '游戏' },
+                        { value: '人工智能', label: '人工智能' },
+                        { value: '通讯', label: '通讯' },
+                        { value: '汽车', label: '汽车' },
+                        { value: '物流', label: '物流' },
+                        { value: '服务业', label: '服务业' },
+                        { value: '影视', label: '影视' },
+                      ]}
                     />
                   </div>
                   <div>
@@ -591,11 +552,26 @@ export default function JobsPage() {
                       placeholder="选择城市"
                       style={{ width: '100%' }}
                       value={filterLocation}
-                      onChange={setFilterLocation}
+                      onChange={(v) => setFilterLocation(v)}
                       allowClear
-                      options={locations.map(l => ({ value: l, label: l }))}
                       showSearch
-                      optionFilterProp="children"
+                      options={[
+                        { value: '北京', label: '北京' },
+                        { value: '上海', label: '上海' },
+                        { value: '广州', label: '广州' },
+                        { value: '深圳', label: '深圳' },
+                        { value: '杭州', label: '杭州' },
+                        { value: '成都', label: '成都' },
+                        { value: '南京', label: '南京' },
+                        { value: '武汉', label: '武汉' },
+                        { value: '西安', label: '西安' },
+                        { value: '苏州', label: '苏州' },
+                        { value: '长沙', label: '长沙' },
+                        { value: '厦门', label: '厦门' },
+                        { value: '重庆', label: '重庆' },
+                        { value: '大连', label: '大连' },
+                        { value: '青岛', label: '青岛' },
+                      ]}
                     />
                   </div>
                   <div>
@@ -604,14 +580,14 @@ export default function JobsPage() {
                       placeholder="选择公司规模"
                       style={{ width: '100%' }}
                       value={filterCompanyScale}
-                      onChange={setFilterCompanyScale}
+                      onChange={(v) => setFilterCompanyScale(v)}
                       allowClear
                       options={companyScales.map(s => ({ value: s, label: s }))}
                     />
                   </div>
                   <div>
                     <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
-                      薪资范围: {filterSalaryMin}K - {filterSalaryMax}K
+                      薪资范围: {filterSalaryMin > 0 ? `${filterSalaryMin}K` : '不限'} - {filterSalaryMax < 100 ? `${filterSalaryMax}K` : '不限'}
                     </div>
                     <Slider
                       range
@@ -622,49 +598,12 @@ export default function JobsPage() {
                         setFilterSalaryMin(value[0]);
                         setFilterSalaryMax(value[1]);
                       }}
-                      marks={{ 0: '0K', 50: '50K', 100: '100K+' }}
+                      marks={{ 0: '不限', 30: '30K', 60: '60K', 100: '100K+' }}
                     />
                   </div>
                 </Space>
               </div>
             )}
-          </div>
-
-          <div className="flex flex-wrap gap-3 items-center">
-            <Select
-              style={{ width: '100%', maxWidth: 320 }}
-              placeholder="选择岗位"
-              loading={loading}
-              value={selectedJobId}
-              onChange={setSelectedJobId}
-              allowClear
-              options={filteredJobs.map((job) => ({
-                value: job.id,
-                label: `${job.name ?? ''}${job.industry ? ` (${job.industry.split(',')[0]})` : ''} - ${job.company ?? ''}`,
-              }))}
-              showSearch
-              optionFilterProp="label"
-              dropdownRender={(menu) => (
-                <>
-                  {menu}
-                  <div className="p-2 text-xs text-gray-500 text-center">
-                    共 {filteredJobs.length} 个岗位
-                  </div>
-                </>
-              )}
-            />
-            <Button
-              icon={<ReloadOutlined />}
-              onClick={handleRefresh}
-              loading={pathsLoading}
-              disabled={!selectedJobId}
-              style={{ 
-                borderRadius: 'var(--md-sys-shape-corner-full)',
-                backgroundColor: 'var(--md-sys-color-surface-container)'
-              }}
-            >
-              刷新
-            </Button>
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -690,21 +629,121 @@ export default function JobsPage() {
           </div>
         </div>
 
-        {!selectedJobId && (
+        {/* 岗位列表区域 */}
+        <div 
+          className="p-4 sm:p-5"
+          style={{ 
+            backgroundColor: 'var(--md-sys-color-surface-container-low)',
+            borderRadius: 'var(--md-sys-shape-corner-large)',
+            border: '1px solid var(--md-sys-color-outline-variant)'
+          }}
+        >
           <div 
-            className="min-h-[500px] overflow-hidden p-6"
+            className="text-base font-medium mb-3"
+            style={{ color: 'var(--md-sys-color-on-surface)' }}
+          >
+            岗位列表 {total > 0 && <span style={{ fontWeight: 'normal', fontSize: '14px', color: 'var(--md-sys-color-on-surface-variant)' }}>共 {total} 个岗位</span>}
+          </div>
+
+          {loading ? (
+            <div className="py-12 flex justify-center">
+              <Spin size="large" />
+            </div>
+          ) : jobs.length === 0 ? (
+            <Empty description="暂无匹配的岗位，请调整筛选条件" />
+          ) : (
+            <Row gutter={[16, 16]}>
+              {jobs.map((job) => (
+                <Col key={job.id} xs={24} sm={12} md={8} lg={6}>
+                  <Card
+                    hoverable
+                    size="small"
+                    onClick={() => setSelectedJobId(job.id)}
+                    style={{
+                      borderRadius: 'var(--md-sys-shape-corner-medium)',
+                      border: selectedJobId === job.id
+                        ? '2px solid var(--md-sys-color-primary)'
+                        : '1px solid var(--md-sys-color-outline-variant)',
+                      backgroundColor: selectedJobId === job.id
+                        ? 'var(--md-sys-color-primary-container)'
+                        : 'var(--md-sys-color-surface-container)',
+                    }}
+                  >
+                    <div className="space-y-1">
+                      <div 
+                        className="text-sm font-medium truncate"
+                        style={{ color: 'var(--md-sys-color-on-surface)' }}
+                        title={job.name}
+                      >
+                        {job.name || '-'}
+                      </div>
+                      <div className="text-xs space-y-0.5" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                        {job.company && (
+                          <div className="flex items-center gap-1 truncate">
+                            <BankOutlined style={{ fontSize: 12 }} />
+                            <span className="truncate">{job.company}</span>
+                          </div>
+                        )}
+                        {job.location && (
+                          <div className="flex items-center gap-1 truncate">
+                            <EnvironmentOutlined style={{ fontSize: 12 }} />
+                            <span className="truncate">{job.location}</span>
+                          </div>
+                        )}
+                        {job.salaryRange && (
+                          <div className="flex items-center gap-1 truncate">
+                            <DollarOutlined style={{ fontSize: 12 }} />
+                            <span className="truncate" style={{ color: 'var(--md-sys-color-primary)' }}>{job.salaryRange}</span>
+                          </div>
+                        )}
+                      </div>
+                      {job.industry && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {job.industry.split(',').slice(0, 2).map((ind) => (
+                            <Tag key={ind} style={{ fontSize: '10px', padding: '0 4px', margin: 0, borderRadius: 'var(--md-sys-shape-corner-small)' }}>
+                              {ind.trim()}
+                            </Tag>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </Card>
+                </Col>
+              ))}
+            </Row>
+          )}
+
+          {total > pageSize && (
+            <div className="mt-4 flex justify-center">
+              <Pagination
+                current={currentPage}
+                pageSize={pageSize}
+                total={total}
+                onChange={handlePageChange}
+                showSizeChanger
+                showQuickJumper
+                pageSizeOptions={['10', '20', '50']}
+                size="small"
+              />
+            </div>
+          )}
+        </div>
+
+        {!selectedJobId && !selectedJob && (
+          <div 
+            className="min-h-[300px] overflow-hidden p-6"
             style={{ 
               backgroundColor: 'var(--md-sys-color-surface-container-low)',
               borderRadius: 'var(--md-sys-shape-corner-large)',
               border: '1px solid var(--md-sys-color-outline-variant)'
             }}
           >
-            <div className="relative z-10 flex min-h-[500px] flex-col items-center justify-center px-4 sm:px-6 text-center">
+            <div className="relative z-10 flex min-h-[300px] flex-col items-center justify-center px-4 sm:px-6 text-center">
               <h3 className="text-xl sm:text-2xl font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
                 选择一个岗位，探索完整发展路径
               </h3>
               <p className="mt-3 max-w-2xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                你可以通过上方筛选快速定位岗位，系统将自动生成岗位图谱、晋升方向与换岗机会。
+                你可以通过上方搜索和筛选快速定位岗位，系统将自动生成岗位图谱、晋升方向与换岗机会。
               </p>
               <div className="mt-6 sm:mt-8 grid w-full max-w-3xl grid-cols-1 gap-3 sm:grid-cols-3">
                 <div 

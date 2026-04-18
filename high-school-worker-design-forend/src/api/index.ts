@@ -129,7 +129,7 @@ export const jobApi = {
   get: (id: number) =>
     api.get<{ code: number; msg: string; data: import('../types').Job }>(`/jobs/${id}`),
   delete: (id: number) => api.delete<void>(`/jobs/${id}`),
-  list: (params?: { page?: number; pageSize?: number; industry?: string; name?: string }) =>
+  list: (params?: { page?: number; pageSize?: number; industry?: string; name?: string; keyword?: string; location?: string; companyScale?: string; salaryMin?: number; salaryMax?: number; category?: string }) =>
     api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').Job> }>('/jobs', { params }),
   generate: (data: { positionName: string; industry?: string; rawData?: string }) =>
     api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs/generate', data, { timeout: 120000 }),

@@ -147,11 +147,16 @@ type JobGraphReq struct {
 }
 
 type JobListReq struct {
-	Page     int    `form:"page" default:"1" validate:"omitempty,min=1"`
-	PageSize int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
-	Industry string `form:"industry,optional"`
-	Name     string `form:"name,optional"`
-	Category string `form:"category,optional"`
+	Page         int    `form:"page" default:"1" validate:"omitempty,min=1"`
+	PageSize     int    `form:"pageSize" default:"10" validate:"omitempty,min=1,max=100"`
+	Industry     string `form:"industry,optional"`
+	Name         string `form:"name,optional"`
+	Category     string `form:"category,optional"`
+	Keyword      string `form:"keyword,optional"`
+	Location     string `form:"location,optional"`
+	CompanyScale string `form:"companyScale,optional"`
+	SalaryMin    int    `form:"salaryMin,optional"`
+	SalaryMax    int    `form:"salaryMax,optional"`
 }
 
 type JobListResp struct {
