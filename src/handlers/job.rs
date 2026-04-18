@@ -467,12 +467,10 @@ pub async fn chunk_upload_init(
 
 pub async fn chunk_upload(
     mut payload: Multipart,
-    req: web::Json<ChunkUploadRequest>,
     state: web::Data<AppState>,
 ) -> impl Responder {
-    let upload_id = req.upload_id.clone();
-    let chunk_index = req.chunk_index;
-
+    let mut upload_id: Option<String> = None;
+    let mut chunk_index: Option<u32> = None;
     let mut file_data: Option<Vec<u8>> = None;
 
     while let Some(item) = payload.next().await {
@@ -481,19 +479,40 @@ pub async fn chunk_upload(
                 let content_disposition = field.content_disposition();
                 if let Some(cd) = content_disposition {
                     if let Some(name) = cd.get_name() {
-                        if name == "chunk" {
-                            let mut data = Vec::new();
-                            while let Some(chunk_result) = field.next().await {
-                                match chunk_result {
-                                    Ok(bytes) => data.extend_from_slice(&bytes),
-                                    Err(e) => {
-                                        log::error!("读取分块失败: {}", e);
-                                        return HttpResponse::BadRequest()
-                                            .json(ErrorResponse::error("读取分块失败", Some(e.to_string())));
+                        match name {
+                            "upload_id" => {
+                                let mut value = String::new();
+                                while let Some(chunk) = field.next().await {
+                                    if let Ok(bytes) = chunk {
+                                        value.push_str(&String::from_utf8_lossy(&bytes));
                                     }
                                 }
+                                upload_id = Some(value.trim().to_string());
                             }
-                            file_data = Some(data);
+                            "chunk_index" => {
+                                let mut value = String::new();
+                                while let Some(chunk) = field.next().await {
+                                    if let Ok(bytes) = chunk {
+                                        value.push_str(&String::from_utf8_lossy(&bytes));
+                                    }
+                                }
+                                chunk_index = value.trim().parse().ok();
+                            }
+                            "chunk" => {
+                                let mut data = Vec::new();
+                                while let Some(chunk_result) = field.next().await {
+                                    match chunk_result {
+                                        Ok(bytes) => data.extend_from_slice(&bytes),
+                                        Err(e) => {
+                                            log::error!("读取分块失败: {}", e);
+                                            return HttpResponse::BadRequest()
+                                                .json(ErrorResponse::error("读取分块失败", Some(e.to_string())));
+                                        }
+                                    }
+                                }
+                                file_data = Some(data);
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -505,6 +524,22 @@ pub async fn chunk_upload(
             }
         }
     }
+
+    let upload_id = match upload_id {
+        Some(id) => id,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("缺少upload_id参数", None));
+        }
+    };
+
+    let chunk_index = match chunk_index {
+        Some(idx) => idx,
+        None => {
+            return HttpResponse::BadRequest()
+                .json(ErrorResponse::error("缺少chunk_index参数", None));
+        }
+    };
 
     let data = match file_data {
         Some(d) => d,
