@@ -71,21 +71,34 @@ func (l *ListJobsLogic) ListJobs(req *types.JobListReq) (resp *types.JobListResu
 			json.Unmarshal([]byte(job.Requirements.String), &requirements)
 		}
 
+		var updateDate string
+		if job.UpdateDate.Valid {
+			updateDate = job.UpdateDate.Time.Format("2006-01-02")
+		}
+
 		jobProfiles = append(jobProfiles, types.JobProfile{
-			Id:              job.Id,
-			Name:            job.Name,
-			Description:     job.Description.String,
-			Company:         job.Company.String,
-			Industry:        job.Industry.String,
-			Location:        job.Location.String,
-			SalaryRange:     job.SalaryRange.String,
-			Skills:          skills,
-			Certificates:    certificates,
-			SoftSkills:      softSkills,
-			Requirements:    requirements,
-			GrowthPotential: job.GrowthPotential.String,
-			CreatedAt:       job.CreatedAt,
-			UpdatedAt:       job.UpdatedAt,
+			Id:                   job.Id,
+			Name:                 job.Name,
+			Description:          job.Description.String,
+			Company:              job.Company.String,
+			Industry:             job.Industry.String,
+			Category:             job.Category.String,
+			Location:             job.Location.String,
+			SalaryRange:          job.SalaryRange.String,
+			JobCode:              job.JobCode.String,
+			CompanyScale:         job.CompanyScale.String,
+			CompanyFundingStatus: job.CompanyFundingStatus.String,
+			CompanyDescription:   job.CompanyDescription.String,
+			SourceUrl:            job.SourceUrl.String,
+			UpdateDate:           updateDate,
+			JobDetail:            job.JobDetail.String,
+			Skills:               skills,
+			Certificates:         certificates,
+			SoftSkills:           softSkills,
+			Requirements:         requirements,
+			GrowthPotential:      job.GrowthPotential.String,
+			CreatedAt:            job.CreatedAt,
+			UpdatedAt:            job.UpdatedAt,
 		})
 	}
 

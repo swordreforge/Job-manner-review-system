@@ -208,13 +208,20 @@ func autoMigrate(dataSource string) error {
 			name: "jobs",
 			createSQL: `CREATE TABLE IF NOT EXISTS jobs (
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				name VARCHAR(200) NOT NULL,
-				description TEXT DEFAULT NULL,
-				company VARCHAR(100) DEFAULT NULL,
-				industry VARCHAR(100) DEFAULT NULL,
-				category VARCHAR(100) DEFAULT NULL,
-				location VARCHAR(100) DEFAULT NULL,
-				salary_range VARCHAR(100) DEFAULT NULL,
+				name VARCHAR(200) NOT NULL COMMENT '岗位名称',
+				description TEXT DEFAULT NULL COMMENT '简短描述(纯文本)',
+				company VARCHAR(200) DEFAULT NULL COMMENT '公司名称',
+				industry VARCHAR(100) DEFAULT NULL COMMENT '所属行业',
+				category VARCHAR(100) DEFAULT NULL COMMENT '岗位分类',
+				location VARCHAR(100) DEFAULT NULL COMMENT '工作地点',
+				salary_range VARCHAR(100) DEFAULT NULL COMMENT '薪资范围',
+				job_code VARCHAR(50) DEFAULT NULL COMMENT '外部岗位编码',
+				company_scale VARCHAR(50) DEFAULT NULL COMMENT '公司规模',
+				company_funding_status VARCHAR(50) DEFAULT NULL COMMENT '融资状态',
+				company_description TEXT DEFAULT NULL COMMENT '公司详情',
+				source_url VARCHAR(500) DEFAULT NULL COMMENT '来源URL',
+				update_date DATE DEFAULT NULL COMMENT '更新日期',
+				job_detail TEXT DEFAULT NULL COMMENT '详细岗位职责',
 				skills TEXT DEFAULT NULL,
 				certificates TEXT DEFAULT NULL,
 				soft_skills TEXT DEFAULT NULL,
@@ -225,7 +232,9 @@ func autoMigrate(dataSource string) error {
 				PRIMARY KEY (id),
 				KEY idx_industry (industry),
 				KEY idx_category (category),
-				KEY idx_location (location)
+				KEY idx_location (location),
+				KEY idx_job_code (job_code),
+				KEY idx_company_scale (company_scale)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
 		},
 		{
@@ -854,6 +863,16 @@ func migrateColumns(dataSource string) error {
 		{"students", "last_activity_at", "ALTER TABLE students ADD COLUMN last_activity_at BIGINT(20) DEFAULT NULL COMMENT '最后活动时间'"},
 		// student_schools table - add teacher_id
 		{"student_schools", "teacher_id", "ALTER TABLE student_schools ADD COLUMN teacher_id BIGINT(20) DEFAULT NULL COMMENT '教师ID'"},
+		// jobs table - add new fields from Excel data
+		{"jobs", "job_code", "ALTER TABLE jobs ADD COLUMN job_code VARCHAR(50) DEFAULT NULL COMMENT '外部岗位编码'"},
+		{"jobs", "job_code_idx", "ALTER TABLE jobs ADD KEY idx_job_code (job_code)"},
+		{"jobs", "company_scale", "ALTER TABLE jobs ADD COLUMN company_scale VARCHAR(50) DEFAULT NULL COMMENT '公司规模'"},
+		{"jobs", "company_scale_idx", "ALTER TABLE jobs ADD KEY idx_company_scale (company_scale)"},
+		{"jobs", "company_funding_status", "ALTER TABLE jobs ADD COLUMN company_funding_status VARCHAR(50) DEFAULT NULL COMMENT '融资状态'"},
+		{"jobs", "company_description", "ALTER TABLE jobs ADD COLUMN company_description TEXT DEFAULT NULL COMMENT '公司详情'"},
+		{"jobs", "source_url", "ALTER TABLE jobs ADD COLUMN source_url VARCHAR(500) DEFAULT NULL COMMENT '来源URL'"},
+		{"jobs", "update_date", "ALTER TABLE jobs ADD COLUMN update_date DATE DEFAULT NULL COMMENT '更新日期'"},
+		{"jobs", "job_detail", "ALTER TABLE jobs ADD COLUMN job_detail TEXT DEFAULT NULL COMMENT '详细岗位职责'"},
 	}
 
 	for _, m := range migrations {

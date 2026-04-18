@@ -50,21 +50,34 @@ func (l *GetJobLogic) GetJob() (resp *types.JobResp, err error) {
 		json.Unmarshal([]byte(job.Requirements.String), &requirements)
 	}
 
+	var updateDate string
+	if job.UpdateDate.Valid {
+		updateDate = job.UpdateDate.Time.Format("2006-01-02")
+	}
+
 	jobProfile := &types.JobProfile{
-		Id:              job.Id,
-		Name:            job.Name,
-		Description:     job.Description.String,
-		Company:         job.Company.String,
-		Industry:        job.Industry.String,
-		Location:        job.Location.String,
-		SalaryRange:     job.SalaryRange.String,
-		Skills:          skills,
-		Certificates:    certificates,
-		SoftSkills:      softSkills,
-		GrowthPotential: job.GrowthPotential.String,
-		Requirements:    requirements,
-		CreatedAt:       job.CreatedAt,
-		UpdatedAt:       job.UpdatedAt,
+		Id:                   job.Id,
+		Name:                 job.Name,
+		Description:          job.Description.String,
+		Company:              job.Company.String,
+		Industry:             job.Industry.String,
+		Category:             job.Category.String,
+		Location:             job.Location.String,
+		SalaryRange:          job.SalaryRange.String,
+		JobCode:              job.JobCode.String,
+		CompanyScale:         job.CompanyScale.String,
+		CompanyFundingStatus: job.CompanyFundingStatus.String,
+		CompanyDescription:   job.CompanyDescription.String,
+		SourceUrl:            job.SourceUrl.String,
+		UpdateDate:           updateDate,
+		JobDetail:            job.JobDetail.String,
+		Skills:               skills,
+		Certificates:         certificates,
+		SoftSkills:           softSkills,
+		GrowthPotential:      job.GrowthPotential.String,
+		Requirements:         requirements,
+		CreatedAt:            job.CreatedAt,
+		UpdatedAt:            job.UpdatedAt,
 	}
 
 	return &types.JobResp{

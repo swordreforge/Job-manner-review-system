@@ -46,16 +46,24 @@ type CareerReport struct {
 }
 
 type CreateJobReq struct {
-	Name         string       `json:"name,optional" validate:"omitempty,min=2,max=100"`
-	Description  string       `json:"description,optional" validate:"omitempty,max=2000"`
-	Company      string       `json:"company,optional" validate:"omitempty,max=200"`
-	Industry     string       `json:"industry,optional" validate:"omitempty,max=100"`
-	Location     string       `json:"location,optional" validate:"omitempty,max=200"`
-	SalaryRange  string       `json:"salaryRange,optional" validate:"omitempty,max=100"`
-	Skills       []Skill      `json:"skills,optional"`
-	Certificates []string     `json:"certificates,optional"`
-	SoftSkills   SoftSkills   `json:"softSkills,optional"`
-	Requirements Requirements `json:"requirements,optional"`
+	Name                 string       `json:"name,optional" validate:"omitempty,min=2,max=100"`
+	Description          string       `json:"description,optional" validate:"omitempty,max=2000"`
+	Company              string       `json:"company,optional" validate:"omitempty,max=200"`
+	Industry             string       `json:"industry,optional" validate:"omitempty,max=100"`
+	Category             string       `json:"category,optional" validate:"omitempty,max=100"`
+	Location             string       `json:"location,optional" validate:"omitempty,max=200"`
+	SalaryRange          string       `json:"salaryRange,optional" validate:"omitempty,max=100"`
+	JobCode              string       `json:"jobCode,optional" validate:"omitempty,max=50"`
+	CompanyScale         string       `json:"companyScale,optional" validate:"omitempty,max=50"`
+	CompanyFundingStatus string       `json:"companyFundingStatus,optional" validate:"omitempty,max=50"`
+	CompanyDescription   string       `json:"companyDescription,optional"`
+	SourceUrl            string       `json:"sourceUrl,optional" validate:"omitempty,max=500"`
+	UpdateDate           string       `json:"updateDate,optional"`
+	JobDetail            string       `json:"jobDetail,optional"`
+	Skills               []Skill      `json:"skills,optional"`
+	Certificates         []string     `json:"certificates,optional"`
+	SoftSkills           SoftSkills   `json:"softSkills,optional"`
+	Requirements         Requirements `json:"requirements,optional"`
 }
 
 type CreateStudentReq struct {
@@ -168,20 +176,28 @@ type JobNode struct {
 }
 
 type JobProfile struct {
-	Id              int64        `json:"id"`
-	Name            string       `json:"name"`
-	Description     string       `json:"description"`
-	Company         string       `json:"company"`
-	Industry        string       `json:"industry"`
-	Location        string       `json:"location"`
-	SalaryRange     string       `json:"salaryRange"`
-	Skills          []Skill      `json:"skills"`
-	Certificates    []string     `json:"certificates"`
-	SoftSkills      SoftSkills   `json:"softSkills"`
-	GrowthPotential string       `json:"growthPotential"`
-	Requirements    Requirements `json:"requirements"`
-	CreatedAt       int64        `json:"createdAt"`
-	UpdatedAt       int64        `json:"updatedAt"`
+	Id                   int64        `json:"id"`
+	Name                 string       `json:"name"`
+	Description          string       `json:"description"`
+	Company              string       `json:"company"`
+	Industry             string       `json:"industry"`
+	Category             string       `json:"category"`
+	Location             string       `json:"location"`
+	SalaryRange          string       `json:"salaryRange"`
+	JobCode              string       `json:"jobCode"`
+	CompanyScale         string       `json:"companyScale"`
+	CompanyFundingStatus string       `json:"companyFundingStatus"`
+	CompanyDescription   string       `json:"companyDescription"`
+	SourceUrl            string       `json:"sourceUrl"`
+	UpdateDate           string       `json:"updateDate"`
+	JobDetail            string       `json:"jobDetail"`
+	Skills               []Skill      `json:"skills"`
+	Certificates         []string     `json:"certificates"`
+	SoftSkills           SoftSkills   `json:"softSkills"`
+	GrowthPotential      string       `json:"growthPotential"`
+	Requirements         Requirements `json:"requirements"`
+	CreatedAt            int64        `json:"createdAt"`
+	UpdatedAt            int64        `json:"updatedAt"`
 }
 
 type JobRef struct {
@@ -586,17 +602,25 @@ type TransferPathsResp struct {
 }
 
 type UpdateJobReq struct {
-	Id           int64        `json:"id" validate:"required,gt=0"`
-	Name         string       `json:"name,optional" validate:"omitempty,min=2,max=100"`
-	Description  string       `json:"description,optional" validate:"omitempty,max=2000"`
-	Company      string       `json:"company,optional" validate:"omitempty,max=200"`
-	Industry     string       `json:"industry,optional" validate:"omitempty,max=100"`
-	Location     string       `json:"location,optional" validate:"omitempty,max=200"`
-	SalaryRange  string       `json:"salaryRange,optional" validate:"omitempty,max=100"`
-	Skills       []Skill      `json:"skills,optional"`
-	Certificates []string     `json:"certificates,optional"`
-	SoftSkills   SoftSkills   `json:"softSkills,optional"`
-	Requirements Requirements `json:"requirements,optional"`
+	Id                   int64        `json:"id" validate:"required,gt=0"`
+	Name                 string       `json:"name,optional" validate:"omitempty,min=2,max=100"`
+	Description          string       `json:"description,optional" validate:"omitempty,max=2000"`
+	Company              string       `json:"company,optional" validate:"omitempty,max=200"`
+	Industry             string       `json:"industry,optional" validate:"omitempty,max=100"`
+	Category             string       `json:"category,optional" validate:"omitempty,max=100"`
+	Location             string       `json:"location,optional" validate:"omitempty,max=200"`
+	SalaryRange          string       `json:"salaryRange,optional" validate:"omitempty,max=100"`
+	JobCode              string       `json:"jobCode,optional" validate:"omitempty,max=50"`
+	CompanyScale         string       `json:"companyScale,optional" validate:"omitempty,max=50"`
+	CompanyFundingStatus string       `json:"companyFundingStatus,optional" validate:"omitempty,max=50"`
+	CompanyDescription   string       `json:"companyDescription,optional"`
+	SourceUrl            string       `json:"sourceUrl,optional" validate:"omitempty,max=500"`
+	UpdateDate           string       `json:"updateDate,optional"`
+	JobDetail            string       `json:"jobDetail,optional"`
+	Skills               []Skill      `json:"skills,optional"`
+	Certificates         []string     `json:"certificates,optional"`
+	SoftSkills           SoftSkills   `json:"softSkills,optional"`
+	Requirements         Requirements `json:"requirements,optional"`
 }
 
 type UpdateReportReq struct {

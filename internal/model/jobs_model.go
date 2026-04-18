@@ -91,7 +91,7 @@ func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, e
 		data.UpdatedAt = now
 	}
 
-	query := fmt.Sprintf("insert into %s (`name`, `description`, `company`, `industry`, `location`, `salary_range`, `skills`, `certificates`, `soft_skills`, `requirements`, `growth_potential`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Location, data.SalaryRange, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.CreatedAt, data.UpdatedAt)
+	query := fmt.Sprintf("insert into %s (`name`, `description`, `company`, `industry`, `category`, `location`, `salary_range`, `job_code`, `company_scale`, `company_funding_status`, `company_description`, `source_url`, `update_date`, `job_detail`, `skills`, `certificates`, `soft_skills`, `requirements`, `growth_potential`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.CreatedAt, data.UpdatedAt)
 	return ret, err
 }

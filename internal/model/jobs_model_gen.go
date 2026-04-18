@@ -36,20 +36,28 @@ type (
 	}
 
 	Jobs struct {
-		Id              int64          `db:"id"`
-		Name            string         `db:"name"`
-		Description     sql.NullString `db:"description"`
-		Company         sql.NullString `db:"company"`
-		Industry        sql.NullString `db:"industry"`
-		Location        sql.NullString `db:"location"`
-		SalaryRange     sql.NullString `db:"salary_range"`
-		Skills          sql.NullString `db:"skills"`
-		Certificates    sql.NullString `db:"certificates"`
-		SoftSkills      sql.NullString `db:"soft_skills"`
-		Requirements    sql.NullString `db:"requirements"`
-		GrowthPotential sql.NullString `db:"growth_potential"`
-		CreatedAt       int64          `db:"created_at"`
-		UpdatedAt       int64          `db:"updated_at"`
+		Id                   int64          `db:"id"`
+		Name                 string         `db:"name"`
+		Description          sql.NullString `db:"description"`
+		Company              sql.NullString `db:"company"`
+		Industry             sql.NullString `db:"industry"`
+		Category             sql.NullString `db:"category"`
+		Location             sql.NullString `db:"location"`
+		SalaryRange          sql.NullString `db:"salary_range"`
+		JobCode              sql.NullString `db:"job_code"`
+		CompanyScale         sql.NullString `db:"company_scale"`
+		CompanyFundingStatus sql.NullString `db:"company_funding_status"`
+		CompanyDescription   sql.NullString `db:"company_description"`
+		SourceUrl            sql.NullString `db:"source_url"`
+		UpdateDate           sql.NullTime   `db:"update_date"`
+		JobDetail            sql.NullString `db:"job_detail"`
+		Skills               sql.NullString `db:"skills"`
+		Certificates         sql.NullString `db:"certificates"`
+		SoftSkills           sql.NullString `db:"soft_skills"`
+		Requirements         sql.NullString `db:"requirements"`
+		GrowthPotential      sql.NullString `db:"growth_potential"`
+		CreatedAt            int64          `db:"created_at"`
+		UpdatedAt            int64          `db:"updated_at"`
 	}
 )
 
@@ -81,14 +89,14 @@ func (m *defaultJobsModel) FindOne(ctx context.Context, id int64) (*Jobs, error)
 }
 
 func (m *defaultJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, jobsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Location, data.SalaryRange, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential)
+	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, jobsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential)
 	return ret, err
 }
 
 func (m *defaultJobsModel) Update(ctx context.Context, data *Jobs) error {
 	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, jobsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Location, data.SalaryRange, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.Id)
+	_, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.Id)
 	return err
 }
 
