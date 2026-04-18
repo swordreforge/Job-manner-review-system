@@ -5,6 +5,8 @@ use anyhow::Result;
 
 const JOB_SELECT_SQL: &str = concat!(
     "SELECT id, name, description, company, industry, category, location, salary_range, ",
+    "job_code, company_scale, company_funding_status, company_description, ",
+    "source_url, CAST(update_date AS CHAR) AS update_date, job_detail, ",
     "skills, certificates, soft_skills, requirements, ",
     "CAST(growth_potential AS CHAR) AS growth_potential, created_at, updated_at ",
     "FROM jobs"
@@ -26,10 +28,12 @@ impl JobRepository {
             r#"
             INSERT INTO jobs (
                 name, description, company, industry, category, location, salary_range,
+                job_code, company_scale, company_funding_status, company_description,
+                source_url, update_date, job_detail,
                 skills, certificates, soft_skills, requirements, growth_potential,
                 created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             "#
         )
         .bind(&req.name)
@@ -39,6 +43,13 @@ impl JobRepository {
         .bind(&req.category)
         .bind(&req.location)
         .bind(&req.salary_range)
+        .bind(&req.job_code)
+        .bind(&req.company_scale)
+        .bind(&req.company_funding_status)
+        .bind(&req.company_description)
+        .bind(&req.source_url)
+        .bind(&req.update_date)
+        .bind(&req.job_detail)
         .bind(&req.skills)
         .bind(&req.certificates)
         .bind(&req.soft_skills)
@@ -55,6 +66,60 @@ impl JobRepository {
         .await?;
 
         Ok(job)
+    }
+
+    pub async fn create_many(&self, reqs: Vec<CreateJobRequest>) -> Result<(u32, u32)> {
+        let now = chrono::Utc::now().timestamp();
+        let mut success = 0u32;
+        let mut failed = 0u32;
+
+        for req in reqs {
+            let result = sqlx::query(
+                r#"
+                INSERT INTO jobs (
+                    name, description, company, industry, category, location, salary_range,
+                    job_code, company_scale, company_funding_status, company_description,
+                    source_url, update_date, job_detail,
+                    skills, certificates, soft_skills, requirements, growth_potential,
+                    created_at, updated_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                "#
+            )
+            .bind(&req.name)
+            .bind(&req.description)
+            .bind(&req.company)
+            .bind(&req.industry)
+            .bind(&req.category)
+            .bind(&req.location)
+            .bind(&req.salary_range)
+            .bind(&req.job_code)
+            .bind(&req.company_scale)
+            .bind(&req.company_funding_status)
+            .bind(&req.company_description)
+            .bind(&req.source_url)
+            .bind(&req.update_date)
+            .bind(&req.job_detail)
+            .bind(&req.skills)
+            .bind(&req.certificates)
+            .bind(&req.soft_skills)
+            .bind(&req.requirements)
+            .bind(&req.growth_potential)
+            .bind(now)
+            .bind(now)
+            .execute(&*self.pool)
+            .await;
+
+            match result {
+                Ok(_) => success += 1,
+                Err(e) => {
+                    log::warn!("插入岗位失败: {}, 错误: {}", req.name, e);
+                    failed += 1;
+                }
+            }
+        }
+
+        Ok((success, failed))
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Job>> {
@@ -142,6 +207,27 @@ impl JobRepository {
         if let Some(salary_range) = &req.salary_range {
             updates.push(("salary_range", salary_range.clone()));
         }
+        if let Some(job_code) = &req.job_code {
+            updates.push(("job_code", job_code.clone()));
+        }
+        if let Some(company_scale) = &req.company_scale {
+            updates.push(("company_scale", company_scale.clone()));
+        }
+        if let Some(company_funding_status) = &req.company_funding_status {
+            updates.push(("company_funding_status", company_funding_status.clone()));
+        }
+        if let Some(company_description) = &req.company_description {
+            updates.push(("company_description", company_description.clone()));
+        }
+        if let Some(source_url) = &req.source_url {
+            updates.push(("source_url", source_url.clone()));
+        }
+        if let Some(update_date) = &req.update_date {
+            updates.push(("update_date", update_date.clone()));
+        }
+        if let Some(job_detail) = &req.job_detail {
+            updates.push(("job_detail", job_detail.clone()));
+        }
         if let Some(skills) = &req.skills {
             updates.push(("skills", skills.clone()));
         }
@@ -193,6 +279,17 @@ impl JobRepository {
             .await?;
 
         Ok(result.0)
+    }
+
+    pub async fn exists_by_job_code(&self, job_code: &str) -> Result<bool> {
+        let result: (i64,) = sqlx::query_as(
+            "SELECT COUNT(*) FROM jobs WHERE job_code = ?"
+        )
+        .bind(job_code)
+        .fetch_one(&*self.pool)
+        .await?;
+
+        Ok(result.0 > 0)
     }
 }
 

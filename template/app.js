@@ -220,6 +220,8 @@ function updateSchoolPagination() {
     elements.schoolPageInfo.textContent = `第 ${state.currentSchoolPage} / ${totalPages || 1} 页`;
     elements.schoolPrevPageBtn.disabled = state.currentSchoolPage <= 1;
     elements.schoolNextPageBtn.disabled = state.currentSchoolPage >= totalPages;
+    const schoolJumpInput = document.getElementById('school-page-jump-input');
+    if (schoolJumpInput) schoolJumpInput.value = state.currentSchoolPage;
 }
 
 async function createSchool(data) {
@@ -331,6 +333,11 @@ function switchPage(page) {
     const activeSection = elements.contentSections[page];
     if (activeSection) {
         activeSection.classList.add('active');
+    }
+
+    // 更新URL hash（不触发hashchange）
+    if (window.location.hash !== '#' + page) {
+        history.replaceState(null, '', '#' + page);
     }
 
     // 加载对应页面数据
@@ -531,6 +538,8 @@ function updatePagination() {
     elements.pageInfo.textContent = `第 ${state.currentPage} / ${totalPages || 1} 页`;
     elements.prevPageBtn.disabled = state.currentPage <= 1;
     elements.nextPageBtn.disabled = state.currentPage >= totalPages;
+    const studentJumpInput = document.getElementById('page-jump-input');
+    if (studentJumpInput) studentJumpInput.value = state.currentPage;
 }
 
 // 加载系统状态
@@ -1555,8 +1564,24 @@ function init() {
         elements.currentUser.textContent = state.user?.name || '教师';
         elements.loginPage.classList.remove('active');
         elements.dashboardPage.classList.add('active');
-        switchPage('dashboard');
+        const hashPage = window.location.hash.slice(1);
+        const validPages = ['dashboard', 'students', 'jobs', 'schools', 'users', 'schema', 'system'];
+        if (hashPage && validPages.includes(hashPage)) {
+            switchPage(hashPage);
+        } else {
+            switchPage('dashboard');
+        }
     }
+
+    // hash变化时跳转页面
+    window.addEventListener('hashchange', () => {
+        if (!state.token) return;
+        const hashPage = window.location.hash.slice(1);
+        const validPages = ['dashboard', 'students', 'jobs', 'schools', 'users', 'schema', 'system'];
+        if (hashPage && validPages.includes(hashPage)) {
+            switchPage(hashPage);
+        }
+    });
 
     // 初始化配置文件编辑器监听
     initConfigEditorListener();
@@ -1570,7 +1595,7 @@ function init() {
             e.preventDefault();
             const page = item.dataset.page;
             if (page) {
-                switchPage(page);
+                window.location.hash = page;
             }
         });
     });
@@ -1595,6 +1620,27 @@ function init() {
             loadStudents(state.currentPage + 1);
         }
     });
+
+    const studentJumpInput = document.getElementById('page-jump-input');
+    const studentJumpBtn = document.getElementById('page-jump-btn');
+    if (studentJumpBtn) {
+        studentJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalStudents / state.pageSize) || 1;
+            const target = parseInt(studentJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadStudents(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (studentJumpInput) {
+        studentJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                studentJumpBtn?.click();
+            }
+        });
+    }
 
     elements.refreshStatusBtn.addEventListener('click', loadSystemStatus);
     elements.backupBtn.addEventListener('click', backupData);
@@ -1649,6 +1695,24 @@ function init() {
         elements.schoolNextPageBtn.addEventListener('click', () => {
             const totalPages = Math.ceil(state.totalSchools / state.pageSize);
             if (state.currentSchoolPage < totalPages) loadSchools(state.currentSchoolPage + 1);
+        });
+    }
+    const schoolJumpInput = document.getElementById('school-page-jump-input');
+    const schoolJumpBtn = document.getElementById('school-page-jump-btn');
+    if (schoolJumpBtn) {
+        schoolJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalSchools / state.pageSize) || 1;
+            const target = parseInt(schoolJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadSchools(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (schoolJumpInput) {
+        schoolJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') schoolJumpBtn?.click();
         });
     }
     if (elements.closeSchoolModalBtn) {
@@ -1752,6 +1816,24 @@ function init() {
         const totalPages = Math.ceil(state.totalJobs / state.pageSize);
         if (state.currentJobPage < totalPages) loadJobs(state.currentJobPage + 1);
     });
+    const jobJumpInput = document.getElementById('job-page-jump-input');
+    const jobJumpBtn = document.getElementById('job-page-jump-btn');
+    if (jobJumpBtn) {
+        jobJumpBtn.addEventListener('click', () => {
+            const totalPages = Math.ceil(state.totalJobs / state.pageSize) || 1;
+            const target = parseInt(jobJumpInput.value);
+            if (target >= 1 && target <= totalPages) {
+                loadJobs(target);
+            } else {
+                showToast(`请输入1-${totalPages}之间的页码`, 'error');
+            }
+        });
+    }
+    if (jobJumpInput) {
+        jobJumpInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') jobJumpBtn?.click();
+        });
+    }
     document.getElementById('close-job-detail-modal').addEventListener('click', closeJobDetailModal);
     document.getElementById('close-job-detail-btn').addEventListener('click', closeJobDetailModal);
     document.getElementById('edit-from-job-detail-btn').addEventListener('click', () => {
@@ -1825,6 +1907,8 @@ function updateJobPagination() {
     document.getElementById('job-page-info').textContent = `第 ${state.currentJobPage} / ${totalPages} 页`;
     document.getElementById('job-prev-page').disabled = state.currentJobPage <= 1;
     document.getElementById('job-next-page').disabled = state.currentJobPage >= totalPages;
+    const jobJumpInput = document.getElementById('job-page-jump-input');
+    if (jobJumpInput) jobJumpInput.value = state.currentJobPage;
 }
 
 function viewJob(jobId) {
@@ -1952,6 +2036,24 @@ document.getElementById('user-next-page').addEventListener('click', () => {
     const totalPages = Math.ceil(state.totalUsers / state.pageSize);
     if (state.currentUserPage < totalPages) loadUsers(state.currentUserPage + 1);
 });
+const userJumpInput = document.getElementById('user-page-jump-input');
+const userJumpBtn = document.getElementById('user-page-jump-btn');
+if (userJumpBtn) {
+    userJumpBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(state.totalUsers / state.pageSize) || 1;
+        const target = parseInt(userJumpInput.value);
+        if (target >= 1 && target <= totalPages) {
+            loadUsers(target);
+        } else {
+            showToast(`请输入1-${totalPages}之间的页码`, 'error');
+        }
+    });
+}
+if (userJumpInput) {
+    userJumpInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') userJumpBtn?.click();
+    });
+}
 document.getElementById('close-user-modal').addEventListener('click', closeUserModal);
 document.getElementById('cancel-user-btn').addEventListener('click', closeUserModal);
 document.getElementById('user-form').addEventListener('submit', saveUser);
@@ -2037,6 +2139,8 @@ function updateUserPagination() {
     document.getElementById('user-page-info').textContent = `第 ${state.currentUserPage} / ${totalPages} 页`;
     document.getElementById('user-prev-page').disabled = state.currentUserPage <= 1;
     document.getElementById('user-next-page').disabled = state.currentUserPage >= totalPages;
+    const userJumpInput = document.getElementById('user-page-jump-input');
+    if (userJumpInput) userJumpInput.value = state.currentUserPage;
 }
 
 function openUserModal(mode = 'add', userId = null) {
@@ -2899,6 +3003,8 @@ function openBatchImportJobsModal() {
     const modal = document.getElementById('batch-import-jobs-modal');
     resetJobImportForm();
     modal.classList.add('active');
+    // 初始化带宽检测和分块大小
+    initChunkSize();
 }
 
 // 关闭批量导入岗位模态框
@@ -2960,6 +3066,305 @@ function removeJobFile() {
     resetJobImportForm();
 }
 
+// 批量导入岗位 - 分块上传配置
+const currentChunkSize_MIN = 256 * 1024;    // 256KB 最小
+const currentChunkSize_MAX = 50 * 1024 * 1024; // 50MB 最大
+const currentChunkSize_DEFAULT = 2 * 1024 * 1024; // 默认 2MB
+const MAX_CONCURRENT = 3; // 最大并发数
+const RETRY_TIMES = 3; // 重试次数
+
+// 带宽检测配置
+const BANDWIDTH_TEST_SIZE = 512 * 1024; // 512KB 测试文件
+const BANDWIDTH_TEST_TIMEOUT = 10000; // 10秒超时
+
+// 带宽级别配置 (分块大小 MB)
+const BANDWIDTH_PRESETS = {
+    'slow': 0.5,      // ≤5Mbps: 512KB
+    'medium': 2,      // 5-20Mbps: 2MB
+    'fast': 5,        // 20-100Mbps: 5MB
+    'ultra': 10       // >100Mbps: 10MB
+};
+
+// 当前分块配置
+let currentChunkSize = currentChunkSize_DEFAULT;
+let detectedBandwidth = null;
+
+// 带宽检测 - 智能混合模式
+async function detectBandwidth() {
+    try {
+        // 生成随机数据
+        const testData = new Uint8Array(BANDWIDTH_TEST_SIZE);
+        for (let i = 0; i < testData.length; i++) {
+            testData[i] = Math.floor(Math.random() * 256);
+        }
+        
+        const startTime = performance.now();
+        
+        const response = await fetch(`${API_BASE}/jobs/bandwidth-test`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            },
+            body: testData,
+            signal: AbortSignal.timeout(BANDWIDTH_TEST_TIMEOUT)
+        });
+        
+        const data = await response.json();
+        const endTime = performance.now();
+        const duration = (endTime - startTime) / 1000; // 秒
+        
+        if (response.ok && data.code === 200 && duration > 0) {
+            const speedMbps = (BANDWIDTH_TEST_SIZE * 8) / (duration * 1024 * 1024);
+            detectedBandwidth = speedMbps;
+            
+            // 根据带宽设置分块大小
+            if (speedMbps <= 5) {
+                currentChunkSize = BANDWIDTH_PRESETS.slow * 1024 * 1024;
+            } else if (speedMbps <= 20) {
+                currentChunkSize = BANDWIDTH_PRESETS.medium * 1024 * 1024;
+            } else if (speedMbps <= 100) {
+                currentChunkSize = BANDWIDTH_PRESETS.fast * 1024 * 1024;
+            } else {
+                currentChunkSize = BANDWIDTH_PRESETS.ultra * 1024 * 1024;
+            }
+            
+            console.log(`带宽检测: ${speedMbps.toFixed(2)} Mbps, 分块大小: ${(currentChunkSize / 1024 / 1024).toFixed(2)} MB`);
+            return currentChunkSize;
+        }
+    } catch (error) {
+        console.warn('带宽检测失败，使用默认分块大小:', error.message);
+    }
+    
+    // 检测失败使用默认
+    currentChunkSize = currentChunkSize_DEFAULT;
+    return currentChunkSize;
+}
+
+// 获取当前网络类型
+function getNetworkType() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection) {
+        return connection.effectiveType; // 'slow-2g', '2g', '3g', '4g'
+    }
+    return null;
+}
+
+// 根据网络类型估算分块大小
+function getChunkSizeByNetwork() {
+    const networkType = getNetworkType();
+    
+    switch (networkType) {
+        case 'slow-2g':
+        case '2g':
+            currentChunkSize = BANDWIDTH_PRESETS.slow * 1024 * 1024;
+            break;
+        case '3g':
+            currentChunkSize = BANDWIDTH_PRESETS.medium * 1024 * 1024;
+            break;
+        case '4g':
+            currentChunkSize = BANDWIDTH_PRESETS.fast * 1024 * 1024;
+            break;
+        default:
+            currentChunkSize = currentChunkSize_DEFAULT;
+    }
+    
+    return currentChunkSize;
+}
+
+// 智能初始化分块大小
+async function initChunkSize() {
+    // 优先尝试带宽测速
+    const bandwidthChunkSize = await detectBandwidth();
+    
+    // 如果测速失败，使用网络类型
+    if (!detectedBandwidth) {
+        getChunkSizeByNetwork();
+    }
+    
+    updateChunkSizeDisplay();
+    return currentChunkSize;
+}
+
+// 更新分块大小显示
+function updateChunkSizeDisplay() {
+    const display = document.getElementById('chunk-size-display');
+    if (display) {
+        const sizeMB = (currentChunkSize / 1024 / 1024).toFixed(2);
+        const bandwidthStr = detectedBandwidth 
+            ? `${detectedBandwidth.toFixed(1)} Mbps` 
+            : '自动检测中...';
+        display.textContent = `分块: ${sizeMB} MB | 带宽: ${bandwidthStr}`;
+    }
+}
+
+// 手动调整分块大小
+function setChunkSize(sizeMB) {
+    const sizeBytes = sizeMB * 1024 * 1024;
+    if (sizeBytes >= currentChunkSize_MIN && sizeBytes <= currentChunkSize_MAX) {
+        currentChunkSize = sizeBytes;
+        updateChunkSizeDisplay();
+        showToast(`分块大小已调整为 ${sizeMB} MB`, 'success');
+    } else {
+        showToast(`分块大小范围: ${currentChunkSize_MIN / 1024}KB - ${currentChunkSize_MAX / 1024 / 1024}MB`, 'error');
+    }
+}
+
+// 分块上传状态
+let chunkUploadState = {
+    uploadId: null,
+    filename: '',
+    file: null,
+    totalChunks: 0,
+    uploadedChunks: new Set(),
+    failedChunks: []
+};
+
+// 初始化分块上传
+async function initChunkUpload(file) {
+    const totalSize = file.size;
+    const totalChunks = Math.ceil(totalSize / currentChunkSize);
+    
+    const response = await apiRequest('/jobs/chunk-upload-init', {
+        method: 'POST',
+        body: JSON.stringify({
+            filename: file.name,
+            total_size: totalSize,
+            chunk_size: currentChunkSize,
+            total_chunks: totalChunks
+        })
+    });
+    
+    if (response.code !== 200) {
+        throw new Error(response.message || '初始化上传失败');
+    }
+    
+    return response.data;
+}
+
+// 上传单个分块
+async function uploadChunk(uploadId, chunkIndex, chunk, retries = RETRY_TIMES) {
+    for (let i = 0; i < retries; i++) {
+        try {
+            const formData = new FormData();
+            formData.append('chunk', new Blob([chunk]), 'chunk');
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex.toString());
+            
+            const response = await fetch(`${API_BASE}/jobs/chunk-upload`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${state.token}`
+                },
+                body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (!response.ok || data.code !== 200) {
+                throw new Error(data.message || '上传分块失败');
+            }
+            
+            return data.data;
+        } catch (error) {
+            if (i === retries - 1) {
+                throw error;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+        }
+    }
+}
+
+// 合并分块
+async function mergeChunks(uploadId) {
+    const response = await apiRequest('/jobs/chunk-merge', {
+        method: 'POST',
+        body: JSON.stringify({
+            upload_id: uploadId
+        })
+    });
+    
+    if (response.code !== 200) {
+        throw new Error(response.message || '合并分块失败');
+    }
+    
+    return response.data;
+}
+
+// 并发上传分块
+async function uploadChunksConcurrently(file, uploadId, onProgress) {
+    const totalChunks = Math.ceil(file.size / currentChunkSize);
+    let completed = 0;
+    let uploading = 0;
+    let currentIndex = 0;
+    
+    return new Promise((resolve, reject) => {
+        const uploadNext = async () => {
+            if (currentIndex >= totalChunks) {
+                if (completed >= totalChunks) {
+                    resolve();
+                }
+                return;
+            }
+            
+            const chunkIndex = currentIndex++;
+            const start = chunkIndex * currentChunkSize;
+            const end = Math.min(start + currentChunkSize, file.size);
+            const chunk = file.slice(start, end);
+            
+            uploading++;
+            
+            try {
+                await uploadChunk(uploadId, chunkIndex, chunk);
+                completed++;
+                uploading--;
+                chunkUploadState.uploadedChunks.add(chunkIndex);
+                onProgress(completed, totalChunks);
+                uploadNext();
+            } catch (error) {
+                uploading--;
+                chunkUploadState.failedChunks.push(chunkIndex);
+                console.error(`分块 ${chunkIndex} 上传失败:`, error);
+                onProgress(completed, totalChunks, error.message);
+                uploadNext();
+            }
+        };
+        
+        // 启动并发上传
+        const startConcurrency = Math.min(MAX_CONCURRENT, totalChunks);
+        for (let i = 0; i < startConcurrency; i++) {
+            uploadNext();
+        }
+    });
+}
+
+// 恢复未完成的分块上传
+async function resumeChunkUpload(file, uploadId, onProgress) {
+    // 获取已上传的分块信息（这里简化为重新检测）
+    const totalChunks = Math.ceil(file.size / currentChunkSize);
+    
+    let completed = 0;
+    const chunkStates = [];
+    
+    // 尝试上传所有分块，服务器会告诉我们哪些已经存在
+    for (let i = 0; i < totalChunks; i++) {
+        const start = i * currentChunkSize;
+        const end = Math.min(start + currentChunkSize, file.size);
+        const chunk = file.slice(start, end);
+        
+        try {
+            await uploadChunk(uploadId, i, chunk);
+            completed++;
+            chunkUploadState.uploadedChunks.add(i);
+            onProgress(completed, totalChunks);
+        } catch (error) {
+            chunkUploadState.failedChunks.push(i);
+            console.warn(`分块 ${i} 上传失败，继续尝试其他分块`);
+        }
+    }
+    
+    return completed;
+}
+
 // 开始批量导入岗位
 async function startBatchImportJobs() {
     const fileInput = document.getElementById('job-import-file');
@@ -2974,27 +3379,72 @@ async function startBatchImportJobs() {
     const importResult = document.getElementById('job-import-result');
     const progressFill = document.getElementById('job-progress-fill');
     const progressText = document.getElementById('job-progress-text');
+    const progressPercent = document.getElementById('job-progress-percent');
     
     // 显示进度
     importProgress.style.display = 'block';
     importResult.style.display = 'none';
-    progressFill.style.width = '10%';
-    progressText.textContent = '正在读取文件...';
+    progressFill.style.width = '0%';
+    progressText.textContent = '正在初始化上传...';
     
     try {
-        // 读取文件并转换为 Base64
-        const base64Data = await fileToBase64(file);
+        // 重置状态
+        chunkUploadState = {
+            uploadId: null,
+            filename: file.name,
+            file: file,
+            totalChunks: Math.ceil(file.size / currentChunkSize),
+            uploadedChunks: new Set(),
+            failedChunks: []
+        };
         
-        progressFill.style.width = '30%';
-        progressText.textContent = '正在上传文件...';
+        // 初始化分块上传
+        progressText.textContent = '正在初始化分块上传...';
+        const initData = await initChunkUpload(file);
+        chunkUploadState.uploadId = initData.upload_id;
         
-        // 调用批量导入 API
-        const response = await apiRequest('/jobs/batch-import', {
-            method: 'POST',
-            body: JSON.stringify({
-                file: base64Data
-            })
+        progressFill.style.width = '10%';
+        progressText.textContent = `正在上传分块 (0/${chunkUploadState.totalChunks})...`;
+        
+        // 并发上传分块
+        await uploadChunksConcurrently(file, initData.upload_id, (completed, total, error) => {
+            const percent = Math.round((completed / total) * 90) + 10;
+            progressFill.style.width = `${percent}%`;
+            
+            if (error) {
+                progressText.textContent = `正在上传分块 (${completed}/${total}) - 部分失败`;
+            } else {
+                progressText.textContent = `正在上传分块 (${completed}/${total})...`;
+            }
+            
+            if (progressPercent) {
+                progressPercent.textContent = `${percent}%`;
+            }
         });
+        
+        // 检查是否有失败的分块
+        if (chunkUploadState.failedChunks.length > 0) {
+            // 重试失败的分块
+            progressText.textContent = `正在重试失败的分块 (${chunkUploadState.failedChunks.length}个)...`;
+            for (const idx of chunkUploadState.failedChunks) {
+                const start = idx * currentChunkSize;
+                const end = Math.min(start + currentChunkSize, file.size);
+                const chunk = file.slice(start, end);
+                
+                try {
+                    await uploadChunk(initData.upload_id, idx, chunk);
+                    chunkUploadState.uploadedChunks.add(idx);
+                } catch (e) {
+                    console.error(`重试分块 ${idx} 失败:`, e);
+                }
+            }
+        }
+        
+        progressFill.style.width = '95%';
+        progressText.textContent = '正在合并分块...';
+        
+        // 合并分块
+        const result = await mergeChunks(initData.upload_id);
         
         progressFill.style.width = '100%';
         progressText.textContent = '导入完成';
@@ -3004,23 +3454,35 @@ async function startBatchImportJobs() {
             importProgress.style.display = 'none';
             importResult.style.display = 'block';
             
-            const result = response.data;
             document.getElementById('job-success-count').textContent = result.success;
             document.getElementById('job-failed-count').textContent = result.failed;
+            document.getElementById('job-skipped-count').textContent = result.skipped || 0;
             
             const errorList = document.getElementById('job-error-list');
             const errorItems = document.getElementById('job-error-items');
             
             if (result.errors && result.errors.length > 0) {
                 errorList.style.display = 'block';
-                errorItems.innerHTML = result.errors.map(error => 
-                    `<li>第 ${error.row} 行: ${error.message}</li>`
-                ).join('');
+                const warningErrors = result.errors.filter(e => e.severity === 'warning');
+                const realErrors = result.errors.filter(e => e.severity !== 'warning');
+                let html = '';
+                if (warningErrors.length > 0) {
+                    html += '<h4 style="color: #eab308;">重复跳过 (' + warningErrors.length + '条)</h4>';
+                    html += warningErrors.map(error => 
+                        `<li style="color: #a16207;">第 ${error.row} 行: ${error.message}</li>`
+                    ).join('');
+                }
+                if (realErrors.length > 0) {
+                    html += '<h4 style="color: #ef4444;">导入错误 (' + realErrors.length + '条)</h4>';
+                    html += realErrors.map(error => 
+                        `<li style="color: #dc2626;">第 ${error.row} 行: ${error.message}</li>`
+                    ).join('');
+                }
+                errorItems.innerHTML = html;
             } else {
                 errorList.style.display = 'none';
             }
             
-            // 刷新岗位列表
             loadJobs();
         }, 500);
         
@@ -3126,6 +3588,15 @@ function setupBatchImportEventListeners() {
     document.getElementById('job-import-file').addEventListener('change', handleJobFileSelect);
     document.getElementById('remove-job-file').addEventListener('click', removeJobFile);
     document.getElementById('start-batch-import-jobs').addEventListener('click', startBatchImportJobs);
+    
+    // 分块大小滑块
+    const chunkSlider = document.getElementById('chunk-size-slider');
+    if (chunkSlider) {
+        chunkSlider.addEventListener('input', (e) => {
+            const sizeMB = parseInt(e.target.value) / 1024;
+            setChunkSize(sizeMB);
+        });
+    }
     
     // 岗位文件拖拽上传
     const jobUploadArea = document.getElementById('job-file-upload-area');

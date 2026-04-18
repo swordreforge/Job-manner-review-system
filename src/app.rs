@@ -102,6 +102,7 @@ impl AppBuilder {
                 .configure(configure_routes)
         })
         .bind(&config.server_address())?
+        .client_request_timeout(std::time::Duration::from_secs(300))
         .run();
 
         log::info!("==========================================");

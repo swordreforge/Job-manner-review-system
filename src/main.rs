@@ -13,8 +13,10 @@ mod utils;
 
 #[actix_web::main]
 async fn main() -> anyhow::Result<()> {
-    // 初始化日志
-    env_logger::init();
+    // 初始化日志，默认级别 INFO
+    env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info"))
+        .format_timestamp_millis()
+        .init();
 
     log::info!("==========================================");
     log::info!("教师端管理系统 v1.0.0");

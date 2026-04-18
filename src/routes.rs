@@ -141,6 +141,31 @@ fn configure_api_v1() -> Scope {
                     "/batch-import",
                     web::post().to(crate::handlers::job::batch_import),
                 )
+                // 批量导入岗位-文件上传（需要在 /{id} 之前）
+                .route(
+                    "/batch-import-file",
+                    web::post().to(crate::handlers::job::batch_import_file),
+                )
+                // 分块上传初始化
+                .route(
+                    "/chunk-upload-init",
+                    web::post().to(crate::handlers::job::chunk_upload_init),
+                )
+                // 分块上传
+                .route(
+                    "/chunk-upload",
+                    web::post().to(crate::handlers::job::chunk_upload),
+                )
+                // 分块合并
+                .route(
+                    "/chunk-merge",
+                    web::post().to(crate::handlers::job::chunk_merge),
+                )
+                // 带宽测试
+                .route(
+                    "/bandwidth-test",
+                    web::post().to(crate::handlers::job::bandwidth_test),
+                )
                 // 岗位详情
                 .route("/{id}", web::get().to(crate::handlers::job::get))
                 // 更新岗位

@@ -4,7 +4,7 @@ use crate::services::StudentService;
 use crate::state::AppState;
 use crate::utils::response::{ApiResponse, ErrorResponse};
 use crate::models::TokenInfo;
-use calamine::{Reader, Xlsx, Data};
+use calamine::{Reader, Xlsx};
 use base64::{Engine as _, engine::general_purpose};
 use std::io::Cursor;
 

@@ -335,13 +335,23 @@ fn parse_school_row(row: &[Data]) -> Result<CreateSchoolRequest, String> {
     })
 }
 
-/// 生成学校代码
+/// 生成学校代码 (SCH + 6位随机 + 校验位)
 async fn generate_school_code(pool: &sqlx::MySqlPool) -> Result<String, String> {
-    let year = chrono::Utc::now().format("%y").to_string();
+    const CHARSET: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTUVWXYZ";
 
     loop {
-        let random_num = rand::random::<u32>() % 10000;
-        let code = format!("SCH{}{:04}", year, random_num);
+        // 生成6位随机字符
+        let mut code_part = Vec::with_capacity(6);
+        for _ in 0..6 {
+            let idx = (rand::random::<u32>() % CHARSET.len() as u32) as usize;
+            code_part.push(CHARSET[idx]);
+        }
+
+        // 计算校验位 (简单加权校验)
+        let check_digit = calculate_check_digit(&code_part, CHARSET);
+        code_part.push(check_digit);
+
+        let code = format!("SCH{}", String::from_utf8_lossy(&code_part));
 
         // 检查代码是否已存在
         let exists = sqlx::query_scalar::<_, i64>(
@@ -356,4 +366,16 @@ async fn generate_school_code(pool: &sqlx::MySqlPool) -> Result<String, String> 
             return Ok(code);
         }
     }
+}
+
+/// 计算校验位
+fn calculate_check_digit(data: &[u8], charset: &[u8]) -> u8 {
+    let mut sum = 0;
+    for (i, &b) in data.iter().enumerate() {
+        if let Some(pos) = charset.iter().position(|&c| c == b) {
+            sum += pos * (i + 1);
+        }
+    }
+    let idx = sum % charset.len();
+    charset[idx]
 }

@@ -40,13 +40,13 @@
                         <h2>管理员端管理系统</h2>
                     </div>
                     <nav class="nav">
-                        <a href="#" class="nav-item active" data-page="dashboard">首页</a>
-                        <a href="#" class="nav-item" data-page="students">学生管理</a>
-                        <a href="#" class="nav-item" data-page="jobs">岗位管理</a>
-                        <a href="#" class="nav-item" data-page="schools">学校管理</a>
-                        <a href="#" class="nav-item" data-page="users">用户管理</a>
-                        <a href="#" class="nav-item" data-page="schema">数据管理</a>
-                        <a href="#" class="nav-item" data-page="system">系统状态</a>
+                        <a href="#dashboard" class="nav-item active" data-page="dashboard">首页</a>
+                        <a href="#students" class="nav-item" data-page="students">学生管理</a>
+                        <a href="#jobs" class="nav-item" data-page="jobs">岗位管理</a>
+                        <a href="#schools" class="nav-item" data-page="schools">学校管理</a>
+                        <a href="#users" class="nav-item" data-page="users">用户管理</a>
+                        <a href="#schema" class="nav-item" data-page="schema">数据管理</a>
+                        <a href="#system" class="nav-item" data-page="system">系统状态</a>
                     </nav>
                     <div class="user-info">
                         <span id="current-user">教师</span>
@@ -200,6 +200,7 @@
                     <div class="pagination" id="pagination">
                         <button class="btn btn-secondary" id="prev-page" disabled>上一页</button>
                         <span id="page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="page-jump-btn">跳转</button></span>
                         <button class="btn btn-secondary" id="next-page" disabled>下一页</button>
                     </div>
                 </div>
@@ -244,6 +245,7 @@
                     <div class="pagination" id="job-pagination">
                         <button class="btn btn-secondary" id="job-prev-page" disabled>上一页</button>
                         <span id="job-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="job-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="job-page-jump-btn">跳转</button></span>
                         <button class="btn btn-secondary" id="job-next-page" disabled>下一页</button>
                     </div>
                 </div>
@@ -282,6 +284,7 @@
                     <div class="pagination" id="user-pagination">
                         <button class="btn btn-secondary" id="user-prev-page" disabled>上一页</button>
                         <span id="user-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="user-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="user-page-jump-btn">跳转</button></span>
                         <button class="btn btn-secondary" id="user-next-page" disabled>下一页</button>
                     </div>
                 </div>
@@ -333,6 +336,7 @@
                     <div class="pagination" id="school-pagination">
                         <button class="btn btn-secondary" id="school-prev-page" disabled>上一页</button>
                         <span id="school-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="school-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="school-page-jump-btn">跳转</button></span>
                         <button class="btn btn-secondary" id="school-next-page" disabled>下一页</button>
                     </div>
                 </div>
@@ -1254,13 +1258,38 @@
                                 <button class="btn-remove-file" id="remove-job-file">×</button>
                             </div>
                         </div>
+                        <!-- 分块上传控制 -->
+                        <div class="chunk-size-control">
+                            <div class="chunk-size-info" id="chunk-size-display">
+                                分块: 2.00 MB | 带宽: 自动检测中...
+                            </div>
+                            <div class="chunk-size-slider">
+                                <input type="range" id="chunk-size-slider" 
+                                       min="256" max="51200" value="2048" 
+                                       step="256" class="slider">
+                                <div class="slider-labels">
+                                    <span>256KB</span>
+                                    <span>50MB</span>
+                                </div>
+                            </div>
+                            <div class="bandwidth-btns">
+                                <button class="btn btn-secondary btn-sm" onclick="detectBandwidth()">重新检测带宽</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(1)">1MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(2)">2MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(5)">5MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(10)">10MB</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="import-progress" id="job-import-progress" style="display: none;">
                         <div class="progress-bar">
                             <div class="progress-fill" id="job-progress-fill"></div>
                         </div>
-                        <div class="progress-text" id="job-progress-text">正在处理...</div>
+                        <div class="progress-info">
+                            <div class="progress-text" id="job-progress-text">正在处理...</div>
+                            <div class="progress-percent" id="job-progress-percent">0%</div>
+                        </div>
                     </div>
 
                     <div class="import-result" id="job-import-result" style="display: none;">
@@ -1271,6 +1300,13 @@
                                 <div>
                                     <div class="result-value" id="job-success-count">0</div>
                                     <div class="result-label">成功导入</div>
+                                </div>
+                            </div>
+                            <div class="result-item skipped">
+                                <span class="result-icon">↻</span>
+                                <div>
+                                    <div class="result-value" id="job-skipped-count">0</div>
+                                    <div class="result-label">重复跳过</div>
                                 </div>
                             </div>
                             <div class="result-item failed">

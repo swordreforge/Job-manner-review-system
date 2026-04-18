@@ -1,0 +1,27 @@
+# Build outputs and caches
+target/
+.worktrees/
+
+# VCS and IDE
+.git/
+.vscode/
+.idea/
+
+# Local env and logs
+.env
+.env.*
+*.log
+
+# Docs and non-build assets
+README.md
+TESTING.md
+API_USAGE.md
+BACKUP_API.md
+docs/
+tests/
+report.json
+backup-db.sh
+career_db_backup_*.sql
+
+# Misc
+.DS_Store
