@@ -161,6 +161,11 @@ fn configure_api_v1() -> Scope {
                     "/chunk-merge",
                     web::post().to(crate::handlers::job::chunk_merge),
                 )
+                // 带宽测试
+                .route(
+                    "/bandwidth-test",
+                    web::post().to(crate::handlers::job::bandwidth_test),
+                )
                 // 岗位详情
                 .route("/{id}", web::get().to(crate::handlers::job::get))
                 // 更新岗位

@@ -2899,6 +2899,8 @@ function openBatchImportJobsModal() {
     const modal = document.getElementById('batch-import-jobs-modal');
     resetJobImportForm();
     modal.classList.add('active');
+    // 初始化带宽检测和分块大小
+    initChunkSize();
 }
 
 // 关闭批量导入岗位模态框
@@ -2961,9 +2963,147 @@ function removeJobFile() {
 }
 
 // 批量导入岗位 - 分块上传配置
-const CHUNK_SIZE = 2 * 1024 * 1024; // 2MB per chunk
+const currentChunkSize_MIN = 256 * 1024;    // 256KB 最小
+const currentChunkSize_MAX = 50 * 1024 * 1024; // 50MB 最大
+const currentChunkSize_DEFAULT = 2 * 1024 * 1024; // 默认 2MB
 const MAX_CONCURRENT = 3; // 最大并发数
 const RETRY_TIMES = 3; // 重试次数
+
+// 带宽检测配置
+const BANDWIDTH_TEST_SIZE = 512 * 1024; // 512KB 测试文件
+const BANDWIDTH_TEST_TIMEOUT = 10000; // 10秒超时
+
+// 带宽级别配置 (分块大小 MB)
+const BANDWIDTH_PRESETS = {
+    'slow': 0.5,      // ≤5Mbps: 512KB
+    'medium': 2,      // 5-20Mbps: 2MB
+    'fast': 5,        // 20-100Mbps: 5MB
+    'ultra': 10       // >100Mbps: 10MB
+};
+
+// 当前分块配置
+let currentChunkSize = currentChunkSize_DEFAULT;
+let detectedBandwidth = null;
+
+// 带宽检测 - 智能混合模式
+async function detectBandwidth() {
+    try {
+        // 生成随机数据
+        const testData = new Uint8Array(BANDWIDTH_TEST_SIZE);
+        for (let i = 0; i < testData.length; i++) {
+            testData[i] = Math.floor(Math.random() * 256);
+        }
+        
+        const startTime = performance.now();
+        
+        const response = await fetch(`${API_BASE}/jobs/bandwidth-test`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${state.token}`,
+                'Content-Type': 'application/octet-stream'
+            },
+            body: testData,
+            signal: AbortSignal.timeout(BANDWIDTH_TEST_TIMEOUT)
+        });
+        
+        const endTime = performance.now();
+        const duration = (endTime - startTime) / 1000; // 秒
+        
+        if (response.ok && duration > 0) {
+            const speedMbps = (BANDWIDTH_TEST_SIZE * 8) / (duration * 1024 * 1024);
+            detectedBandwidth = speedMbps;
+            
+            // 根据带宽设置分块大小
+            if (speedMbps <= 5) {
+                currentChunkSize = BANDWIDTH_PRESETS.slow * 1024 * 1024;
+            } else if (speedMbps <= 20) {
+                currentChunkSize = BANDWIDTH_PRESETS.medium * 1024 * 1024;
+            } else if (speedMbps <= 100) {
+                currentChunkSize = BANDWIDTH_PRESETS.fast * 1024 * 1024;
+            } else {
+                currentChunkSize = BANDWIDTH_PRESETS.ultra * 1024 * 1024;
+            }
+            
+            console.log(`带宽检测: ${speedMbps.toFixed(2)} Mbps, 分块大小: ${(currentChunkSize / 1024 / 1024).toFixed(2)} MB`);
+            return currentChunkSize;
+        }
+    } catch (error) {
+        console.warn('带宽检测失败，使用默认分块大小:', error.message);
+    }
+    
+    // 检测失败使用默认
+    currentChunkSize = currentChunkSize_DEFAULT;
+    return currentChunkSize;
+}
+
+// 获取当前网络类型
+function getNetworkType() {
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    if (connection) {
+        return connection.effectiveType; // 'slow-2g', '2g', '3g', '4g'
+    }
+    return null;
+}
+
+// 根据网络类型估算分块大小
+function getChunkSizeByNetwork() {
+    const networkType = getNetworkType();
+    
+    switch (networkType) {
+        case 'slow-2g':
+        case '2g':
+            currentChunkSize = BANDWIDTH_PRESETS.slow * 1024 * 1024;
+            break;
+        case '3g':
+            currentChunkSize = BANDWIDTH_PRESETS.medium * 1024 * 1024;
+            break;
+        case '4g':
+            currentChunkSize = BANDWIDTH_PRESETS.fast * 1024 * 1024;
+            break;
+        default:
+            currentChunkSize = currentChunkSize_DEFAULT;
+    }
+    
+    return currentChunkSize;
+}
+
+// 智能初始化分块大小
+async function initChunkSize() {
+    // 优先尝试带宽测速
+    const bandwidthChunkSize = await detectBandwidth();
+    
+    // 如果测速失败，使用网络类型
+    if (!detectedBandwidth) {
+        getChunkSizeByNetwork();
+    }
+    
+    updateChunkSizeDisplay();
+    return currentChunkSize;
+}
+
+// 更新分块大小显示
+function updateChunkSizeDisplay() {
+    const display = document.getElementById('chunk-size-display');
+    if (display) {
+        const sizeMB = (currentChunkSize / 1024 / 1024).toFixed(2);
+        const bandwidthStr = detectedBandwidth 
+            ? `${detectedBandwidth.toFixed(1)} Mbps` 
+            : '自动检测中...';
+        display.textContent = `分块: ${sizeMB} MB | 带宽: ${bandwidthStr}`;
+    }
+}
+
+// 手动调整分块大小
+function setChunkSize(sizeMB) {
+    const sizeBytes = sizeMB * 1024 * 1024;
+    if (sizeBytes >= currentChunkSize_MIN && sizeBytes <= currentChunkSize_MAX) {
+        currentChunkSize = sizeBytes;
+        updateChunkSizeDisplay();
+        showToast(`分块大小已调整为 ${sizeMB} MB`, 'success');
+    } else {
+        showToast(`分块大小范围: ${currentChunkSize_MIN / 1024}KB - ${currentChunkSize_MAX / 1024 / 1024}MB`, 'error');
+    }
+}
 
 // 分块上传状态
 let chunkUploadState = {
@@ -2978,14 +3118,14 @@ let chunkUploadState = {
 // 初始化分块上传
 async function initChunkUpload(file) {
     const totalSize = file.size;
-    const totalChunks = Math.ceil(totalSize / CHUNK_SIZE);
+    const totalChunks = Math.ceil(totalSize / currentChunkSize);
     
     const response = await apiRequest('/jobs/chunk-upload-init', {
         method: 'POST',
         body: JSON.stringify({
             filename: file.name,
             total_size: totalSize,
-            chunk_size: CHUNK_SIZE,
+            chunk_size: currentChunkSize,
             total_chunks: totalChunks
         })
     });
@@ -3046,7 +3186,7 @@ async function mergeChunks(uploadId) {
 
 // 并发上传分块
 async function uploadChunksConcurrently(file, uploadId, onProgress) {
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const totalChunks = Math.ceil(file.size / currentChunkSize);
     let completed = 0;
     let uploading = 0;
     let currentIndex = 0;
@@ -3061,8 +3201,8 @@ async function uploadChunksConcurrently(file, uploadId, onProgress) {
             }
             
             const chunkIndex = currentIndex++;
-            const start = chunkIndex * CHUNK_SIZE;
-            const end = Math.min(start + CHUNK_SIZE, file.size);
+            const start = chunkIndex * currentChunkSize;
+            const end = Math.min(start + currentChunkSize, file.size);
             const chunk = file.slice(start, end);
             
             uploading++;
@@ -3094,15 +3234,15 @@ async function uploadChunksConcurrently(file, uploadId, onProgress) {
 // 恢复未完成的分块上传
 async function resumeChunkUpload(file, uploadId, onProgress) {
     // 获取已上传的分块信息（这里简化为重新检测）
-    const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+    const totalChunks = Math.ceil(file.size / currentChunkSize);
     
     let completed = 0;
     const chunkStates = [];
     
     // 尝试上传所有分块，服务器会告诉我们哪些已经存在
     for (let i = 0; i < totalChunks; i++) {
-        const start = i * CHUNK_SIZE;
-        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const start = i * currentChunkSize;
+        const end = Math.min(start + currentChunkSize, file.size);
         const chunk = file.slice(start, end);
         
         try {
@@ -3147,7 +3287,7 @@ async function startBatchImportJobs() {
             uploadId: null,
             filename: file.name,
             file: file,
-            totalChunks: Math.ceil(file.size / CHUNK_SIZE),
+            totalChunks: Math.ceil(file.size / currentChunkSize),
             uploadedChunks: new Set(),
             failedChunks: []
         };
@@ -3181,8 +3321,8 @@ async function startBatchImportJobs() {
             // 重试失败的分块
             progressText.textContent = `正在重试失败的分块 (${chunkUploadState.failedChunks.length}个)...`;
             for (const idx of chunkUploadState.failedChunks) {
-                const start = idx * CHUNK_SIZE;
-                const end = Math.min(start + CHUNK_SIZE, file.size);
+                const start = idx * currentChunkSize;
+                const end = Math.min(start + currentChunkSize, file.size);
                 const chunk = file.slice(start, end);
                 
                 try {
@@ -3328,6 +3468,15 @@ function setupBatchImportEventListeners() {
     document.getElementById('job-import-file').addEventListener('change', handleJobFileSelect);
     document.getElementById('remove-job-file').addEventListener('click', removeJobFile);
     document.getElementById('start-batch-import-jobs').addEventListener('click', startBatchImportJobs);
+    
+    // 分块大小滑块
+    const chunkSlider = document.getElementById('chunk-size-slider');
+    if (chunkSlider) {
+        chunkSlider.addEventListener('input', (e) => {
+            const sizeMB = parseInt(e.target.value) / 1024;
+            setChunkSize(sizeMB);
+        });
+    }
     
     // 岗位文件拖拽上传
     const jobUploadArea = document.getElementById('job-file-upload-area');

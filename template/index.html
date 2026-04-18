@@ -1254,6 +1254,28 @@
                                 <button class="btn-remove-file" id="remove-job-file">×</button>
                             </div>
                         </div>
+                        <!-- 分块上传控制 -->
+                        <div class="chunk-size-control">
+                            <div class="chunk-size-info" id="chunk-size-display">
+                                分块: 2.00 MB | 带宽: 自动检测中...
+                            </div>
+                            <div class="chunk-size-slider">
+                                <input type="range" id="chunk-size-slider" 
+                                       min="256" max="51200" value="2048" 
+                                       step="256" class="slider">
+                                <div class="slider-labels">
+                                    <span>256KB</span>
+                                    <span>50MB</span>
+                                </div>
+                            </div>
+                            <div class="bandwidth-btns">
+                                <button class="btn btn-secondary btn-sm" onclick="detectBandwidth()">重新检测带宽</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(1)">1MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(2)">2MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(5)">5MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(10)">10MB</button>
+                            </div>
+                        </div>
                     </div>
 
                     <div class="import-progress" id="job-import-progress" style="display: none;">

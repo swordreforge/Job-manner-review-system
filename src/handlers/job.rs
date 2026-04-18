@@ -589,3 +589,40 @@ pub async fn chunk_merge(
 
     process_import(state, file_data).await
 }
+
+pub async fn bandwidth_test(
+    mut payload: Multipart,
+) -> impl Responder {
+    let mut total_received = 0u64;
+
+    while let Some(item) = payload.next().await {
+        match item {
+            Ok(mut field) => {
+                while let Some(chunk_result) = field.next().await {
+                    match chunk_result {
+                        Ok(bytes) => {
+                            total_received += bytes.len() as u64;
+                        }
+                        Err(e) => {
+                            log::error!("读取带宽测试数据失败: {}", e);
+                            return HttpResponse::BadRequest()
+                                .json(ErrorResponse::error("读取测试数据失败", Some(e.to_string())));
+                        }
+                    }
+                }
+            }
+            Err(e) => {
+                log::error!("带宽测试失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("带宽测试失败", Some(e.to_string())));
+            }
+        }
+    }
+
+    log::info!("带宽测试完成，收到 {} 字节", total_received);
+
+    HttpResponse::Ok().json(ApiResponse::success(serde_json::json!({
+        "received": total_received,
+        "message": "带宽测试完成"
+    })))
+}
