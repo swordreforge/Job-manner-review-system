@@ -574,13 +574,15 @@ pub async fn chunk_upload(
 
     upload_info.received_chunks.insert(chunk_index);
     
-    while upload_info.chunks.len() < upload_info.total_chunks as usize {
-        upload_info.chunks.push(Vec::new());
+    // 确保 chunks 数组正确填充
+    if upload_info.chunks.len() < upload_info.total_chunks as usize {
+        upload_info.chunks.resize(upload_info.total_chunks as usize, Vec::new());
     }
     upload_info.chunks[chunk_index as usize] = data;
 
     let progress = upload_info.received_chunks.len() as u32;
-    log::info!("分块上传: upload_id={}, chunk={}/{}", upload_id, chunk_index + 1, upload_info.total_chunks);
+    log::info!("分块上传: upload_id={}, chunk={}/{}, received_count={}", 
+        upload_id, chunk_index + 1, upload_info.total_chunks, upload_info.received_chunks.len());
 
     HttpResponse::Ok().json(ApiResponse::success(serde_json::json!({
         "chunk_index": chunk_index,
@@ -596,25 +598,46 @@ pub async fn chunk_merge(
 ) -> impl Responder {
     let upload_id = req.upload_id.clone();
 
+    log::info!("开始合并分块: upload_id={}", upload_id);
+
     let mut state_lock = CHUNK_UPLOAD_STATE.write().await;
 
     let upload_info = match state_lock.uploads.remove(&upload_id) {
-        Some(info) => info,
+        Some(info) => {
+            log::info!("找到上传信息: chunks={}, received={}", 
+                info.total_chunks, info.received_chunks.len());
+            info
+        }
         None => {
+            log::error!("上传ID不存在: {}", upload_id);
             return HttpResponse::BadRequest()
                 .json(ErrorResponse::error("上传ID不存在", None));
         }
     };
 
-    if upload_info.received_chunks.len() != upload_info.total_chunks as usize {
+    let received_count = upload_info.received_chunks.len();
+    log::info!("已接收分块数: {}/{}", received_count, upload_info.total_chunks);
+
+    if received_count != upload_info.total_chunks as usize {
+        log::warn!("警告: 分块未全部上传! 已有: {}, 预期: {}", 
+            received_count, upload_info.total_chunks);
+        
+        // 检查哪些分块缺失
+        for i in 0..upload_info.total_chunks {
+            if !upload_info.received_chunks.contains(&i) {
+                log::warn!("缺失分块: {}", i);
+            }
+        }
+        
         return HttpResponse::BadRequest()
             .json(ErrorResponse::error(&format!("分块未全部上传，已收到 {}/{} 个分块", 
-                upload_info.received_chunks.len(), upload_info.total_chunks), None));
+                received_count, upload_info.total_chunks), None));
     }
 
     let mut file_data = Vec::with_capacity(upload_info.total_size as usize);
-    for chunk in upload_info.chunks {
-        file_data.extend_from_slice(&chunk);
+    for (i, chunk) in upload_info.chunks.iter().enumerate() {
+        log::info!("合并分块 {}: {} bytes", i, chunk.len());
+        file_data.extend_from_slice(chunk);
     }
 
     log::info!("分块合并完成: upload_id={}, filename={}, size={}", 
