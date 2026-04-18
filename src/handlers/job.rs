@@ -6,7 +6,7 @@ use crate::models::{JobQuery, CreateJobRequest, UpdateJobRequest, BatchImportJob
 use crate::services::JobService;
 use crate::state::AppState;
 use crate::utils::response::{ApiResponse, ErrorResponse};
-use calamine::{Reader, Xlsx};
+use calamine::{Reader, Xlsx, Xls, open_workbook};
 use base64::{Engine as _, engine::general_purpose};
 use std::io::Cursor;
 
@@ -186,30 +186,71 @@ pub async fn batch_import_file(
 }
 
 async fn process_import(state: web::Data<AppState>, file_data: Vec<u8>) -> HttpResponse {
-    let cursor = Cursor::new(file_data);
-
-    let mut workbook: Xlsx<Cursor<Vec<u8>>> = match Xlsx::new(cursor) {
-        Ok(wb) => wb,
-        Err(e) => {
-            log::error!("打开 Excel 文件失败: {}", e);
-            return HttpResponse::BadRequest()
-                .json(ErrorResponse::error("打开 Excel 文件失败", Some(e.to_string())));
-        }
+    log::info!("开始处理导入文件, 大小: {} bytes", file_data.len());
+    
+    // 检测文件类型 (xls vs xlsx)
+    let is_xls = if file_data.len() >= 8 {
+        // 检查文件头: xlsx是ZIP (50 4B), xls是CFB (D0 CF)
+        file_data[0] == 0xD0 && file_data[1] == 0xCF
+    } else {
+        false
     };
-
-    let range = match workbook.worksheet_range_at(0) {
-        Some(Ok(r)) => r,
-        Some(Err(e)) => {
-            log::error!("读取工作表失败: {}", e);
-            return HttpResponse::BadRequest()
-                .json(ErrorResponse::error("读取工作表失败", Some(e.to_string())));
-        }
-        None => {
-            log::error!("工作表为空");
-            return HttpResponse::BadRequest()
-                .json(ErrorResponse::error("工作表为空", None));
-        }
-    };
+    
+    let range;
+    
+    if is_xls {
+        // 使用 Xls 读取 .xls 文件
+        log::info!("检测到 .xls 格式文件");
+        let cursor = Cursor::new(file_data);
+        let mut workbook: Xls<Cursor<Vec<u8>>> = match Xls::new(cursor) {
+            Ok(wb) => wb,
+            Err(e) => {
+                log::error!("打开 .xls 文件失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("打开 Excel 文件失败", Some(e.to_string())));
+            }
+        };
+        
+        range = match workbook.worksheet_range_at(0) {
+            Some(Ok(r)) => r,
+            Some(Err(e)) => {
+                log::error!("读取工作表失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("读取工作表失败", Some(e.to_string())));
+            }
+            None => {
+                log::error!("工作表为空");
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("工作表为空", None));
+            }
+        };
+    } else {
+        // 使用 Xlsx 读取 .xlsx 文件
+        log::info!("检测到 .xlsx 格式文件");
+        let cursor = Cursor::new(file_data);
+        let mut workbook: Xlsx<Cursor<Vec<u8>>> = match Xlsx::new(cursor) {
+            Ok(wb) => wb,
+            Err(e) => {
+                log::error!("打开 Excel 文件失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("打开 Excel 文件失败", Some(e.to_string())));
+            }
+        };
+        
+        range = match workbook.worksheet_range_at(0) {
+            Some(Ok(r)) => r,
+            Some(Err(e)) => {
+                log::error!("读取工作表失败: {}", e);
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("读取工作表失败", Some(e.to_string())));
+            }
+            None => {
+                log::error!("工作表为空");
+                return HttpResponse::BadRequest()
+                    .json(ErrorResponse::error("工作表为空", None));
+            }
+        };
+    }
 
     let mut total = 0u32;
     let mut errors = Vec::new();
