@@ -2999,17 +2999,17 @@ async function detectBandwidth() {
         const response = await fetch(`${API_BASE}/jobs/bandwidth-test`, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${state.token}`,
-                'Content-Type': 'application/octet-stream'
+                'Authorization': `Bearer ${state.token}`
             },
             body: testData,
             signal: AbortSignal.timeout(BANDWIDTH_TEST_TIMEOUT)
         });
         
+        const data = await response.json();
         const endTime = performance.now();
         const duration = (endTime - startTime) / 1000; // 秒
         
-        if (response.ok && duration > 0) {
+        if (response.ok && data.code === 200 && duration > 0) {
             const speedMbps = (BANDWIDTH_TEST_SIZE * 8) / (duration * 1024 * 1024);
             detectedBandwidth = speedMbps;
             
@@ -3143,6 +3143,8 @@ async function uploadChunk(uploadId, chunkIndex, chunk, retries = RETRY_TIMES) {
         try {
             const formData = new FormData();
             formData.append('chunk', new Blob([chunk]), 'chunk');
+            formData.append('upload_id', uploadId);
+            formData.append('chunk_index', chunkIndex.toString());
             
             const response = await fetch(`${API_BASE}/jobs/chunk-upload`, {
                 method: 'POST',
@@ -3154,7 +3156,7 @@ async function uploadChunk(uploadId, chunkIndex, chunk, retries = RETRY_TIMES) {
             
             const data = await response.json();
             
-            if (!response.ok) {
+            if (!response.ok || data.code !== 200) {
                 throw new Error(data.message || '上传分块失败');
             }
             
