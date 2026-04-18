@@ -591,30 +591,21 @@ pub async fn chunk_merge(
 }
 
 pub async fn bandwidth_test(
-    mut payload: Multipart,
+    mut payload: actix_web::web::Payload,
 ) -> impl Responder {
+    use futures_util::StreamExt;
+    
     let mut total_received = 0u64;
-
-    while let Some(item) = payload.next().await {
-        match item {
-            Ok(mut field) => {
-                while let Some(chunk_result) = field.next().await {
-                    match chunk_result {
-                        Ok(bytes) => {
-                            total_received += bytes.len() as u64;
-                        }
-                        Err(e) => {
-                            log::error!("读取带宽测试数据失败: {}", e);
-                            return HttpResponse::BadRequest()
-                                .json(ErrorResponse::error("读取测试数据失败", Some(e.to_string())));
-                        }
-                    }
-                }
+    
+    while let Some(chunk_result) = payload.next().await {
+        match chunk_result {
+            Ok(bytes) => {
+                total_received += bytes.len() as u64;
             }
             Err(e) => {
-                log::error!("带宽测试失败: {}", e);
+                log::error!("读取带宽测试数据失败: {}", e);
                 return HttpResponse::BadRequest()
-                    .json(ErrorResponse::error("带宽测试失败", Some(e.to_string())));
+                    .json(ErrorResponse::error("读取测试数据失败", Some(e.to_string())));
             }
         }
     }
