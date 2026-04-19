@@ -20,6 +20,7 @@ type (
 		withSession(session sqlx.Session) JobsModel
 		FindAll(ctx context.Context, page, pageSize int, industry, category string) ([]*Jobs, int64, error)
 		Search(ctx context.Context, req *JobSearchReq) ([]*Jobs, int64, error)
+		GetFilterOptions(ctx context.Context) (industries, companyScales, locations []string, err error)
 	}
 
 	JobSearchReq struct {
@@ -182,4 +183,45 @@ func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, e
 	query := fmt.Sprintf("insert into %s (`name`, `description`, `company`, `industry`, `category`, `location`, `salary_range`, `job_code`, `company_scale`, `company_funding_status`, `company_description`, `source_url`, `update_date`, `job_detail`, `skills`, `certificates`, `soft_skills`, `requirements`, `growth_potential`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
 	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.CreatedAt, data.UpdatedAt)
 	return ret, err
+}
+
+// GetFilterOptions 获取筛选选项（行业、公司规模、城市）
+func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, companyScales, locations []string, err error) {
+	indQuery := fmt.Sprintf("SELECT DISTINCT `industry` FROM %s WHERE `industry` IS NOT NULL AND `industry` != '' ORDER BY `industry`", m.table)
+	var indResults []struct {
+		Industry string `db:"industry"`
+	}
+	err = m.conn.QueryRowsCtx(ctx, &indResults, indQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	for _, r := range indResults {
+		industries = append(industries, r.Industry)
+	}
+
+	scaleQuery := fmt.Sprintf("SELECT DISTINCT `company_scale` FROM %s WHERE `company_scale` IS NOT NULL AND `company_scale` != '' ORDER BY `company_scale`", m.table)
+	var scaleResults []struct {
+		CompanyScale string `db:"company_scale"`
+	}
+	err = m.conn.QueryRowsCtx(ctx, &scaleResults, scaleQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	for _, r := range scaleResults {
+		companyScales = append(companyScales, r.CompanyScale)
+	}
+
+	locQuery := fmt.Sprintf("SELECT DISTINCT `location` FROM %s WHERE `location` IS NOT NULL AND `location` != '' ORDER BY `location`", m.table)
+	var locResults []struct {
+		Location string `db:"location"`
+	}
+	err = m.conn.QueryRowsCtx(ctx, &locResults, locQuery)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	for _, r := range locResults {
+		locations = append(locations, r.Location)
+	}
+
+	return industries, companyScales, locations, nil
 }

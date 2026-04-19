@@ -170,6 +170,14 @@ type JobListResultResp struct {
 	Data *JobListResp `json:"data,optional"`
 }
 
+type JobFilterOptionsResp struct {
+	Code              int      `json:"code"`
+	Msg               string   `json:"msg"`
+	Industries        []string `json:"industries"`
+	CompanyScales     []string `json:"companyScales"`
+	Locations         []string `json:"locations"`
+}
+
 type JobNode struct {
 	Id           int64    `json:"id"`
 	Name         string   `json:"name"`

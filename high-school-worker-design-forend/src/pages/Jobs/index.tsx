@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space, Pagination, Card, Row, Col } from 'antd';
-import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined } from '@ant-design/icons';
-import ReactECharts from 'echarts-for-react';
-import { jobApi, jobPathApi } from '../../api';
-import type { Job, PromotionPath, TransferPath } from '../../types';
+  import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space, Pagination, Card, Row, Col } from 'antd';
+  import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
+  import ReactECharts from 'echarts-for-react';
+  import { jobApi, jobPathApi } from '../../api';
+  import type { Job, PromotionPath, TransferPath } from '../../types';
 
 type GraphLink = {
   source: number;
@@ -23,7 +23,7 @@ export default function JobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [total, setTotal] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(12);
   const [selectedJobId, setSelectedJobId] = useState<number | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [loading, setLoading] = useState(false);
@@ -40,9 +40,11 @@ export default function JobsPage() {
   const [filterSalaryMin, setFilterSalaryMin] = useState(0);
   const [filterSalaryMax, setFilterSalaryMax] = useState(100);
 
-  const companyScales = ['20人以下', '20-99人', '100-299人', '300-499人', '500-999人', '1000-9999人', '10000人以上'];
+  const [industryOptions, setIndustryOptions] = useState<string[]>([]);
+  const [companyScaleOptions, setCompanyScaleOptions] = useState<string[]>([]);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
 
-  const popularJobs = ['Golang后端开发工程师', '高级Java开发工程师', '产品经理'];
+  const popularJobs = ['科研人员', '硬件测试', '前端开发'];
 
   const loadJobs = useCallback(async (page: number, size: number) => {
     try {
@@ -75,6 +77,20 @@ export default function JobsPage() {
   useEffect(() => {
     void loadJobs(currentPage, pageSize);
   }, [currentPage, pageSize, loadJobs]);
+
+  useEffect(() => {
+    const loadFilterOptions = async () => {
+      try {
+        const res = await jobApi.filterOptions();
+        setIndustryOptions(res.industries || []);
+        setCompanyScaleOptions(res.companyScales || []);
+        setLocationOptions(res.locations || []);
+      } catch {
+        console.error('获取筛选选项失败');
+      }
+    };
+    void loadFilterOptions();
+  }, []);
 
   useEffect(() => {
     if (selectedJobId) {
@@ -257,19 +273,48 @@ export default function JobsPage() {
     setPageSize(size);
   };
 
-  const handleQuickPick = (jobName: string) => {
+  const handleQuickPick = async (jobName: string) => {
     const target = jobs.find((job) => {
       const name = job.name ?? '';
       return name.includes(jobName) || jobName.includes(name);
     });
 
-    if (!target) {
-      message.info(`未找到岗位: ${jobName}，请尝试搜索`);
+    if (target) {
+      setSelectedJobId(target.id);
+      message.success(`已选择: ${target.name}`);
       return;
     }
 
-    setSelectedJobId(target.id);
-    message.success(`已选择: ${target.name}`);
+    setSearchKeyword(jobName);
+    setFilterIndustry(undefined);
+    setFilterLocation(undefined);
+    setFilterCompanyScale(undefined);
+    setFilterSalaryMin(0);
+    setFilterSalaryMax(100);
+    setCurrentPage(1);
+
+    try {
+      setLoading(true);
+      const response = await jobApi.list({ page: 1, pageSize: pageSize, keyword: jobName });
+      if (response.data?.list && response.data.list.length > 0) {
+        const found = response.data.list.find((job) => {
+          const name = job.name ?? '';
+          return name.includes(jobName) || jobName.includes(name);
+        }) ?? response.data.list[0];
+        setJobs(response.data.list);
+        setTotal(response.data.total);
+        setSelectedJobId(found.id);
+        message.success(`已选择: ${found.name}`);
+      } else {
+        setJobs([]);
+        setTotal(0);
+        message.info(`未找到岗位: ${jobName}，请尝试搜索`);
+      }
+    } catch {
+      message.error('搜索岗位失败');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const getGraphOption = () => {
@@ -527,23 +572,7 @@ export default function JobsPage() {
                       onChange={(v) => setFilterIndustry(v)}
                       allowClear
                       showSearch
-                      options={[
-                        { value: '互联网', label: '互联网' },
-                        { value: '金融', label: '金融' },
-                        { value: '教育', label: '教育' },
-                        { value: '医疗', label: '医疗' },
-                        { value: '制造业', label: '制造业' },
-                        { value: '房地产', label: '房地产' },
-                        { value: '能源', label: '能源' },
-                        { value: '电商', label: '电商' },
-                        { value: '游戏', label: '游戏' },
-                        { value: '人工智能', label: '人工智能' },
-                        { value: '通讯', label: '通讯' },
-                        { value: '汽车', label: '汽车' },
-                        { value: '物流', label: '物流' },
-                        { value: '服务业', label: '服务业' },
-                        { value: '影视', label: '影视' },
-                      ]}
+                      options={industryOptions.map(s => ({ value: s, label: s }))}
                     />
                   </div>
                   <div>
@@ -555,34 +584,20 @@ export default function JobsPage() {
                       onChange={(v) => setFilterLocation(v)}
                       allowClear
                       showSearch
-                      options={[
-                        { value: '北京', label: '北京' },
-                        { value: '上海', label: '上海' },
-                        { value: '广州', label: '广州' },
-                        { value: '深圳', label: '深圳' },
-                        { value: '杭州', label: '杭州' },
-                        { value: '成都', label: '成都' },
-                        { value: '南京', label: '南京' },
-                        { value: '武汉', label: '武汉' },
-                        { value: '西安', label: '西安' },
-                        { value: '苏州', label: '苏州' },
-                        { value: '长沙', label: '长沙' },
-                        { value: '厦门', label: '厦门' },
-                        { value: '重庆', label: '重庆' },
-                        { value: '大连', label: '大连' },
-                        { value: '青岛', label: '青岛' },
-                      ]}
+                      options={locationOptions.map(s => ({ value: s, label: s }))}
                     />
                   </div>
                   <div>
-                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>公司规模</div>
+                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      <TeamOutlined style={{ marginRight: 4 }} />企业人数
+                    </div>
                     <Select
-                      placeholder="选择公司规模"
+                      placeholder="选择企业人数"
                       style={{ width: '100%' }}
                       value={filterCompanyScale}
                       onChange={(v) => setFilterCompanyScale(v)}
                       allowClear
-                      options={companyScales.map(s => ({ value: s, label: s }))}
+                      options={companyScaleOptions.map(s => ({ value: s, label: s }))}
                     />
                   </div>
                   <div>
@@ -675,37 +690,29 @@ export default function JobsPage() {
                         style={{ color: 'var(--md-sys-color-on-surface)' }}
                         title={job.name}
                       >
-                        {job.name || '-'}
+                        {job.name || '未知'}
                       </div>
                       <div className="text-xs space-y-0.5" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
-                        {job.company && (
                           <div className="flex items-center gap-1 truncate">
                             <BankOutlined style={{ fontSize: 12 }} />
-                            <span className="truncate">{job.company}</span>
+                            <span className="truncate">{job.company || '未知'}</span>
                           </div>
-                        )}
-                        {job.location && (
                           <div className="flex items-center gap-1 truncate">
                             <EnvironmentOutlined style={{ fontSize: 12 }} />
-                            <span className="truncate">{job.location}</span>
+                            <span className="truncate">{job.location || '未知'}</span>
                           </div>
-                        )}
-                        {job.salaryRange && (
                           <div className="flex items-center gap-1 truncate">
                             <DollarOutlined style={{ fontSize: 12 }} />
-                            <span className="truncate" style={{ color: 'var(--md-sys-color-primary)' }}>{job.salaryRange}</span>
+                            <span className="truncate" style={{ color: 'var(--md-sys-color-primary)' }}>{job.salaryRange || '未知'}</span>
                           </div>
-                        )}
                       </div>
-                      {job.industry && (
-                        <div className="flex flex-wrap gap-1 mt-1">
-                          {job.industry.split(',').slice(0, 2).map((ind) => (
-                            <Tag key={ind} style={{ fontSize: '10px', padding: '0 4px', margin: 0, borderRadius: 'var(--md-sys-shape-corner-small)' }}>
-                              {ind.trim()}
-                            </Tag>
-                          ))}
-                        </div>
-                      )}
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {(job.industry ? job.industry.split(',').slice(0, 2) : ['未知']).map((ind) => (
+                          <Tag key={ind} style={{ fontSize: '10px', padding: '0 4px', margin: 0, borderRadius: 'var(--md-sys-shape-corner-small)' }}>
+                            {ind.trim()}
+                          </Tag>
+                        ))}
+                      </div>
                     </div>
                   </Card>
                 </Col>
@@ -722,7 +729,7 @@ export default function JobsPage() {
                 onChange={handlePageChange}
                 showSizeChanger
                 showQuickJumper
-                pageSizeOptions={['10', '20', '50']}
+                pageSizeOptions={['12', '21', '51']}
                 size="small"
               />
             </div>

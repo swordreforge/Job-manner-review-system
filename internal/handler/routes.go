@@ -78,6 +78,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: job.ListJobsHandler(serverCtx),
 			},
 			{
+				// Get job filter options
+				Method:  http.MethodGet,
+				Path:    "/jobs/filter-options",
+				Handler: job.GetFilterOptionsHandler(serverCtx),
+			},
+			{
 				// Generate job profile via AI
 				Method:  http.MethodPost,
 				Path:    "/jobs/generate",
