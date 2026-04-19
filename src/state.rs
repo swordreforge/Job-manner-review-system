@@ -1,18 +1,24 @@
 use sqlx::{MySqlPool, SqlitePool};
 use std::sync::Arc;
+
 use std::path::Path;
 use anyhow::{Context, Result};
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+
+static RE_COLLATE_EQ: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_COLLATE_SPACE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_COMMENT: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_CHECK_JSON: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_AUTO_INC: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_PAREN_OPEN: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_PAREN_CLOSE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+static RE_MULTI_SPACE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
 
 fn replace_unsupported_collations(input: &str) -> String {
-    let replaced_eq = regex::Regex::new(r"(?i)COLLATE\s*=\s*utf8mb4_uca[0-9a-z_]*")
-        .unwrap()
-        .replace_all(input, "COLLATE=utf8mb4_unicode_ci")
-        .to_string();
-
-    regex::Regex::new(r"(?i)COLLATE\s+utf8mb4_uca[0-9a-z_]*")
-        .unwrap()
-        .replace_all(&replaced_eq, "COLLATE utf8mb4_unicode_ci")
-        .to_string()
+    let re_eq = RE_COLLATE_EQ.get_or_init(|| regex::Regex::new(r"(?i)COLLATE\s*=\s*utf8mb4_uca[0-9a-z_]*").unwrap());
+    let re_sp = RE_COLLATE_SPACE.get_or_init(|| regex::Regex::new(r"(?i)COLLATE\s+utf8mb4_uca[0-9a-z_]*").unwrap());
+    let mid = re_eq.replace_all(input, "COLLATE=utf8mb4_unicode_ci");
+    re_sp.replace_all(&mid, "COLLATE utf8mb4_unicode_ci").to_string()
 }
 
 /// 应用状态，统一管理所有共享依赖
@@ -75,23 +81,18 @@ impl AppState {
     pub async fn backup_database(&self, output_dir: &str) -> Result<String> {
         let (host, port, user, password, db_name) = self.get_mysql_config();
 
-        // 创建备份目录
-        std::fs::create_dir_all(output_dir)
+        tokio::fs::create_dir_all(output_dir).await
             .context("Failed to create backup directory")?;
 
-        // 生成备份文件名
         let timestamp = chrono::Utc::now().format("%Y%m%d_%H%M%S").to_string();
         let filename = format!("career_db_backup_{}.sql", timestamp);
         let output_path = format!("{}/{}", output_dir, filename);
 
-        // 检查密码
         if password.is_empty() {
             anyhow::bail!("Database password is not configured");
         }
 
-        // 检查 mysqldump 是否存在
         let dump_cmd = if cfg!(target_os = "windows") {
-            // Windows平台检测mysqldump.exe
             if std::process::Command::new("where").arg("mysqldump").output().map(|o| o.status.success()).unwrap_or(false) {
                 "mysqldump"
             } else {
@@ -109,8 +110,14 @@ impl AppState {
             "mysqldump"
         };
 
-        // 构建命令
-        let output = {
+        let re_comment = RE_COMMENT.get_or_init(|| regex::Regex::new(r"COMMENT\s*'[^']*'").unwrap());
+        let re_check_json = RE_CHECK_JSON.get_or_init(|| regex::Regex::new(r"CHECK\s*\(json_valid\([^)]*\)\)").unwrap());
+        let re_auto_inc = RE_AUTO_INC.get_or_init(|| regex::Regex::new(r"AUTO_INCREMENT\s*=\s*\d+").unwrap());
+        let re_paren_open = RE_PAREN_OPEN.get_or_init(|| regex::Regex::new(r"\s*\(").unwrap());
+        let re_paren_close = RE_PAREN_CLOSE.get_or_init(|| regex::Regex::new(r"\)\s*").unwrap());
+        let re_multi_space = RE_MULTI_SPACE.get_or_init(|| regex::Regex::new(r" {2,}").unwrap());
+
+        let mut child = {
             let mut cmd = tokio::process::Command::new(dump_cmd);
             cmd.arg("-h")
                 .arg(host)
@@ -119,127 +126,117 @@ impl AppState {
                 .arg("-u")
                 .arg(user)
                 .arg("--default-character-set=utf8mb4")
-                .arg(db_name);
-            cmd.env("MYSQL_PWD", password);
-            cmd.output()
-                .await
+                .arg("--quick")
+                .arg("--single-transaction")
+                .arg("--compress")
+                .arg(db_name)
+                .env("MYSQL_PWD", password)
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+            cmd.spawn()
                 .context("Failed to execute mysqldump command")?
         };
 
-        if !output.status.success() {
-            let error = String::from_utf8_lossy(&output.stderr);
-            anyhow::bail!("mysqldump failed: {}", error);
+        let mut stdout = child.stdout.take().context("Failed to capture mysqldump stdout")?;
+
+        let out_path = output_path.clone();
+        let db_name_owned = db_name.to_string();
+
+        let writer_handle = tokio::spawn(async move {
+use tokio::io::{AsyncBufReadExt, AsyncWriteExt};
+
+            let mut reader = tokio::io::BufReader::new(&mut stdout);
+            let out_file = tokio::fs::File::create(&out_path).await
+                .map_err(|e| anyhow::anyhow!("Failed to create backup file: {}", e))?;
+            let mut writer = tokio::io::BufWriter::new(out_file);
+
+            let header = format!(
+                "CREATE DATABASE IF NOT EXISTS `{}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n\
+                 USE `{}`;\n\
+                 SET FOREIGN_KEY_CHECKS=0;\n\n",
+                db_name_owned, db_name_owned
+            );
+            writer.write_all(header.as_bytes()).await
+                .map_err(|e| anyhow::anyhow!("Failed to write header: {}", e))?;
+
+            let mut line = String::with_capacity(4096);
+            let mut line_count: u64 = 0;
+
+            loop {
+                line.clear();
+                let n = reader.read_line(&mut line).await
+                    .map_err(|e| anyhow::anyhow!("Failed to read mysqldump output: {}", e))?;
+                if n == 0 { break; }
+
+                let trimmed = line.trim();
+                if trimmed.is_empty()
+                    || trimmed.starts_with("--")
+                    || trimmed.starts_with("/*")
+                    || trimmed.starts_with("*/")
+                    || trimmed.starts_with("SET ")
+                    || trimmed.starts_with("LOCK ")
+                    || trimmed.starts_with("UNLOCK ")
+                    || trimmed.starts_with("COMMIT")
+                {
+                    continue;
+                }
+
+                let mut cleaned = trimmed.to_string();
+
+                cleaned = re_multi_space.replace_all(&cleaned, " ").to_string();
+                cleaned = cleaned.replace("TYPE=InnoDB", "ENGINE=InnoDB");
+                cleaned = re_comment.replace_all(&cleaned, "").to_string();
+                cleaned = replace_unsupported_collations(&cleaned);
+                cleaned = cleaned.replace("COLLATE=utf8mb4_bin", "");
+                cleaned = re_check_json.replace_all(&cleaned, "").to_string();
+                cleaned = re_auto_inc.replace_all(&cleaned, "").to_string();
+                cleaned = re_paren_open.replace_all(&cleaned, "(").to_string();
+                cleaned = re_paren_close.replace_all(&cleaned, ")").to_string();
+                cleaned = cleaned.replace(" ,", ",");
+
+                if cleaned.contains(") ENGINE=InnoDB") && !cleaned.contains("DEFAULT CHARSET") {
+                    cleaned = cleaned.replace(") ENGINE=InnoDB", ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+                }
+
+                let cleaned = cleaned.trim();
+                if !cleaned.is_empty() {
+                    writer.write_all(cleaned.as_bytes()).await
+                        .map_err(|e| anyhow::anyhow!("Failed to write line: {}", e))?;
+                    writer.write_all(b"\n").await
+                        .map_err(|e| anyhow::anyhow!("Failed to write newline: {}", e))?;
+                    line_count += 1;
+                }
+            }
+
+            writer.write_all(b"\nSET FOREIGN_KEY_CHECKS=1;\n").await
+                .map_err(|e| anyhow::anyhow!("Failed to write footer: {}", e))?;
+            writer.flush().await
+                .map_err(|e| anyhow::anyhow!("Failed to flush: {}", e))?;
+
+            Ok::<u64, anyhow::Error>(line_count)
+        });
+
+        let status = child.wait().await
+            .context("Failed to wait for mysqldump")?;
+        if !status.success() {
+            let mut stderr = String::new();
+            if let Some(mut err) = child.stderr.take() {
+                use tokio::io::AsyncReadExt;
+                let _ = err.read_to_string(&mut stderr).await;
+            }
+            anyhow::bail!("mysqldump failed: {}", stderr);
         }
 
-        // 清理 SQL 内容以提高兼容性
-        let sql_content = String::from_utf8_lossy(&output.stdout).to_string();
-        
-        // 1. 添加兼容性头信息
-        let mut cleaned_sql = format!(
-            "CREATE DATABASE IF NOT EXISTS `{}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\n",
-            db_name
-        );
-        cleaned_sql.push_str(&format!("USE `{}`;\n", db_name));
-        cleaned_sql.push_str("SET FOREIGN_KEY_CHECKS=0;\n\n");
+        let line_count = writer_handle.await
+            .context("Backup writer task panicked")?
+            .context("Backup writer task failed")?;
 
-        // 2. 过滤和清理 SQL
-        for line in sql_content.lines() {
-            let line = line.trim();
-            
-            // 跳过空行
-            if line.is_empty() {
-                continue;
-            }
-            
-            // 跳过注释行
-            if line.starts_with("--") || line.starts_with("/*") || line.starts_with("*/") {
-                continue;
-            }
-            
-            // 跳过 SET 语句（可能导致兼容性问题）
-            if line.starts_with("SET ") {
-                continue;
-            }
-            
-            // 跳过 LOCK 和 UNLOCK 语句
-            if line.starts_with("LOCK ") || line.starts_with("UNLOCK ") {
-                continue;
-            }
-            
-            // 跳过 COMMIT 语句
-            if line.starts_with("COMMIT") {
-                continue;
-            }
-            
-            // 清理 SQL 语法
-            let mut cleaned_line = line.to_string();
-            
-            // 合并多个空格
-            while cleaned_line.contains("  ") {
-                cleaned_line = cleaned_line.replace("  ", " ");
-            }
-            
-            // TYPE → ENGINE（MySQL 旧语法）
-            cleaned_line = cleaned_line.replace("TYPE=InnoDB", "ENGINE=InnoDB");
-            
-            // 移除 COMMENT（可能导致导入失败）
-            cleaned_line = regex::Regex::new(r"COMMENT\s*'[^']*'").unwrap()
-                .replace_all(&cleaned_line, "")
-                .to_string();
-            
-            // 统一不兼容排序规则到 utf8mb4_unicode_ci
-            cleaned_line = replace_unsupported_collations(&cleaned_line);
-            cleaned_line = cleaned_line.replace("COLLATE=utf8mb4_bin", "");
-            
-            // 移除 CHECK (json_valid(...)) 约束
-            cleaned_line = regex::Regex::new(r"CHECK\s*\(json_valid\([^)]*\)\)").unwrap()
-                .replace_all(&cleaned_line, "")
-                .to_string();
-            
-            // 移除 AUTO_INCREMENT（避免主键冲突）
-            cleaned_line = regex::Regex::new(r"AUTO_INCREMENT\s*=\s*\d+").unwrap()
-                .replace_all(&cleaned_line, "")
-                .to_string();
-            
-            // 清理括号前后的空格
-            cleaned_line = regex::Regex::new(r"\s*\(").unwrap()
-                .replace_all(&cleaned_line, "(")
-                .to_string();
-            cleaned_line = regex::Regex::new(r"\)\s*").unwrap()
-                .replace_all(&cleaned_line, ")")
-                .to_string();
-            
-            // 清理逗号前的空格
-            cleaned_line = cleaned_line.replace(" ,", ",");
-            
-            // 确保 ENGINE 子句完整
-            if cleaned_line.contains(") ENGINE=InnoDB") && !cleaned_line.contains("DEFAULT CHARSET") {
-                cleaned_line = cleaned_line.replace(
-                    ") ENGINE=InnoDB",
-                    ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-                );
-            }
-            
-            // 移除行首和行尾的空格
-            cleaned_line = cleaned_line.trim().to_string();
-            
-            if !cleaned_line.is_empty() {
-                cleaned_sql.push_str(&cleaned_line);
-                cleaned_sql.push('\n');
-            }
-        }
-        
-        // 3. 添加结尾
-        cleaned_sql.push_str("\nSET FOREIGN_KEY_CHECKS=1;\n");
-
-        // 写入文件
-        std::fs::write(&output_path, cleaned_sql)
-            .context("Failed to write backup file")?;
+        log::info!("Database backup completed: {} lines written to {}", line_count, output_path);
 
         Ok(output_path)
     }
 
-    /// 执行数据库恢复
+/// 执行数据库恢复
     /// 
     /// # 参数
     /// - `backup_file`: 备份文件的路径
@@ -250,75 +247,64 @@ impl AppState {
     pub async fn restore_database(&self, backup_file: &str) -> Result<()> {
         let (host, port, user, password, db_name) = self.get_mysql_config();
 
-        // 检查备份文件是否存在
         if !Path::new(backup_file).exists() {
             anyhow::bail!("Backup file not found: {}", backup_file);
         }
-
-        // 检查密码
         if password.is_empty() {
             anyhow::bail!("Database password is not configured");
         }
 
-        // 检查 mysql 命令是否存在
-        if cfg!(target_os = "windows") {
-            if !std::process::Command::new("where").arg("mysql").output().map(|o| o.status.success()).unwrap_or(false) {
-                anyhow::bail!(
-                    "未找到 mysql 命令。\n\
-                     请确保 MySQL bin 目录在 PATH 中。"
-                );
-            }
+        let mut child = {
+            let mut cmd = tokio::process::Command::new("mysql");
+            cmd.arg("-h")
+                .arg(host)
+                .arg("-P")
+                .arg(port.to_string())
+                .arg("-u")
+                .arg(user)
+                .arg("--default-character-set=utf8mb4")
+                .arg("--binary-mode=1")
+                .arg(db_name)
+                .env("MYSQL_PWD", password)
+                .stdin(std::process::Stdio::piped())
+                .stdout(std::process::Stdio::piped())
+                .stderr(std::process::Stdio::piped());
+            cmd.spawn().context("Failed to execute mysql command")?
+        };
+
+        let stdin = child.stdin.take().context("Failed to open stdin")?;
+        let mut writer = tokio::io::BufWriter::new(stdin);
+
+        writer.write_all(b"SET NAMES utf8mb4;\nSET CHARACTER SET utf8mb4;\n").await
+            .context("Failed to write charset header")?;
+
+        let file = tokio::fs::File::open(backup_file).await
+            .context("Failed to open backup file")?;
+        let mut reader = tokio::io::BufReader::new(file);
+        let mut line = String::with_capacity(8192);
+
+        loop {
+            line.clear();
+            let n = reader.read_line(&mut line).await
+                .context("Failed to read backup line")?;
+            if n == 0 { break; }
+
+            let normalized = replace_unsupported_collations(&line);
+            writer.write_all(normalized.as_bytes()).await
+                .context("Failed to write to mysql")?;
         }
 
-        // 使用 mysql 命令恢复数据库
-        let backup_content = std::fs::read_to_string(backup_file)
-            .context("Failed to read backup file")?;
+        writer.flush().await.context("Failed to flush")?;
+        drop(writer);
 
-        // 恢复前统一不兼容排序规则，避免 MySQL 8.0 导入失败
-        let normalized_backup_content = replace_unsupported_collations(&backup_content);
-
-        // 在备份内容前添加字符集设置
-        let restored_content = format!(
-            "SET NAMES utf8mb4;\nSET CHARACTER SET utf8mb4;\n{}",
-            normalized_backup_content
-        );
-
-        let mut cmd = tokio::process::Command::new("mysql");
-        cmd.arg("-h")
-            .arg(host)
-            .arg("-P")
-            .arg(port.to_string())
-            .arg("-u")
-            .arg(user)
-            .arg("--default-character-set=utf8mb4")
-            .arg("--binary-mode=1")
-            .arg(db_name);
-        cmd.env("MYSQL_PWD", password);
-
-        // 写入备份内容到 stdin
-        let mut child = cmd
-            .stdin(std::process::Stdio::piped())
-            .stdout(std::process::Stdio::piped())
-            .stderr(std::process::Stdio::piped())
-            .spawn()
-            .context("Failed to execute mysql command")?;
-
-        if let Some(mut stdin) = child.stdin.take() {
-            use tokio::io::AsyncWriteExt;
-            stdin.write_all(restored_content.as_bytes()).await
-                .context("Failed to write backup content to mysql")?;
-            drop(stdin);
-        }
-
-        let output = child.wait_with_output()
-            .await
+        let output = child.wait_with_output().await
             .context("Failed to wait for mysql command")?;
 
         if !output.status.success() {
             let error = String::from_utf8_lossy(&output.stderr);
             if error.contains("Unknown collation") {
                 anyhow::bail!(
-                    "mysql restore failed: {}\nHint: restore now auto-normalizes utf8mb4_uca* to utf8mb4_unicode_ci; please verify the input SQL content and retry.",
+                    "mysql restore failed: {}\nHint: collation normalization was applied; verify input SQL.",
                     error.trim()
                 );
             }

@@ -69,6 +69,7 @@ pub async fn list_tables(state: web::Data<crate::state::AppState>) -> impl Respo
             TABLE_NAME as table_name,
             TABLE_COMMENT as table_comment,
             ENGINE as engine,
+            TABLE_ROWS as row_count,
             CREATE_TIME as created_time
         FROM information_schema.TABLES
         WHERE TABLE_SCHEMA = DATABASE()
@@ -104,16 +105,7 @@ pub async fn list_tables(state: web::Data<crate::state::AppState>) -> impl Respo
                         .ok()
                 });
                 let created_time: Option<String> = row.try_get("created_time").ok();
-                
-                // 查询表的行数
-                let count_query = format!("SELECT COUNT(*) as count FROM `{}`", table_name);
-                let row_count: Option<i64> = match sqlx::query(&count_query)
-                    .fetch_one(pool)
-                    .await
-                {
-                    Ok(count_row) => Some(count_row.get("count")),
-                    Err(_) => None,
-                };
+                let row_count: Option<i64> = row.try_get::<i64, _>("row_count").ok();
                 
                 tables.push(TableInfo {
                     table_name,
@@ -604,9 +596,16 @@ fn is_valid_identifier(name: &str) -> bool {
     name.chars().all(|c| c.is_alphanumeric() || c == '_')
 }
 
-/// 转义SQL字符串
+fn contains_sql_injection(s: &str) -> bool {
+    let lower = s.to_lowercase();
+    let forbidden = [";", "--", "/*", "*/", "drop ", "delete ", "insert ", "update ", "alter ", "create ", "exec ", "execute ", "union ", "into outfile", "load_file", "benchmark", "sleep(", "waitfor"];
+    forbidden.iter().any(|f| lower.contains(f))
+}
+
 fn escape_sql_string(s: &str) -> String {
-    s.replace('\'', "''")
+    s.replace('\\', "\\\\")
+     .replace('\'', "''")
+     .replace('\0', "")
 }
 
 /// 查询表数据请求
@@ -638,13 +637,20 @@ pub async fn query_table_data(
     }
     
     let page = query.page.unwrap_or(1);
-    let page_size = query.page_size.unwrap_or(10);
+    let page_size = query.page_size.unwrap_or(10).min(500);
     let offset = (page - 1) * page_size;
     
     // 构建WHERE子句
     let where_clause = if let Some(clause) = &query.where_clause {
-        if clause.trim().is_empty() {
+        let trimmed = clause.trim();
+        if trimmed.is_empty() {
             String::new()
+        } else if contains_sql_injection(clause) {
+            return HttpResponse::BadRequest().json(serde_json::json!({
+                "code": 400,
+                "message": "WHERE clause contains potentially dangerous SQL",
+                "data": null
+            }));
         } else {
             format!("WHERE {}", clause)
         }
@@ -1021,14 +1027,14 @@ pub async fn delete_data(
         }));
     }
     
-    let delete_sql = format!(
-        "DELETE FROM `{}` WHERE `{}` = '{}'",
+let delete_sql = format!(
+        "DELETE FROM `{}` WHERE `{}` = ?",
         req.table_name,
-        req.where_column,
-        escape_sql_string(&req.where_value)
+        req.where_column
     );
-    
+
     match sqlx::query(&delete_sql)
+        .bind(&req.where_value)
         .execute(pool)
         .await
     {

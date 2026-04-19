@@ -4,6 +4,7 @@ use std::sync::Mutex;
 use sysinfo::{System, Disks, ProcessesToUpdate};
 use once_cell::sync::Lazy;
 use futures_util::StreamExt;
+use tokio::io::AsyncWriteExt;
 
 static SYSTEM: Lazy<Mutex<System>> = Lazy::new(|| Mutex::new(System::new_all()));
 
@@ -98,55 +99,63 @@ pub struct ListBackupsRequest {
 }
 
 pub async fn status() -> impl Responder {
-    let mut sys = SYSTEM.lock().unwrap();
-    sys.refresh_cpu_usage();
-    sys.refresh_memory();
-    sys.refresh_processes(ProcessesToUpdate::All, true);
+    let result = tokio::task::spawn_blocking(|| {
+        let mut sys = SYSTEM.lock().unwrap();
+        sys.refresh_cpu_usage();
+        sys.refresh_memory();
+        sys.refresh_processes(ProcessesToUpdate::All, true);
 
-    let memory_used = sys.used_memory();
-    let memory_total = sys.total_memory();
-    let memory_usage = if memory_total > 0 {
-        (memory_used as f32 / memory_total as f32) * 100.0
-    } else {
-        0.0
-    };
+        let memory_used = sys.used_memory();
+        let memory_total = sys.total_memory();
+        let memory_usage = if memory_total > 0 {
+            (memory_used as f32 / memory_total as f32) * 100.0
+        } else {
+            0.0
+        };
 
-    let cpu_usage = sys.global_cpu_usage();
+        let cpu_usage = sys.global_cpu_usage();
+        let disks = Disks::new_with_refreshed_list();
+        let disk_list = disks.list();
+        let disk_total: u64 = disk_list.iter().map(|d| d.total_space()).sum();
+        let disk_used: u64 = disk_list.iter().map(|d| d.total_space() - d.available_space()).sum();
+        let disk_usage = if disk_total > 0 {
+            (disk_used as f32 / disk_total as f32) * 100.0
+        } else {
+            0.0
+        };
 
-    let disks = Disks::new_with_refreshed_list();
-    let disk_list = disks.list();
-    let disk_total: u64 = disk_list.iter().map(|d| d.total_space()).sum();
-    let disk_used: u64 = disk_list.iter().map(|d| d.total_space() - d.available_space()).sum();
-    let disk_usage = if disk_total > 0 {
-        (disk_used as f32 / disk_total as f32) * 100.0
-    } else {
-        0.0
-    };
+        let uptime = System::uptime();
+        let server_time = chrono::Utc::now().timestamp();
+        let process_count = sys.processes().len();
 
-    let uptime = System::uptime();
-    let server_time = chrono::Utc::now().timestamp();
-    let process_count = sys.processes().len();
+        SystemStatus {
+            server: "running".to_string(),
+            database: "connected".to_string(),
+            memory_used,
+            memory_total,
+            memory_usage,
+            cpu_usage,
+            uptime,
+            server_time,
+            disk_total,
+            disk_used,
+            disk_usage,
+            process_count,
+        }
+    }).await;
 
-    let status = SystemStatus {
-        server: "running".to_string(),
-        database: "connected".to_string(),
-        memory_used,
-        memory_total,
-        memory_usage,
-        cpu_usage,
-        uptime,
-        server_time,
-        disk_total,
-        disk_used,
-        disk_usage,
-        process_count,
-    };
-
-    HttpResponse::Ok().json(serde_json::json!({
-        "code": 200,
-        "message": "success",
-        "data": status
-    }))
+    match result {
+        Ok(status) => HttpResponse::Ok().json(serde_json::json!({
+            "code": 200,
+            "message": "success",
+            "data": status
+        })),
+        Err(_) => HttpResponse::InternalServerError().json(serde_json::json!({
+            "code": 500,
+            "message": "Failed to get system status",
+            "data": null
+        })),
+    }
 }
 
 /// 数据库备份接口
@@ -232,8 +241,9 @@ pub async fn list_backups(
 ) -> impl Responder {
     let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
 
-    match state.list_backups(backup_dir) {
-        Ok(backups) => {
+    let backup_dir_owned = backup_dir.to_string();
+    match tokio::task::spawn_blocking(move || state.list_backups(&backup_dir_owned)).await {
+        Ok(Ok(backups)) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "code": 200,
                 "message": "success",
@@ -243,8 +253,16 @@ pub async fn list_backups(
                 }
             }))
         }
-        Err(e) => {
+        Ok(Err(e)) => {
             log::error!("Failed to list backups: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to list backups: {}", e),
+                "data": null
+            }))
+        }
+        Err(e) => {
+            log::error!("Task failed: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "code": 500,
                 "message": format!("Failed to list backups: {}", e),
@@ -311,8 +329,9 @@ pub async fn delete_backup(
     }
 
     // 删除文件
-    match std::fs::remove_file(path) {
-        Ok(_) => {
+    let path_buf = path.to_path_buf();
+    match tokio::task::spawn_blocking(move || std::fs::remove_file(&path_buf)).await {
+        Ok(Ok(_)) => {
             log::info!("Backup file deleted successfully: {}", backup_file);
             HttpResponse::Ok().json(serde_json::json!({
                 "code": 200,
@@ -323,8 +342,16 @@ pub async fn delete_backup(
                 }
             }))
         }
-        Err(e) => {
+        Ok(Err(e)) => {
             log::error!("Failed to delete backup file: {}", e);
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to delete backup file: {}", e),
+                "data": null
+            }))
+        }
+        Err(e) => {
+            log::error!("Task failed: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "code": 500,
                 "message": format!("Failed to delete backup file: {}", e),
@@ -342,7 +369,7 @@ pub async fn upload_backup(
     let backup_dir = query.backup_dir.as_deref().unwrap_or(".");
     
     // 创建备份目录
-    if let Err(e) = std::fs::create_dir_all(backup_dir) {
+    if let Err(e) = tokio::fs::create_dir_all(backup_dir).await {
         log::error!("Failed to create backup directory: {}", e);
         return HttpResponse::InternalServerError().json(serde_json::json!({
             "code": 500,
@@ -387,7 +414,7 @@ pub async fn upload_backup(
                 let filepath = format!("{}/{}", backup_dir, filename);
 
                 // 创建文件
-                let mut file = match std::fs::File::create(&filepath) {
+                let mut file = match tokio::fs::File::create(&filepath).await {
                     Ok(f) => f,
                     Err(e) => {
                         log::error!("Failed to create file: {}", e);
@@ -399,13 +426,12 @@ pub async fn upload_backup(
                     }
                 };
 
-                // 写入文件内容
                 file_size = 0;
                 while let Some(chunk_result) = field.next().await {
                     match chunk_result {
                         Ok(bytes) => {
                             file_size += bytes.len() as u64;
-                            if let Err(e) = std::io::Write::write_all(&mut file, &bytes) {
+                            if let Err(e) = file.write_all(&bytes).await {
                                 log::error!("Failed to write to file: {}", e);
                                 return HttpResponse::InternalServerError().json(serde_json::json!({
                                     "code": 500,
@@ -416,8 +442,8 @@ pub async fn upload_backup(
                         }
                         Err(e) => {
                             log::error!("Error reading chunk: {}", e);
-                            return HttpResponse::InternalServerError().json(serde_json::json!({
-                                "code": 500,
+                            return HttpResponse::BadRequest().json(serde_json::json!({
+                                "code": 400,
                                 "message": format!("Error reading chunk: {}", e),
                                 "data": null
                             }));
@@ -470,7 +496,8 @@ pub async fn read_config(query: web::Query<ReadConfigQuery>) -> impl Responder {
         }));
     }
 
-    match std::fs::read_to_string(path) {
+    let path_owned = path.clone();
+    match tokio::fs::read_to_string(path_owned).await {
         Ok(content) => {
             let yaml_result: Result<serde_yaml::Value, serde_yaml::Error> = serde_yaml::from_str(&content);
             match yaml_result {
@@ -523,18 +550,26 @@ pub async fn write_config(req: web::Json<WriteConfigRequest>) -> impl Responder 
         }));
     }
 
-    let backup_result = backup_config_file(path);
+    let path_for_backup = path.clone();
+    let backup_result = tokio::task::spawn_blocking(move || backup_config_file(&path_for_backup)).await;
     let backup_file = match backup_result {
-        Ok(bf) => bf,
-        Err(e) => {
+        Ok(Ok(bf)) => bf,
+        Ok(Err(e)) => {
             log::warn!("Failed to create backup (file may not exist): {}", e);
+            String::new()
+        }
+        Err(e) => {
+            log::warn!("Backup task failed: {}", e);
             String::new()
         }
     };
 
-    match std::fs::write(path, content) {
+    let path_owned = path.clone();
+    let content_owned = content.clone();
+    match tokio::fs::write(path_owned, content_owned).await {
         Ok(_) => {
-            let _ = cleanup_old_backups(path, 5);
+            let path_for_cleanup = path.clone();
+            let _ = tokio::task::spawn_blocking(move || cleanup_old_backups(&path_for_cleanup, 5)).await;
             HttpResponse::Ok().json(serde_json::json!({
                 "code": 200,
                 "message": "Config file saved successfully",
@@ -560,8 +595,9 @@ pub async fn list_config_backups_handler(
 ) -> impl Responder {
     let path = &query.path;
 
-    match list_config_backups(path) {
-        Ok(backups) => {
+    let path_owned = path.clone();
+    match tokio::task::spawn_blocking(move || list_config_backups(&path_owned)).await {
+        Ok(Ok(backups)) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "code": 200,
                 "message": "success",
@@ -571,7 +607,15 @@ pub async fn list_config_backups_handler(
                 }
             }))
         }
+        Ok(Err(e)) => {
+            HttpResponse::InternalServerError().json(serde_json::json!({
+                "code": 500,
+                "message": format!("Failed to list backups: {}", e),
+                "data": null
+            }))
+        }
         Err(e) => {
+            log::error!("Task failed: {}", e);
             HttpResponse::InternalServerError().json(serde_json::json!({
                 "code": 500,
                 "message": format!("Failed to list backups: {}", e),
@@ -598,12 +642,14 @@ pub async fn rollback_config(req: web::Json<RollbackRequest>) -> impl Responder 
         }));
     }
 
-    let backup_result = backup_config_file(original_path);
-    if backup_result.is_err() {
-        log::warn!("Failed to create backup before rollback: {:?}", backup_result.err());
+    let path_for_backup = original_path.clone();
+    let backup_result = tokio::task::spawn_blocking(move || backup_config_file(&path_for_backup)).await;
+    if let Ok(Err(e)) = backup_result {
+        log::warn!("Failed to create backup before rollback: {}", e);
     }
 
-    match std::fs::copy(&backup_path, original_path) {
+    let original_path_owned = original_path.clone();
+    match tokio::fs::copy(&backup_path, &original_path_owned).await {
         Ok(_) => {
             HttpResponse::Ok().json(serde_json::json!({
                 "code": 200,

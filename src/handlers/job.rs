@@ -10,6 +10,12 @@ use calamine::{Reader, Xlsx, Xls};
 use base64::{Engine as _, engine::general_purpose};
 use chrono::Datelike;
 use std::io::Cursor;
+use std::sync::OnceLock;
+
+static RE_HTML_TAG: OnceLock<regex::Regex> = OnceLock::new();
+static RE_WHITESPACE: OnceLock<regex::Regex> = OnceLock::new();
+static RE_DATE_FORMAT: OnceLock<regex::Regex> = OnceLock::new();
+static RE_CN_DATE: OnceLock<regex::Regex> = OnceLock::new();
 
 #[derive(serde::Deserialize)]
 pub struct PathId {
@@ -397,11 +403,10 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
 
     let truncate_chars = |s: Option<String>, max_chars: usize| -> Option<String> {
         s.map(|v| {
-            let chars: Vec<char> = v.chars().collect();
-            if chars.len() > max_chars {
-                chars[..max_chars].iter().collect()
-            } else {
+            if v.chars().count() <= max_chars {
                 v
+            } else {
+                v.chars().take(max_chars).collect()
             }
         })
     };
@@ -411,10 +416,10 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
     };
 
     let strip_html = |html: &str| -> String {
-        let re = regex::Regex::new(r"<[^>]+>").unwrap();
+        let re = RE_HTML_TAG.get_or_init(|| regex::Regex::new(r"<[^>]+>").unwrap());
         let text = re.replace(html, " ").to_string();
-        let whitespace_re = regex::Regex::new(r"\s+").unwrap();
-        whitespace_re.replace(&text.trim(), " ").to_string()
+        let ws_re = RE_WHITESPACE.get_or_init(|| regex::Regex::new(r"\s+").unwrap());
+        ws_re.replace(text.trim(), " ").to_string()
     };
 
     let parse_update_date = |raw: Option<String>| -> Option<String> {
@@ -423,7 +428,7 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
             if s.is_empty() {
                 return None;
             }
-            if regex::Regex::new(r"^\d{4}-\d{1,2}-\d{1,2}$").unwrap().is_match(s) {
+            if RE_DATE_FORMAT.get_or_init(|| regex::Regex::new(r"^\d{4}-\d{1,2}-\d{1,2}$").unwrap()).is_match(s) {
                 let parts: Vec<&str> = s.split('-').collect();
                 if parts.len() == 3 {
                     let y: i32 = parts[0].parse().ok()?;
@@ -450,7 +455,7 @@ pub fn parse_job_row_from_vec(row: &[calamine::Data], col_mapping: &std::collect
                 }
                 return Some(s.to_string());
             }
-            let re = regex::Regex::new(r"(\d{1,2})月(\d{1,2})日").unwrap();
+            let re = RE_CN_DATE.get_or_init(|| regex::Regex::new(r"(\d{1,2})月(\d{1,2})日").unwrap());
             if let Some(caps) = re.captures(s) {
                 let month: u32 = caps.get(1).unwrap().as_str().parse().ok()?;
                 let day: u32 = caps.get(2).unwrap().as_str().parse().ok()?;
@@ -681,15 +686,25 @@ struct ChunkUploadInfo {
     received_chunks: std::collections::HashSet<u32>,
     chunks: Vec<Vec<u8>>,
     created_at: i64,
+    total_received_size: u64,
 }
 
 const CHUNK_UPLOAD_EXPIRE_SECONDS: i64 = 3600;
+const MAX_TOTAL_UPLOAD_SIZE: u64 = 100 * 1024 * 1024; // 100MB
+const MAX_CHUNK_SIZE: u64 = 10 * 1024 * 1024; // 10MB per chunk
 
 pub async fn chunk_upload_init(
     req: web::Json<ChunkUploadInitRequest>,
 ) -> impl Responder {
     let upload_id = uuid::Uuid::new_v4().to_string();
     let now = chrono::Utc::now().timestamp();
+
+    if req.total_size > MAX_TOTAL_UPLOAD_SIZE {
+        return HttpResponse::BadRequest().json(ErrorResponse::error(
+            &format!("File size exceeds maximum allowed size of {}MB", MAX_TOTAL_UPLOAD_SIZE / 1024 / 1024),
+            None
+        ));
+    }
 
     let info = ChunkUploadInfo {
         filename: req.filename.clone(),
@@ -699,9 +714,14 @@ pub async fn chunk_upload_init(
         received_chunks: std::collections::HashSet::new(),
         chunks: Vec::with_capacity(req.total_chunks as usize),
         created_at: now,
+        total_received_size: 0,
     };
 
     let mut state = CHUNK_UPLOAD_STATE.write().await;
+
+    let current_time = chrono::Utc::now().timestamp();
+    state.uploads.retain(|_, info| current_time - info.created_at <= CHUNK_UPLOAD_EXPIRE_SECONDS);
+
     state.uploads.insert(upload_id.clone(), info);
 
     log::info!("分块上传初始化: upload_id={}, filename={}, chunks={}", 
@@ -798,6 +818,13 @@ pub async fn chunk_upload(
         }
     };
 
+    if data.len() as u64 > MAX_CHUNK_SIZE {
+        return HttpResponse::BadRequest().json(ErrorResponse::error(
+            &format!("Chunk size exceeds maximum allowed size of {}MB", MAX_CHUNK_SIZE / 1024 / 1024),
+            None
+        ));
+    }
+
     let mut state_lock = CHUNK_UPLOAD_STATE.write().await;
 
     let upload_info = match state_lock.uploads.get_mut(&upload_id) {
@@ -828,6 +855,15 @@ pub async fn chunk_upload(
         upload_info.chunks.resize(upload_info.total_chunks as usize, Vec::new());
     }
     upload_info.chunks[chunk_index as usize] = data;
+
+    upload_info.total_received_size += upload_info.chunks[chunk_index as usize].len() as u64;
+    if upload_info.total_received_size > MAX_TOTAL_UPLOAD_SIZE {
+        state_lock.uploads.remove(&upload_id);
+        return HttpResponse::BadRequest().json(ErrorResponse::error(
+            &format!("Total upload size exceeds maximum allowed size of {}MB", MAX_TOTAL_UPLOAD_SIZE / 1024 / 1024),
+            None
+        ));
+    }
 
     let progress = upload_info.received_chunks.len() as u32;
     log::info!("分块上传: upload_id={}, chunk={}/{}, received_count={}", 

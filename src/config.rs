@@ -58,8 +58,8 @@ pub struct Config {
 }
 
 impl Config {
-    pub fn jwt_secret(&self) -> String {
-        self.jwt_secret.clone().unwrap()
+    pub fn jwt_secret(&self) -> &str {
+        self.jwt_secret.as_ref().unwrap()
     }
 }
 

@@ -4,6 +4,8 @@ use std::sync::Arc;
 use uuid::Uuid;
 use anyhow::Result;
 
+const USER_SELECT_SQL: &str = "SELECT id, username, password_hash, name, role, created_at, updated_at FROM users";
+
 /// 用户数据访问层
 #[allow(dead_code)]
 pub struct UserRepository {
@@ -25,7 +27,10 @@ impl UserRepository {
 
         let id = Uuid::new_v4();
         let now = chrono::Utc::now();
-        let password_hash = bcrypt::hash(&req.password, bcrypt::DEFAULT_COST)?;
+        let password = req.password.clone();
+        let password_hash = tokio::task::spawn_blocking(move || bcrypt::hash(&password, bcrypt::DEFAULT_COST))
+            .await
+            .map_err(|e| anyhow::anyhow!("Hash task failed: {}", e))??;
         let role = req.role.unwrap_or_else(|| "teacher".to_string());
 
         // 执行插入操作
@@ -46,48 +51,55 @@ impl UserRepository {
         .await?;
 
         // 查询刚创建的用户
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_one(&*self.pool)
-        .await?;
+        let sql = format!("{} WHERE id = ?", USER_SELECT_SQL);
+        let user = sqlx::query_as::<_, User>(&sql)
+            .bind(id)
+            .fetch_one(&*self.pool)
+            .await?;
 
         Ok(user)
     }
 
     /// 根据 ID 查询用户
     pub async fn find_by_id(&self, id: &Uuid) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let sql = format!("{} WHERE id = ?", USER_SELECT_SQL);
+        let user = sqlx::query_as::<_, User>(&sql)
+            .bind(id)
+            .fetch_optional(&*self.pool)
+            .await?;
 
         Ok(user)
     }
 
     /// 根据用户名查询用户
     pub async fn find_by_username(&self, username: &str) -> Result<Option<User>> {
-        let user = sqlx::query_as::<_, User>(
-            "SELECT * FROM users WHERE username = ?"
-        )
-        .bind(username)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let sql = format!("{} WHERE username = ?", USER_SELECT_SQL);
+        let user = sqlx::query_as::<_, User>(&sql)
+            .bind(username)
+            .fetch_optional(&*self.pool)
+            .await?;
 
         Ok(user)
     }
 
     /// 验证用户登录
     pub async fn verify_credentials(&self, username: &str, password: &str) -> Result<Option<UserResponse>> {
-        if let Some(user) = self.find_by_username(username).await? {
-            if user.verify_password(password)? {
-                return Ok(Some(user.into()));
+        let user = self.find_by_username(username).await?;
+        match user {
+            Some(user) => {
+                let password_owned = password.to_string();
+                let hash = user.password_hash.clone();
+                let verified = tokio::task::spawn_blocking(move || bcrypt::verify(&password_owned, &hash))
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Verify task failed: {}", e))??;
+                if verified {
+                    Ok(Some(user.into()))
+                } else {
+                    Ok(None)
+                }
             }
+            None => Ok(None),
         }
-        Ok(None)
     }
 
     /// 更新用户信息
@@ -129,7 +141,10 @@ impl UserRepository {
 
     /// 更新密码
     pub async fn update_password(&self, id: &Uuid, new_password: &str) -> Result<bool> {
-        let password_hash = bcrypt::hash(new_password, bcrypt::DEFAULT_COST)?;
+        let new_password_owned = new_password.to_string();
+        let password_hash = tokio::task::spawn_blocking(move || bcrypt::hash(&new_password_owned, bcrypt::DEFAULT_COST))
+            .await
+            .map_err(|e| anyhow::anyhow!("Hash task failed: {}", e))??;
 
         let result = sqlx::query(
             "UPDATE users SET password_hash = ?, updated_at = ? WHERE id = ?"

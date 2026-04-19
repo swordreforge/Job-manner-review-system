@@ -7,7 +7,10 @@ use std::time::Duration;
 pub async fn create_mysql_pool(database_url: &str) -> anyhow::Result<MySqlPool> {
     let pool = MySqlPoolOptions::new()
         .max_connections(10)
+        .min_connections(2)
         .acquire_timeout(Duration::from_secs(30))
+        .idle_timeout(Duration::from_secs(600))
+        .max_lifetime(Duration::from_secs(1800))
         .connect(database_url)
         .await?;
 
@@ -18,7 +21,10 @@ pub async fn create_mysql_pool(database_url: &str) -> anyhow::Result<MySqlPool> 
 pub async fn create_sqlite_pool(database_url: &str) -> anyhow::Result<SqlitePool> {
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
+        .min_connections(1)
         .acquire_timeout(Duration::from_secs(30))
+        .idle_timeout(Duration::from_secs(600))
+        .max_lifetime(Duration::from_secs(1800))
         .connect(database_url)
         .await?;
 

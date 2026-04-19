@@ -15,7 +15,7 @@ impl StudentRepository {
     pub async fn create(&self, user_id: i64, req: CreateStudentRequest) -> Result<Student> {
         let now = chrono::Utc::now().timestamp();
 
-        sqlx::query(
+        let result = sqlx::query(
             r#"
             INSERT INTO students (
                 user_id, name, education, major, graduation_year,
@@ -40,13 +40,14 @@ impl StudentRepository {
         .execute(&*self.pool)
         .await?;
 
-        let student = sqlx::query_as::<_, Student>(
-            "SELECT * FROM students ORDER BY id DESC LIMIT 1"
+        let id = result.last_insert_id();
+        sqlx::query_as::<_, Student>(
+            "SELECT id, user_id, name, education, major, graduation_year, skills, certificates, soft_skills, internship, projects, completeness_score, competitiveness_score, resume_url, suggestions, resume_content, created_at, updated_at FROM students WHERE id = ?"
         )
+        .bind(id as i64)
         .fetch_one(&*self.pool)
-        .await?;
-
-        Ok(student)
+        .await
+        .map_err(Into::into)
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<Student>> {
@@ -61,30 +62,38 @@ impl StudentRepository {
     }
 
     pub async fn find_all(&self, query: &StudentQuery) -> Result<(Vec<Student>, i64)> {
-        let page = query.page.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(20);
-        let offset = (page - 1) * page_size;
+        let page = query.page.unwrap_or(1).min(100);
+        let page_size = query.page_size.unwrap_or(20).min(200);
+        let offset = page.saturating_sub(1) * page_size;
 
         let base_select = "SELECT id, user_id, name, education, major, graduation_year, skills, certificates, soft_skills, internship, projects, completeness_score, competitiveness_score, resume_url, suggestions, resume_content, created_at, updated_at FROM students";
-        
-        let mut sql = base_select.to_string();
-        let mut count_sql = "SELECT COUNT(*) as count FROM students".to_string();
+
+        let mut sql = format!("{} WHERE 1=1", base_select);
+        let mut count_sql = String::from("SELECT COUNT(*) as count FROM students WHERE 1=1");
+
+        let mut bind_values: Vec<String> = Vec::new();
 
         if let Some(keyword) = &query.keyword {
-            let where_clause = format!(" WHERE name LIKE '%{}%'", keyword);
-            sql.push_str(&where_clause);
-            count_sql.push_str(&where_clause);
+            let pattern = format!("%{}%", keyword);
+            sql.push_str(" AND name LIKE ?");
+            count_sql.push_str(" AND name LIKE ?");
+            bind_values.push(pattern);
         }
 
-        sql.push_str(&format!(" ORDER BY id DESC LIMIT {} OFFSET {}", page_size, offset));
+        sql.push_str(" ORDER BY id DESC LIMIT ? OFFSET ?");
 
-        let total: (i64,) = sqlx::query_as(&count_sql)
-            .fetch_one(&*self.pool)
-            .await?;
+        let mut count_query = sqlx::query_as::<_, (i64,)>(&count_sql);
+        for val in &bind_values {
+            count_query = count_query.bind(val);
+        }
+        let total: (i64,) = count_query.fetch_one(&*self.pool).await?;
 
-        let students = sqlx::query_as::<_, Student>(&sql)
-            .fetch_all(&*self.pool)
-            .await?;
+        let mut data_query = sqlx::query_as::<_, Student>(&sql);
+        for val in &bind_values {
+            data_query = data_query.bind(val);
+        }
+        data_query = data_query.bind(page_size).bind(offset);
+        let students = data_query.fetch_all(&*self.pool).await?;
 
         Ok((students, total.0))
     }
