@@ -10,7 +10,7 @@ Log:
     KeepDays: 7
     Encoding: plain
 Mysql:
-    DataSource: root:123456zj@tcp(localhost:3306)/career_db?charset=utf8mb4&parseTime=true&loc=Local
+    DataSource: root:206715lyt@tcp(localhost:3306)/career_db?charset=utf8mb4&parseTime=true&loc=Local
     MaxOpenConns: 100
     MaxIdleConns: 10
     ConnMaxLifetime: 3600
