@@ -165,7 +165,7 @@ export default function JobsPage() {
     ];
     const interval = window.setInterval(constrainNodes, 800);
 
-    chart.on('mouseup', () => window.setTimeout(constrainNodes, 80));
+    chart.on('mouseup', () => { window.setTimeout(constrainNodes, 80); });
 
     return () => {
       timers.forEach(clearTimeout);
