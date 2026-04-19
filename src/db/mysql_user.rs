@@ -63,9 +63,12 @@ impl MySqlUserRepository {
 
     pub async fn create(&self, username: &str, password: &str, email: Option<&str>, phone: Option<&str>, role: &str) -> Result<MySqlUser> {
         let now = chrono::Utc::now().timestamp();
-        let password_hash = bcrypt::hash(password, bcrypt::DEFAULT_COST)?;
+        let password_owned = password.to_string();
+        let password_hash = tokio::task::spawn_blocking(move || bcrypt::hash(&password_owned, bcrypt::DEFAULT_COST))
+            .await
+            .map_err(|e| anyhow::anyhow!("Hash task failed: {}", e))??;
 
-        sqlx::query(
+        let result = sqlx::query(
             "INSERT INTO users (username, password, email, phone, role, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)"
         )
         .bind(username)
@@ -78,8 +81,10 @@ impl MySqlUserRepository {
         .execute(&*self.pool)
         .await?;
 
-        let create_fetch_sql = format!("{} ORDER BY id DESC LIMIT 1", MYSQL_USER_SELECT_SQL);
+        let id = result.last_insert_id();
+        let create_fetch_sql = format!("{} WHERE id = ?", MYSQL_USER_SELECT_SQL);
         let user = sqlx::query_as::<_, MySqlUser>(&create_fetch_sql)
+            .bind(id as i64)
             .fetch_one(&*self.pool)
             .await?;
 
@@ -126,7 +131,10 @@ impl MySqlUserRepository {
     }
 
     pub async fn update_password(&self, id: i64, new_password: &str) -> Result<bool> {
-        let password_hash = bcrypt::hash(new_password, bcrypt::DEFAULT_COST)?;
+        let new_password_owned = new_password.to_string();
+        let password_hash = tokio::task::spawn_blocking(move || bcrypt::hash(&new_password_owned, bcrypt::DEFAULT_COST))
+            .await
+            .map_err(|e| anyhow::anyhow!("Hash task failed: {}", e))??;
         let now = chrono::Utc::now().timestamp();
 
         let result = sqlx::query("UPDATE users SET password = ?, updated_at = ? WHERE id = ?")

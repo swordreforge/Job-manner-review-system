@@ -191,13 +191,32 @@ pub async fn batch_import(
     let mut errors = Vec::new();
     let now = chrono::Utc::now().timestamp();
 
-    // 跳过标题行，从第二行开始
-    for (row_idx, row) in rows.rows().skip(1).enumerate() {
-        total += 1;
-        let row_num = (row_idx + 2) as u32;
+    // Pre-parse all rows to get count
+    let parsed_rows: Vec<(u32, Result<CreateSchoolRequest, String>)> = rows.rows().skip(1).enumerate()
+        .map(|(idx, row)| {
+            let row_num = (idx + 2) as u32;
+            match parse_school_row(row) {
+                Ok(s) => (row_num, Ok(s)),
+                Err(e) => (row_num, Err(e)),
+            }
+        })
+        .collect();
 
-        // 解析行数据
-        let school = match parse_school_row(row) {
+    let valid_count = parsed_rows.iter().filter(|(_, r)| r.is_ok()).count();
+
+    // Pre-generate school codes in batch
+    let school_codes = match generate_school_codes_batch(pool.as_ref(), valid_count).await {
+        Ok(codes) => codes,
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(ErrorResponse::error(&format!("生成学校代码失败: {}", e), None));
+        }
+    };
+    let mut code_index = 0usize;
+
+    for (row_num, school_result) in parsed_rows {
+        total += 1;
+
+        let school = match school_result {
             Ok(s) => s,
             Err(e) => {
                 failed += 1;
@@ -209,18 +228,8 @@ pub async fn batch_import(
             }
         };
 
-        // 生成学校代码
-        let school_code = match generate_school_code(pool.as_ref()).await {
-            Ok(code) => code,
-            Err(e) => {
-                failed += 1;
-                errors.push(SchoolImportError {
-                    row: row_num,
-                    message: format!("生成学校代码失败: {}", e),
-                });
-                continue;
-            }
-        };
+        let school_code = school_codes[code_index].clone();
+        code_index += 1;
 
         // 插入数据库
         let result = sqlx::query(
@@ -392,6 +401,47 @@ fn parse_school_row(row: &[Data]) -> Result<CreateSchoolRequest, String> {
         contact_phone,
         contact_email,
     })
+}
+
+async fn generate_school_codes_batch(pool: &sqlx::MySqlPool, count: usize) -> Result<Vec<String>, String> {
+    const CHARSET: &[u8] = b"0123456789ABCDEFGHJKMNPQRSTUVWXYZ";
+    let mut codes = Vec::with_capacity(count);
+
+    if count == 0 {
+        return Ok(codes);
+    }
+
+    let mut attempts = 0;
+    while codes.len() < count && attempts < count * 3 {
+        attempts += 1;
+
+        let mut code_part = Vec::with_capacity(6);
+        for _ in 0..6 {
+            let idx = (rand::random::<u32>() % CHARSET.len() as u32) as usize;
+            code_part.push(CHARSET[idx]);
+        }
+        let check_digit = calculate_check_digit(&code_part, CHARSET);
+        code_part.push(check_digit);
+        let code = format!("SCH{}", String::from_utf8_lossy(&code_part));
+
+        let exists = sqlx::query_scalar::<_, i64>(
+            "SELECT COUNT(*) FROM schools WHERE code = ?"
+        )
+        .bind(&code)
+        .fetch_one(pool)
+        .await
+        .map_err(|e| format!("检查学校代码失败: {}", e))?;
+
+        if exists == 0 {
+            codes.push(code);
+        }
+    }
+
+    if codes.len() < count {
+        return Err(format!("无法生成足够的学校代码，需要 {} 个，仅生成 {} 个", count, codes.len()));
+    }
+
+    Ok(codes)
 }
 
 /// 生成学校代码 (SCH + 6位随机 + 校验位)

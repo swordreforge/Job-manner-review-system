@@ -1,5 +1,5 @@
 use crate::models::{Job, CreateJobRequest, UpdateJobRequest, JobQuery};
-use sqlx::MySqlPool;
+use sqlx::{MySqlPool, Row};
 use std::sync::Arc;
 use anyhow::Result;
 
@@ -24,7 +24,7 @@ impl JobRepository {
     pub async fn create(&self, req: CreateJobRequest) -> Result<Job> {
         let now = chrono::Utc::now().timestamp();
 
-        sqlx::query(
+        let result = sqlx::query(
             r#"
             INSERT INTO jobs (
                 name, description, company, industry, category, location, salary_range,
@@ -60,12 +60,13 @@ impl JobRepository {
         .execute(&*self.pool)
         .await?;
 
-        let latest_job_sql = format!("{} ORDER BY id DESC LIMIT 1", JOB_SELECT_SQL);
-        let job = sqlx::query_as::<_, Job>(&latest_job_sql)
-        .fetch_one(&*self.pool)
-        .await?;
-
-        Ok(job)
+        let id = result.last_insert_id();
+        let find_sql = format!("{} WHERE id = ?", JOB_SELECT_SQL);
+        sqlx::query_as::<_, Job>(&find_sql)
+            .bind(id as i64)
+            .fetch_one(&*self.pool)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn create_many(&self, reqs: Vec<CreateJobRequest>) -> Result<(u32, u32)> {
@@ -133,50 +134,57 @@ impl JobRepository {
     }
 
     pub async fn find_all(&self, query: &JobQuery) -> Result<(Vec<Job>, i64)> {
-        let page = query.page.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(20);
-        let offset = (page - 1) * page_size;
+        let page = query.page.unwrap_or(1).min(100);
+        let page_size = query.page_size.unwrap_or(20).min(200);
+        let offset = page.saturating_sub(1) * page_size;
 
-        let base_select = JOB_SELECT_SQL;
-
-        let mut sql = base_select.to_string();
-        let mut count_sql = "SELECT COUNT(*) as count FROM jobs".to_string();
+        let mut sql = JOB_SELECT_SQL.to_string();
+        let mut where_parts: Vec<String> = Vec::new();
+        let mut bind_values: Vec<String> = Vec::new();
 
         if let Some(keyword) = &query.keyword {
-            let where_clause = format!(" WHERE name LIKE '%{}%' OR company LIKE '%{}%'", keyword, keyword);
-            sql.push_str(&where_clause);
-            count_sql.push_str(&where_clause);
+            let pattern = format!("%{}%", keyword);
+            where_parts.push("(name LIKE ? OR company LIKE ?)".to_string());
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern);
         }
 
         if let Some(industry) = &query.industry {
-            let and_clause = if sql.contains(" WHERE ") {
-                format!(" AND industry = '{}'", industry)
-            } else {
-                format!(" WHERE industry = '{}'", industry)
-            };
-            sql.push_str(&and_clause);
-            count_sql.push_str(&and_clause);
+            where_parts.push("industry = ?".to_string());
+            bind_values.push(industry.clone());
         }
 
         if let Some(category) = &query.category {
-            let and_clause = if sql.contains(" WHERE ") {
-                format!(" AND category = '{}'", category)
-            } else {
-                format!(" WHERE category = '{}'", category)
-            };
-            sql.push_str(&and_clause);
-            count_sql.push_str(&and_clause);
+            where_parts.push("category = ?".to_string());
+            bind_values.push(category.clone());
         }
 
-        sql.push_str(&format!(" ORDER BY id DESC LIMIT {} OFFSET {}", page_size, offset));
+        let where_clause = if where_parts.is_empty() {
+            String::new()
+        } else {
+            format!(" WHERE {}", where_parts.join(" AND "))
+        };
 
-        let total: (i64,) = sqlx::query_as(&count_sql)
-            .fetch_one(&*self.pool)
-            .await?;
+        sql.push_str(&where_clause);
+        let count_sql_final = if where_parts.is_empty() {
+            String::from("SELECT COUNT(*) as count FROM jobs")
+        } else {
+            format!("SELECT COUNT(*) as count FROM jobs WHERE {}", where_parts.join(" AND "))
+        };
+        sql.push_str(" ORDER BY id DESC LIMIT ? OFFSET ?");
 
-        let jobs = sqlx::query_as::<_, Job>(&sql)
-            .fetch_all(&*self.pool)
-            .await?;
+        let mut count_query = sqlx::query_as::<_, (i64,)>(&count_sql_final);
+        for val in &bind_values {
+            count_query = count_query.bind(val);
+        }
+        let total: (i64,) = count_query.fetch_one(&*self.pool).await?;
+
+        let mut data_query = sqlx::query_as::<_, Job>(&sql);
+        for val in &bind_values {
+            data_query = data_query.bind(val);
+        }
+        data_query = data_query.bind(page_size).bind(offset);
+        let jobs = data_query.fetch_all(&*self.pool).await?;
 
         Ok((jobs, total.0))
     }
@@ -298,6 +306,20 @@ impl JobRepository {
         .await?;
 
         Ok(result.0 > 0)
+    }
+
+    pub async fn exists_by_job_codes(&self, codes: &[String]) -> Result<std::collections::HashSet<String>> {
+        if codes.is_empty() {
+            return Ok(std::collections::HashSet::new());
+        }
+        let placeholders: Vec<String> = codes.iter().map(|_| "?".to_string()).collect();
+        let sql = format!("SELECT job_code FROM jobs WHERE job_code IN ({})", placeholders.join(","));
+        let mut query = sqlx::query(&sql);
+        for code in codes {
+            query = query.bind(code);
+        }
+        let rows = query.fetch_all(&*self.pool).await?;
+        Ok(rows.iter().filter_map(|row| row.try_get::<String, _>("job_code").ok()).collect())
     }
 }
 

@@ -34,20 +34,16 @@ impl StudentService {
     }
 
     pub async fn update_student(&self, id: i64, req: UpdateStudentRequest) -> Result<StudentResponse> {
-        let _ = self.student_repo.find_by_id(id).await?
-            .ok_or_else(|| anyhow::anyhow!("学生不存在"))?;
-
         let student = self.student_repo.update(id, req).await?
-            .ok_or_else(|| anyhow::anyhow!("更新失败"))?;
-
+            .ok_or_else(|| anyhow::anyhow!("学生不存在或更新失败"))?;
         Ok(student.into())
     }
 
     pub async fn delete_student(&self, id: i64) -> Result<()> {
-        let _ = self.student_repo.find_by_id(id).await?
-            .ok_or_else(|| anyhow::anyhow!("学生不存在"))?;
-
-        self.student_repo.delete(id).await?;
+        let deleted = self.student_repo.delete(id).await?;
+        if !deleted {
+            return Err(anyhow::anyhow!("学生不存在"));
+        }
         Ok(())
     }
 

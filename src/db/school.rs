@@ -3,6 +3,8 @@ use sqlx::MySqlPool;
 use std::sync::Arc;
 use anyhow::Result;
 
+const SCHOOL_SELECT_SQL: &str = "SELECT id, name, code, address, contact_person, contact_phone, contact_email, status, created_at, updated_at FROM schools";
+
 pub struct SchoolRepository {
     pool: Arc<MySqlPool>,
 }
@@ -15,7 +17,7 @@ impl SchoolRepository {
     pub async fn create(&self, req: CreateSchoolRequest, code: String) -> Result<School> {
         let now = chrono::Utc::now().timestamp();
 
-        sqlx::query(
+        let result = sqlx::query(
             r#"
             INSERT INTO schools (
                 name, code, address, contact_person, contact_phone, contact_email,
@@ -35,72 +37,72 @@ impl SchoolRepository {
         .execute(&*self.pool)
         .await?;
 
-        let school = sqlx::query_as::<_, School>(
-            "SELECT * FROM schools ORDER BY id DESC LIMIT 1"
-        )
-        .fetch_one(&*self.pool)
-        .await?;
-
-        Ok(school)
+        let id = result.last_insert_id();
+        let sql = format!("{} WHERE id = ?", SCHOOL_SELECT_SQL);
+        sqlx::query_as::<_, School>(&sql)
+            .bind(id as i64)
+            .fetch_one(&*self.pool)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn find_by_id(&self, id: i64) -> Result<Option<School>> {
-        let school = sqlx::query_as::<_, School>(
-            "SELECT * FROM schools WHERE id = ?"
-        )
-        .bind(id)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let sql = format!("{} WHERE id = ?", SCHOOL_SELECT_SQL);
+        let school = sqlx::query_as::<_, School>(&sql)
+            .bind(id)
+            .fetch_optional(&*self.pool)
+            .await?;
 
         Ok(school)
     }
 
     pub async fn find_by_code(&self, code: &str) -> Result<Option<School>> {
-        let school = sqlx::query_as::<_, School>(
-            "SELECT * FROM schools WHERE code = ?"
-        )
-        .bind(code)
-        .fetch_optional(&*self.pool)
-        .await?;
+        let sql = format!("{} WHERE code = ?", SCHOOL_SELECT_SQL);
+        let school = sqlx::query_as::<_, School>(&sql)
+            .bind(code)
+            .fetch_optional(&*self.pool)
+            .await?;
 
         Ok(school)
     }
 
     pub async fn find_all(&self, query: &SchoolQuery) -> Result<(Vec<School>, i64)> {
-        let page = query.page.unwrap_or(1);
-        let page_size = query.page_size.unwrap_or(20);
-        let offset = (page - 1) * page_size;
+        let page = query.page.unwrap_or(1).min(100);
+        let page_size = query.page_size.unwrap_or(20).min(200);
+        let offset = page.saturating_sub(1) * page_size;
 
-        let base_select = "SELECT * FROM schools";
-
-        let mut sql = base_select.to_string();
-        let mut count_sql = "SELECT COUNT(*) as count FROM schools".to_string();
+        let mut sql = format!("{} WHERE 1=1", SCHOOL_SELECT_SQL);
+        let mut count_sql = String::from("SELECT COUNT(*) as count FROM schools WHERE 1=1");
+        let mut bind_values: Vec<String> = Vec::new();
 
         if let Some(keyword) = &query.keyword {
-            let where_clause = format!(" WHERE name LIKE '%{}%' OR code LIKE '%{}%'", keyword, keyword);
-            sql.push_str(&where_clause);
-            count_sql.push_str(&where_clause);
+            let pattern = format!("%{}%", keyword);
+            sql.push_str(" AND (name LIKE ? OR code LIKE ?)");
+            count_sql.push_str(" AND (name LIKE ? OR code LIKE ?)");
+            bind_values.push(pattern.clone());
+            bind_values.push(pattern);
         }
 
         if let Some(status) = &query.status {
-            let and_clause = if sql.contains(" WHERE ") {
-                format!(" AND status = '{}'", status)
-            } else {
-                format!(" WHERE status = '{}'", status)
-            };
-            sql.push_str(&and_clause);
-            count_sql.push_str(&and_clause);
+            sql.push_str(" AND status = ?");
+            count_sql.push_str(" AND status = ?");
+            bind_values.push(status.clone());
         }
 
-        sql.push_str(&format!(" ORDER BY created_at DESC LIMIT {} OFFSET {}", page_size, offset));
+        sql.push_str(" ORDER BY created_at DESC LIMIT ? OFFSET ?");
 
-        let total: (i64,) = sqlx::query_as(&count_sql)
-            .fetch_one(&*self.pool)
-            .await?;
+        let mut count_query = sqlx::query_as::<_, (i64,)>(&count_sql);
+        for val in &bind_values {
+            count_query = count_query.bind(val);
+        }
+        let total: (i64,) = count_query.fetch_one(&*self.pool).await?;
 
-        let schools = sqlx::query_as::<_, School>(&sql)
-            .fetch_all(&*self.pool)
-            .await?;
+        let mut data_query = sqlx::query_as::<_, School>(&sql);
+        for val in &bind_values {
+            data_query = data_query.bind(val);
+        }
+        data_query = data_query.bind(page_size).bind(offset);
+        let schools = data_query.fetch_all(&*self.pool).await?;
 
         Ok((schools, total.0))
     }
@@ -158,8 +160,8 @@ impl SchoolRepository {
     }
 
     pub async fn list_all(&self) -> Result<Vec<School>> {
-        let sql = "SELECT * FROM schools ORDER BY id DESC";
-        let schools = sqlx::query_as::<_, School>(sql)
+        let sql = format!("{} ORDER BY id DESC", SCHOOL_SELECT_SQL);
+        let schools = sqlx::query_as::<_, School>(&sql)
             .fetch_all(&*self.pool)
             .await?;
         Ok(schools)

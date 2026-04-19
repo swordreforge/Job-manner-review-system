@@ -37,20 +37,16 @@ impl SchoolService {
     }
 
     pub async fn update_school(&self, id: i64, req: UpdateSchoolRequest) -> Result<SchoolResponse> {
-        let _ = self.school_repo.find_by_id(id).await?
-            .ok_or_else(|| anyhow::anyhow!("学校不存在"))?;
-
         let school = self.school_repo.update(id, req).await?
-            .ok_or_else(|| anyhow::anyhow!("更新失败"))?;
-
+            .ok_or_else(|| anyhow::anyhow!("学校不存在或更新失败"))?;
         Ok(school.into())
     }
 
     pub async fn delete_school(&self, id: i64) -> Result<()> {
-        let _ = self.school_repo.find_by_id(id).await?
-            .ok_or_else(|| anyhow::anyhow!("学校不存在"))?;
-
-        self.school_repo.delete(id).await?;
+        let deleted = self.school_repo.delete(id).await?;
+        if !deleted {
+            return Err(anyhow::anyhow!("学校不存在"));
+        }
         Ok(())
     }
 
