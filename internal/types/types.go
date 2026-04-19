@@ -1145,6 +1145,15 @@ type ReadMessageReq struct {
 	Id int64 `path:"id" validate:"required,gt=0"`
 }
 
+type TeacherInfo struct {
+	UserId int64  `json:"userId"`
+	Name   string `json:"name"`
+}
+
+type ListTeachersResp struct {
+	List []TeacherInfo `json:"list"`
+}
+
 type ResumePolishReq struct {
 	StudentId int64  `json:"studentId,validate:"required,gt=0"`
 	HistoryId int64  `json:"historyId,optional"`

@@ -605,6 +605,16 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: teacher.ListMessagesHandlerTeacher(serverCtx),
 			},
 			{
+				Method:  http.MethodPost,
+				Path:    "/students/messages",
+				Handler: student.SendMessageHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/students/teachers",
+				Handler: student.ListTeachersHandler(serverCtx),
+			},
+			{
 				Method:  http.MethodGet,
 				Path:    "/students/messages",
 				Handler: student.ListMessagesHandlerStudent(serverCtx),

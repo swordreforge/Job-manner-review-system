@@ -2,13 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { Avatar, Button, Card, Drawer, Empty, Form, Input, List, Modal, Select, Space, Tag, message } from 'antd';
 import { MessageOutlined, PlusOutlined, ReloadOutlined } from '@ant-design/icons';
 import { teacherApi, studentMessageApi } from '../../api';
-import type { InboxMessage } from '../../types';
+import type { InboxMessage, TeacherInfo } from '../../types';
 
 const { TextArea } = Input;
 
 type MessageCenterRole = 'teacher' | 'student';
 
-type StudentOption = {
+type RecipientOption = {
   id: number;
   name?: string;
   username?: string;
@@ -31,8 +31,8 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
   const [inboxDrawerOpen, setInboxDrawerOpen] = useState(false);
   const [composeOpen, setComposeOpen] = useState(false);
   const [composeForm] = Form.useForm();
-  const [studentOptions, setStudentOptions] = useState<StudentOption[]>([]);
-  const [studentOptionsLoading, setStudentOptionsLoading] = useState(false);
+  const [recipientOptions, setRecipientOptions] = useState<RecipientOption[]>([]);
+  const [recipientLoading, setRecipientLoading] = useState(false);
 
   const loadInbox = useCallback(async () => {
     setInboxLoading(true);
@@ -49,24 +49,28 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
     }
   }, [isTeacher]);
 
-  const loadStudentOptions = useCallback(async () => {
-    if (!isTeacher) return;
-    setStudentOptionsLoading(true);
+  const loadRecipientOptions = useCallback(async () => {
+    setRecipientLoading(true);
     try {
-      const response = await teacherApi.listStudents({ page: 1, pageSize: 200 });
-      const data = unwrap<{ total: number; list: StudentOption[] }>(response);
-      setStudentOptions((data.list || []).map((item) => ({ id: item.id, name: item.name, username: item.username })));
+      if (isTeacher) {
+        const response = await teacherApi.listStudents({ page: 1, pageSize: 200 });
+        const data = unwrap<{ total: number; list: RecipientOption[] }>(response);
+        setRecipientOptions((data.list || []).map((item) => ({ id: item.id, name: item.name, username: item.username })));
+      } else {
+        const response = await studentMessageApi.listTeachers();
+        const data = unwrap<{ list: TeacherInfo[] }>(response);
+        setRecipientOptions((data.list || []).map((item) => ({ id: item.userId, name: item.name })));
+      }
     } catch (error) {
-      message.error('加载学生列表失败');
+      message.error(isTeacher ? '加载学生列表失败' : '加载教师列表失败');
     } finally {
-      setStudentOptionsLoading(false);
+      setRecipientLoading(false);
     }
   }, [isTeacher]);
 
   useEffect(() => {
     void loadInbox();
-    void loadStudentOptions();
-  }, [loadInbox, loadStudentOptions]);
+  }, [loadInbox]);
 
   const handleInboxOpen = async (item: InboxMessage) => {
     setSelectedInbox(item);
@@ -84,11 +88,19 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
   const handleCompose = async () => {
     try {
       const values = await composeForm.validateFields();
-      await teacherApi.sendMessage({
-        receiverId: values.receiverId,
-        title: values.title,
-        content: values.content,
-      });
+      if (isTeacher) {
+        await teacherApi.sendMessage({
+          receiverId: values.receiverId,
+          title: values.title,
+          content: values.content,
+        });
+      } else {
+        await studentMessageApi.sendMessage({
+          receiverId: values.receiverId,
+          title: values.title,
+          content: values.content,
+        });
+      }
       message.success('站内信已发送');
       setComposeOpen(false);
       composeForm.resetFields();
@@ -100,6 +112,11 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
     }
   };
 
+  const handleComposeOpen = () => {
+    setComposeOpen(true);
+    void loadRecipientOptions();
+  };
+
   return (
     <div className="space-y-4">
       <Card
@@ -109,11 +126,9 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
             <Button icon={<ReloadOutlined />} onClick={() => void loadInbox()}>
               刷新
             </Button>
-            {isTeacher && (
-              <Button type="primary" icon={<PlusOutlined />} onClick={() => setComposeOpen(true)}>
-                发送站内信
-              </Button>
-            )}
+            <Button type="primary" icon={<PlusOutlined />} onClick={handleComposeOpen}>
+              发送站内信
+            </Button>
           </Space>
         }
       >
@@ -165,13 +180,13 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
         destroyOnClose
       >
         <Form form={composeForm} layout="vertical">
-          <Form.Item name="receiverId" label="接收学生" rules={[{ required: true, message: '请选择接收学生' }]}>
+          <Form.Item name="receiverId" label={isTeacher ? '接收学生' : '接收教师'} rules={[{ required: true, message: isTeacher ? '请选择接收学生' : '请选择接收教师' }]}>
             <Select
               showSearch
-              loading={studentOptionsLoading}
-              placeholder="选择接收学生"
+              loading={recipientLoading}
+              placeholder={isTeacher ? '选择接收学生' : '选择接收教师'}
               optionFilterProp="label"
-              options={studentOptions.map((item) => ({
+              options={recipientOptions.map((item) => ({
                 value: item.id,
                 label: item.name ? `${item.name} (${item.username || item.id})` : `${item.username || item.id}`,
               }))}

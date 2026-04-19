@@ -55,6 +55,11 @@ export interface InboxMessage {
   readAt?: number;
 }
 
+export interface TeacherInfo {
+  userId: number;
+  name: string;
+}
+
 export interface User {
   id: number;
   username: string;

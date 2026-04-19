@@ -433,6 +433,12 @@ export const studentMessageApi = {
 
   markAsRead: (id: number) =>
     api.put<{ code: number; msg: string }>(`/students/messages/${id}/read`),
+
+  sendMessage: (data: { receiverId: number; title: string; content: string }) =>
+    api.post<{ code: number; msg: string }>('/students/messages', data),
+
+  listTeachers: () =>
+    api.get<{ code: number; msg: string; data: { list: import('../types').TeacherInfo[] } }>('/students/teachers'),
 };
 
 export default api;
