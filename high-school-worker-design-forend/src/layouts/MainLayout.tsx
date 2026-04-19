@@ -238,6 +238,21 @@ export default function MainLayout() {
       </div>
 
       {!isDesktop && (
+        <button
+          onClick={toggleTheme}
+          className="fixed right-3 z-30 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all active:scale-90 lg:hidden"
+          style={{
+            backgroundColor: 'var(--md-sys-color-surface-container-high)',
+            color: 'var(--md-sys-color-on-surface-variant)',
+            top: '12px',
+          }}
+          title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
+        >
+          {theme === 'dark' ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
+        </button>
+      )}
+
+      {!isDesktop && (
         <TabBar
           activeKey={activeTab}
           onChange={handleTabChange}

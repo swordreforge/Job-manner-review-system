@@ -71,8 +71,8 @@ const lightPalette: ThemePalette = {
 
 const darkPalette: ThemePalette = {
   primary: '#A9C7FF',
-  primaryContainer: '#0B57D0',
-  onPrimaryContainer: '#EAF1FF',
+  primaryContainer: '#004A97',
+  onPrimaryContainer: '#D3E4FF',
   success: '#89D394',
   warning: '#F2C04D',
   error: '#F2B8B5',

@@ -95,7 +95,11 @@
   --md-sys-color-inverse-surface: #E4E1E6;
   --md-sys-color-inverse-on-surface: #303033;
   --md-sys-color-inverse-primary: #0B57D0;
-  
+  --md-sys-color-primary: #A9C7FF;
+  --md-sys-color-on-primary: #062E6A;
+  --md-sys-color-primary-container: #004A97;
+  --md-sys-color-on-primary-container: #D3E4FF;
+
   --color-primary: #A9C7FF;
   --color-success: #89D394;
   --color-warning: #F2C04D;

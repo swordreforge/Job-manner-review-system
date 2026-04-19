@@ -168,6 +168,9 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
             writingMode: 'vertical-lr',
             textOrientation: 'upright',
             backgroundColor: 'var(--md-sys-color-primary)',
+            color: 'var(--md-sys-color-on-primary)',
+            border: '2px solid var(--md-sys-color-primary)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.3)',
           }}
         >
           <MenuOutlined /> 引导
