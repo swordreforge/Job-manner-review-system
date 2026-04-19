@@ -280,3 +280,68 @@ pub async fn download_student_template() -> impl Responder {
         .append_header(("Content-Disposition", "attachment; filename=student_import_template.xlsx"))
         .body(buffer)
 }
+
+pub async fn export(state: web::Data<AppState>) -> impl Responder {
+    use rust_xlsxwriter::*;
+
+    let student_repo = crate::db::StudentRepository::new(state.mysql_pool.clone());
+    let students = match student_repo.list_all().await {
+        Ok(students) => students,
+        Err(e) => {
+            log::error!("导出学生数据失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("获取学生数据失败", None));
+        }
+    };
+
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    let headers = vec![
+        "姓名", "学历", "专业", "毕业年份", "技能", "证书", "软技能", "实习经历", "项目经验", "备注"
+    ];
+
+    for (col, header) in headers.iter().enumerate() {
+        if let Err(e) = worksheet.write_string(0, col as u16, *header) {
+            log::warn!("写入表头失败: {}", e);
+        }
+    }
+
+    for (row_idx, student) in students.iter().enumerate() {
+        let row = (row_idx + 1) as u32;
+        let graduation_year_str = student.graduation_year.map(|y| y.to_string());
+        let values: Vec<Option<&str>> = vec![
+            Some(&student.name),
+            student.education.as_deref(),
+            student.major.as_deref(),
+            graduation_year_str.as_deref(),
+            student.skills.as_deref(),
+            student.certificates.as_deref(),
+            student.soft_skills.as_deref(),
+            student.internship.as_deref(),
+            student.projects.as_deref(),
+            None,
+        ];
+        for (col, value) in values.into_iter().enumerate() {
+            if let Some(v) = value {
+                if let Err(e) = worksheet.write_string(row, col as u16, v) {
+                    log::warn!("写入单元格({},{})失败: {}", row, col, e);
+                }
+            }
+        }
+    }
+
+    let buffer = match workbook.save_to_buffer() {
+        Ok(buf) => buf,
+        Err(e) => {
+            log::error!("生成导出文件失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("生成导出文件失败", None));
+        }
+    };
+
+    HttpResponse::Ok()
+        .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        .append_header(("Content-Disposition", "attachment; filename=students_export.xlsx"))
+        .body(buffer)
+}

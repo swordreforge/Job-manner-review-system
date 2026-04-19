@@ -57,6 +57,10 @@ fn configure_api_v1() -> Scope {
                     "/import-template",
                     web::get().to(crate::handlers::student::download_student_template),
                 )
+                .route(
+                    "/export",
+                    web::get().to(crate::handlers::student::export),
+                )
                 // 批量导入学生（需要在 /{id} 之前）
                 .route(
                     "/batch-import",
@@ -136,6 +140,10 @@ fn configure_api_v1() -> Scope {
                     "/import-template",
                     web::get().to(crate::handlers::job::download_template),
                 )
+                .route(
+                    "/export",
+                    web::get().to(crate::handlers::job::export),
+                )
                 // 批量导入岗位（需要在 /{id} 之前）
                 .route(
                     "/batch-import",
@@ -185,6 +193,10 @@ fn configure_api_v1() -> Scope {
                 .route(
                     "/import-template",
                     web::get().to(crate::handlers::school::download_school_template),
+                )
+                .route(
+                    "/export",
+                    web::get().to(crate::handlers::school::export),
                 )
                 // 批量导入（需要在 /{id} 之前）
                 .route(

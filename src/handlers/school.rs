@@ -303,6 +303,65 @@ pub async fn download_school_template() -> impl Responder {
         .body(buffer)
 }
 
+pub async fn export(state: web::Data<AppState>) -> impl Responder {
+    use rust_xlsxwriter::*;
+
+    let school_repo = crate::db::SchoolRepository::new(state.mysql_pool.clone());
+    let schools = match school_repo.list_all().await {
+        Ok(schools) => schools,
+        Err(e) => {
+            log::error!("导出学校数据失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("获取学校数据失败", None));
+        }
+    };
+
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    let headers = vec![
+        "学校名称", "地址", "联系人", "联系电话", "联系邮箱"
+    ];
+
+    for (col, header) in headers.iter().enumerate() {
+        if let Err(e) = worksheet.write_string(0, col as u16, *header) {
+            log::warn!("写入表头失败: {}", e);
+        }
+    }
+
+    for (row_idx, school) in schools.iter().enumerate() {
+        let row = (row_idx + 1) as u32;
+        let values: Vec<Option<&str>> = vec![
+            Some(&school.name),
+            school.address.as_deref(),
+            school.contact_person.as_deref(),
+            school.contact_phone.as_deref(),
+            school.contact_email.as_deref(),
+        ];
+        for (col, value) in values.into_iter().enumerate() {
+            if let Some(v) = value {
+                if let Err(e) = worksheet.write_string(row, col as u16, v) {
+                    log::warn!("写入单元格({},{})失败: {}", row, col, e);
+                }
+            }
+        }
+    }
+
+    let buffer = match workbook.save_to_buffer() {
+        Ok(buf) => buf,
+        Err(e) => {
+            log::error!("生成导出文件失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("生成导出文件失败", None));
+        }
+    };
+
+    HttpResponse::Ok()
+        .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        .append_header(("Content-Disposition", "attachment; filename=schools_export.xlsx"))
+        .body(buffer)
+}
+
 /// 解析单行数据
 fn parse_school_row(row: &[Data]) -> Result<CreateSchoolRequest, String> {
     if row.len() < 5 {

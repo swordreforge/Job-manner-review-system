@@ -1678,6 +1678,9 @@ function init() {
     if (document.getElementById('batch-import-schools-btn')) {
         document.getElementById('batch-import-schools-btn').addEventListener('click', openSchoolBatchImportModal);
     }
+    if (document.getElementById('export-schools-btn')) {
+        document.getElementById('export-schools-btn').addEventListener('click', exportSchools);
+    }
     if (elements.schoolSearchBtn) {
         elements.schoolSearchBtn.addEventListener('click', () => loadSchools(1));
     }
@@ -3522,6 +3525,93 @@ async function downloadJobTemplate() {
     }
 }
 
+async function exportJobs() {
+    try {
+        showToast('正在导出岗位数据...');
+        const response = await fetch(`${API_BASE}/jobs/export`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'jobs_export.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('岗位数据导出成功');
+        } else {
+            throw new Error('导出失败');
+        }
+    } catch (error) {
+        console.error('导出岗位数据失败:', error);
+        showToast('导出失败: ' + error.message, 'error');
+    }
+}
+
+async function exportStudents() {
+    try {
+        showToast('正在导出学生数据...');
+        const response = await fetch(`${API_BASE}/students/export`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'students_export.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('学生数据导出成功');
+        } else {
+            throw new Error('导出失败');
+        }
+    } catch (error) {
+        console.error('导出学生数据失败:', error);
+        showToast('导出失败: ' + error.message, 'error');
+    }
+}
+
+async function exportSchools() {
+    try {
+        showToast('正在导出学校数据...');
+        const response = await fetch(`${API_BASE}/schools/export`, {
+            headers: {
+                'Authorization': `Bearer ${state.token}`
+            }
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'schools_export.xlsx';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            showToast('学校数据导出成功');
+        } else {
+            throw new Error('导出失败');
+        }
+    } catch (error) {
+        console.error('导出学校数据失败:', error);
+        showToast('导出失败: ' + error.message, 'error');
+    }
+}
+
 // 辅助函数：文件转 Base64
 function fileToBase64(file) {
     return new Promise((resolve, reject) => {
@@ -3550,6 +3640,7 @@ function setupBatchImportEventListeners() {
     // 学生批量导入
     document.getElementById('batch-import-students-btn').addEventListener('click', openBatchImportStudentsModal);
     document.getElementById('download-student-template-btn').addEventListener('click', downloadStudentTemplate);
+    document.getElementById('export-students-btn').addEventListener('click', exportStudents);
     document.getElementById('download-student-template-modal-btn').addEventListener('click', downloadStudentTemplate);
     document.getElementById('close-batch-import-students-modal').addEventListener('click', closeBatchImportStudentsModal);
     document.getElementById('cancel-batch-import-students').addEventListener('click', closeBatchImportStudentsModal);
@@ -3582,6 +3673,7 @@ function setupBatchImportEventListeners() {
     // 岗位批量导入
     document.getElementById('batch-import-jobs-btn').addEventListener('click', openBatchImportJobsModal);
     document.getElementById('download-job-template-btn').addEventListener('click', downloadJobTemplate);
+    document.getElementById('export-jobs-btn').addEventListener('click', exportJobs);
     document.getElementById('download-job-template-modal-btn').addEventListener('click', downloadJobTemplate);
     document.getElementById('close-batch-import-jobs-modal').addEventListener('click', closeBatchImportJobsModal);
     document.getElementById('cancel-batch-import-jobs').addEventListener('click', closeBatchImportJobsModal);

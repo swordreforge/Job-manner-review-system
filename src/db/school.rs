@@ -157,6 +157,14 @@ impl SchoolRepository {
         Ok(result.rows_affected() > 0)
     }
 
+    pub async fn list_all(&self) -> Result<Vec<School>> {
+        let sql = "SELECT * FROM schools ORDER BY id DESC";
+        let schools = sqlx::query_as::<_, School>(sql)
+            .fetch_all(&*self.pool)
+            .await?;
+        Ok(schools)
+    }
+
     pub async fn count(&self) -> Result<i64> {
         let result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM schools")
             .fetch_one(&*self.pool)
