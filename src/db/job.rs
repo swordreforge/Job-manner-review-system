@@ -281,6 +281,14 @@ impl JobRepository {
         Ok(result.0)
     }
 
+    pub async fn list_all(&self) -> Result<Vec<Job>> {
+        let sql = format!("{} ORDER BY id DESC", JOB_SELECT_SQL);
+        let jobs = sqlx::query_as::<_, Job>(&sql)
+            .fetch_all(&*self.pool)
+            .await?;
+        Ok(jobs)
+    }
+
     pub async fn exists_by_job_code(&self, job_code: &str) -> Result<bool> {
         let result: (i64,) = sqlx::query_as(
             "SELECT COUNT(*) FROM jobs WHERE job_code = ?"

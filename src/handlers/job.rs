@@ -562,6 +562,80 @@ pub async fn download_template() -> impl Responder {
         .body(buffer)
 }
 
+pub async fn export(state: web::Data<AppState>) -> impl Responder {
+    use rust_xlsxwriter::*;
+
+    let job_repo = crate::db::JobRepository::new(state.mysql_pool.clone());
+    let jobs = match job_repo.list_all().await {
+        Ok(jobs) => jobs,
+        Err(e) => {
+            log::error!("导出岗位数据失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("获取岗位数据失败", None));
+        }
+    };
+
+    let mut workbook = Workbook::new();
+    let worksheet = workbook.add_worksheet();
+
+    let headers = vec![
+        "岗位名称", "岗位详情", "公司名称", "所属行业", "类别", "地点",
+        "薪资范围", "岗位编码", "公司规模", "公司类型(融资状态)", "公司详情",
+        "岗位来源地址", "更新日期", "技能要求", "证书要求", "软技能", "岗位要求", "成长潜力"
+    ];
+
+    for (col, header) in headers.iter().enumerate() {
+        if let Err(e) = worksheet.write_string(0, col as u16, *header) {
+            log::warn!("写入表头失败: {}", e);
+        }
+    }
+
+    for (row_idx, job) in jobs.iter().enumerate() {
+        let row = (row_idx + 1) as u32;
+        let values: Vec<Option<&str>> = vec![
+            Some(&job.name),
+            job.job_detail.as_deref(),
+            job.company.as_deref(),
+            job.industry.as_deref(),
+            job.category.as_deref(),
+            job.location.as_deref(),
+            job.salary_range.as_deref(),
+            job.job_code.as_deref(),
+            job.company_scale.as_deref(),
+            job.company_funding_status.as_deref(),
+            job.company_description.as_deref(),
+            job.source_url.as_deref(),
+            job.update_date.as_deref(),
+            job.skills.as_deref(),
+            job.certificates.as_deref(),
+            job.soft_skills.as_deref(),
+            job.requirements.as_deref(),
+            job.growth_potential.as_deref(),
+        ];
+        for (col, value) in values.into_iter().enumerate() {
+            if let Some(v) = value {
+                if let Err(e) = worksheet.write_string(row, col as u16, v) {
+                    log::warn!("写入单元格({},{})失败: {}", row, col, e);
+                }
+            }
+        }
+    }
+
+    let buffer = match workbook.save_to_buffer() {
+        Ok(buf) => buf,
+        Err(e) => {
+            log::error!("生成导出文件失败: {}", e);
+            return HttpResponse::InternalServerError()
+                .json(ErrorResponse::error("生成导出文件失败", None));
+        }
+    };
+
+    HttpResponse::Ok()
+        .content_type("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        .append_header(("Content-Disposition", "attachment; filename=jobs_export.xlsx"))
+        .body(buffer)
+}
+
 // 分块上传请求结构
 #[derive(Debug, Deserialize)]
 pub struct ChunkUploadInitRequest {

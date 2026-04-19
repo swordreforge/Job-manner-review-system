@@ -150,6 +150,14 @@ impl StudentRepository {
         Ok(result.rows_affected() > 0)
     }
 
+    pub async fn list_all(&self) -> Result<Vec<Student>> {
+        let sql = "SELECT id, user_id, name, education, major, graduation_year, skills, certificates, soft_skills, internship, projects, completeness_score, competitiveness_score, resume_url, suggestions, resume_content, created_at, updated_at FROM students ORDER BY id DESC";
+        let students = sqlx::query_as::<_, Student>(sql)
+            .fetch_all(&*self.pool)
+            .await?;
+        Ok(students)
+    }
+
     pub async fn count(&self) -> Result<i64> {
         let result: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM students")
             .fetch_one(&*self.pool)
