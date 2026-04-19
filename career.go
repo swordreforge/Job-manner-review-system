@@ -878,7 +878,7 @@ func migrateColumns(dataSource string) error {
 	for _, m := range migrations {
 		var exists int
 		// Check if it's an index migration (ends with _idx)
-		isIndex := strings.HasSuffix(m.column, "_idx")
+		isIndex := strings.HasPrefix(m.column, "idx_")
 
 		if isIndex {
 			// Check if index exists in information_schema.statistics
