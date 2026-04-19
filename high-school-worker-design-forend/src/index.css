@@ -712,6 +712,11 @@ body {
 [data-theme="dark"] .shadow-2xl { box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3) !important; }
 
 /* Catch remaining white backgrounds - override Ant Design Card and other components */
+[data-theme="light"] .ant-modal-container { background-color: #ffffff !important; border-color: #f0f0f0 !important; }
+[data-theme="light"] .ant-modal-content { background-color: #ffffff !important; }
+[data-theme="light"] .ant-modal-header { background-color: #ffffff !important; }
+[data-theme="light"] .ant-modal-body { background-color: #ffffff !important; }
+[data-theme="light"] .ant-modal-footer { background-color: #ffffff !important; }
 [data-theme="dark"] .ant-card { background-color: var(--md-sys-color-surface-container) !important; }
 [data-theme="dark"] .ant-list-item { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; }
 [data-theme="dark"] .ant-modal-container { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important; }
@@ -726,7 +731,7 @@ body {
 [data-theme="dark"] .ant-popover-inner { background-color: var(--md-sys-color-surface-container) !important; }
 [data-theme="dark"] .ant-tooltip-inner { background-color: var(--md-sys-color-surface-container-high) !important; }
 
-/* Dark-mode style for Plan page delete confirmation modal */
+/* Light-mode: ensure clean white modal */
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-content,
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-header,
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-body,
@@ -734,7 +739,16 @@ body {
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-confirm-body-wrapper,
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-confirm-body,
 [data-theme="light"] .plan-delete-modal-dark .ant-modal-confirm-paragraph,
-[data-theme="light"] .plan-delete-modal-dark .ant-modal-confirm-btns {
+[data-theme="light"] .plan-delete-modal-dark .ant-modal-confirm-btns,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-container,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-content,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-header,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-body,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-footer,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-confirm-body-wrapper,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-confirm-body,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-confirm-paragraph,
+[data-theme="light"] .logout-confirm-modal-dark .ant-modal-confirm-btns {
   background-color: #ffffff !important;
 }
 
@@ -795,21 +809,44 @@ body {
 }
 
 /* Logout confirm modal: class-scoped dark-mode cleanup (no white outer frame) */
-.logout-confirm-modal-dark .ant-modal,
-.logout-confirm-modal-dark .ant-modal-wrap,
-.logout-confirm-modal-dark .ant-modal-content,
-.logout-confirm-modal-dark .ant-modal-content:focus,
-.logout-confirm-modal-dark .ant-modal-content:focus-visible,
-.logout-confirm-modal-dark-root,
-.logout-confirm-modal-dark-root .ant-modal,
-.logout-confirm-modal-dark-root .ant-modal-wrap,
-.logout-confirm-modal-dark-root .ant-modal-content,
-.logout-confirm-modal-dark-wrap,
-.logout-confirm-modal-dark-wrap .ant-modal,
-.logout-confirm-modal-dark-wrap .ant-modal-wrap {
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-wrap,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content:focus,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content:focus-visible,
+[data-theme="dark"] .logout-confirm-modal-dark-root,
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal,
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal-wrap,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal-wrap {
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
+}
+
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal-confirm-body-wrapper,
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal-confirm-body,
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal-confirm-paragraph,
+[data-theme="dark"] .logout-confirm-modal-dark-root .ant-modal-confirm-btns,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal-confirm-body-wrapper,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal-confirm-body,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal-confirm-paragraph,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal-confirm-btns {
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content::before,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content::after,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap::before,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap::after,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal::before,
+[data-theme="dark"] .logout-confirm-modal-dark-wrap .ant-modal::after {
+  display: none !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .logout-confirm-modal-dark-root .ant-modal-confirm-body-wrapper,

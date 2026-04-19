@@ -152,42 +152,11 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
 
       <div style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
         <button
-          onClick={() => {
-            const isDarkMode = document.documentElement.getAttribute('data-theme') === 'dark';
+onClick={() => {
             Modal.confirm({
               className: 'logout-confirm-modal-dark',
               rootClassName: 'logout-confirm-modal-dark-root',
               wrapClassName: 'logout-confirm-modal-dark-wrap',
-              style: {
-                background: 'transparent',
-                boxShadow: 'none',
-                outline: 'none',
-              },
-              styles: {
-                root: {
-                  background: 'transparent',
-                  boxShadow: 'none',
-                  outline: 'none',
-                },
-                wrapper: {
-                  background: 'transparent',
-                  boxShadow: 'none',
-                  outline: 'none',
-                },
-                container: {
-                  background: 'transparent',
-                  boxShadow: 'none',
-                  outline: 'none',
-                },
-                ...(isDarkMode
-                  ? {
-                      body: {
-                        background: '#111111',
-                        color: '#ffffff',
-                      },
-                    }
-                  : {}),
-              },
               title: '确认退出',
               icon: <LogoutOutlined />,
               content: '确定要退出登录吗？',
