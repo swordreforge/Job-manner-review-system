@@ -3,8 +3,8 @@ package logic
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
-	"os"
 	"sort"
 	"time"
 
@@ -15,6 +15,9 @@ import (
 	"career-api/internal/svc"
 	"career-api/internal/types"
 )
+
+//go:embed hollande_test_analysis.json
+var hollandTestDataFS embed.FS
 
 type GetHollandQuestionsLogic struct {
 	ctx    context.Context
@@ -489,22 +492,21 @@ func buildTopTypes(scores map[string]int, careerTypes map[string]types.HollandCa
 	return topTypes
 }
 
-// loadHollandTestData 从JSON文件加载测试数据
+// loadHollandTestData 从嵌入的JSON文件加载测试数据
 func loadHollandTestData() (types.HollandTestInfo, error) {
 	var testData types.HollandTestInfo
-	
-	// 从internal/pkg/hollande_test_analysis.json文件加载
-	data, err := os.ReadFile("internal/pkg/hollande_test_analysis.json")
+
+	data, err := hollandTestDataFS.ReadFile("hollande_test_analysis.json")
 	if err != nil {
-		logx.Errorf("Failed to read holland test data file: %v", err)
+		logx.Errorf("Failed to read embedded holland test data: %v", err)
 		return testData, err
 	}
-	
+
 	if err := json.Unmarshal(data, &testData); err != nil {
 		logx.Errorf("Failed to unmarshal holland test data: %v", err)
 		return testData, err
 	}
-	
+
 	return testData, nil
 }
 
