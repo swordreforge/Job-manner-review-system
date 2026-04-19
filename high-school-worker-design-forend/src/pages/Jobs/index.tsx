@@ -117,10 +117,62 @@ export default function JobsPage() {
   useEffect(() => {
     if (activeTab !== 'graph') return;
     const timer = window.setTimeout(() => {
-      chartRef.current?.getEchartsInstance().resize();
+      const chart = chartRef.current?.getEchartsInstance();
+      if (chart) {
+        chart.resize();
+      }
     }, 120);
     return () => window.clearTimeout(timer);
   }, [selectedJobId, activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== 'graph' || !selectedJob) return;
+    const chart = chartRef.current?.getEchartsInstance();
+    if (!chart) return;
+
+    const constrainNodes = () => {
+      const opt = chart.getOption() as { series: { data: { x?: number; y?: number; fixed?: boolean; symbolSize?: number; name?: string; id?: number }[] }[] };
+      const series = opt.series?.[0];
+      if (!series?.data) return;
+
+      const width = chart.getWidth();
+      const height = chart.getHeight();
+      const pad = 55;
+
+      let needUpdate = false;
+      series.data.forEach((node) => {
+        if (typeof node.x === 'number' && typeof node.y === 'number') {
+          const cx = Math.max(pad, Math.min(width - pad, node.x));
+          const cy = Math.max(pad, Math.min(height - pad, node.y));
+          if (node.x !== cx || node.y !== cy) {
+            node.x = cx;
+            node.y = cy;
+            node.fixed = true;
+            needUpdate = true;
+          }
+        }
+      });
+
+      if (needUpdate) {
+        chart.setOption({ series: [{ data: series.data }] });
+      }
+    };
+
+    const timers = [
+      window.setTimeout(constrainNodes, 1500),
+      window.setTimeout(constrainNodes, 3000),
+      window.setTimeout(constrainNodes, 5000),
+    ];
+    const interval = window.setInterval(constrainNodes, 800);
+
+    chart.on('mouseup', () => window.setTimeout(constrainNodes, 80));
+
+    return () => {
+      timers.forEach(clearTimeout);
+      clearInterval(interval);
+      chart.off('mouseup');
+    };
+  }, [selectedJobId, activeTab, selectedJob]);
 
   const loadJobDetail = async (jobId: number) => {
     try {
@@ -479,9 +531,16 @@ export default function JobsPage() {
           },
           edgeSymbol: ['none', 'arrow'],
           edgeSymbolSize: [0, 15],
+          left: '8%',
+          right: '8%',
+          top: '12%',
+          bottom: '8%',
           force: {
             repulsion: 400,
             edgeLength: [150, 250],
+            gravity: 0.1,
+            friction: 0.6,
+            preventOverlap: true,
           },
           emphasis: {
             focus: 'adjacency',
@@ -933,7 +992,7 @@ export default function JobsPage() {
                             <Spin size="large" />
                           </div>
                         ) : promotionPath || transferPaths.length > 0 ? (
-                          <div className="flex h-full min-h-[520px] w-full items-center justify-center">
+                          <div className="flex h-full min-h-[520px] w-full items-center justify-center rounded-lg">
                             <ReactECharts
                               ref={chartRef}
                               option={getGraphOption()}
