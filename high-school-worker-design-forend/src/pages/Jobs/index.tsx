@@ -320,6 +320,12 @@ export default function JobsPage() {
   const getGraphOption = () => {
     if (!selectedJob) return {};
 
+    const chartTextColor = typeof window !== 'undefined'
+      ? (getComputedStyle(document.documentElement)
+          .getPropertyValue('--md-sys-color-on-surface')
+          .trim() || '#111111')
+      : '#111111';
+
     const nodeMap = new Map<number, Record<string, unknown>>();
     const links: GraphLink[] = [];
 
@@ -426,6 +432,9 @@ export default function JobsPage() {
       title: {
         text: `${selectedJob.name} - 岗位发展路径`,
         left: 'center',
+        textStyle: {
+          color: chartTextColor,
+        },
       },
       tooltip: {
         formatter: (params: GraphTooltipParam) => {
@@ -439,6 +448,9 @@ export default function JobsPage() {
       legend: {
         data: ['当前岗位', '发展路径'],
         top: '10%',
+        textStyle: {
+          color: chartTextColor,
+        },
       },
       series: [
         {
@@ -461,6 +473,9 @@ export default function JobsPage() {
           label: {
             show: true,
             position: 'bottom',
+            color: chartTextColor,
+            textBorderWidth: 0,
+            textBorderColor: 'transparent',
           },
           edgeSymbol: ['none', 'arrow'],
           edgeSymbolSize: [0, 15],
@@ -470,6 +485,11 @@ export default function JobsPage() {
           },
           emphasis: {
             focus: 'adjacency',
+            label: {
+              color: chartTextColor,
+              textBorderWidth: 0,
+              textBorderColor: 'transparent',
+            },
           },
         },
       ],
@@ -1057,3 +1077,4 @@ export default function JobsPage() {
     </div>
   );
 }
+
