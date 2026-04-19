@@ -4,6 +4,7 @@ import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Prog
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
+import './FloatingPolygons.css';
 
 export default function InterviewPage() {
   const [mode, setMode] = useState<'practice' | 'assessment'>('practice');
@@ -790,7 +791,7 @@ export default function InterviewPage() {
             className="glass-effect shadow-xl"
           >
             <div className="text-center mb-6">
-              <p className="text-gray-600">选择面试模式，开始你的模拟面试练习</p>
+              <p className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)]">选择面试模式，开始你的模拟面试练习</p>
             </div>
             
             <Segmented
@@ -817,17 +818,17 @@ export default function InterviewPage() {
             />
             
             <Card 
-              className={mode === 'practice' ? 'glass-effect border-blue-500 shadow-md' : 'glass-effect border-green-500 shadow-md'}
+              className={mode === 'practice' ? 'glass-effect border-blue-500 dark:border-blue-400 shadow-md' : 'glass-effect border-green-500 dark:border-green-400 shadow-md'}
             >
               <div className="text-center">
                                 <div className="text-4xl mb-3">{mode === 'practice' ? '🏢' : '🏛️'}</div>
                                 <div className="font-semibold text-lg mb-2">
                                   {mode === 'practice' ? '大厂技术面' : '国企综合面'}
                                 </div>
-                                <div className="text-gray-600 mb-3 text-left">
+                                <div className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)] mb-3 text-left">
                                   {getModeDescription(mode)}
                                 </div>
-                                <div className="text-sm text-gray-700 text-left bg-blue-50 p-3 rounded-lg">
+                                <div className="text-sm text-gray-700 text-left bg-blue-50 dark:bg-[var(--md-sys-color-surface-container-high)] p-3 rounded-lg dark:text-[var(--md-sys-color-on-surface-variant)]">
                                   💡 {getModeRecommendation(mode)}
                                 </div>
                               </div>            </Card>
@@ -868,7 +869,7 @@ export default function InterviewPage() {
                   <Avatar size="large" icon={<RobotOutlined />} />
                   <div>
                     <div className="text-lg font-semibold">{getModeLabel(mode)} - 模拟面试</div>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
                       平均分: <span style={{ color: getScoreColor(averageScore), fontWeight: 'bold' }}>
                         {averageScore.toFixed(1)} ({getScoreLabel(averageScore)})
                       </span>
@@ -906,17 +907,17 @@ export default function InterviewPage() {
                         icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
                         className={msg.role === 'user' ? 'bg-blue-500' : 'bg-green-500'}
                       />
-                      <div className={`p-4 rounded-2xl ${
+                      <div className={`p-4 rounded-2xl interview-msg-${msg.role} ${
                         msg.role === 'user' 
-                          ? 'bg-blue-500 text-white rounded-tr-none' 
-                          : 'bg-white shadow-sm rounded-tl-none'
+                          ? 'rounded-tr-none' 
+                          : 'rounded-tl-none'
                       }`}>
-                        <div className="text-sm mb-1 opacity-75">
+                        <div className="text-sm mb-1 opacity-75 interview-msg-label">
                           {msg.role === 'user' ? '你' : '面试官'}
                         </div>
                         <div className="whitespace-pre-wrap">{msg.content}</div>
                         {msg.score !== undefined && (
-                          <div className="mt-2 pt-2 border-t border-gray-200">
+                          <div className="mt-2 pt-2 border-t interview-msg-score-divider">
                             <Tag color="green" className="mr-2">
                               评分: {msg.score}
                             </Tag>
@@ -933,15 +934,15 @@ export default function InterviewPage() {
                 ))}
                 {currentScore !== null && (
                   <div className="flex justify-center">
-                    <Card size="small" className="glass-effect bg-gradient-to-r from-green-50 to-blue-50">
+                    <Card size="small" className="glass-effect interview-score-card">
                       <div className="text-center">
-                        <div className="text-sm text-gray-600 mb-1">本次回答评分</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">本次回答评分</div>
                         <div className="text-3xl font-bold" style={{ color: getScoreColor(currentScore) }}>
                           {currentScore}
                         </div>
-                        <div className="text-sm text-gray-500 mt-1">{getScoreLabel(currentScore)}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getScoreLabel(currentScore)}</div>
                         {currentFeedback && (
-                          <div className="mt-2 text-sm text-gray-600 italic">
+                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
                             💡 {currentFeedback}
                           </div>
                         )}
@@ -978,7 +979,7 @@ export default function InterviewPage() {
                     </Button>
                   )}
                   
-                  <div className="flex-1 text-center text-sm text-gray-500">
+                  <div className="flex-1 text-center text-sm text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
                     {isRecording ? (
                       <span className="text-red-500 font-medium">正在录音...</span>
                     ) : transcribing ? (
@@ -1089,7 +1090,7 @@ export default function InterviewPage() {
                             </span>
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
                           问题数: {item.currentQuestion}/{item.totalQuestions} | 
                           时长: {Math.floor(item.durationSeconds / 60)}分钟
                         </div>
@@ -1120,13 +1121,13 @@ export default function InterviewPage() {
           {currentReport && (
             <div className="space-y-6">
               {/* 总体评分 */}
-              <Card title="总体评价" className="glass-effect bg-gradient-to-r from-blue-50 to-indigo-50">
+              <Card title="总体评价" className="glass-effect interview-report-overview">
                 <div className="text-center">
                   <div className="text-6xl font-bold mb-2" style={{ color: getScoreColor(currentReport.overallScore) }}>
                     {currentReport.overallScore.toFixed(1)}
                   </div>
-                  <div className="text-xl text-gray-700 mb-4">{getScoreLabel(currentReport.overallScore)}</div>
-                  <div className="text-gray-600">{currentReport.summary}</div>
+                  <div className="text-xl text-gray-700 dark:text-[var(--md-sys-color-on-surface)] mb-4">{getScoreLabel(currentReport.overallScore)}</div>
+                  <div className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)]">{currentReport.summary}</div>
                 </div>
               </Card>
               

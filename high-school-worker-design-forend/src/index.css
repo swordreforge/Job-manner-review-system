@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 @import url('https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Noto+Sans+SC:wght@400;500;700&family=Roboto:wght@400;500;700&display=swap');
 
 @theme {
@@ -713,7 +714,12 @@ body {
 /* Catch remaining white backgrounds - override Ant Design Card and other components */
 [data-theme="dark"] .ant-card { background-color: var(--md-sys-color-surface-container) !important; }
 [data-theme="dark"] .ant-list-item { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; }
-[data-theme="dark"] .ant-modal-content { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-modal-container { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important; }
+[data-theme="dark"] .ant-modal-content { background-color: var(--md-sys-color-surface-container) !important; border-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .ant-modal-header { background-color: var(--md-sys-color-surface-container) !important; border-bottom-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .ant-modal-body { background-color: var(--md-sys-color-surface-container) !important; }
+[data-theme="dark"] .ant-modal-footer { background-color: var(--md-sys-color-surface-container) !important; border-top-color: var(--md-sys-color-outline-variant) !important; }
+[data-theme="dark"] .ant-modal-close { color: var(--md-sys-color-on-surface-variant) !important; }
 [data-theme="dark"] .ant-drawer-content { background-color: var(--md-sys-color-surface) !important; }
 [data-theme="dark"] .ant-dropdown-menu { background-color: var(--md-sys-color-surface-container) !important; }
 [data-theme="dark"] .ant-select-dropdown { background-color: var(--md-sys-color-surface-container) !important; }
@@ -732,10 +738,11 @@ body {
   background-color: #ffffff !important;
 }
 
-[data-theme="dark"] .plan-delete-modal-dark .ant-modal-content {
-  background-color: #111111 !important;
-  border: 2px solid #ffffff !important;
-  box-shadow: inset 0 0 0 1px #000000 !important;
+[data-theme="dark"] .plan-delete-modal-dark .ant-modal-content,
+[data-theme="dark"] .plan-delete-modal-dark .ant-modal-container {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   outline: none !important;
 }
 
@@ -766,14 +773,16 @@ body {
 }
 
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-content::before,
-[data-theme="dark"] .plan-delete-modal-dark .ant-modal-content::after {
+[data-theme="dark"] .plan-delete-modal-dark .ant-modal-content::after,
+[data-theme="dark"] .plan-delete-modal-dark .ant-modal-container::before,
+[data-theme="dark"] .plan-delete-modal-dark .ant-modal-container::after {
   display: none !important;
 }
 
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-header,
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-body,
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-footer {
-  background-color: #111111 !important;
+  background-color: var(--md-sys-color-surface-container) !important;
   border: none !important;
 }
 
@@ -782,7 +791,7 @@ body {
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-close,
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-close-x,
 [data-theme="dark"] .plan-delete-modal-dark .ant-modal-confirm-body .anticon {
-  color: #ffffff !important;
+  color: var(--md-sys-color-on-surface) !important;
 }
 
 /* Logout confirm modal: class-scoped dark-mode cleanup (no white outer frame) */
@@ -829,8 +838,11 @@ body {
 
 [data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content,
 [data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content:focus,
-[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content:focus-visible {
-  background-color: #111111 !important;
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-content:focus-visible,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-container,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-container:focus,
+[data-theme="dark"] .logout-confirm-modal-dark .ant-modal-container:focus-visible {
+  background-color: var(--md-sys-color-surface-container) !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;
@@ -862,7 +874,7 @@ body {
 [data-theme="dark"] .logout-confirm-modal-dark .ant-modal-confirm-title,
 [data-theme="dark"] .logout-confirm-modal-dark .ant-modal-confirm-content,
 [data-theme="dark"] .logout-confirm-modal-dark .ant-modal-confirm-body .anticon {
-  color: #ffffff !important;
+  color: var(--md-sys-color-on-surface) !important;
 }
 
 /* Override glass-effect class */
@@ -921,17 +933,20 @@ body {
   background: transparent !important;
 }
 
+[data-theme="dark"] .ant-modal-confirm .ant-modal-container,
+[data-theme="dark"] .ant-modal-confirm .ant-modal-container:focus,
+[data-theme="dark"] .ant-modal-confirm .ant-modal-container:focus-visible,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-content,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-content:focus,
-[data-theme="dark"] .ant-modal-confirm .ant-modal-content:focus-visible,
-[data-theme="dark"] .ant-modal-confirm .ant-modal:focus,
-[data-theme="dark"] .ant-modal-confirm .ant-modal:focus-visible {
-  background-color: #111111 !important;
-  border: 2px solid #ffffff !important;
-  box-shadow: inset 0 0 0 1px #000000 !important;
+[data-theme="dark"] .ant-modal-confirm .ant-modal-content:focus-visible {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
   outline: none !important;
 }
 
+[data-theme="dark"] .ant-modal-confirm .ant-modal-container::before,
+[data-theme="dark"] .ant-modal-confirm .ant-modal-container::after,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-content::before,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-content::after {
   display: none !important;
@@ -945,7 +960,7 @@ body {
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-title,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-content,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-body .anticon {
-  color: #ffffff !important;
+  color: var(--md-sys-color-on-surface) !important;
 }
 
 /* Confirm internal wrapper fallback (removes remaining white framed layer) */
@@ -953,7 +968,7 @@ body {
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-body,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-paragraph,
 [data-theme="dark"] .ant-modal-confirm .ant-modal-confirm-btns {
-  background: #111111 !important;
+  background: var(--md-sys-color-surface-container) !important;
   border: none !important;
   box-shadow: none !important;
   outline: none !important;

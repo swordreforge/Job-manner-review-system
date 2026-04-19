@@ -118,6 +118,60 @@
   box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
 }
 
+[data-theme="dark"] .glass-effect {
+  background: rgba(33, 31, 38, 0.82);
+  border: 1px solid rgba(68, 71, 79, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Chat message bubbles */
+.interview-msg-user {
+  background: #1677ff;
+  color: #fff;
+}
+
+.interview-msg-assistant {
+  background: #fff;
+  color: #333;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.interview-msg-score-divider {
+  border-color: #e5e7eb;
+}
+
+.interview-score-card {
+  background: linear-gradient(to right, #f0fff4, #eff6ff) !important;
+}
+
+.interview-report-overview {
+  background: linear-gradient(to right, #eff6ff, #eef2ff) !important;
+}
+
+/* === Dark mode overrides === */
+[data-theme="dark"] .interview-msg-user {
+  background: #0d47a1;
+  color: #E4E1E6;
+}
+
+[data-theme="dark"] .interview-msg-assistant {
+  background: var(--md-sys-color-surface-container-high);
+  color: #E4E1E6;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="dark"] .interview-msg-score-divider {
+  border-color: rgba(68, 71, 79, 0.6);
+}
+
+[data-theme="dark"] .interview-score-card {
+  background: linear-gradient(to right, rgba(21, 50, 21, 0.5), rgba(21, 30, 50, 0.5)) !important;
+}
+
+[data-theme="dark"] .interview-report-overview {
+  background: linear-gradient(to right, rgba(21, 30, 50, 0.5), rgba(26, 26, 46, 0.5)) !important;
+}
+
 /* 动态渐变背景 */
 .animated-gradient {
   background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
