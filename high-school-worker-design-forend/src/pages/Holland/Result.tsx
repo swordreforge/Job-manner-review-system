@@ -1,5 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactECharts from 'echarts-for-react';
 import { hollandApi } from '../../api';
 import type { HollandResult } from '../../types';
 
@@ -9,6 +10,66 @@ export default function HollandResultPage() {
   const [result, setResult] = useState<HollandResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const radarOption = useMemo(() => {
+    if (!result) return {};
+    const typeMap: Record<string, { name: string; color: string }> = {};
+    result.topTypes.forEach(t => {
+      typeMap[t.type] = { name: t.name, color: t.color };
+    });
+
+    const maxScore = Math.max(...Object.values(result.scores));
+    const indicator = Object.entries(result.scores).map(([type]) => ({
+      name: typeMap[type]?.name || type,
+      max: maxScore * 1.1,
+    }));
+
+    const scoreValues = Object.values(result.scores);
+    const areaColor = result.topTypes[0]?.color || '#f97316';
+
+    return {
+      backgroundColor: 'transparent',
+      tooltip: {},
+      radar: {
+        indicator,
+        shape: 'polygon' as const,
+        splitNumber: 4,
+        axisName: {
+          color: '#374151',
+          fontSize: 13,
+          fontWeight: 600,
+        },
+        splitLine: { lineStyle: { color: '#e5e7eb' } },
+        splitArea: { areaStyle: { color: ['#fafafa', '#f3f4f6'] } },
+        axisLine: { lineStyle: { color: '#d1d5db' } },
+      },
+      series: [
+        {
+          type: 'radar' as const,
+          data: [
+            {
+              value: scoreValues,
+              name: '兴趣得分',
+              symbol: 'circle',
+              symbolSize: 6,
+              lineStyle: { color: areaColor, width: 2 },
+              areaStyle: {
+                color: {
+                  type: 'radial' as const,
+                  x: 0.5, y: 0.5, r: 0.5,
+                  colorStops: [
+                    { offset: 0, color: areaColor + '40' },
+                    { offset: 1, color: areaColor + '15' },
+                  ],
+                } as any,
+              },
+              itemStyle: { color: areaColor },
+            },
+          ],
+        },
+      ],
+    };
+  }, [result]);
 
   useEffect(() => {
     if (id) {
@@ -92,7 +153,13 @@ export default function HollandResultPage() {
           </div>
         </div>
 
-        {/* 六边形雷达图 */}
+        {/* 雷达图 */}
+        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">兴趣雷达图</h2>
+          <ReactECharts option={radarOption} style={{ height: 320 }} />
+        </div>
+
+        {/* 属性卡片 */}
         <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">职业类型分布</h2>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
