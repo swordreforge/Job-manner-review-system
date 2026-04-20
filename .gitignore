@@ -12,20 +12,16 @@
 .vscode/
 *.code-workspace
 
-# 环境变量（含密钥）
-.env
-.env.local
-.env.production
+# 环境变量（含密钥，不含 .env.example）
+项目源码/admin-app/.env
+项目源码/voice/.env
 
-# 构建产物 - 大型二进制文件（Docker 镜像中已包含）
-构建产物/主服务后端/career-api
-构建产物/管理端/teacher-api
+# 构建产物 - 仅排除 Windows 可执行文件和移动端包（Linux 二进制保留用于部署）
 构建产物/管理端/teacher-api.exe
-构建产物/语音服务/xunfei-asr-server
 构建产物/语音服务/xunfei-asr-server.exe
 构建产物/安卓客户端/
-构建产物/前端/
 构建产物/客户端/
+构建产物/前端/
 
 # 源码依赖和缓存
 项目源码/forend/node_modules/
