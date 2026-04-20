@@ -1,0 +1,148 @@
+name: career
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: career-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-career2026}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-career_db}
+      MYSQL_CHARACTER_SET_SERVER: utf8mb4
+      MYSQL_COLLATION_SERVER: utf8mb4_unicode_ci
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - career-mysql-data:/var/lib/mysql
+      - ./mysql-init:/docker-entrypoint-initdb.d
+    ports:
+      - "${MYSQL_PORT:-3307}:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-career2026}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - career-net
+
+  redis:
+    image: redis:7-alpine
+    container_name: career-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - career-redis-data:/data
+    networks:
+      - career-net
+
+  career-api:
+    image: career-api:latest
+    container_name: career-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "${CAREER_API_PORT:-8088}:8088"
+    command: ["./career-api", "-f", "etc/career-api.yaml", "--skip-all"]
+    volumes:
+      - ./config/career-api.yaml:/app/etc/career-api.yaml:ro
+      - career-upload-data:/app/img
+    networks:
+      - career-net
+
+  teacher-api:
+    image: career-teacher-api:latest
+    container_name: career-teacher-api
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    ports:
+      - "${TEACHER_API_PORT:-8081}:8081"
+    command:
+      - "./teacher-api"
+      - "--mysql-host"
+      - "mysql"
+      - "--mysql-port"
+      - "3306"
+      - "--mysql-username"
+      - "root"
+      - "--mysql-password"
+      - "${MYSQL_ROOT_PASSWORD:-career2026}"
+      - "--mysql-database"
+      - "${MYSQL_DATABASE:-career_db}?ssl-mode=disabled"
+      - "--host"
+      - "0.0.0.0"
+      - "--port"
+      - "8081"
+      - "--sqlite-database-url"
+      - "sqlite:/app/data/auth.db"
+      - "--jwt-secret"
+      - "${JWT_SECRET:-career2026secret}"
+    volumes:
+      - career-teacher-data:/app/data
+    networks:
+      - career-net
+
+  voice-api:
+    image: career-voice-api:latest
+    container_name: career-voice-api
+    restart: unless-stopped
+    ports:
+      - "${VOICE_API_PORT:-8000}:8000"
+    command:
+      - "./xunfei-asr-server"
+      - "--server-host"
+      - "0.0.0.0"
+      - "--server-port"
+      - "8000"
+      - "--xunfei-app-id"
+      - "${XUNFEI_APP_ID:-140c88e2}"
+      - "--xunfei-api-key"
+      - "${XUNFEI_API_KEY:-63101bc8a895022a2f12d0875f909ee6}"
+      - "--xunfei-api-secret"
+      - "${XUNFEI_API_SECRET:-ZGRiNWVjZTRhMjQ0NmE0YTRkOGMxZWEx}"
+    networks:
+      - career-net
+
+  frontend:
+    image: nginx:alpine
+    container_name: career-frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    volumes:
+      - ./frontend:/usr/share/nginx/html:ro
+      - ./nginx/frontend.conf:/etc/nginx/conf.d/default.conf:ro
+    networks:
+      - career-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: career-nginx
+    restart: unless-stopped
+    ports:
+      - "${NGINX_PORT:-8080}:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./frontend:/usr/share/nginx/html:ro
+    depends_on:
+      - career-api
+      - teacher-api
+      - voice-api
+    networks:
+      - career-net
+
+volumes:
+  career-mysql-data:
+  career-redis-data:
+  career-upload-data:
+  career-teacher-data:
+
+networks:
+  career-net:
+    driver: bridge

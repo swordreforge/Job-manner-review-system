@@ -1,0 +1,132 @@
+syntax = "v1"
+
+type (
+	// 霍兰德测试题目
+	HollandQuestion {
+		Id      int             `json:"id"`
+		Question string        `json:"question"`
+		Options []HollandOption `json:"options"`
+	}
+	HollandOption {
+		Text string `json:"text"`
+		Type string `json:"type"` // R, I, A, S, E, C
+	}
+
+	// 霍兰德测试答案
+	HollandAnswer {
+		QuestionId int    `json:"questionId"`
+		SelectedType string `json:"selectedType"` // R, I, A, S, E, C
+	}
+
+	// 霍兰德测试结果
+	HollandResult {
+		TestId       int64                `json:"testId"`
+		StudentId    int64                `json:"studentId"`
+		CareerCode   string               `json:"careerCode"`   // 如 "RIA", "SEC"
+		Scores       map[string]int       `json:"scores"`       // 各类型得分
+		TopTypes     []HollandTypeInfo    `json:"topTypes"`     // 排名前三的类型
+		SuitableJobs []string             `json:"suitableJobs"` // 推荐职业
+		Description  string               `json:"description"`  // 结果描述
+		CreatedAt    int64                `json:"createdAt"`
+	}
+	HollandTypeInfo {
+		Type        string `json:"type"`
+		Name        string `json:"name"`
+		Score       int    `json:"score"`
+		Description string `json:"description"`
+		Color       string `json:"color"`
+	}
+
+	// 获取测试题目请求
+	GetHollandQuestionsReq struct{}
+
+	// 获取测试题目响应
+	GetHollandQuestionsResp {
+		Code int                `json:"code"`
+		Msg  string             `json:"msg"`
+		Data *HollandTestInfo   `json:"data,optional"`
+	}
+	HollandTestInfo {
+		TestInfo   HollandTestMeta  `json:"testInfo"`
+		Questions  []HollandQuestion `json:"questions"`
+		CareerTypes map[string]HollandCareerType `json:"careerTypes"`
+	}
+	HollandTestMeta {
+		Name           string `json:"name"`
+		Description    string `json:"description"`
+		Version        string `json:"version"`
+		TotalQuestions int    `json:"totalQuestions"`
+		EstimatedTime  string `json:"estimatedTime"`
+	}
+	HollandCareerType {
+		Name         string   `json:"name"`
+		Description  string   `json:"description"`
+		Traits       []string `json:"traits"`
+		SuitableJobs []string `json:"suitableJobs"`
+		Color        string   `json:"color"`
+	}
+
+	// 提交测试答案请求
+	SubmitHollandTestReq {
+		Answers []HollandAnswer `json:"answers,validate:"required,dive,required"`
+	}
+
+	// 提交测试答案响应
+	SubmitHollandTestResp {
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data *HollandResult   `json:"data,optional"`
+	}
+
+	// 获取测试结果请求
+	GetHollandResultReq {
+		TestId int64 `path:"id"`
+	}
+
+	// 获取测试结果响应
+	GetHollandResultResp {
+		Code int              `json:"code"`
+		Msg  string           `json:"msg"`
+		Data *HollandResult   `json:"data,optional"`
+	}
+
+	// 获取学生测试历史请求
+	GetHollandHistoryReq {
+		Page     int `form:"page,default=1"`
+		PageSize int `form:"pageSize,default=10"`
+	}
+
+	// 获取学生测试历史响应
+	GetHollandHistoryResp {
+		Code int                `json:"code"`
+		Msg  string             `json:"msg"`
+		Data *HollandHistoryData `json:"data,optional"`
+	}
+	HollandHistoryData {
+		Total int64            `json:"total"`
+		List  []HollandResult  `json:"list"`
+	}
+)
+
+@server (
+	prefix: /api/v1
+	group:  holland
+	middleware: AuthMiddleware
+)
+service career-api {
+	@doc "获取霍兰德职业倾向测试题目"
+	@handler GetHollandQuestions
+	get /holland/questions (GetHollandQuestionsReq) returns (GetHollandQuestionsResp)
+
+	@doc "提交霍兰德职业倾向测试答案"
+	@handler SubmitHollandTest
+	post /holland/submit (SubmitHollandTestReq) returns (SubmitHollandTestResp)
+
+	@doc "获取霍兰德测试结果"
+	@handler GetHollandResult
+	get /holland/result/:id (GetHollandResultReq) returns (GetHollandResultResp)
+
+	@doc "获取当前用户的霍兰德测试历史"
+	@handler GetHollandHistory
+	get /holland/history (GetHollandHistoryReq) returns (GetHollandHistoryResp)
+}

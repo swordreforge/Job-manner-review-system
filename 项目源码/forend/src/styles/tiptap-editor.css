@@ -1,0 +1,89 @@
+.resume-editor .tiptap {
+  outline: none;
+  min-height: 400px;
+  padding: 16px;
+  font-family: 'Microsoft YaHei', 'SimSun', 'PingFang SC', sans-serif;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #333;
+}
+
+.resume-editor .tiptap p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #adb5bd;
+  pointer-events: none;
+  height: 0;
+}
+
+.resume-editor .tiptap h1 {
+  font-size: 24px;
+  font-weight: bold;
+  color: #1a1a1a;
+  text-align: center;
+  margin: 0 0 4px;
+}
+
+.resume-editor .tiptap h2 {
+  font-size: 16px;
+  color: #1a73e8;
+  border-bottom: 2px solid #1a73e8;
+  padding-bottom: 5px;
+  margin-bottom: 12px;
+}
+
+.resume-editor .tiptap h3 {
+  font-size: 14px;
+  color: #1a1a1a;
+  font-weight: 600;
+  margin: 8px 0 4px;
+}
+
+.resume-editor .tiptap ul {
+  padding-left: 20px;
+  list-style-type: disc;
+}
+
+.resume-editor .tiptap ol {
+  padding-left: 20px;
+  list-style-type: decimal;
+}
+
+.resume-editor .tiptap li {
+  margin-bottom: 4px;
+}
+
+.resume-editor .tiptap p {
+  margin: 4px 0;
+}
+
+.resume-editor .tiptap mark {
+  background-color: #fef08a;
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.resume-editor .tiptap div {
+  margin-bottom: 8px;
+}
+
+.resume-editor .tiptap span {
+  font-size: 13px;
+}
+
+.resume-editor .tiptap a {
+  color: #1a73e8;
+  text-decoration: underline;
+}
+
+.resume-editor .tiptap strong {
+  font-weight: 600;
+}
+
+.resume-editor .tiptap em {
+  font-style: italic;
+}
+
+.resume-editor .tiptap u {
+  text-decoration: underline;
+}

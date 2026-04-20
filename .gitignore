@@ -1,0 +1,34 @@
+# 部署运行时目录（由脚本生成）
+部署/
+
+# 系统文件
+.DS_Store
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.code-workspace
+
+# 环境变量（含密钥）
+.env
+.env.local
+.env.production
+
+# 构建产物 - 大型二进制文件（Docker 镜像中已包含）
+构建产物/主服务后端/career-api
+构建产物/管理端/teacher-api
+构建产物/管理端/teacher-api.exe
+构建产物/语音服务/xunfei-asr-server
+构建产物/语音服务/xunfei-asr-server.exe
+构建产物/安卓客户端/
+构建产物/前端/
+构建产物/客户端/
+
+# 源码依赖和缓存
+项目源码/forend/node_modules/
+项目源码/forend/dist/
+项目源码/admin-app/target/
+项目源码/voice/target/

@@ -1,0 +1,65 @@
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .resume-export-area,
+  .resume-export-area * {
+    visibility: visible;
+  }
+  .resume-export-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+.resume-export-container {
+  font-family: 'Microsoft YaHei', 'SimSun', 'PingFang SC', sans-serif;
+  color: #333;
+  line-height: 1.6;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px;
+  background: white;
+}
+
+.resume-export-container h1 {
+  font-size: 24px;
+  color: #1a1a1a;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.resume-export-container h2 {
+  font-size: 16px;
+  color: #1a73e8;
+  border-bottom: 2px solid #1a73e8;
+  padding-bottom: 5px;
+  margin-bottom: 12px;
+}
+
+.resume-export-container h3 {
+  font-size: 14px;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.resume-export-container p {
+  margin: 4px 0;
+  font-size: 13px;
+}
+
+.resume-export-container ul {
+  padding-left: 20px;
+  margin: 4px 0;
+}
+
+.resume-export-container li {
+  margin-bottom: 4px;
+  font-size: 13px;
+}
+
+.resume-export-area {
+  background: white;
+}

@@ -1,0 +1,25 @@
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock
+report.json
+
+# 环境变量
+.env
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local git worktrees
+.worktrees/
+
+# 日志
+*.log
+
+# OS
+.DS_Store
+Thumbs.db20260226105856_457.xls

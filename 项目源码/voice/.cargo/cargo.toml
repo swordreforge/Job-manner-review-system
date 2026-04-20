@@ -1,0 +1,98 @@
+[build]
+target = "x86_64-unknown-linux-musl"
+rustflags = [
+    "-C", "link-arg=-s",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=x86-64",
+    "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=4",
+    "-Z", "unsound-mir-opts=true",
+    "-Z", "cross-crate-inline-threshold=0",  
+]
+
+[profile.release]
+lto = "fat"
+
+[target.x86_64-unknown-linux-musl]
+rustflags = [
+    "-C", "link-arg=-z",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=x86-64",
+    "-C", "embed-bitcode=yes",# lto needed
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=4",
+    "-Z", "unsound-mir-opts=true",
+    "-Z", "cross-crate-inline-threshold=0",  
+]
+
+[target.x86_64-unknown-linux-gnu]
+rustflags = [
+    "-C", "link-arg=-z",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=x86-64",
+    "-C", "embed-bitcode=yes",# lto needed
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=4",
+    "-Z", "unsound-mir-opts=true",
+    "-Z", "cross-crate-inline-threshold=0", 
+]
+[target.i686-unknown-linux-gnu]
+rustflags = [
+    "-C", "link-arg=-s",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=generic",
+    "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "relocation-model=static",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=3",
+]
+
+[target.x86_64-pc-windows-gnu]
+rustflags = [
+    "-C", "link-arg=-s",
+    "-C", "link-arg=-Wl,--gc-sections",
+    "-C", "link-arg=-Wl,--strip-all",
+    "-C", "target-cpu=generic",
+    "-C", "embed-bitcode=yes",
+    "-C", "codegen-units=1",
+    "-C", "force-frame-pointers=no",
+    "-C", "strip=symbols",
+    "-C", "debuginfo=0",
+    "-C", "overflow-checks=false",
+    "-Z", "share-generics=y",
+    "-Z", "location-detail=none",
+    "-Z", "mir-opt-level=3",
+]
+

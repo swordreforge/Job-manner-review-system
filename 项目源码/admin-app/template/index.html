@@ -1,0 +1,1451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员端管理系统</title>
+    <link rel="stylesheet" href="static/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- 登录页面 -->
+        <div id="login-page" class="page active">
+            <div class="login-container">
+                <div class="login-box">
+                    <h1>管理员端管理系统</h1>
+                    <p class="subtitle">学生信息管理与可视化平台</p>
+                    <form id="login-form">
+                        <div class="form-group">
+                            <label for="username">用户名</label>
+                            <input type="text" id="username" name="username" required placeholder="请输入用户名">
+                        </div>
+                        <div class="form-group">
+                            <label for="password">密码</label>
+                            <input type="password" id="password" name="password" required placeholder="请输入密码">
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-large">登录</button>
+                    </form>
+                    <div id="login-error" class="error-message"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主页面 -->
+        <div id="dashboard-page" class="page">
+            <!-- 顶部导航栏 -->
+            <header class="header">
+                <div class="header-content">
+                    <div class="logo">
+                        <h2>管理员端管理系统</h2>
+                    </div>
+                    <nav class="nav">
+                        <a href="#dashboard" class="nav-item active" data-page="dashboard">首页</a>
+                        <a href="#students" class="nav-item" data-page="students">学生管理</a>
+                        <a href="#jobs" class="nav-item" data-page="jobs">岗位管理</a>
+                        <a href="#schools" class="nav-item" data-page="schools">学校管理</a>
+                        <a href="#users" class="nav-item" data-page="users">用户管理</a>
+                        <a href="#schema" class="nav-item" data-page="schema">数据管理</a>
+                        <a href="#system" class="nav-item" data-page="system">系统状态</a>
+                    </nav>
+                    <div class="user-info">
+                        <span id="current-user">教师</span>
+                        <button id="logout-btn" class="btn btn-logout">退出</button>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 仪表盘内容 -->
+            <div id="dashboard-content" class="content active">
+                <!-- 统计卡片 -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon student-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                                <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                                <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-students">0</h3>
+                            <p>学生总数</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon class-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 21h18"></path>
+                                <path d="M5 21V7l8-4 8 4v14"></path>
+                                <path d="M13 11l-2 2h4l-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-classes">0</h3>
+                            <p>专业数量</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon job-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-jobs">0</h3>
+                            <p>岗位数量</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon database-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="database-status">连接中</h3>
+                            <p>数据库状态</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 快捷操作 -->
+                <div class="quick-actions">
+                    <h2>快捷操作</h2>
+                    <div class="actions-grid">
+                        <a href="#" class="action-card" data-action="add-student">
+                            <div class="action-icon add-icon">+</div>
+                            <p>添加学生</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="view-all">
+                            <div class="action-icon list-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                                </svg>
+                            </div>
+                            <p>查看全部</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="add-job">
+                            <div class="action-icon add-icon">+</div>
+                            <p>添加岗位</p>
+                        </a>
+                        <a href="#" class="action-card" data-action="backup">
+                            <div class="action-icon backup-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                                    <polyline points="7 3 7 8 15 8"></polyline>
+                                </svg>
+                            </div>
+                            <p>数据备份</p>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- 最近学生 -->
+                <div class="recent-students">
+                    <h2>最近添加的学生</h2>
+                    <div id="recent-students-list" class="students-list">
+                        <div class="loading">加载中...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学生管理内容 -->
+            <div id="students-content" class="content">
+                <div class="page-header">
+                    <h1>学生管理</h1>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" id="download-student-template-btn">下载模板</button>
+                        <button class="btn btn-success" id="batch-import-students-btn">批量导入</button>
+                        <button class="btn btn-secondary" id="export-students-btn">导出数据</button>
+                        <button class="btn btn-primary" id="add-student-btn">添加学生</button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="student-search" placeholder="搜索学生姓名...">
+                    <button class="btn btn-secondary" id="search-btn">搜索</button>
+                </div>
+
+                <div id="students-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>姓名</th>
+                                <th>学历</th>
+                                <th>专业</th>
+                                <th>毕业年份</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="students-table-body">
+                            <tr>
+                                <td colspan="6" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="pagination">
+                        <button class="btn btn-secondary" id="prev-page" disabled>上一页</button>
+                        <span id="page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="page-jump-btn">跳转</button></span>
+                        <button class="btn btn-secondary" id="next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 岗位管理内容 -->
+            <div id="jobs-content" class="content">
+                <div class="page-header">
+                    <h1>岗位管理</h1>
+                    <div class="header-buttons">
+                        <button class="btn btn-secondary" id="download-job-template-btn">下载模板</button>
+                        <button class="btn btn-success" id="batch-import-jobs-btn">批量导入</button>
+                        <button class="btn btn-secondary" id="export-jobs-btn">导出数据</button>
+                        <button class="btn btn-primary" id="add-job-btn">添加岗位</button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="job-search" placeholder="搜索岗位名称或公司...">
+                    <button class="btn btn-secondary" id="job-search-btn">搜索</button>
+                </div>
+
+                <div id="jobs-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>岗位名称</th>
+                                <th>公司</th>
+                                <th>行业</th>
+                                <th>种类</th>
+                                <th>地点</th>
+                                <th>薪资</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobs-table-body">
+                            <tr>
+                                <td colspan="8" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="job-pagination">
+                        <button class="btn btn-secondary" id="job-prev-page" disabled>上一页</button>
+                        <span id="job-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="job-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="job-page-jump-btn">跳转</button></span>
+                        <button class="btn btn-secondary" id="job-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 用户管理内容 -->
+            <div id="users-content" class="content">
+                <div class="page-header">
+                    <h1>用户管理</h1>
+                    <button class="btn btn-primary" id="add-user-btn">添加用户</button>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="user-search" placeholder="搜索用户名...">
+                    <button class="btn btn-secondary" id="user-search-btn">搜索</button>
+                </div>
+
+                <div id="users-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>用户名</th>
+                                <th>邮箱</th>
+                                <th>电话</th>
+                                <th>角色</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td colspan="6" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="user-pagination">
+                        <button class="btn btn-secondary" id="user-prev-page" disabled>上一页</button>
+                        <span id="user-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="user-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="user-page-jump-btn">跳转</button></span>
+                        <button class="btn btn-secondary" id="user-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学校管理内容 -->
+            <div id="schools-content" class="content">
+                <div class="page-header">
+                    <h1>学校管理</h1>
+                    <div class="header-right">
+                        <button class="btn btn-secondary" id="batch-import-schools-btn">批量导入</button>
+                        <button class="btn btn-secondary" id="export-schools-btn">导出数据</button>
+                        <button class="btn btn-primary" id="add-school-btn">添加学校</button>
+                    </div>
+                </div>
+
+                <div class="search-bar">
+                    <input type="text" id="school-search" placeholder="搜索学校名称或代码...">
+                    <button class="btn btn-secondary" id="school-search-btn">搜索</button>
+                    <select id="school-status-filter" class="status-filter">
+                        <option value="">全部状态</option>
+                        <option value="active">启用</option>
+                        <option value="inactive">禁用</option>
+                        <option value="suspended">暂停</option>
+                    </select>
+                </div>
+
+                <div id="schools-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>学校代码</th>
+                                <th>学校名称</th>
+                                <th>地址</th>
+                                <th>联系人</th>
+                                <th>联系电话</th>
+                                <th>联系邮箱</th>
+                                <th>状态</th>
+                                <th>创建时间</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="schools-table-body">
+                            <tr>
+                                <td colspan="10" class="loading">加载中...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="pagination" id="school-pagination">
+                        <button class="btn btn-secondary" id="school-prev-page" disabled>上一页</button>
+                        <span id="school-page-info">第 1 页</span>
+                        <span class="page-jump">跳至 <input type="number" id="school-page-jump-input" min="1" value="1" class="page-jump-input"> 页 <button class="btn btn-sm" id="school-page-jump-btn">跳转</button></span>
+                        <button class="btn btn-secondary" id="school-next-page" disabled>下一页</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 数据管理内容 -->
+            <div id="schema-content" class="content">
+                <div class="page-header">
+                    <h1>数据管理</h1>
+                    <div class="header-right">
+                        <button class="btn btn-primary" id="refresh-tables-btn">刷新表列表</button>
+                    </div>
+                </div>
+
+                <div class="schema-layout">
+                    <!-- 表列表 -->
+                    <div class="schema-sidebar">
+                        <h3>数据表</h3>
+                        <div id="tables-list" class="tables-list">
+                            <div class="loading">加载中...</div>
+                        </div>
+                    </div>
+
+                    <!-- 表结构详情 -->
+                    <div class="schema-main">
+                        <div id="table-detail">
+                            <div class="placeholder">
+                                <p>请选择一个表查看结构</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 系统状态内容 -->
+            <div id="system-content" class="content">
+                <div class="page-header">
+                    <h1>系统监控</h1>
+                    <div class="header-right">
+                        <span id="server-time" class="time-display">-</span>
+                        <button class="btn btn-secondary" id="refresh-status-btn">刷新</button>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon server-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="server-status-text">-</h3>
+                            <p>服务器状态</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon database-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="db-status-text">-</h3>
+                            <p>数据库状态</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="uptime-text">-</h3>
+                            <p>运行时间</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="9" cy="7" r="4"></circle>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-users-stat">-</h3>
+                            <p>用户总数</p>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="3" width="7" height="7"></rect>
+                                <rect x="14" y="14" width="7" height="7"></rect>
+                                <rect x="3" y="14" width="7" height="7"></rect>
+                            </svg>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="process-count-stat">-</h3>
+                            <p>进程数量</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <h3>CPU 使用率</h3>
+                        <div class="chart-container">
+                            <canvas id="cpuChart"></canvas>
+                        </div>
+                        <div class="chart-value" id="cpu-usage">-</div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>内存使用率</h3>
+                        <div class="chart-container">
+                            <canvas id="memoryChart"></canvas>
+                        </div>
+                        <div class="chart-value" id="memory-info">-</div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>磁盘使用率</h3>
+                        <div class="chart-container">
+                            <canvas id="diskChart"></canvas>
+                        </div>
+                        <div class="chart-value" id="disk-info">-</div>
+                    </div>
+
+                    <div class="chart-card">
+                        <h3>进程数量</h3>
+                        <div class="chart-container">
+                            <canvas id="processChart"></canvas>
+                        </div>
+                        <div class="chart-value" id="process-info">-</div>
+                    </div>
+                </div>
+
+                <div class="backup-section">
+                    <h3>备份管理</h3>
+                    <div class="backup-actions">
+                        <button class="btn btn-primary" id="backup-btn">立即备份</button>
+                        <button class="btn btn-primary" id="upload-backup-btn">上传备份</button>
+                        <button class="btn btn-secondary" id="view-backups-btn">查看备份</button>
+                    </div>
+                    <div id="backups-list" class="backups-list"></div>
+                </div>
+
+                <div class="account-section">
+                    <h3>账号管理</h3>
+                    <div class="account-cards">
+                        <div class="account-card">
+                            <h4>修改密码</h4>
+                            <form id="change-password-form">
+                                <div class="form-group">
+                                    <label for="old-password">当前密码</label>
+                                    <input type="password" id="old-password" name="old_password" required placeholder="请输入当前密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">新密码</label>
+                                    <input type="password" id="new-password" name="new_password" required placeholder="请输入新密码（至少6位）" minlength="6">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-password">确认新密码</label>
+                                    <input type="password" id="confirm-password" name="confirm_password" required placeholder="请再次输入新密码" minlength="6">
+                                </div>
+                                <button type="submit" class="btn btn-primary">修改密码</button>
+                            </form>
+                        </div>
+
+                        <div class="account-card">
+                            <h4>修改用户名</h4>
+                            <form id="change-username-form">
+                                <div class="form-group">
+                                    <label for="username-password">当前密码</label>
+                                    <input type="password" id="username-password" name="password" required placeholder="请输入当前密码">
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-username">新用户名</label>
+                                    <input type="text" id="new-username" name="new_username" required placeholder="请输入新用户名" minlength="1" maxlength="50">
+                                </div>
+                                <div class="form-group">
+                                    <label for="confirm-username">确认新用户名</label>
+                                    <input type="text" id="confirm-username" name="confirm_username" required placeholder="请再次输入新用户名" minlength="1" maxlength="50">
+                                </div>
+                                <button type="submit" class="btn btn-primary">修改用户名</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="config-section">
+                    <h3>配置文件管理</h3>
+                    <div class="config-quick-access">
+                        <h4>快捷入口</h4>
+                        <div class="config-cards">
+                            <div class="config-card" onclick="openConfigEditor('/home/swordreforge/projects/high-school-worker-design/etc/career-api.yaml', 'career-api.yaml')">
+                                <div class="config-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="config-info">
+                                    <span class="config-name">career-api.yaml</span>
+                                    <span class="config-path">/etc/career-api.yaml</span>
+                                </div>
+                            </div>
+                            <div class="config-card" onclick="openConfigEditor('/home/swordreforge/projects/high-school-worker-design/etc/career-api.yaml.docker', 'career-api.yaml.docker')">
+                                <div class="config-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                        <line x1="16" y1="13" x2="8" y2="13"></line>
+                                        <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        <polyline points="10 9 9 9 8 9"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="config-info">
+                                    <span class="config-name">career-api.yaml.docker</span>
+                                    <span class="config-path">/etc/career-api.yaml.docker</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="config-editor-section">
+                        <h4>自定义路径</h4>
+                        <div class="config-custom-path">
+                            <input type="text" id="config-custom-path" placeholder="输入配置文件路径...">
+                            <button class="btn btn-secondary" onclick="loadCustomConfig()">加载</button>
+                        </div>
+                    </div>
+                    
+                    <div id="config-editor-container" class="config-editor-container" style="display: none;">
+                        <div class="config-editor-header">
+                            <h4 id="config-editor-title">编辑配置文件</h4>
+                            <span id="config-status" class="config-status"></span>
+                        </div>
+                        <div class="config-editor-wrapper">
+                            <textarea id="config-editor" class="config-editor" spellcheck="false"></textarea>
+                        </div>
+                        <div class="config-editor-actions">
+                            <div class="config-backup-selector">
+                                <select id="config-backup-select">
+                                    <option value="">选择备份版本...</option>
+                                </select>
+                                <button class="btn btn-secondary" id="rollback-config-btn" onclick="rollbackConfig()">回滚</button>
+                            </div>
+                            <button class="btn btn-primary" id="save-config-btn" onclick="saveConfig()" disabled>保存</button>
+                        </div>
+                        <div id="config-error" class="config-error"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学生详情模态框 -->
+        <div id="student-detail-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>学生详情</h2>
+                    <button class="close-btn" id="close-detail-modal">&times;</button>
+                </div>
+                <div class="detail-content">
+                    <div class="detail-section">
+                        <h3>基本信息</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>姓名</label>
+                                <span id="detail-name">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>学历</label>
+                                <span id="detail-education">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>专业</label>
+                                <span id="detail-major">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>毕业年份</label>
+                                <span id="detail-graduation-year">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>能力评估</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>完整度</label>
+                                <span id="detail-completeness">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>竞争力</label>
+                                <span id="detail-competitiveness">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>技能</h3>
+                        <div id="detail-skills" class="tag-list">-</div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>证书</h3>
+                        <div id="detail-certificates" class="tag-list">-</div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="close-detail-btn">关闭</button>
+                    <button type="button" class="btn btn-primary" id="edit-from-detail-btn">编辑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学生编辑模态框 -->
+        <div id="student-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="modal-title">编辑学生</h2>
+                    <button class="close-btn" id="close-modal">&times;</button>
+                </div>
+                <form id="student-form">
+                    <input type="hidden" id="student-id">
+                    <div class="form-group">
+                        <label for="student-name">姓名 *</label>
+                        <input type="text" id="student-name" name="name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="student-education">学历</label>
+                            <select id="student-education" name="education">
+                                <option value="">请选择</option>
+                                <option value="high_school">高中</option>
+                                <option value="associate">大专</option>
+                                <option value="bachelor">本科</option>
+                                <option value="master">硕士</option>
+                                <option value="doctor">博士</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="student-major">专业</label>
+                            <input type="text" id="student-major" name="major">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-graduation-year">毕业年份</label>
+                        <input type="number" id="student-graduation-year" name="graduation_year" min="2000" max="2100">
+                    </div>
+                    <div class="form-group">
+                        <label for="student-skills">技能 (JSON格式)</label>
+                        <textarea id="student-skills" name="skills" rows="3" placeholder='[{"name":"Golang","level":80}]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-certificates">证书 (JSON格式)</label>
+                        <textarea id="student-certificates" name="certificates" rows="3" placeholder='[{"name":"英语四级","level":"通过"}]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="student-projects">项目经历 (JSON格式)</label>
+                        <textarea id="student-projects" name="projects" rows="3" placeholder='[{"name":"博客系统","description":"..."}]'></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 用户编辑模态框 -->
+        <div id="user-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="user-modal-title">添加用户</h2>
+                    <button class="close-btn" id="close-user-modal">&times;</button>
+                </div>
+                <form id="user-form">
+                    <input type="hidden" id="user-id">
+                    <div class="form-group">
+                        <label for="user-username">用户名 *</label>
+                        <input type="text" id="user-username" name="username" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-password">密码 <span id="password-hint">(留空则不修改)</span></label>
+                        <input type="password" id="user-password" name="password">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="user-email">邮箱</label>
+                            <input type="email" id="user-email" name="email">
+                        </div>
+                        <div class="form-group">
+                            <label for="user-phone">电话</label>
+                            <input type="tel" id="user-phone" name="phone">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="user-role">角色</label>
+                        <select id="user-role" name="role">
+                            <option value="user">普通用户</option>
+                            <option value="teacher">教师</option>
+                            <option value="admin">管理员</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-user-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 学校编辑/添加模态框 -->
+        <div id="school-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="school-modal-title">添加学校</h2>
+                    <button class="close-btn" id="close-school-modal">&times;</button>
+                </div>
+                <form id="school-form">
+                    <input type="hidden" id="school-id">
+                    <div class="form-group">
+                        <label for="school-name">学校名称 *</label>
+                        <input type="text" id="school-name" name="name" required minlength="2" maxlength="100" placeholder="请输入学校名称（2-100字符）">
+                    </div>
+                    <div class="form-group">
+                        <label for="school-code">学校代码</label>
+                        <input type="text" id="school-code" name="code" readonly placeholder="系统自动生成">
+                        <small class="text-muted">学校代码由系统自动生成，不可修改</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-address">地址</label>
+                        <input type="text" id="school-address" name="address" placeholder="请输入学校地址">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="school-contact-person">联系人</label>
+                            <input type="text" id="school-contact-person" name="contact_person" placeholder="请输入联系人姓名">
+                        </div>
+                        <div class="form-group">
+                            <label for="school-contact-phone">联系电话</label>
+                            <input type="tel" id="school-contact-phone" name="contact_phone" placeholder="请输入联系电话">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="school-contact-email">联系邮箱</label>
+                        <input type="email" id="school-contact-email" name="contact_email" placeholder="请输入联系邮箱">
+                    </div>
+                    <div class="form-group" id="school-status-group" style="display: none;">
+                        <label for="school-status">状态</label>
+                        <select id="school-status" name="status">
+                            <option value="active">启用</option>
+                            <option value="inactive">禁用</option>
+                            <option value="suspended">暂停</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-school-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 岗位详情模态框 -->
+        <div id="job-detail-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>岗位详情</h2>
+                    <button class="close-btn" id="close-job-detail-modal">&times;</button>
+                </div>
+                <div class="detail-content">
+                    <div class="detail-section">
+                        <h3>基本信息</h3>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>岗位名称</label>
+                                <span id="job-detail-name">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>公司</label>
+                                <span id="job-detail-company">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>行业</label>
+                                <span id="job-detail-industry">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>种类</label>
+                                <span id="job-detail-category">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>地点</label>
+                                <span id="job-detail-location">-</span>
+                            </div>
+                            <div class="detail-item">
+                                <label>薪资范围</label>
+                                <span id="job-detail-salary">-</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="detail-section">
+                        <h3>岗位描述</h3>
+                        <p id="job-detail-description" class="detail-text">-</p>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="close-job-detail-btn">关闭</button>
+                    <button type="button" class="btn btn-primary" id="edit-from-job-detail-btn">编辑</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 岗位编辑模态框 -->
+        <div id="job-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 id="job-modal-title">编辑岗位</h2>
+                    <button class="close-btn" id="close-job-modal">&times;</button>
+                </div>
+                <form id="job-form">
+                    <input type="hidden" id="job-id">
+                    <div class="form-group">
+                        <label for="job-name">岗位名称 *</label>
+                        <input type="text" id="job-name" name="name" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="job-company">公司</label>
+                            <input type="text" id="job-company" name="company">
+                        </div>
+                        <div class="form-group">
+                            <label for="job-industry">行业</label>
+                            <input type="text" id="job-industry" name="industry">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="job-category">种类</label>
+                            <input type="text" id="job-category" name="category">
+                        </div>
+                        <div class="form-group">
+                            <label for="job-location">地点</label>
+                            <input type="text" id="job-location" name="location">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="job-location">地点</label>
+                            <input type="text" id="job-location" name="location">
+                        </div>
+                        <div class="form-group">
+                            <label for="job-salary">薪资范围</label>
+                            <input type="text" id="job-salary" name="salary_range" placeholder="如: 15000-30000">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-description">岗位描述</label>
+                        <textarea id="job-description" name="description" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-skills">技能要求 (JSON格式)</label>
+                        <textarea id="job-skills" name="skills" rows="3" placeholder='["Golang", "MySQL"]'></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-certificates">证书要求 (JSON格式)</label>
+                        <textarea id="job-certificates" name="certificates" rows="2"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="job-requirements">其他要求</label>
+                        <textarea id="job-requirements" name="requirements" rows="2"></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-job-btn">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 添加字段模态框 -->
+        <div id="add-column-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>添加字段</h2>
+                    <button class="close-btn" id="close-add-column-modal">&times;</button>
+                </div>
+                <form id="add-column-form">
+                    <input type="hidden" id="add-column-table-name" name="table_name">
+                    <div class="form-group">
+                        <label for="add-column-name">字段名 *</label>
+                        <input type="text" id="add-column-name" name="column_name" required placeholder="例如: age">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-type">字段类型 *</label>
+                        <select id="add-column-type" name="column_type" required>
+                            <option value="VARCHAR(255)">VARCHAR(255)</option>
+                            <option value="TEXT">TEXT</option>
+                            <option value="INT">INT</option>
+                            <option value="BIGINT">BIGINT</option>
+                            <option value="FLOAT">FLOAT</option>
+                            <option value="DOUBLE">DOUBLE</option>
+                            <option value="DECIMAL(10,2)">DECIMAL(10,2)</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="add-column-nullable" name="is_nullable">
+                            <span>允许为空</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-default">默认值</label>
+                        <input type="text" id="add-column-default" name="default_value" placeholder="例如: 0">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-comment">注释</label>
+                        <input type="text" id="add-column-comment" name="comment" placeholder="字段说明">
+                    </div>
+                    <div class="form-group">
+                        <label for="add-column-after">插入位置</label>
+                        <select id="add-column-after" name="after_column">
+                            <option value="">插入到开头</option>
+                        </select>
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-add-column">取消</button>
+                        <button type="submit" class="btn btn-primary">添加</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 修改字段模态框 -->
+        <div id="modify-column-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>修改字段</h2>
+                    <button class="close-btn" id="close-modify-column-modal">&times;</button>
+                </div>
+                <form id="modify-column-form">
+                    <input type="hidden" id="modify-column-table-name" name="table_name">
+                    <input type="hidden" id="modify-column-old-name" name="old_column_name">
+                    <div class="form-group">
+                        <label for="modify-column-name">字段名</label>
+                        <input type="text" id="modify-column-name" name="new_column_name" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-type">字段类型</label>
+                        <select id="modify-column-type" name="column_type">
+                            <option value="">保持不变</option>
+                            <option value="VARCHAR(255)">VARCHAR(255)</option>
+                            <option value="TEXT">TEXT</option>
+                            <option value="INT">INT</option>
+                            <option value="BIGINT">BIGINT</option>
+                            <option value="FLOAT">FLOAT</option>
+                            <option value="DOUBLE">DOUBLE</option>
+                            <option value="DECIMAL(10,2)">DECIMAL(10,2)</option>
+                            <option value="DATE">DATE</option>
+                            <option value="DATETIME">DATETIME</option>
+                            <option value="TIMESTAMP">TIMESTAMP</option>
+                            <option value="BOOLEAN">BOOLEAN</option>
+                            <option value="JSON">JSON</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="modify-column-nullable" name="is_nullable">
+                            <span>允许为空</span>
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-default">默认值</label>
+                        <input type="text" id="modify-column-default" name="default_value" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-group">
+                        <label for="modify-column-comment">注释</label>
+                        <input type="text" id="modify-column-comment" name="comment" placeholder="留空则不修改">
+                    </div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-modify-column">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 插入数据模态框 -->
+        <div id="insert-data-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>插入数据</h2>
+                    <button class="close-btn" id="close-insert-data-modal">&times;</button>
+                </div>
+                <form id="insert-data-form">
+                    <div id="insert-data-fields"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-insert-data">取消</button>
+                        <button type="submit" class="btn btn-primary">插入</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 编辑数据模态框 -->
+        <div id="edit-data-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>编辑数据</h2>
+                    <button class="close-btn" id="close-edit-data-modal">&times;</button>
+                </div>
+                <form id="edit-data-form">
+                    <div id="edit-data-fields"></div>
+                    <div class="form-actions">
+                        <button type="button" class="btn btn-secondary" id="cancel-edit-data">取消</button>
+                        <button type="submit" class="btn btn-primary">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 批量导入学生模态框 -->
+        <div id="batch-import-students-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入学生</h2>
+                    <button class="close-btn" id="close-batch-import-students-modal">&times;</button>
+                </div>
+                <div class="batch-import-content">
+                    <div class="import-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-text">下载模板</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-text">填写数据</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-text">上传文件</div>
+                        </div>
+                    </div>
+                    
+                    <div class="import-instructions">
+                        <h3>导入说明</h3>
+                        <ol>
+                            <li>点击下方"下载模板"按钮获取 Excel 模板</li>
+                            <li>按照模板格式填写学生数据</li>
+                            <li>上传填写好的 Excel 文件</li>
+                            <li>系统会自动验证数据并导入</li>
+                        </ol>
+                        <div class="download-template-section">
+                            <button class="btn btn-secondary" id="download-student-template-modal-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                下载 Excel 模板
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>上传文件</h3>
+                        <div class="file-upload-area" id="student-file-upload-area">
+                            <input type="file" id="student-import-file" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>点击或拖拽文件到此处上传</p>
+                                <small>支持 .xlsx 和 .xls 格式</small>
+                            </div>
+                            <div class="file-info" id="student-file-info" style="display: none;">
+                                <div class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <div class="file-name" id="student-file-name">-</div>
+                                    <div class="file-size" id="student-file-size">-</div>
+                                </div>
+                                <button class="btn-remove-file" id="remove-student-file">×</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-progress" id="student-import-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="student-progress-fill"></div>
+                        </div>
+                        <div class="progress-text" id="student-progress-text">正在处理...</div>
+                    </div>
+
+                    <div class="import-result" id="student-import-result" style="display: none;">
+                        <h3>导入结果</h3>
+                        <div class="result-summary">
+                            <div class="result-item success">
+                                <span class="result-icon">✓</span>
+                                <div>
+                                    <div class="result-value" id="student-success-count">0</div>
+                                    <div class="result-label">成功导入</div>
+                                </div>
+                            </div>
+                            <div class="result-item failed">
+                                <span class="result-icon">×</span>
+                                <div>
+                                    <div class="result-value" id="student-failed-count">0</div>
+                                    <div class="result-label">导入失败</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="error-list" id="student-error-list" style="display: none;">
+                            <h4>错误详情</h4>
+                            <ul id="student-error-items"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-batch-import-students">取消</button>
+                    <button type="button" class="btn btn-primary" id="start-batch-import-students" disabled>开始导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 批量导入岗位模态框 -->
+        <div id="batch-import-jobs-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入岗位</h2>
+                    <button class="close-btn" id="close-batch-import-jobs-modal">&times;</button>
+                </div>
+                <div class="batch-import-content">
+                    <div class="import-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-text">下载模板</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-text">填写数据</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-text">上传文件</div>
+                        </div>
+                    </div>
+                    
+                    <div class="import-instructions">
+                        <h3>导入说明</h3>
+                        <ol>
+                            <li>点击下方"下载模板"按钮获取 Excel 模板</li>
+                            <li>按照模板格式填写岗位数据</li>
+                            <li>上传填写好的 Excel 文件</li>
+                            <li>系统会自动验证数据并导入</li>
+                        </ol>
+                        <div class="download-template-section">
+                            <button class="btn btn-secondary" id="download-job-template-modal-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="7 10 12 15 17 10"></polyline>
+                                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                                </svg>
+                                下载 Excel 模板
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="upload-section">
+                        <h3>上传文件</h3>
+                        <div class="file-upload-area" id="job-file-upload-area">
+                            <input type="file" id="job-import-file" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p>点击或拖拽文件到此处上传</p>
+                                <small>支持 .xlsx 和 .xls 格式</small>
+                            </div>
+                            <div class="file-info" id="job-file-info" style="display: none;">
+                                <div class="file-icon">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                        <polyline points="14 2 14 8 20 8"></polyline>
+                                    </svg>
+                                </div>
+                                <div class="file-details">
+                                    <div class="file-name" id="job-file-name">-</div>
+                                    <div class="file-size" id="job-file-size">-</div>
+                                </div>
+                                <button class="btn-remove-file" id="remove-job-file">×</button>
+                            </div>
+                        </div>
+                        <!-- 分块上传控制 -->
+                        <div class="chunk-size-control">
+                            <div class="chunk-size-info" id="chunk-size-display">
+                                分块: 2.00 MB | 带宽: 自动检测中...
+                            </div>
+                            <div class="chunk-size-slider">
+                                <input type="range" id="chunk-size-slider" 
+                                       min="256" max="51200" value="2048" 
+                                       step="256" class="slider">
+                                <div class="slider-labels">
+                                    <span>256KB</span>
+                                    <span>50MB</span>
+                                </div>
+                            </div>
+                            <div class="bandwidth-btns">
+                                <button class="btn btn-secondary btn-sm" onclick="detectBandwidth()">重新检测带宽</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(1)">1MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(2)">2MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(5)">5MB</button>
+                                <button class="btn btn-secondary btn-sm" onclick="setChunkSize(10)">10MB</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="import-progress" id="job-import-progress" style="display: none;">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="job-progress-fill"></div>
+                        </div>
+                        <div class="progress-info">
+                            <div class="progress-text" id="job-progress-text">正在处理...</div>
+                            <div class="progress-percent" id="job-progress-percent">0%</div>
+                        </div>
+                    </div>
+
+                    <div class="import-result" id="job-import-result" style="display: none;">
+                        <h3>导入结果</h3>
+                        <div class="result-summary">
+                            <div class="result-item success">
+                                <span class="result-icon">✓</span>
+                                <div>
+                                    <div class="result-value" id="job-success-count">0</div>
+                                    <div class="result-label">成功导入</div>
+                                </div>
+                            </div>
+                            <div class="result-item skipped">
+                                <span class="result-icon">↻</span>
+                                <div>
+                                    <div class="result-value" id="job-skipped-count">0</div>
+                                    <div class="result-label">重复跳过</div>
+                                </div>
+                            </div>
+                            <div class="result-item failed">
+                                <span class="result-icon">×</span>
+                                <div>
+                                    <div class="result-value" id="job-failed-count">0</div>
+                                    <div class="result-label">导入失败</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="error-list" id="job-error-list" style="display: none;">
+                            <h4>错误详情</h4>
+                            <ul id="job-error-items"></ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancel-batch-import-jobs">取消</button>
+                    <button type="button" class="btn btn-primary" id="start-batch-import-jobs" disabled>开始导入</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学校批量导入模态框 -->
+        <div id="school-batch-import-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>批量导入学校</h2>
+                    <button class="close-btn" id="close-school-batch-import-modal">&times;</button>
+                </div>
+                <div class="batch-import-content">
+                    <div class="import-steps">
+                        <div class="step active" data-step="1">
+                            <div class="step-number">1</div>
+                            <div class="step-text">下载模板</div>
+                        </div>
+                        <div class="step" data-step="2">
+                            <div class="step-number">2</div>
+                            <div class="step-text">填写数据</div>
+                        </div>
+                        <div class="step" data-step="3">
+                            <div class="step-number">3</div>
+                            <div class="step-text">上传文件</div>
+                        </div>
+                    </div>
+                <div class="step-content">
+                    <div class="step-panel active" data-panel="1">
+                        <div class="instruction">
+                            <h3>第一步：下载导入模板</h3>
+                            <p>点击下方按钮下载学校导入模板，模板包含以下字段：</p>
+                            <ul>
+                                <li>学校名称（必填）</li>
+                                <li>地址</li>
+                                <li>联系人</li>
+                                <li>联系电话</li>
+                                <li>联系邮箱</li>
+                            </ul>
+                            <button class="btn btn-primary" id="download-school-template-btn">下载模板</button>
+                        </div>
+                    </div>
+                    <div class="step-panel" data-panel="2">
+                        <div class="instruction">
+                            <h3>第二步：填写数据</h3>
+                            <p>按照模板格式填写学校信息，注意：</p>
+                            <ul>
+                                <li>学校名称为必填项</li>
+                                <li>学校代码由系统自动生成，无需填写</li>
+                                <li>其他字段可根据实际情况填写</li>
+                                <li>请不要修改模板的表头</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="step-panel" data-panel="3">
+                        <div class="instruction">
+                            <h3>第三步：上传文件</h3>
+                            <p>将填写好的 Excel 文件上传到系统</p>
+                        </div>
+                        <div class="upload-area" id="school-upload-area">
+                            <input type="file" id="school-file-input" accept=".xlsx,.xls" style="display: none;">
+                            <div class="upload-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <p>拖拽文件到此处或点击上传</p>
+                            <p class="file-hint">支持 .xlsx 和 .xls 格式</p>
+                        </div>
+                        <div id="school-file-info" class="file-info" style="display: none;">
+                            <span class="file-name"></span>
+                            <span class="file-size"></span>
+                            <button class="btn-remove-file" id="remove-school-file">×</button>
+                        </div>
+                    </div>
+                </div>
+                <div id="school-import-progress" class="import-progress" style="display: none;">
+                    <div class="progress-bar">
+                        <div class="progress-fill"></div>
+                    </div>
+                    <p class="progress-text">正在导入...</p>
+                </div>
+                <div id="school-import-result" class="import-result" style="display: none;">
+                    <h3>导入完成</h3>
+                    <div class="result-stats">
+                        <div class="stat-item success">
+                            <span class="stat-number" id="school-import-success">0</span>
+                            <span class="stat-label">成功</span>
+                        </div>
+                        <div class="stat-item failed">
+                            <span class="stat-number" id="school-import-failed">0</span>
+                            <span class="stat-label">失败</span>
+                        </div>
+                        <div class="stat-item total">
+                            <span class="stat-number" id="school-import-total">0</span>
+                            <span class="stat-label">总计</span>
+                        </div>
+                    </div>
+                    <div id="school-import-errors" class="import-errors" style="display: none;">
+                        <h4>错误详情</h4>
+                        <div class="errors-list"></div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="prev-school-step" style="display: none;">上一步</button>
+                    <button type="button" class="btn btn-primary" id="next-school-step">下一步</button>
+                    <button type="button" class="btn btn-primary" id="start-school-import" style="display: none;">开始导入</button>
+                    <button type="button" class="btn btn-secondary" id="close-school-import-result" style="display: none;">关闭</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 提示消息 -->
+        <div id="toast" class="toast"></div>
+    </div>
+
+    <script src="static/app.js"></script>
+</body>
+</html>
