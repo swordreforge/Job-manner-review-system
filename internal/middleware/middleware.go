@@ -68,31 +68,34 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, "username", claims.Username)
 		ctx = context.WithValue(ctx, "role", claims.Role)
 
-		// For teachers, add schoolId to context
+		// For teachers, add schoolId and teacherId to context
 		if claims.Role == "teacher" {
-			schoolId := m.getTeacherSchoolId(claims.UserId)
+			schoolId, teacherId := m.getTeacherInfo(claims.UserId)
 			ctx = context.WithValue(ctx, "schoolId", schoolId)
+			ctx = context.WithValue(ctx, "teacherId", teacherId)
 		}
 
 		next(w, r.WithContext(ctx))
 	}
 }
 
-func (m *AuthMiddleware) getTeacherSchoolId(userId int64) int64 {
+func (m *AuthMiddleware) getTeacherInfo(userId int64) (schoolId, teacherId int64) {
+	schoolId = 1
+	teacherId = 1
+
 	if m.dataSource == "" {
-		return 1 // default
+		return
 	}
 
 	db, err := sql.Open("mysql", m.dataSource)
 	if err != nil {
-		return 1
+		return
 	}
 	defer db.Close()
 
-	var schoolId int64
-	err = db.QueryRow("SELECT school_id FROM teachers WHERE user_id = ?", userId).Scan(&schoolId)
+	err = db.QueryRow("SELECT id, school_id FROM teachers WHERE user_id = ?", userId).Scan(&teacherId, &schoolId)
 	if err != nil {
-		return 1
+		return
 	}
-	return schoolId
+	return
 }

@@ -31,11 +31,27 @@ func (l *CreateInviteCodeLogic) CreateInviteCode(req *types.CreateInviteCodeReq)
 	teacherId := int64(1)
 	schoolId := int64(1)
 
-	if v, ok := l.ctx.Value("teacherId").(int64); ok {
+	if v, ok := l.ctx.Value("schoolId").(int64); ok && v > 0 {
+		schoolId = v
+	}
+	if v, ok := l.ctx.Value("teacherId").(int64); ok && v > 0 {
 		teacherId = v
 	}
-	if v, ok := l.ctx.Value("schoolId").(int64); ok {
-		schoolId = v
+
+	// If context doesn't have teacherId, look up from database using userId
+	if teacherId == 1 {
+		userId, ok := l.ctx.Value("userId").(int64)
+		if ok && userId > 0 {
+			db2, err := l.svcCtx.DB.RawDB()
+			if err == nil {
+				db2.QueryRowContext(l.ctx, "SELECT id FROM teachers WHERE user_id = ?", userId).Scan(&teacherId)
+			}
+		} else if schoolId > 0 {
+			db2, err := l.svcCtx.DB.RawDB()
+			if err == nil {
+				db2.QueryRowContext(l.ctx, "SELECT id FROM teachers WHERE school_id = ? LIMIT 1", schoolId).Scan(&teacherId)
+			}
+		}
 	}
 
 	db, err := l.svcCtx.DB.RawDB()

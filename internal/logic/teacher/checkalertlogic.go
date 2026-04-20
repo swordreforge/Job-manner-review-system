@@ -2,6 +2,7 @@ package teacher
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -46,6 +47,9 @@ func (l *CheckAlertLogic) CheckStudentAlert(studentId int64) error {
 	err = db.QueryRowContext(l.ctx,
 		"SELECT COALESCE(completeness_score, 0) FROM students WHERE id = ?", studentId).Scan(&rate)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return fmt.Errorf("student %d not found", studentId)
+		}
 		logx.Errorf("get student completion rate failed: %v", err)
 		return err
 	}

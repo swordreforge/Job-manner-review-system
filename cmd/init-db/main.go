@@ -562,7 +562,7 @@ func initTables(dbConfig *DatabaseConfig) error {
 			name: "invite_codes",
 			createSQL: `CREATE TABLE IF NOT EXISTS invite_codes (
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
-				code VARCHAR(20) NOT NULL UNIQUE COMMENT '邀请码',
+				code VARCHAR(50) NOT NULL UNIQUE COMMENT '邀请码',
 				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
 				teacher_id BIGINT(20) NOT NULL COMMENT '创建教师ID',
 				type VARCHAR(20) NOT NULL DEFAULT 'student' COMMENT '类型: student, teacher',
