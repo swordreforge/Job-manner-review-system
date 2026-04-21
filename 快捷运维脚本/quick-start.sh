@@ -64,6 +64,9 @@ check_artifacts() {
     if [ ! -f "$VOICE_ARTIFACT" ]; then
         error "语音服务二进制文件不存在: $VOICE_ARTIFACT"
     fi
+    if [ ! -f "$ARTIFACTS_DIR/前端/index.html" ]; then
+        error "前端构建产物不存在: $ARTIFACTS_DIR/前端/index.html"
+    fi
     if [ ! -f "$DATASET_FILE" ]; then
         error "项目数据集不存在: $DATASET_FILE"
     fi
@@ -196,13 +199,12 @@ setup_deploy_dir() {
     cp "$DOCKER_DIR/nginx.conf" "$DEPLOY_DIR/nginx/nginx.conf"
     cp "$DOCKER_DIR/frontend.conf" "$DEPLOY_DIR/nginx/frontend.conf"
 
-    local frontend_dist="$PROJECT_ROOT/项目源码/forend/dist"
+    local frontend_dist="$ARTIFACTS_DIR/前端"
     if [ -d "$frontend_dist" ] && [ -f "$frontend_dist/index.html" ]; then
         cp -r "$frontend_dist/." "$DEPLOY_DIR/frontend/"
         success "前端构建产物已复制"
     else
-        warn "未找到前端构建产物: $frontend_dist"
-        warn "前端服务将使用空目录，请手动构建前端后重新部署"
+        error "未找到前端构建产物: $frontend_dist"
     fi
 
     cp "$DOCKER_DIR/docker-compose.yml" "$DEPLOY_DIR/docker-compose.yml"
