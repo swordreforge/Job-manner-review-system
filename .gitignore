@@ -21,10 +21,9 @@
 构建产物/语音服务/xunfei-asr-server.exe
 构建产物/安卓客户端/
 构建产物/客户端/
-构建产物/前端/
 
 # 源码依赖和缓存
 项目源码/forend/node_modules/
-项目源码/forend/dist/
+
 项目源码/admin-app/target/
 项目源码/voice/target/
