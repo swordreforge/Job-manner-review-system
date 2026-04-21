@@ -1,1 +1,0 @@
-import{t as e}from"./index-DaT9jYNL.js";import{t}from"./MessageCenter-DWIKh_X3.js";var n=e();function r(){return(0,n.jsx)(t,{role:`student`})}export{r as default};
