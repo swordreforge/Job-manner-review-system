@@ -89,11 +89,14 @@ export default function JobsPage() {
   }, [currentPage, pageSize, loadJobs]);
 
   useEffect(() => {
-    const loadFilterOptions = async () => {
+const loadFilterOptions = async () => {
       try {
         const res = await jobApi.filterOptions();
-        setIndustryOptions(res.industries || []);
-        setCompanyScaleOptions(res.companyScales || []);
+        // 去重处理，避免React key重复
+        const uniqueIndustries = [...new Set(res.industries || [])];
+        const uniqueCompanyScales = [...new Set(res.companyScales || [])];
+        setIndustryOptions(uniqueIndustries);
+        setCompanyScaleOptions(uniqueCompanyScales);
         setLocationOptions((res.locations || []).map(l => ({ ...l, districts: l.districts || [] })));
       } catch {
         console.error('获取筛选选项失败');
@@ -163,9 +166,13 @@ export default function JobsPage() {
     if (!chart) return;
 
     const constrainNodes = () => {
-      const opt = chart.getOption() as { series: { data: { x?: number; y?: number; fixed?: boolean; symbolSize?: number; name?: string; id?: number }[] }[] };
-      const series = opt.series?.[0];
-      if (!series?.data) return;
+      const chart = chartRef.current?.getEchartsInstance();
+      if (!chart) return;
+      
+      try {
+        const opt = chart.getOption() as { series?: { data?: { x?: number; y?: number; fixed?: boolean; symbolSize?: number; name?: string; id?: number }[] }[] };
+        const series = opt?.series?.[0];
+        if (!series?.data) return;
 
       const width = chart.getWidth();
       const height = chart.getHeight();
@@ -1018,7 +1025,11 @@ export default function JobsPage() {
                           </div>
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {(job.industry ? job.industry.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3) : ['未知']).map((ind) => (
+                        {(() => {
+                          const industries = job.industry 
+                            ? [...new Set(job.industry.split(',').map(s => s.trim()).filter(Boolean))].slice(0, 3)
+                            : ['未知'];
+                          return industries.map((ind) => (
                           <Tag
                             key={ind}
                             style={{
@@ -1039,7 +1050,8 @@ export default function JobsPage() {
                           >
                             {ind}
                           </Tag>
-                        ))}
+                          ));
+                        })()}
                       </div>
                     </div>
                   </Card>
