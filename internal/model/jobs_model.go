@@ -4,9 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
+
+	"career-api/internal/types"
 
 	"github.com/zeromicro/go-zero/core/stores/sqlx"
 )
@@ -18,10 +21,10 @@ type (
 	// and implement the added methods in customJobsModel.
 	JobsModel interface {
 		jobsModel
-		withSession(session sqlx.Session) JobsModel
+withSession(session sqlx.Session) JobsModel
 		FindAll(ctx context.Context, page, pageSize int, industry, category string) ([]*Jobs, int64, error)
 		Search(ctx context.Context, req *JobSearchReq) ([]*Jobs, int64, error)
-		GetFilterOptions(ctx context.Context) (industries, companyScales, locations []string, err error)
+		GetFilterOptions(ctx context.Context) (industries, companyScales []string, locations []types.LocationOption, err error)
 	}
 
 	JobSearchReq struct {
@@ -193,7 +196,8 @@ func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, e
 }
 
 // GetFilterOptions 获取筛选选项（行业、公司规模、城市）
-func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, companyScales, locations []string, err error) {
+// 行业按逗号拆分去重，地点按省份聚合返回层级结构（省→区列表）
+func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, companyScales []string, locations []types.LocationOption, err error) {
 	indQuery := fmt.Sprintf("SELECT DISTINCT `industry` FROM %s WHERE `industry` IS NOT NULL AND `industry` != '' ORDER BY `industry`", m.table)
 	var indResults []struct {
 		Industry string `db:"industry"`
@@ -202,9 +206,19 @@ func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, com
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	indSet := make(map[string]struct{})
 	for _, r := range indResults {
-		industries = append(industries, r.Industry)
+		for _, ind := range strings.Split(r.Industry, ",") {
+			trimmed := strings.TrimSpace(ind)
+			if trimmed != "" {
+				indSet[trimmed] = struct{}{}
+			}
+		}
 	}
+	for ind := range indSet {
+		industries = append(industries, ind)
+	}
+	sort.Strings(industries)
 
 	scaleQuery := fmt.Sprintf("SELECT DISTINCT `company_scale` FROM %s WHERE `company_scale` IS NOT NULL AND `company_scale` != '' ORDER BY `company_scale`", m.table)
 	var scaleResults []struct {
@@ -226,11 +240,65 @@ func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, com
 	if err != nil {
 		return nil, nil, nil, err
 	}
+	// Build province → districts map
+	provinceMap := make(map[string]map[string]struct{})
 	for _, r := range locResults {
-		locations = append(locations, r.Location)
+		loc := strings.TrimSpace(r.Location)
+		if loc == "" || strings.HasPrefix(loc, "http") {
+			continue
+		}
+		province, district := splitLocationParts(loc)
+		if province == "" {
+			continue
+		}
+		if _, ok := provinceMap[province]; !ok {
+			provinceMap[province] = make(map[string]struct{})
+		}
+		if district != "" {
+			provinceMap[province][district] = struct{}{}
+		}
+	}
+	// Sort provinces and districts
+	var provinceNames []string
+	for p := range provinceMap {
+		provinceNames = append(provinceNames, p)
+	}
+	sort.Strings(provinceNames)
+	for _, p := range provinceNames {
+		districts := provinceMap[p]
+		var districtNames []string
+		for d := range districts {
+			districtNames = append(districtNames, d)
+		}
+		sort.Strings(districtNames)
+		locations = append(locations, types.LocationOption{
+			Province:  p,
+			Districts: districtNames,
+		})
 	}
 
 	return industries, companyScales, locations, nil
+}
+
+// splitLocationParts splits "城市-区" format into (province, district).
+// Returns ("北京", "朝阳区") for "北京-朝阳区", ("上海", "") for "上海-None".
+// Filters out URLs entirely.
+func splitLocationParts(loc string) (province, district string) {
+	loc = strings.TrimSpace(loc)
+	if loc == "" || strings.HasPrefix(loc, "http") {
+		return "", ""
+	}
+	if strings.Contains(loc, "-") {
+		parts := strings.SplitN(loc, "-", 2)
+		province = strings.TrimSpace(parts[0])
+		district = strings.TrimSpace(parts[1])
+		if district == "None" || district == "" {
+			district = ""
+		}
+		return province, district
+	}
+	// No dash: could be bare city name like "北京" or "上海"
+	return loc, ""
 }
 
 // ParseSalaryRange parses salary range strings into monthly amounts in yuan.

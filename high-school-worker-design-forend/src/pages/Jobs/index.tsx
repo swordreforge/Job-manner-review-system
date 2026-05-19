@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-  import { Select, Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Space, Pagination, Card, Row, Col } from 'antd';
+  import { Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Pagination, Card, Row, Col } from 'antd';
   import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
   import ReactECharts from 'echarts-for-react';
   import { jobApi, jobPathApi } from '../../api';
@@ -42,7 +42,15 @@ export default function JobsPage() {
 
   const [industryOptions, setIndustryOptions] = useState<string[]>([]);
   const [companyScaleOptions, setCompanyScaleOptions] = useState<string[]>([]);
-  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [locationOptions, setLocationOptions] = useState<{ province: string; districts: string[] }[]>([]);
+
+  const [industryPage, setIndustryPage] = useState(1);
+  const industryPageSize = 20;
+  const [selectedProvince, setSelectedProvince] = useState<string | undefined>(undefined);
+  const [provincePage, setProvincePage] = useState(1);
+  const provincePageSize = 20;
+  const [districtPage, setDistrictPage] = useState(1);
+  const districtPageSize = 20;
 
   const popularJobs = ['科研人员', '硬件测试', '前端开发'];
 
@@ -84,7 +92,7 @@ export default function JobsPage() {
         const res = await jobApi.filterOptions();
         setIndustryOptions(res.industries || []);
         setCompanyScaleOptions(res.companyScales || []);
-        setLocationOptions(res.locations || []);
+        setLocationOptions((res.locations || []).map(l => ({ ...l, districts: l.districts || [] })));
       } catch {
         console.error('获取筛选选项失败');
       }
@@ -317,6 +325,10 @@ export default function JobsPage() {
     setFilterCompanyScale(undefined);
     setFilterSalaryMin(0);
     setFilterSalaryMax(100);
+    setSelectedProvince(undefined);
+    setIndustryPage(1);
+    setProvincePage(1);
+    setDistrictPage(1);
     setCurrentPage(1);
   };
 
@@ -635,67 +647,239 @@ export default function JobsPage() {
 
             {showFilters && (
               <div
-                className="p-4 rounded-lg"
+                className="p-4 rounded-lg space-y-4"
                 style={{
                   backgroundColor: 'var(--md-sys-color-surface-container)',
                   border: '1px solid var(--md-sys-color-outline-variant)'
                 }}
               >
-                <Space direction="vertical" style={{ width: '100%' }} size="middle">
-                  <div>
-                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>行业</div>
-                    <Select
-                      placeholder="选择行业"
-                      style={{ width: '100%' }}
-                      value={filterIndustry}
-                      onChange={(v) => setFilterIndustry(v)}
-                      allowClear
-                      showSearch
-                      options={industryOptions.map(s => ({ value: s, label: s }))}
-                    />
+                <div>
+                  <div className="text-sm mb-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>行业</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {industryOptions.slice((industryPage - 1) * industryPageSize, industryPage * industryPageSize).map((ind) => (
+                      <Tag
+                        key={ind}
+                        style={{
+                          cursor: 'pointer',
+                          borderRadius: 'var(--md-sys-shape-corner-small)',
+                          border: filterIndustry === ind ? 'none' : '1px solid var(--md-sys-color-outline)',
+                          backgroundColor: filterIndustry === ind ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                          color: filterIndustry === ind ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                          padding: '2px 10px',
+                          fontSize: '13px',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onClick={() => setFilterIndustry(filterIndustry === ind ? undefined : ind)}
+                      >
+                        {ind}
+                      </Tag>
+                    ))}
                   </div>
-                  <div>
-                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>工作地点</div>
-                    <Select
-                      placeholder="选择城市"
-                      style={{ width: '100%' }}
-                      value={filterLocation}
-                      onChange={(v) => setFilterLocation(v)}
-                      allowClear
-                      showSearch
-                      options={locationOptions.map(s => ({ value: s, label: s }))}
-                    />
-                  </div>
-                  <div>
-                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
-                      <TeamOutlined style={{ marginRight: 4 }} />企业人数
+                  {industryOptions.length > industryPageSize && (
+                    <div className="flex items-center justify-center gap-2 mt-2">
+                      <Button
+                        size="small"
+                        disabled={industryPage <= 1}
+                        onClick={() => setIndustryPage(industryPage - 1)}
+                        style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                      >
+                        上一页
+                      </Button>
+                      <span className="text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                        {industryPage} / {Math.ceil(industryOptions.length / industryPageSize)}
+                      </span>
+                      <Button
+                        size="small"
+                        disabled={industryPage >= Math.ceil(industryOptions.length / industryPageSize)}
+                        onClick={() => setIndustryPage(industryPage + 1)}
+                        style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                      >
+                        下一页
+                      </Button>
                     </div>
-                    <Select
-                      placeholder="选择企业人数"
-                      style={{ width: '100%' }}
-                      value={filterCompanyScale}
-                      onChange={(v) => setFilterCompanyScale(v)}
-                      allowClear
-                      options={companyScaleOptions.map(s => ({ value: s, label: s }))}
-                    />
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm mb-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>工作地点</div>
+                  {!selectedProvince ? (
+                    <>
+                      <div className="flex flex-wrap gap-1.5">
+                        {locationOptions.slice((provincePage - 1) * provincePageSize, provincePage * provincePageSize).map((loc) => (
+                          <Tag
+                            key={loc.province}
+                            style={{
+                              cursor: 'pointer',
+                              borderRadius: 'var(--md-sys-shape-corner-small)',
+                              border: '1px solid var(--md-sys-color-outline)',
+                              backgroundColor: 'transparent',
+                              color: 'var(--md-sys-color-on-surface-variant)',
+                              padding: '2px 10px',
+                              fontSize: '13px',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onClick={() => {
+                              setSelectedProvince(loc.province);
+                              setDistrictPage(1);
+                              if (!loc.districts || loc.districts.length === 0) {
+                                setFilterLocation(loc.province);
+                              }
+                            }}
+                          >
+                            {loc.province}{loc.districts && loc.districts.length > 0 ? ` (${loc.districts.length})` : ''}
+                          </Tag>
+                        ))}
+                      </div>
+                      {locationOptions.length > provincePageSize && (
+                        <div className="flex items-center justify-center gap-2 mt-2">
+                          <Button
+                            size="small"
+                            disabled={provincePage <= 1}
+                            onClick={() => setProvincePage(provincePage - 1)}
+                            style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                          >
+                            上一页
+                          </Button>
+                          <span className="text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {provincePage} / {Math.ceil(locationOptions.length / provincePageSize)}
+                          </span>
+                          <Button
+                            size="small"
+                            disabled={provincePage >= Math.ceil(locationOptions.length / provincePageSize)}
+                            onClick={() => setProvincePage(provincePage + 1)}
+                            style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                          >
+                            下一页
+                          </Button>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Button
+                          size="small"
+                          onClick={() => {
+                            setSelectedProvince(undefined);
+                            setFilterLocation(undefined);
+                          }}
+                          style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                        >
+                          ← 返回省份
+                        </Button>
+                        <span className="text-sm font-medium" style={{ color: 'var(--md-sys-color-primary)' }}>
+                          {selectedProvince}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        <Tag
+                          style={{
+                            cursor: 'pointer',
+                            borderRadius: 'var(--md-sys-shape-corner-small)',
+                            border: filterLocation === selectedProvince ? 'none' : '1px solid var(--md-sys-color-outline)',
+                            backgroundColor: filterLocation === selectedProvince ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                            color: filterLocation === selectedProvince ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                            padding: '2px 10px',
+                            fontSize: '13px',
+                            transition: 'all 0.15s ease',
+                          }}
+                          onClick={() => setFilterLocation(filterLocation === selectedProvince ? undefined : selectedProvince)}
+                        >
+                          全部{selectedProvince}
+                        </Tag>
+                        {(() => {
+                          const prov = locationOptions.find(l => l.province === selectedProvince);
+                          const districts = prov?.districts || [];
+                          return districts.slice((districtPage - 1) * districtPageSize, districtPage * districtPageSize).map((dist) => (
+                            <Tag
+                              key={dist}
+                              style={{
+                                cursor: 'pointer',
+                                borderRadius: 'var(--md-sys-shape-corner-small)',
+                                border: filterLocation === `${selectedProvince}-${dist}` ? 'none' : '1px solid var(--md-sys-color-outline)',
+                                backgroundColor: filterLocation === `${selectedProvince}-${dist}` ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                                color: filterLocation === `${selectedProvince}-${dist}` ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                                padding: '2px 10px',
+                                fontSize: '13px',
+                                transition: 'all 0.15s ease',
+                              }}
+                              onClick={() => setFilterLocation(filterLocation === `${selectedProvince}-${dist}` ? undefined : `${selectedProvince}-${dist}`)}
+                            >
+                              {dist}
+                            </Tag>
+                          ));
+                        })()}
+                      </div>
+                      {(() => {
+                        const prov = locationOptions.find(l => l.province === selectedProvince);
+                        const districts = prov?.districts || [];
+                        return districts.length > districtPageSize ? (
+                          <div className="flex items-center justify-center gap-2 mt-2">
+                            <Button
+                              size="small"
+                              disabled={districtPage <= 1}
+                              onClick={() => setDistrictPage(districtPage - 1)}
+                              style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                            >
+                              上一页
+                            </Button>
+                            <span className="text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              {districtPage} / {Math.ceil(districts.length / districtPageSize)}
+                            </span>
+                            <Button
+                              size="small"
+                              disabled={districtPage >= Math.ceil(districts.length / districtPageSize)}
+                              onClick={() => setDistrictPage(districtPage + 1)}
+                              style={{ borderRadius: 'var(--md-sys-shape-corner-full)' }}
+                            >
+                              下一页
+                            </Button>
+                          </div>
+                        ) : null;
+                      })()}
+                    </>
+                  )}
+                </div>
+                <div>
+                  <div className="text-sm mb-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    <TeamOutlined style={{ marginRight: 4 }} />企业人数
                   </div>
-                  <div>
-                    <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>
-                      薪资范围: {filterSalaryMin > 0 ? `${filterSalaryMin}K` : '不限'} - {filterSalaryMax < 100 ? `${filterSalaryMax}K` : '不限'}
-                    </div>
-                    <Slider
-                      range
-                      min={0}
-                      max={100}
-                      value={[filterSalaryMin, filterSalaryMax]}
-                      onChange={(value) => {
-                        setFilterSalaryMin(value[0]);
-                        setFilterSalaryMax(value[1]);
-                      }}
-                      marks={{ 0: '不限', 30: '30K', 60: '60K', 100: '100K+' }}
-                    />
+                  <div className="flex flex-wrap gap-1.5">
+                    {companyScaleOptions.map((scale) => (
+                      <Tag
+                        key={scale}
+                        style={{
+                          cursor: 'pointer',
+                          borderRadius: 'var(--md-sys-shape-corner-small)',
+                          border: filterCompanyScale === scale ? 'none' : '1px solid var(--md-sys-color-outline)',
+                          backgroundColor: filterCompanyScale === scale ? 'var(--md-sys-color-primary-container)' : 'transparent',
+                          color: filterCompanyScale === scale ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                          padding: '2px 10px',
+                          fontSize: '13px',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onClick={() => setFilterCompanyScale(filterCompanyScale === scale ? undefined : scale)}
+                      >
+                        {scale}
+                      </Tag>
+                    ))}
                   </div>
-                </Space>
+                </div>
+                <div>
+                  <div className="text-sm mb-2 font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                    薪资范围: {filterSalaryMin > 0 ? `${filterSalaryMin}K` : '不限'} - {filterSalaryMax < 100 ? `${filterSalaryMax}K` : '不限'}
+                  </div>
+                  <Slider
+                    range
+                    min={0}
+                    max={100}
+                    value={[filterSalaryMin, filterSalaryMax]}
+                    onChange={(value) => {
+                      setFilterSalaryMin(value[0]);
+                      setFilterSalaryMax(value[1]);
+                    }}
+                    marks={{ 0: '不限', 30: '30K', 60: '60K', 100: '100K+' }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -776,9 +960,33 @@ export default function JobsPage() {
                             <BankOutlined style={{ fontSize: 12 }} />
                             <span className="truncate">{job.company || '未知'}</span>
                           </div>
-                          <div className="flex items-center gap-1 truncate">
+                          <div
+                            className="flex items-center gap-1 truncate cursor-pointer group"
+                            title={job.location || '未知'}
+                            onClick={() => {
+                              if (!job.location) return;
+                              const loc = job.location.trim();
+                              if (loc.startsWith('http')) return;
+                              if (loc.includes('-')) {
+                                const parts = loc.split('-');
+                                const province = parts[0];
+                                const district = parts.length > 1 && parts[1] !== 'None' ? parts[1] : undefined;
+                                setSelectedProvince(province);
+                                setFilterLocation(district ? `${province}-${district}` : province);
+                              } else {
+                                setFilterLocation(loc);
+                              }
+                              setCurrentPage(1);
+                            }}
+                          >
                             <EnvironmentOutlined style={{ fontSize: 12 }} />
-                            <span className="truncate">{job.location || '未知'}</span>
+                            <span className="truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              {job.location
+                                ? job.location.startsWith('http')
+                                  ? '在线岗位'
+                                  : job.location.replace(/-None$/g, '')
+                                : '未知'}
+                            </span>
                           </div>
                           <div className="flex items-center gap-1 truncate">
                             <DollarOutlined style={{ fontSize: 12 }} />
@@ -786,9 +994,26 @@ export default function JobsPage() {
                           </div>
                       </div>
                       <div className="flex flex-wrap gap-1 mt-1">
-                        {(job.industry ? job.industry.split(',').slice(0, 2) : ['未知']).map((ind) => (
-                          <Tag key={ind} style={{ fontSize: '10px', padding: '0 4px', margin: 0, borderRadius: 'var(--md-sys-shape-corner-small)' }}>
-                            {ind.trim()}
+                        {(job.industry ? job.industry.split(',').map(s => s.trim()).filter(Boolean).slice(0, 3) : ['未知']).map((ind) => (
+                          <Tag
+                            key={ind}
+                            style={{
+                              fontSize: '10px',
+                              padding: '0 6px',
+                              margin: 0,
+                              borderRadius: 'var(--md-sys-shape-corner-small)',
+                              cursor: 'pointer',
+                              backgroundColor: filterIndustry === ind ? 'var(--md-sys-color-primary-container)' : 'var(--md-sys-color-surface-container-high)',
+                              color: filterIndustry === ind ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+                              border: 'none',
+                              transition: 'all 0.15s ease',
+                            }}
+                            onClick={() => {
+                              setFilterIndustry(ind);
+                              setCurrentPage(1);
+                            }}
+                          >
+                            {ind}
                           </Tag>
                         ))}
                       </div>

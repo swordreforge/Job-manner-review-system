@@ -136,7 +136,7 @@ export const jobApi = {
   generate: (data: { positionName: string; industry?: string; rawData?: string }) =>
     api.post<{ code: number; msg: string; data: import('../types').Job }>('/jobs/generate', data, { timeout: 120000 }),
   filterOptions: () =>
-    api.get<{ code: number; msg: string; industries: string[]; companyScales: string[]; locations: string[] }>('/jobs/filter-options'),
+    api.get<{ code: number; msg: string; industries: string[]; companyScales: string[]; locations: { province: string; districts: string[] }[] }>('/jobs/filter-options'),
 };
 
 export const matchApi = {

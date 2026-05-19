@@ -170,12 +170,17 @@ type JobListResultResp struct {
 	Data *JobListResp `json:"data,optional"`
 }
 
+type LocationOption struct {
+	Province string   `json:"province"`
+	Districts []string `json:"districts"`
+}
+
 type JobFilterOptionsResp struct {
-	Code          int      `json:"code"`
-	Msg           string   `json:"msg"`
-	Industries    []string `json:"industries"`
-	CompanyScales []string `json:"companyScales"`
-	Locations     []string `json:"locations"`
+	Code          int               `json:"code"`
+	Msg           string             `json:"msg"`
+	Industries    []string           `json:"industries"`
+	CompanyScales []string           `json:"companyScales"`
+	Locations     []LocationOption   `json:"locations"`
 }
 
 type JobNode struct {

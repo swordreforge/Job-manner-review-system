@@ -41,7 +41,7 @@ func (l *GetFilterOptionsLogic) GetFilterOptions() (*types.JobFilterOptionsResp,
 		companyScales = []string{}
 	}
 	if locations == nil {
-		locations = []string{}
+		locations = []types.LocationOption{}
 	}
 
 	return &types.JobFilterOptionsResp{
