@@ -30,6 +30,8 @@ export default function JobsPage() {
   const [promotionPath, setPromotionPath] = useState<PromotionPath | null>(null);
   const [transferPaths, setTransferPaths] = useState<TransferPath[]>([]);
   const [pathsLoading, setPathsLoading] = useState(false);
+  const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
+  const [relatedLoading, setRelatedLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('graph');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -104,12 +106,31 @@ export default function JobsPage() {
     if (selectedJobId) {
       void loadJobDetail(selectedJobId);
       void loadJobPaths(selectedJobId);
+      void loadRelatedJobs(selectedJobId);
     } else {
       setSelectedJob(null);
       setPromotionPath(null);
       setTransferPaths([]);
+      setRelatedJobs([]);
     }
   }, [selectedJobId]);
+
+  const loadRelatedJobs = async (jobId: number) => {
+    try {
+      setRelatedLoading(true);
+      const res = await jobPathApi.getRelated(jobId, { type: 'related' });
+      if (res.data) {
+        setRelatedJobs(res.data.slice(0, 3));
+      } else {
+        setRelatedJobs([]);
+      }
+    } catch (error) {
+      console.error('获取相似职位失败:', error);
+      setRelatedJobs([]);
+    } finally {
+      setRelatedLoading(false);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -1355,6 +1376,69 @@ export default function JobsPage() {
                 ]}
               />
             </div>
+
+            {/* 相似职位推荐卡片 */}
+            {relatedJobs.length > 0 && (
+              <div 
+                className="p-4 sm:p-5"
+                style={{ 
+                  backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                  borderRadius: 'var(--md-sys-shape-corner-large)',
+                  border: '1px solid var(--md-sys-color-outline-variant)'
+                }}
+              >
+                <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                  相似职位推荐
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {relatedJobs.map((job) => (
+                    <div
+                      key={job.id}
+                      className="p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.02]"
+                      style={{ 
+                        backgroundColor: 'var(--md-sys-color-surface-container)',
+                        border: '1px solid var(--md-sys-color-outline-variant)',
+                      }}
+                      onClick={() => setSelectedJobId(job.id)}
+                    >
+                      <div className="flex items-start gap-2 mb-2">
+                        <div 
+                          className="w-10 h-10 rounded-lg flex items-center justify-center text-white text-sm font-medium flex-shrink-0"
+                          style={{ 
+                            background: 'linear-gradient(135deg, var(--md-sys-color-primary), var(--md-sys-color-secondary))'
+                          }}
+                        >
+                          {job.company?.slice(0, 2) || '公司'}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-medium truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                            {job.name || '未知'}
+                          </div>
+                          <div className="text-xs truncate" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            {job.company || '未知'}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                        <span className="flex items-center gap-1">
+                          <EnvironmentOutlined style={{ fontSize: 10 }} />
+                          {job.location?.replace(/-None$/g, '') || '未知'}
+                        </span>
+                        <span className="flex items-center gap-1" style={{ color: 'var(--md-sys-color-primary)' }}>
+                          <DollarOutlined style={{ fontSize: 10 }} />
+                          {job.salaryRange || '未知'}
+                        </span>
+                      </div>
+                      {job.sourceUrl && (
+                        <div className="mt-2 text-xs" style={{ color: 'var(--md-sys-color-primary)' }}>
+                          来源: {job.sourceUrl.startsWith('http') ? '在线职位' : job.sourceUrl}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
       </div>
