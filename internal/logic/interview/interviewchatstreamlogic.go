@@ -173,7 +173,7 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	// 调用AI获取响应
 	contentChan, errChan := l.callAIStream(aiMessages)
 
-	// 实时发送响应
+	// 实时发送响应 - 同时实现流式输出和完整JSON解析
 	var fullResponse strings.Builder
 	ticker := time.NewTicker(50 * time.Millisecond)
 	defer ticker.Stop()
@@ -181,6 +181,7 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	done := false
 	var aiResp AIResponse
 	var streamErr error
+	chunkCount := 0
 
 	for !done {
 		select {
@@ -189,8 +190,11 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 				done = true
 			} else {
 				fullResponse.WriteString(content)
-				// 可以选择实时发送字符，或者收集后统一发送
-				// 这里选择收集后统一发送，便于解析JSON
+				chunkCount++
+				// 实时发送chunk事件，实现打字机效果
+				l.sendSSEEvent(w, flusher, "chunk", map[string]interface{}{
+					"content": content,
+				})
 			}
 		case err := <-errChan:
 			if err != nil {

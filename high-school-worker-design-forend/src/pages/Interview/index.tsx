@@ -538,20 +538,41 @@ export default function InterviewPage() {
         (event) => {
           console.log('收到SSE事件:', event);
           
-          // 根据事件类型处理不同的数据
+          // 处理流式chunk事件 - 打字机效果
+          if (event.type === 'chunk' && event.data.content) {
+            setMessages(prev => {
+              const lastMessage = prev[prev.length - 1];
+              if (lastMessage && lastMessage.role === 'assistant') {
+                // 更新最后一条AI消息，追加新内容
+                return [...prev.slice(0, -1), {
+                  ...lastMessage,
+                  content: lastMessage.content + event.data.content,
+                }];
+              } else {
+                // 添加新的AI消息
+                return [...prev, {
+                  id: Date.now(),
+                  sessionId: session.id,
+                  role: 'assistant',
+                  content: event.data.content,
+                  createdAt: Date.now() / 1000,
+                }];
+              }
+            });
+          }
+          
+          // 处理完整问题事件 - 替换流式文本
           if (event.type === 'question' && event.data.content) {
-            // 添加或更新AI回复
             setMessages(prev => {
               const lastMessage = prev[prev.length - 1];
               const newAiMessage: InterviewMessage = {
-                id: Date.now(),
+                id: lastMessage?.id || Date.now(),
                 sessionId: session.id,
                 role: 'assistant',
                 content: event.data.content,
                 createdAt: Date.now() / 1000,
               };
               
-              // 检查是否已经有一条AI消息，如果就更新它，否则添加新的
               if (lastMessage && lastMessage.role === 'assistant') {
                 return [...prev.slice(0, -1), newAiMessage];
               } else {
@@ -574,7 +595,6 @@ export default function InterviewPage() {
           
           if (event.type === 'done' && event.data.message === '面试结束') {
             message.success('面试已完成，可以查看报告');
-            // 更新会话状态为已完成
             setSession(prev => prev ? { ...prev, status: 'completed' } : null);
             handleShowReport(session.id);
           }
