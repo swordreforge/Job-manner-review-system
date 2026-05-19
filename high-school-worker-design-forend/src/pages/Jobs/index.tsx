@@ -1433,8 +1433,20 @@ export default function JobsPage() {
                         </span>
                       </div>
                       {job.sourceUrl && (
-                        <div className="mt-2 text-xs" style={{ color: 'var(--md-sys-color-primary)' }}>
-                          来源: {job.sourceUrl.startsWith('http') ? '在线职位' : job.sourceUrl}
+                        <div className="mt-2 flex items-center gap-2">
+                          <a 
+                            href={job.sourceUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-xs px-2 py-1 rounded-full"
+                            style={{ 
+                              backgroundColor: 'var(--md-sys-color-primary-container)',
+                              color: 'var(--md-sys-color-on-primary-container)'
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            查看原始职位 →
+                          </a>
                         </div>
                       )}
                     </div>
