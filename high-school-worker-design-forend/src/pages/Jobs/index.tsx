@@ -119,8 +119,11 @@ export default function JobsPage() {
     try {
       setRelatedLoading(true);
       const res = await jobPathApi.getRelated(jobId, { type: 'related' });
-      if (res.data) {
-        setRelatedJobs(res.data.slice(0, 3));
+      if (res.data && typeof res.data === 'object' && 'list' in res.data) {
+        const list = (res.data as { list: Job[] }).list;
+        setRelatedJobs(list.slice(0, 3));
+      } else if (Array.isArray(res.data)) {
+        setRelatedJobs((res.data as Job[]).slice(0, 3));
       } else {
         setRelatedJobs([]);
       }
