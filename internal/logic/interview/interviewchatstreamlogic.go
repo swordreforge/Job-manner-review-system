@@ -268,10 +268,12 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 		"content": aiResp.Feedback,
 	})
 
-	// 更新会话统计
-	err = l.svcCtx.InterviewSessionsModel.UpdateStats(l.ctx, req.SessionId, aiResp.Score)
-	if err != nil {
-		logx.WithContext(l.ctx).Errorf("Failed to update session stats: %v", err)
+	// 更新会话统计 - 跳过起始问题（score为0）
+	if aiResp.Score > 0 {
+		err = l.svcCtx.InterviewSessionsModel.UpdateStats(l.ctx, req.SessionId, aiResp.Score)
+		if err != nil {
+			logx.WithContext(l.ctx).Errorf("Failed to update session stats: %v", err)
+		}
 	}
 
 	// 获取更新后的会话信息

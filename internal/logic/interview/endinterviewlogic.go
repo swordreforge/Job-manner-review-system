@@ -105,8 +105,8 @@ func (l *EndInterviewLogic) generateReport(sessionId int64, userId int64) {
 		return
 	}
 
-	// 检查是否为取消的面试（averageScore为0）
-	if session.AverageScore == 0 {
+	// 检查会话状态，只跳过已取消的面试
+	if session.Status == "cancelled" {
 		logx.Infof("Session %d is cancelled, skipping report generation", sessionId)
 		return
 	}
