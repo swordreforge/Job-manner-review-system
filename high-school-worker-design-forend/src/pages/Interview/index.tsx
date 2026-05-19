@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
@@ -14,6 +14,7 @@ export default function InterviewPage() {
   const [loading, setLoading] = useState(false);
   const [started, setStarted] = useState(false);
   const [isChatting, setIsChatting] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [currentScore, setCurrentScore] = useState<number | null>(null);
   const [currentFeedback, setCurrentFeedback] = useState<string>('');
   const [historyVisible, setHistoryVisible] = useState(false);
@@ -531,6 +532,7 @@ export default function InterviewPage() {
     setCurrentScore(null);
     setCurrentFeedback('');
     setIsChatting(true);
+    setIsStreaming(true);
 
     try {
       await interviewApi.chatStream(
@@ -593,20 +595,25 @@ export default function InterviewPage() {
             setAverageScore(event.data.averageScore);
           }
           
-          if (event.type === 'done' && event.data.message === '面试结束') {
-            message.success('面试已完成，可以查看报告');
-            setSession(prev => prev ? { ...prev, status: 'completed' } : null);
-            handleShowReport(session.id);
+          if (event.type === 'done') {
+            setIsStreaming(false);
+            if (event.data.message === '面试结束') {
+              message.success('面试已完成，可以查看报告');
+              setSession(prev => prev ? { ...prev, status: 'completed' } : null);
+              handleShowReport(session.id);
+            }
           }
         },
         (error) => {
           console.error('SSE错误:', error);
           message.error('连接断开');
+          setIsStreaming(false);
         }
       );
     } catch (error) {
       console.error('发送消息失败:', error);
       message.error('发送消息失败');
+      setIsStreaming(false);
     } finally {
       setIsChatting(false);
     }
@@ -935,7 +942,12 @@ export default function InterviewPage() {
                         <div className="text-sm mb-1 opacity-75 interview-msg-label">
                           {msg.role === 'user' ? '你' : '面试官'}
                         </div>
-                        <div className="whitespace-pre-wrap">{msg.content}</div>
+                        <div className="whitespace-pre-wrap">
+                          {msg.content}
+                          {isStreaming && msg.role === 'assistant' && idx === messages.length - 1 && (
+                            <span className="inline-block w-2 h-5 ml-1 bg-primary animate-pulse" style={{ backgroundColor: 'var(--md-sys-color-primary)' }}>|</span>
+                          )}
+                        </div>
                         {msg.score !== undefined && (
                           <div className="mt-2 pt-2 border-t interview-msg-score-divider">
                             <Tag color="green" className="mr-2">
