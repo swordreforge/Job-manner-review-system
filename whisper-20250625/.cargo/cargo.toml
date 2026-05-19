@@ -15,7 +15,7 @@ rustflags = [
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
     "-Z", "mir-opt-level=4",
-    "-Z", "unsound-mir-opts=true",
+    #"-Z", "unsound-mir-opts=true",
     "-Z", "cross-crate-inline-threshold=0",  
 ]
 
@@ -38,7 +38,7 @@ rustflags = [
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
     "-Z", "mir-opt-level=4",
-    "-Z", "unsound-mir-opts=true",
+    #"-Z", "unsound-mir-opts=true",
     "-Z", "cross-crate-inline-threshold=0",  
 ]
 
@@ -57,8 +57,8 @@ rustflags = [
     "-C", "overflow-checks=false",
     "-Z", "share-generics=y",
     "-Z", "location-detail=none",
-    "-Z", "mir-opt-level=4",
-    "-Z", "unsound-mir-opts=true",
+    #"-Z", "mir-opt-level=4",
+#"-Z", "unsound-mir-opts=true",
     "-Z", "cross-crate-inline-threshold=0", 
 ]
 [target.i686-unknown-linux-gnu]

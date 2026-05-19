@@ -101,13 +101,12 @@ func main() {
 		logx.Errorf("Seed data failed: %v", err)
 	}
 
-	server := rest.MustNewServer(c.RestConf, rest.WithCors())
+	server := rest.MustNewServer(c.RestConf, rest.WithCors(c.CORS.Origins...))
 	defer server.Stop()
 
 	ctx := svc.NewServiceContext(&c)
 	handler.RegisterHandlers(server, ctx)
 
-	// 应用认证中间件
 	server.Use(middleware.NewAuthMiddlewareWithServiceContext(c.Auth.AccessSecret, ctx).Handle)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
@@ -884,26 +883,23 @@ func migrateColumns(dataSource string) error {
 			// Check if index exists in information_schema.statistics
 			checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = '%s' AND index_name = '%s'", m.table, m.column)
 			if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
-				logx.Errorf("Failed to check index %s.%s: %v", m.table, m.column, err)
-				continue
+				return fmt.Errorf("failed to check index %s.%s: %w", m.table, m.column, err)
 			}
 		} else {
 			// Check if column exists in information_schema.columns
 			checkSQL := fmt.Sprintf("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = '%s' AND column_name = '%s'", m.table, m.column)
 			if err := db.QueryRow(checkSQL).Scan(&exists); err != nil {
-				logx.Errorf("Failed to check column %s.%s: %v", m.table, m.column, err)
-				continue
+				return fmt.Errorf("failed to check column %s.%s: %w", m.table, m.column, err)
 			}
 		}
 
 		if exists > 0 {
-			continue // Column/Index already exists
+			continue
 		}
 
 		// Add column/index
 		if _, err := db.Exec(m.sql); err != nil {
-			logx.Errorf("Failed to add %s.%s: %v", m.table, m.column, err)
-			continue
+			return fmt.Errorf("failed to add %s.%s: %w", m.table, m.column, err)
 		}
 		logx.Infof("Added %s: %s.%s", map[bool]string{true: "index", false: "column"}[isIndex], m.table, m.column)
 	}
@@ -1105,7 +1101,7 @@ func runInteractiveInit(c config.Config) error {
 
 	// 读取现有配置中的数据库信息
 	fmt.Println("检测到当前配置:")
-	fmt.Printf("  数据库: %s\n", c.Mysql.DataSource)
+	fmt.Printf("  数据库: career_db@localhost\n")
 	fmt.Println()
 	fmt.Println("将使用现有配置进行初始化...")
 	fmt.Println()

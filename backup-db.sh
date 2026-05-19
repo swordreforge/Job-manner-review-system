@@ -1,4 +1,6 @@
 #!/bin/bash
+echo "⚠ WARNING: This script is deprecated and may produce corrupted backups. Use backup-db-compatible.sh instead." >&2
+sleep 3
 
 # 高度兼容的 MySQL 数据库备份脚本
 

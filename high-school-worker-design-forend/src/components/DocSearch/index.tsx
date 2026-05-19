@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchOutlined, CloseOutlined, FileTextOutlined } from '@ant-design/icons';
 import MiniSearch from 'minisearch';
+import DOMPurify from 'dompurify';
 
 interface SearchResult {
   id: string;
@@ -277,17 +278,17 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
                             <h3
                               className="font-medium text-slate-800 mb-1 truncate"
                               dangerouslySetInnerHTML={{
-                                __html: highlightText(result.title, searchQuery),
+                                __html: DOMPurify.sanitize(highlightText(result.title, searchQuery)),
                               }}
                             />
                             {result.text && (
                               <p
                                 className="text-sm text-slate-600 line-clamp-2"
                                 dangerouslySetInnerHTML={{
-                                  __html: highlightText(
+                                  __html: DOMPurify.sanitize(highlightText(
                                     getExcerpt(result.text, searchQuery),
                                     searchQuery
-                                  ),
+                                  )),
                                 }}
                               />
                             )}

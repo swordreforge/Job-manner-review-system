@@ -18,10 +18,6 @@ func NewAuthMiddleware(accessSecret string) *AuthMiddleware {
 	return &AuthMiddleware{accessSecret: accessSecret}
 }
 
-func NewAuthMiddlewareWithDSN(accessSecret, dataSource string) *AuthMiddleware {
-	return &AuthMiddleware{accessSecret: accessSecret}
-}
-
 func NewAuthMiddlewareWithServiceContext(accessSecret string, svcCtx *svc.ServiceContext) *AuthMiddleware {
 	return &AuthMiddleware{accessSecret: accessSecret, svcCtx: svcCtx}
 }

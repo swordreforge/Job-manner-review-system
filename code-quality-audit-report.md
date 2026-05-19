@@ -3,10 +3,12 @@
 #	问题
 1	✅备份脚本生产坏 SQL (backup-db.sh)(backup-db.sh->backup-db-compatible.sh)
 2	✅Rust 启用 unsound-mir-opts=true(已经注释)
-3	Go 测试导入断裂 (interviewlogic_test.go:34)
+3    ✅Go 测试导入断裂 (interviewlogic_test.go:34)
 4	Whisper Dockerfile 构建会失败
 第二梯队：API 质量与安全
+
 #	问题
+
 5	认证中间件用 strings.Contains 做路径白名单
 6	Token 在 URL query 中传输 (middleware.go:51, api/index.ts:163)
 7	XSS 向量 — dangerouslySetInnerHTML + innerHTML

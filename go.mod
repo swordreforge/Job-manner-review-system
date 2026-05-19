@@ -11,7 +11,6 @@ require (
 	github.com/nguyenthenguyen/docx v0.0.0-20230621112118-9c8e795a11db
 	github.com/stretchr/testify v1.11.1
 	github.com/unidoc/unioffice v1.39.0
-	github.com/xuri/excelize/v2 v2.10.1
 	github.com/zeromicro/go-zero v1.6.4
 	golang.org/x/crypto v0.49.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -45,12 +44,7 @@ require (
 	github.com/prometheus/common v0.45.0 // indirect
 	github.com/prometheus/procfs v0.12.0 // indirect
 	github.com/redis/go-redis/v9 v9.4.0 // indirect
-	github.com/richardlehane/mscfb v1.0.6 // indirect
-	github.com/richardlehane/msoleps v1.0.6 // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/tiendc/go-deepcopy v1.7.2 // indirect
-	github.com/xuri/efp v0.0.1 // indirect
-	github.com/xuri/nfp v0.0.2-0.20250530014748-2ddeb826f9a9 // indirect
 	go.opentelemetry.io/otel v1.19.0 // indirect
 	go.opentelemetry.io/otel/exporters/jaeger v1.17.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.19.0 // indirect

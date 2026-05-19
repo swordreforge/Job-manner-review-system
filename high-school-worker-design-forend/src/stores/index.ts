@@ -17,6 +17,8 @@ interface AuthState {
   setRole: (role: 'student' | 'teacher' | 'admin') => void;
 }
 
+const _clearAuthState = { token: null, user: null, isAuthenticated: false, isAuthChecked: true, role: 'student' as const };
+
 export const useAuthStore = create<AuthState>((set) => ({
   token: null,
   user: null,
@@ -33,12 +35,12 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   logout: () => {
     localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true, role: 'student' });
+    set(_clearAuthState);
   },
 
   clearAuth: () => {
     localStorage.removeItem('token');
-    set({ token: null, user: null, isAuthenticated: false, isAuthChecked: true, role: 'student' });
+    set(_clearAuthState);
   },
 
   setRole: (role) => set({ role }),

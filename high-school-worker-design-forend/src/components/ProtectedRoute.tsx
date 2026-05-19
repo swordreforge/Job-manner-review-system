@@ -12,8 +12,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { isAuthenticated, isAuthChecked, initialize } = useAuthStore();
 
   useEffect(() => {
-    initialize();
-  }, [initialize]);
+    if (!isAuthChecked) {
+      initialize();
+    }
+  }, [isAuthChecked, initialize]);
 
   useEffect(() => {
     if (isAuthChecked && !isAuthenticated) {

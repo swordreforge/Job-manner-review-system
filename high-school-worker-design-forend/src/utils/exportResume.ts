@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } from 'docx';
@@ -19,7 +20,7 @@ function sanitizeSVG(container: HTMLElement): void {
 export async function exportResumeToPDF(htmlContent: string): Promise<void> {
   const container = document.createElement('div');
   container.className = 'resume-export-container';
-  container.innerHTML = htmlContent;
+  container.innerHTML = DOMPurify.sanitize(htmlContent);
   sanitizeSVG(container);
   container.style.position = 'absolute';
   container.style.left = '-9999px';

@@ -44,7 +44,7 @@ func (m *ValidationMiddleware) ValidationHandler(next http.HandlerFunc, req inte
 		// 解析JSON到请求结构体
 		if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			w.Write([]byte("\x1b[33m400 Bad Request: invalid request body: " + err.Error() + "\x1b[0m\n"))
+			w.Write([]byte("400 Bad Request: invalid request body: " + err.Error() + "\n"))
 			return
 		}
 
@@ -52,7 +52,7 @@ func (m *ValidationMiddleware) ValidationHandler(next http.HandlerFunc, req inte
 		if err := m.Validate(req); err != nil {
 			// 获取验证错误信息
 			errors := m.formatValidationErrors(err)
-			errorMsg := "\x1b[33m400 Bad Request: validation failed\x1b[0m\n"
+			errorMsg := "400 Bad Request: validation failed\n"
 			for _, e := range errors {
 				errorMsg += "  - " + e["field"] + ": " + e["message"] + "\n"
 			}
@@ -151,7 +151,7 @@ func (m *ValidationMiddleware) ValidateAndErrorResponse(w http.ResponseWriter, r
 	// 解析请求体
 	if err := json.NewDecoder(r.Body).Decode(req); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("\x1b[33m400 Bad Request: invalid request body: " + err.Error() + "\x1b[0m\n"))
+		w.Write([]byte("400 Bad Request: invalid request body: " + err.Error() + "\n"))
 		return false
 	}
 
@@ -159,7 +159,7 @@ func (m *ValidationMiddleware) ValidateAndErrorResponse(w http.ResponseWriter, r
 	if err := m.Validate(req); err != nil {
 		// 获取验证错误信息
 		errors := m.formatValidationErrors(err)
-		errorMsg := "\x1b[33m400 Bad Request: validation failed\x1b[0m\n"
+		errorMsg := "400 Bad Request: validation failed\n"
 		for _, e := range errors {
 			errorMsg += "  - " + e["field"] + ": " + e["message"] + "\n"
 		}

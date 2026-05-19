@@ -316,7 +316,7 @@ Requirements:
 		}
 
 		// 添加调试日志
-		logx.Infof("Calling AI API: URL=%s, Model=%s, APIKey=%s", p.baseURL+"/chat/completions", p.model, p.apiKey[:10]+"...")
+		logx.Infof("Calling AI API: URL=%s, Model=%s", p.baseURL+"/chat/completions", p.model)
 
 		c := &http.Client{Timeout: p.timeout}
 		httpReq, _ := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/chat/completions", bytes.NewReader(body))
