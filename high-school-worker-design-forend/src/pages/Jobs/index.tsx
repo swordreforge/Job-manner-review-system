@@ -169,10 +169,9 @@ const loadFilterOptions = async () => {
       const chart = chartRef.current?.getEchartsInstance();
       if (!chart) return;
       
-      try {
-        const opt = chart.getOption() as { series?: { data?: { x?: number; y?: number; fixed?: boolean; symbolSize?: number; name?: string; id?: number }[] }[] };
-        const series = opt?.series?.[0];
-        if (!series?.data) return;
+      const opt = chart.getOption() as { series?: { data?: { x?: number; y?: number; fixed?: boolean; symbolSize?: number; name?: string; id?: number }[] }[] };
+      const series = opt?.series?.[0];
+      if (!series?.data) return;
 
       const width = chart.getWidth();
       const height = chart.getHeight();
