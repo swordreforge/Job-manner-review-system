@@ -50,6 +50,8 @@ func (l *CreateJobLogic) CreateJob(req *types.CreateJobReq) (resp *types.JobResp
 		Category:             sql.NullString{String: req.Category, Valid: req.Category != ""},
 		Location:             sql.NullString{String: req.Location, Valid: req.Location != ""},
 		SalaryRange:          sql.NullString{String: req.SalaryRange, Valid: req.SalaryRange != ""},
+		SalaryMin:            func() int64 { s, _ := model.ParseSalaryRange(req.SalaryRange); return s }(),
+		SalaryMax:            func() int64 { _, s := model.ParseSalaryRange(req.SalaryRange); return s }(),
 		JobCode:              sql.NullString{String: req.JobCode, Valid: req.JobCode != ""},
 		CompanyScale:         sql.NullString{String: req.CompanyScale, Valid: req.CompanyScale != ""},
 		CompanyFundingStatus: sql.NullString{String: req.CompanyFundingStatus, Valid: req.CompanyFundingStatus != ""},

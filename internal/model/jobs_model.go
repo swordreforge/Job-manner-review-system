@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
@@ -24,15 +25,15 @@ type (
 	}
 
 	JobSearchReq struct {
-		Page            int    `json:"page"`
-		PageSize        int    `json:"pageSize"`
-		Keyword         string `json:"keyword"`
-		Industry        string `json:"industry"`
-		Category        string `json:"category"`
-		Location        string `json:"location"`
-		CompanyScale    string `json:"companyScale"`
-		SalaryMin       int    `json:"salaryMin"`
-		SalaryMax       int    `json:"salaryMax"`
+		Page         int    `json:"page"`
+		PageSize     int    `json:"pageSize"`
+		Keyword      string `json:"keyword"`
+		Industry     string `json:"industry"`
+		Category     string `json:"category"`
+		Location     string `json:"location"`
+		CompanyScale string `json:"companyScale"`
+		SalaryMin    int    `json:"salaryMin"`
+		SalaryMax    int    `json:"salaryMax"`
 	}
 
 	customJobsModel struct {
@@ -130,15 +131,17 @@ func (m *customJobsModel) Search(ctx context.Context, req *JobSearchReq) ([]*Job
 		args = append(args, req.CompanyScale)
 	}
 
-	// 薪资范围筛选
+	// 薪资范围筛选（使用 salary_min/salary_max 数值列）
 	if req.SalaryMin > 0 || req.SalaryMax > 0 {
-		salaryConditions := []string{}
-		if req.SalaryMin > 0 {
-			salaryConditions = append(salaryConditions, "(salary_range REGEXP ? OR salary_range REGEXP ?)")
-			args = append(args, fmt.Sprintf("[0-9]+%d", req.SalaryMin), fmt.Sprintf("[0-9]+\\.%d", req.SalaryMin))
-		}
-		if len(salaryConditions) > 0 {
-			conditions = append(conditions, strings.Join(salaryConditions, " OR "))
+		if req.SalaryMin > 0 && req.SalaryMax > 0 {
+			conditions = append(conditions, "salary_min <= ? AND salary_max >= ?")
+			args = append(args, req.SalaryMax*1000, req.SalaryMin*1000)
+		} else if req.SalaryMin > 0 {
+			conditions = append(conditions, "salary_max >= ?")
+			args = append(args, req.SalaryMin*1000)
+		} else {
+			conditions = append(conditions, "salary_min <= ?")
+			args = append(args, req.SalaryMax*1000)
 		}
 	}
 
@@ -169,8 +172,8 @@ func (m *customJobsModel) Search(ctx context.Context, req *JobSearchReq) ([]*Job
 	return resp, total, nil
 }
 
-// Insert 插入职位记录，自动设置时间戳
-// 重写生成的Insert方法，自动设置created_at和updated_at
+// Insert 插入职位记录，自动设置时间戳和薪资数值
+// 重写生成的Insert方法，自动设置created_at、updated_at、salary_min、salary_max
 func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, error) {
 	now := time.Now().Unix()
 	if data.CreatedAt == 0 {
@@ -180,8 +183,12 @@ func (m *customJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, e
 		data.UpdatedAt = now
 	}
 
-	query := fmt.Sprintf("insert into %s (`name`, `description`, `company`, `industry`, `category`, `location`, `salary_range`, `job_code`, `company_scale`, `company_funding_status`, `company_description`, `source_url`, `update_date`, `job_detail`, `skills`, `certificates`, `soft_skills`, `requirements`, `growth_potential`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.CreatedAt, data.UpdatedAt)
+	sMin, sMax := parseSalaryRange(data.SalaryRange.String)
+	data.SalaryMin = sMin
+	data.SalaryMax = sMax
+
+	query := fmt.Sprintf("insert into %s (`name`, `description`, `company`, `industry`, `category`, `location`, `salary_range`, `salary_min`, `salary_max`, `job_code`, `company_scale`, `company_funding_status`, `company_description`, `source_url`, `update_date`, `job_detail`, `skills`, `certificates`, `soft_skills`, `requirements`, `growth_potential`, `created_at`, `updated_at`) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.SalaryMin, data.SalaryMax, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.CreatedAt, data.UpdatedAt)
 	return ret, err
 }
 
@@ -224,4 +231,107 @@ func (m *customJobsModel) GetFilterOptions(ctx context.Context) (industries, com
 	}
 
 	return industries, companyScales, locations, nil
+}
+
+// ParseSalaryRange parses salary range strings into monthly amounts in yuan.
+// Exported for use by other packages.
+func ParseSalaryRange(s string) (int64, int64) {
+	return parseSalaryRange(s)
+}
+
+// parseSalaryRange parses salary range strings into monthly amounts in yuan.
+// Formats: "3000-4000元", "1-2万", "120-150元/天", "面议"
+// Returns (min, max) in yuan. Both 0 if unparseable.
+func parseSalaryRange(s string) (int64, int64) {
+	if s == "" {
+		return 0, 0
+	}
+
+	s = strings.TrimSpace(s)
+
+	if s == "面议" || s == " negotiable" || s == "N/A" {
+		return 0, 0
+	}
+
+	isDaily := strings.Contains(s, "/天")
+	isWan := strings.Contains(s, "万")
+
+	// Strip suffixes: "元·13薪", "元/天", "万·14薪", "元", "万"
+	cleaned := s
+	cleaned = strings.Split(cleaned, "·")[0]
+	cleaned = strings.Split(cleaned, "/")[0]
+	cleaned = strings.TrimRight(cleaned, "元")
+	cleaned = strings.TrimRight(cleaned, "万")
+	cleaned = strings.TrimSpace(cleaned)
+
+	// Split on "-"
+	parts := strings.SplitN(cleaned, "-", 2)
+	if len(parts) != 2 {
+		// Try single value
+		v, err := parseFloatChinese(parts[0])
+		if err != nil {
+			return 0, 0
+		}
+		if isWan {
+			v *= 10000
+		}
+		if isDaily {
+			v *= 22
+		}
+		return int64(v), int64(v)
+	}
+
+	var min64, max64 int64
+	for i, p := range parts {
+		v, err := parseFloatChinese(p)
+		if err != nil {
+			return 0, 0
+		}
+		if isWan {
+			v *= 10000
+		}
+		if isDaily {
+			v *= 22
+		}
+		if i == 0 {
+			min64 = int64(v)
+		} else {
+			max64 = int64(v)
+		}
+	}
+
+	if min64 > max64 && max64 > 0 {
+		min64, max64 = max64, min64
+	}
+
+	return min64, max64
+}
+
+func parseFloatChinese(s string) (float64, error) {
+	s = strings.TrimSpace(s)
+	return strconv.ParseFloat(s, 64)
+}
+
+// BackfillSalaryColumns sets salary_min/salary_max for all rows where they are 0
+func (m *customJobsModel) BackfillSalaryColumns(ctx context.Context) error {
+	query := fmt.Sprintf("SELECT `id`, `salary_range` FROM %s WHERE `salary_min` = 0 AND `salary_max` = 0 AND `salary_range` IS NOT NULL AND `salary_range` != ''", m.table)
+	var rows []struct {
+		Id          int64          `db:"id"`
+		SalaryRange sql.NullString `db:"salary_range"`
+	}
+	if err := m.conn.QueryRowsCtx(ctx, &rows, query); err != nil {
+		return err
+	}
+
+	for _, row := range rows {
+		sMin, sMax := parseSalaryRange(row.SalaryRange.String)
+		if sMin == 0 && sMax == 0 {
+			continue
+		}
+		update := fmt.Sprintf("UPDATE %s SET `salary_min` = ?, `salary_max` = ? WHERE `id` = ?", m.table)
+		if _, err := m.conn.ExecCtx(ctx, update, sMin, sMax, row.Id); err != nil {
+			return err
+		}
+	}
+	return nil
 }

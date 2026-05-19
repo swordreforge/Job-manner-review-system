@@ -44,6 +44,8 @@ type (
 		Category             sql.NullString `db:"category"`
 		Location             sql.NullString `db:"location"`
 		SalaryRange          sql.NullString `db:"salary_range"`
+		SalaryMin            int64          `db:"salary_min"`
+		SalaryMax            int64          `db:"salary_max"`
 		JobCode              sql.NullString `db:"job_code"`
 		CompanyScale         sql.NullString `db:"company_scale"`
 		CompanyFundingStatus sql.NullString `db:"company_funding_status"`
@@ -89,14 +91,14 @@ func (m *defaultJobsModel) FindOne(ctx context.Context, id int64) (*Jobs, error)
 }
 
 func (m *defaultJobsModel) Insert(ctx context.Context, data *Jobs) (sql.Result, error) {
-	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, jobsRowsExpectAutoSet)
-	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential)
+	query := fmt.Sprintf("insert into %s (%s) values (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", m.table, jobsRowsExpectAutoSet)
+	ret, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.SalaryMin, data.SalaryMax, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential)
 	return ret, err
 }
 
 func (m *defaultJobsModel) Update(ctx context.Context, data *Jobs) error {
 	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, jobsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.Id)
+	_, err := m.conn.ExecCtx(ctx, query, data.Name, data.Description, data.Company, data.Industry, data.Category, data.Location, data.SalaryRange, data.SalaryMin, data.SalaryMax, data.JobCode, data.CompanyScale, data.CompanyFundingStatus, data.CompanyDescription, data.SourceUrl, data.UpdateDate, data.JobDetail, data.Skills, data.Certificates, data.SoftSkills, data.Requirements, data.GrowthPotential, data.Id)
 	return err
 }
 

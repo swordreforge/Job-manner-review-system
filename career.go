@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -128,6 +129,8 @@ func main() {
 		logx.Errorf("Column migration failed: %v", err)
 	}
 
+	backfillSalaryColumns(c.Mysql.DataSource)
+
 	if err := seedData(c.Mysql.DataSource); err != nil {
 		logx.Errorf("Seed data failed: %v", err)
 	}
@@ -245,6 +248,8 @@ func autoMigrate(dataSource string) error {
 				category VARCHAR(100) DEFAULT NULL COMMENT '岗位分类',
 				location VARCHAR(100) DEFAULT NULL COMMENT '工作地点',
 				salary_range VARCHAR(100) DEFAULT NULL COMMENT '薪资范围',
+				salary_min BIGINT DEFAULT 0 COMMENT '薪资最低值(元/月)',
+				salary_max BIGINT DEFAULT 0 COMMENT '薪资最高值(元/月)',
 				job_code VARCHAR(50) DEFAULT NULL COMMENT '外部岗位编码',
 				company_scale VARCHAR(50) DEFAULT NULL COMMENT '公司规模',
 				company_funding_status VARCHAR(50) DEFAULT NULL COMMENT '融资状态',
@@ -903,6 +908,9 @@ func migrateColumns(dataSource string) error {
 		{"jobs", "source_url", "ALTER TABLE jobs ADD COLUMN source_url VARCHAR(500) DEFAULT NULL COMMENT '来源URL'"},
 		{"jobs", "update_date", "ALTER TABLE jobs ADD COLUMN update_date DATE DEFAULT NULL COMMENT '更新日期'"},
 		{"jobs", "job_detail", "ALTER TABLE jobs ADD COLUMN job_detail TEXT DEFAULT NULL COMMENT '详细岗位职责'"},
+		{"jobs", "salary_min", "ALTER TABLE jobs ADD COLUMN salary_min BIGINT DEFAULT 0 COMMENT '薪资最低值(元/月)'"},
+		{"jobs", "salary_max", "ALTER TABLE jobs ADD COLUMN salary_max BIGINT DEFAULT 0 COMMENT '薪资最高值(元/月)'"},
+		{"jobs", "idx_salary", "ALTER TABLE jobs ADD KEY idx_salary (salary_min, salary_max)"},
 	}
 
 	for _, m := range migrations {
@@ -1151,4 +1159,99 @@ func runInteractiveInit(c config.Config) error {
 	fmt.Println("✓ 数据库初始化完成")
 	fmt.Println("现在可以正常使用系统了")
 	return nil
+}
+
+func backfillSalaryColumns(dataSource string) {
+	db, err := sql.Open("mysql", dataSource)
+	if err != nil {
+		logx.Errorf("backfillSalaryColumns: failed to connect: %v", err)
+		return
+	}
+	defer db.Close()
+
+	rows, err := db.Query("SELECT id, salary_range FROM jobs WHERE salary_min = 0 AND salary_max = 0 AND salary_range IS NOT NULL AND salary_range != ''")
+	if err != nil {
+		logx.Errorf("backfillSalaryColumns: query failed: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	count := 0
+	for rows.Next() {
+		var id int64
+		var salaryRange string
+		if err := rows.Scan(&id, &salaryRange); err != nil {
+			continue
+		}
+		sMin, sMax := parseSalaryRangeGo(salaryRange)
+		if sMin == 0 && sMax == 0 {
+			continue
+		}
+		if _, err := db.Exec("UPDATE jobs SET salary_min = ?, salary_max = ? WHERE id = ?", sMin, sMax, id); err != nil {
+			logx.Errorf("backfillSalaryColumns: update failed for id %d: %v", id, err)
+			continue
+		}
+		count++
+	}
+	if count > 0 {
+		logx.Infof("backfillSalaryColumns: updated %d rows", count)
+	}
+}
+
+func parseSalaryRangeGo(s string) (int64, int64) {
+	s = strings.TrimSpace(s)
+	if s == "" || s == "面议" {
+		return 0, 0
+	}
+
+	isDaily := strings.Contains(s, "/天")
+	isWan := strings.Contains(s, "万")
+
+	cleaned := s
+	if idx := strings.Index(cleaned, "·"); idx >= 0 {
+		cleaned = cleaned[:idx]
+	}
+	if idx := strings.Index(cleaned, "/"); idx >= 0 {
+		cleaned = cleaned[:idx]
+	}
+	cleaned = strings.TrimRight(cleaned, "元")
+	cleaned = strings.TrimRight(cleaned, "万")
+	cleaned = strings.TrimSpace(cleaned)
+
+	parts := strings.SplitN(cleaned, "-", 2)
+	if len(parts) != 2 {
+		v, err := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+		if err != nil {
+			return 0, 0
+		}
+		if isWan {
+			v *= 10000
+		}
+		if isDaily {
+			v *= 22
+		}
+		result := int64(v)
+		return result, result
+	}
+
+	minVal, err1 := strconv.ParseFloat(strings.TrimSpace(parts[0]), 64)
+	maxVal, err2 := strconv.ParseFloat(strings.TrimSpace(parts[1]), 64)
+	if err1 != nil || err2 != nil {
+		return 0, 0
+	}
+
+	if isWan {
+		minVal *= 10000
+		maxVal *= 10000
+	}
+	if isDaily {
+		minVal *= 22
+		maxVal *= 22
+	}
+
+	sMin, sMax := int64(minVal), int64(maxVal)
+	if sMin > sMax {
+		sMin, sMax = sMax, sMin
+	}
+	return sMin, sMax
 }
