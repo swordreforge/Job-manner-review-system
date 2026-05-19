@@ -45,6 +45,35 @@ func (m *mockAIProvider) GenerateCareerReport(ctx context.Context, req ai.Report
 	return m.response, nil
 }
 
+func (m *mockAIProvider) GenerateCareerReportStream(ctx context.Context, req ai.ReportGenerationRequest) (<-chan string, <-chan error) {
+	ch := make(chan string, 1)
+	errCh := make(chan error, 1)
+	if m.err != nil {
+		errCh <- m.err
+	} else {
+		ch <- m.response
+	}
+	close(ch)
+	close(errCh)
+	return ch, errCh
+}
+
+func (m *mockAIProvider) GeneratePathAnalysis(ctx context.Context, req ai.PathAnalysisRequest) (string, error) {
+	return "mock path analysis", nil
+}
+
+func (m *mockAIProvider) GeneratePromotionTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
+	return "mock promotion targets", nil
+}
+
+func (m *mockAIProvider) GenerateTransferTargets(ctx context.Context, jobInfo, studentProfile string) (string, error) {
+	return "mock transfer targets", nil
+}
+
+func (m *mockAIProvider) PolishResume(ctx context.Context, profileJSON, suggestions string) (string, error) {
+	return "mock polished resume", nil
+}
+
 func createTestServiceContext(t *testing.T) *svc.ServiceContext {
 	db, mock, err := sqlmock.New()
 	assert.NoError(t, err)
@@ -66,8 +95,8 @@ func createTestServiceContext(t *testing.T) *svc.ServiceContext {
 		WillReturnRows(rows)
 
 	return &svc.ServiceContext{
-		Config: cfg,
-		DB:     conn,
+		Config:       cfg,
+		DB:           conn,
 		StudentModel: model.NewStudentsModel(conn),
 		AIProvider: &mockAIProvider{
 			response: "This is a comprehensive career development report generated for the student profile.",

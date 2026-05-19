@@ -153,15 +153,79 @@ export const matchApi = {
 export const reportApi = {
   generate: (data: { studentId: number; targetJobId?: number; options?: { includeGapAnalysis?: boolean; includeActionPlan?: boolean; detailedLevel?: number } }) =>
     api.post<{ code: number; msg: string; data: import('../types').Report }>('/reports/generate', data, { timeout: 120000 }),
-  generateStream: (data: { studentId: number; track?: string; targetJobId?: number }) => {
-    const params = new URLSearchParams({
-      studentId: String(data.studentId),
-    });
-    if (data.track) params.append('track', data.track);
-    if (data.targetJobId) params.append('targetJobId', String(data.targetJobId));
-    const token = localStorage.getItem('token');
-    const authParam = token ? `&token=${encodeURIComponent(token)}` : '';
-    return `${BASE_URL}/reports/generate-stream?${params.toString()}${authParam}`;
+  generateStream: {
+    url: (data: { studentId: number; track?: string; targetJobId?: number }) => {
+      const params = new URLSearchParams({
+        studentId: String(data.studentId),
+      });
+      if (data.track) params.append('track', data.track);
+      if (data.targetJobId) params.append('targetJobId', String(data.targetJobId));
+      return `${BASE_URL}/reports/generate-stream?${params.toString()}`;
+    },
+    fetchWithAuth: async (
+      data: { studentId: number; track?: string; targetJobId?: number },
+      onEvent: (event: { type: string; data: any }) => void,
+      onError: (error: Error) => void
+    ) => {
+      const token = localStorage.getItem('token');
+      const params = new URLSearchParams({ studentId: String(data.studentId) });
+      if (data.track) params.append('track', data.track);
+      if (data.targetJobId) params.append('targetJobId', String(data.targetJobId));
+
+      try {
+        const response = await fetch(`${BASE_URL}/reports/generate-stream?${params.toString()}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'text/event-stream',
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (!reader) {
+          throw new Error('Response body is null');
+        }
+
+        let buffer = '';
+        let currentEventType = '';
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            const trimmedLine = line.trim();
+            if (trimmedLine === '') continue;
+            if (trimmedLine.startsWith('event: ')) {
+              currentEventType = trimmedLine.substring(7);
+              continue;
+            }
+            if (trimmedLine.startsWith('data: ')) {
+              const eventData = trimmedLine.substring(6);
+              try {
+                const parsedData = JSON.parse(eventData);
+                onEvent({ type: currentEventType || 'data', data: parsedData });
+                currentEventType = '';
+              } catch (e) {
+                console.error('Failed to parse SSE data:', e);
+              }
+            }
+          }
+        }
+      } catch (error) {
+        onError(error as Error);
+      }
+    },
   },
   get: (id: number) =>
     api.get<{ code: number; msg: string; data: import('../types').Report }>(`/reports/${id}`),

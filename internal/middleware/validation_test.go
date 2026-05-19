@@ -252,7 +252,6 @@ func TestValidationMiddleware_Validate(t *testing.T) {
 		assert.Error(t, err)
 	})
 
-	
 }
 
 func TestValidationMiddleware_FormatValidationErrors(t *testing.T) {

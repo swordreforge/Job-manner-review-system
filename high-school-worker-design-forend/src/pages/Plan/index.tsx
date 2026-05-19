@@ -188,39 +188,28 @@ export default function PlanPage() {
     setGenerating(true);
     try {
       const trackValue = activeTrack === 'bigtech' ? 'full' : 'gap';
-      const streamUrl = reportApi.generateStream({
-        studentId: student.id,
-        track: trackValue,
-      });
-
-      const eventSource = new EventSource(streamUrl);
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === 'report') {
+      await reportApi.generateStream.fetchWithAuth(
+        {
+          studentId: student.id,
+          track: trackValue,
+        },
+        (event) => {
+          const data = event.data;
+          if (event.type === 'report' || data.type === 'report') {
             setSkills(data.content?.skills || []);
             setTimeline(data.content?.timeline || []);
             setCompleteness(data.content?.completeness || 0);
             setCompetitiveness(data.content?.competitiveness || 0);
             setHasReport(true);
           }
-        } catch (e) {
-          console.error('解析SSE数据失败:', e);
+        },
+        (error) => {
+          console.error('SSE stream error:', error);
         }
-      };
-
-      eventSource.onerror = () => {
-        eventSource.close();
-        setGenerating(false);
-        message.success('职业规划生成完成');
-        // 生成完成后重新加载报告列表
-        loadReports();
-      };
-
-      eventSource.onopen = () => {
-        console.log('SSE连接已建立');
-      };
+      );
+      setGenerating(false);
+      message.success('职业规划生成完成');
+      loadReports();
     } catch (error) {
       console.error('生成报告失败:', error);
       message.error('生成报告失败');

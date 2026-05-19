@@ -108,7 +108,7 @@ func main() {
 	handler.RegisterHandlers(server, ctx)
 
 	// 应用认证中间件
-	server.Use(middleware.NewAuthMiddlewareWithDSN(c.Auth.AccessSecret, c.Mysql.DataSource).Handle)
+	server.Use(middleware.NewAuthMiddlewareWithServiceContext(c.Auth.AccessSecret, ctx).Handle)
 
 	fmt.Printf("Starting server at %s:%d...\n", c.Host, c.Port)
 	server.Start()

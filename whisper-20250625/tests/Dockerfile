@@ -38,9 +38,6 @@ WORKDIR /app
 # 从构建阶段复制二进制文件
 COPY --from=builder /app/target/release/xunfei-asr-server .
 
-# 复制环境变量示例
-COPY .env.example .env.example
-
 # 创建非 root 用户
 RUN addgroup -g 1000 appuser && \
     adduser -D -u 1000 -G appuser appuser && \

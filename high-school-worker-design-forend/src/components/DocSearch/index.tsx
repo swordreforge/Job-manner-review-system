@@ -147,10 +147,17 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
     window.dispatchEvent(new CustomEvent('openDoc', { detail: { docId } }));
   }
 
+  function escapeHtml(text: string): string {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
   function highlightText(text: string, query: string) {
-    if (!query.trim()) return text;
+    const escaped = escapeHtml(text);
+    if (!query.trim()) return escaped;
     const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
-    return text.replace(regex, '<mark class="bg-orange-200 text-orange-900 px-1 rounded">$1</mark>');
+    return escaped.replace(regex, '<mark class="bg-orange-200 text-orange-900 px-1 rounded">$1</mark>');
   }
 
   function getExcerpt(text: string, query: string, maxLength = 150) {

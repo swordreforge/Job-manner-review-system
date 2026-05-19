@@ -171,11 +171,11 @@ type JobListResultResp struct {
 }
 
 type JobFilterOptionsResp struct {
-	Code              int      `json:"code"`
-	Msg               string   `json:"msg"`
-	Industries        []string `json:"industries"`
-	CompanyScales     []string `json:"companyScales"`
-	Locations         []string `json:"locations"`
+	Code          int      `json:"code"`
+	Msg           string   `json:"msg"`
+	Industries    []string `json:"industries"`
+	CompanyScales []string `json:"companyScales"`
+	Locations     []string `json:"locations"`
 }
 
 type JobNode struct {

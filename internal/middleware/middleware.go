@@ -2,17 +2,16 @@ package middleware
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"strings"
 
 	"career-api/internal/pkg"
-	_ "github.com/go-sql-driver/mysql"
+	"career-api/internal/svc"
 )
 
 type AuthMiddleware struct {
 	accessSecret string
-	dataSource   string
+	svcCtx       *svc.ServiceContext
 }
 
 func NewAuthMiddleware(accessSecret string) *AuthMiddleware {
@@ -20,22 +19,29 @@ func NewAuthMiddleware(accessSecret string) *AuthMiddleware {
 }
 
 func NewAuthMiddlewareWithDSN(accessSecret, dataSource string) *AuthMiddleware {
-	return &AuthMiddleware{accessSecret: accessSecret, dataSource: dataSource}
+	return &AuthMiddleware{accessSecret: accessSecret}
+}
+
+func NewAuthMiddlewareWithServiceContext(accessSecret string, svcCtx *svc.ServiceContext) *AuthMiddleware {
+	return &AuthMiddleware{accessSecret: accessSecret, svcCtx: svcCtx}
+}
+
+var publicPaths = map[string]bool{
+	"/api/v1/user/login":        true,
+	"/api/v1/user/register":     true,
+	"/api/v1/teachers/register": true,
+	"/health":                    true,
 }
 
 func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		path := r.URL.Path
-		if strings.Contains(path, "/user/login") ||
-			strings.Contains(path, "/user/register") ||
-			strings.Contains(path, "/teachers/register") ||
-			strings.Contains(path, "/health") ||
-			strings.HasPrefix(path, "/img/") {
+
+		if publicPaths[path] || strings.HasPrefix(path, "/img/") {
 			next(w, r)
 			return
 		}
 
-		// 首先尝试从 Authorization header 获取 token
 		auth := r.Header.Get("Authorization")
 		token := ""
 
@@ -46,21 +52,16 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 			}
 		}
 
-		// 如果 header 中没有 token，尝试从 URL 参数获取（用于 SSE 连接）
-		if token == "" {
-			token = r.URL.Query().Get("token")
-		}
-
 		if token == "" {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("\x1b[31m401 Unauthorized: missing authorization token\x1b[0m\n"))
+			w.Write([]byte("401 Unauthorized: missing authorization token\n"))
 			return
 		}
 
 		claims, err := pkg.ParseToken(token, m.accessSecret)
 		if err != nil {
 			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte("\x1b[31m401 Unauthorized: invalid token\x1b[0m\n"))
+			w.Write([]byte("401 Unauthorized: invalid token\n"))
 			return
 		}
 
@@ -68,7 +69,6 @@ func (m *AuthMiddleware) Handle(next http.HandlerFunc) http.HandlerFunc {
 		ctx = context.WithValue(ctx, "username", claims.Username)
 		ctx = context.WithValue(ctx, "role", claims.Role)
 
-		// For teachers, add schoolId and teacherId to context
 		if claims.Role == "teacher" {
 			schoolId, teacherId := m.getTeacherInfo(claims.UserId)
 			ctx = context.WithValue(ctx, "schoolId", schoolId)
@@ -83,19 +83,21 @@ func (m *AuthMiddleware) getTeacherInfo(userId int64) (schoolId, teacherId int64
 	schoolId = 1
 	teacherId = 1
 
-	if m.dataSource == "" {
+	if m.svcCtx == nil || m.svcCtx.DB == nil {
 		return
 	}
 
-	db, err := sql.Open("mysql", m.dataSource)
+	db, err := m.svcCtx.DB.RawDB()
 	if err != nil {
 		return
 	}
-	defer db.Close()
 
-	err = db.QueryRow("SELECT id, school_id FROM teachers WHERE user_id = ?", userId).Scan(&teacherId, &schoolId)
+	err = db.QueryRowContext(context.Background(),
+		"SELECT id, school_id FROM teachers WHERE user_id = ?", userId).
+		Scan(&teacherId, &schoolId)
 	if err != nil {
 		return
 	}
-	return
+
+	return schoolId, teacherId
 }

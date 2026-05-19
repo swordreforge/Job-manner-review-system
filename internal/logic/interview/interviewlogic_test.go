@@ -1,4 +1,4 @@
-package logic
+package interview
 
 import (
 	"context"
@@ -180,7 +180,7 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userId", int64(1))
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory()
+	resp, err := logic.GetInterviewHistory(nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeSuccess, resp.Code)
@@ -194,7 +194,7 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_Unauthorized(t *testing.T)
 	ctx := context.Background()
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory()
+	resp, err := logic.GetInterviewHistory(nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeUnauthorized, resp.Code)
@@ -206,14 +206,14 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_ContainsCorrectData(t *tes
 	ctx := context.WithValue(context.Background(), "userId", int64(1))
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory()
+	resp, err := logic.GetInterviewHistory(nil)
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeSuccess, resp.Code)
 
 	if resp.Data != nil && len(resp.Data.List) > 0 {
 		assert.Contains(t, []string{"bigtech", "gov"}, resp.Data.List[0].Mode)
-		assert.Greater(t, resp.Data.List[0].Score, 0.0)
+		assert.Greater(t, resp.Data.List[0].AverageScore, 0.0)
 		assert.Equal(t, "completed", resp.Data.List[0].Status)
 		assert.Greater(t, resp.Data.List[0].Id, int64(0))
 		assert.Greater(t, resp.Data.List[0].CreatedAt, int64(0))

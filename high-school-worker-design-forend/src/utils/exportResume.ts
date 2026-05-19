@@ -4,10 +4,23 @@ import { Document, Packer, Paragraph, TextRun, AlignmentType, BorderStyle } from
 import { saveAs } from 'file-saver';
 import type { Student } from '../types';
 
+function sanitizeSVG(container: HTMLElement): void {
+  container.querySelectorAll('script, iframe, object, embed, form').forEach((el) => el.remove());
+  container.querySelectorAll('*').forEach((el) => {
+    for (let i = el.attributes.length - 1; i >= 0; i--) {
+      const attr = el.attributes[i];
+      if (attr.name.startsWith('on') || attr.value.trim().toLowerCase().startsWith('javascript:')) {
+        el.removeAttribute(attr.name);
+      }
+    }
+  });
+}
+
 export async function exportResumeToPDF(htmlContent: string): Promise<void> {
   const container = document.createElement('div');
   container.className = 'resume-export-container';
   container.innerHTML = htmlContent;
+  sanitizeSVG(container);
   container.style.position = 'absolute';
   container.style.left = '-9999px';
   container.style.top = '0';

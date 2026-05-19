@@ -100,6 +100,7 @@ func TestAuthMiddleware_Handle_WithInvalidToken(t *testing.T) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 }
 
+// Test that paths matching publicPaths are allowed without auth
 func TestAuthMiddleware_Handle_LoginPath(t *testing.T) {
 	secret := "test-secret-key"
 	middleware := NewAuthMiddleware(secret)
@@ -136,6 +137,24 @@ func TestAuthMiddleware_Handle_RegisterPath(t *testing.T) {
 	assert.True(t, nextCalled)
 }
 
+func TestAuthMiddleware_Handle_TeacherRegisterPath(t *testing.T) {
+	secret := "test-secret-key"
+	middleware := NewAuthMiddleware(secret)
+
+	nextCalled := false
+	nextHandler := func(w http.ResponseWriter, r *http.Request) {
+		nextCalled = true
+	}
+
+	req := httptest.NewRequest("POST", "/api/v1/teachers/register", nil)
+	w := httptest.NewRecorder()
+
+	handler := middleware.Handle(nextHandler)
+	handler(w, req)
+
+	assert.True(t, nextCalled)
+}
+
 func TestAuthMiddleware_Handle_HealthPath(t *testing.T) {
 	secret := "test-secret-key"
 	middleware := NewAuthMiddleware(secret)
@@ -152,6 +171,41 @@ func TestAuthMiddleware_Handle_HealthPath(t *testing.T) {
 	handler(w, req)
 
 	assert.True(t, nextCalled)
+}
+
+// Test that strings.Contains-style paths are NOT allowed without auth
+func TestAuthMiddleware_Handle_SimilarPathsBlocked(t *testing.T) {
+	secret := "test-secret-key"
+	middleware := NewAuthMiddleware(secret)
+
+	tests := []struct {
+		name string
+		path string
+	}{
+		{"login suffix", "/api/v1/user/login-helper"},
+		{"login prefix", "/api/v1/fake/user/login"},
+		{"register suffix", "/api/v1/user/register-new"},
+		{"health prefix", "/api/v1/health-check"},
+		{"img without prefix", "/api/v1/img/avatar.png"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			nextCalled := false
+			nextHandler := func(w http.ResponseWriter, r *http.Request) {
+				nextCalled = true
+			}
+
+			req := httptest.NewRequest("GET", tt.path, nil)
+			w := httptest.NewRecorder()
+
+			handler := middleware.Handle(nextHandler)
+			handler(w, req)
+
+			assert.False(t, nextCalled, "path %s should require auth", tt.path)
+			assert.Equal(t, http.StatusUnauthorized, w.Code)
+		})
+	}
 }
 
 func TestAuthMiddleware_Handle_WithAdminToken(t *testing.T) {
