@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use std::env;
 
 #[derive(Parser, Clone, Debug)]
 #[command(
@@ -11,15 +12,15 @@ use clap::Parser;
 )]
 pub struct Config {
     /// 讯飞星火应用 ID（优先级：命令行参数 > 环境变量 > 默认值）
-    #[arg(long, default_value = "140c88e2")]
+    #[arg(long, env = "XUNFEI_APP_ID", default_value = "")]
     pub xunfei_app_id: String,
 
     /// 讯飞星火 API Key（优先级：命令行参数 > 环境变量 > 默认值）
-    #[arg(long, default_value = "63101bc8a895022a2f12d0875f909ee6")]
+    #[arg(long, env = "XUNFEI_API_KEY", default_value = "")]
     pub xunfei_api_key: String,
 
     /// 讯飞星火 API Secret（优先级：命令行参数 > 环境变量 > 默认值）
-    #[arg(long, default_value = "ZGRiNWVjZTRhMjQ0NmE0YTRkOGMxZWEx")]
+    #[arg(long, env = "XUNFEI_API_SECRET", default_value = "")]
     pub xunfei_api_secret: String,
 
     /// 服务器监听地址
@@ -33,8 +34,28 @@ pub struct Config {
 
 impl Config {
     pub fn from_args_and_env() -> Result<Self> {
-        // 直接解析命令行参数（使用硬编码的默认值，不从环境变量读取）
-        let config = Self::try_parse()?;
+        let mut config = Self::try_parse()?;
+
+        if config.xunfei_app_id.is_empty() {
+            if let Ok(v) = env::var("XUNFEI_APP_ID") {
+                config.xunfei_app_id = v;
+            }
+        }
+        if config.xunfei_api_key.is_empty() {
+            if let Ok(v) = env::var("XUNFEI_API_KEY") {
+                config.xunfei_api_key = v;
+            }
+        }
+        if config.xunfei_api_secret.is_empty() {
+            if let Ok(v) = env::var("XUNFEI_API_SECRET") {
+                config.xunfei_api_secret = v;
+            }
+        }
+
+        if config.xunfei_app_id.is_empty() || config.xunfei_api_key.is_empty() || config.xunfei_api_secret.is_empty() {
+            anyhow::bail!("XUNFEI_APP_ID, XUNFEI_API_KEY, and XUNFEI_API_SECRET must be set via environment variables or command line flags");
+        }
+
         Ok(config)
     }
 

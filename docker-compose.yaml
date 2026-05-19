@@ -4,7 +4,7 @@ services:
     container_name: mysql
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: 123456zj
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-career_local_2024}
       MYSQL_DATABASE: career_db
     ports:
       - "3307:3306"
@@ -71,7 +71,7 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-    command: ["teacher-api", "--mysql-host", "mysql", "--mysql-password", "123456zj", "--host", "0.0.0.0", "--port", "8081"]
+    command: ["teacher-api", "--mysql-host", "mysql", "--mysql-password", "${MYSQL_ROOT_PASSWORD:-career_local_2024}", "--host", "0.0.0.0", "--port", "8081"]
 
 volumes:
   mysql_data:

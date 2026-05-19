@@ -41,7 +41,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 dotenv = "0.15"
 
 # 命令行参数
-clap = { version = "4.4", features = ["derive"] }
+clap = { version = "4.4", features = ["derive", "env"] }
 
 # 多部分表单
 #multipart = { version = "0.18", features = ["server"] }
