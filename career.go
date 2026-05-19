@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/zeromicro/go-zero/core/conf"
 	"github.com/zeromicro/go-zero/core/logx"
 	"github.com/zeromicro/go-zero/rest"
@@ -27,8 +28,38 @@ var skipAll = flag.Bool("skip-all", false, "skip all database initialization pro
 func main() {
 	flag.Parse()
 
+	godotenv.Load()
+
 	var c config.Config
 	conf.MustLoad(*configFile, &c)
+
+	if ds := os.Getenv("MYSQL_DATASOURCE"); ds != "" {
+		c.Mysql.DataSource = ds
+	}
+	if s := os.Getenv("JWT_SECRET"); s != "" {
+		c.Auth.AccessSecret = s
+	}
+	if k := os.Getenv("AI_API_KEY"); k != "" {
+		c.AI.ApiKey = k
+	}
+	if p := os.Getenv("AI_PROVIDER"); p != "" {
+		c.AI.Provider = p
+	}
+	if m := os.Getenv("AI_MODEL"); m != "" {
+		c.AI.Model = m
+	}
+	if u := os.Getenv("AI_BASE_URL"); u != "" {
+		c.AI.BaseURL = u
+	}
+	if rp := os.Getenv("REDIS_PASSWORD"); rp != "" {
+		c.Redis.Pass = rp
+		c.CacheRedis.Pass = rp
+	}
+
+	if c.Mysql.DataSource == "" {
+		logx.Severef("MYSQL_DATASOURCE not set")
+		os.Exit(1)
+	}
 
 	// 配置日志使用 console 模式以支持颜色
 	logx.MustSetup(logx.LogConf{
