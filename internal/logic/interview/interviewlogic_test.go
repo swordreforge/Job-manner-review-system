@@ -11,6 +11,7 @@ import (
 
 	"career-api/common/errors"
 	"career-api/internal/config"
+	"career-api/internal/model"
 	"career-api/internal/svc"
 	"career-api/internal/types"
 )
@@ -23,8 +24,39 @@ func createTestServiceContextForInterview(t *testing.T) *svc.ServiceContext {
 	cfg.AI.BaseURL = "https://api.openai.com/v1"
 	cfg.AI.Timeout = 30
 
+	sessionsModel := &model.MockInterviewSessionsModel{
+		FindByIdResult: []*model.InterviewSessions{
+			{
+				Id:              1,
+				UserId:          1,
+				Mode:            "bigtech",
+				Status:          "completed",
+				AverageScore:    85.5,
+				TotalQuestions:  10,
+				CurrentQuestion: 10,
+				DurationSeconds: 600,
+				CreatedAt:       1700000000,
+			},
+			{
+				Id:              2,
+				UserId:          1,
+				Mode:            "gov",
+				Status:          "completed",
+				AverageScore:    90.0,
+				TotalQuestions:  8,
+				CurrentQuestion: 8,
+				DurationSeconds: 480,
+				CreatedAt:       1700100000,
+			},
+		},
+		FindByIdTotal: 2,
+	}
+
 	return &svc.ServiceContext{
-		Config: cfg,
+		Config:                   cfg,
+		InterviewSessionsModel:   sessionsModel,
+		InterviewMessagesModel:   &model.MockInterviewMessagesModel{},
+		InterviewReportsModel:    &model.MockInterviewReportsModel{},
 	}
 }
 
@@ -180,7 +212,7 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_Success(t *testing.T) {
 	ctx := context.WithValue(context.Background(), "userId", int64(1))
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory(nil)
+	resp, err := logic.GetInterviewHistory(&types.GetInterviewHistoryReq{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeSuccess, resp.Code)
@@ -194,7 +226,7 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_Unauthorized(t *testing.T)
 	ctx := context.Background()
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory(nil)
+	resp, err := logic.GetInterviewHistory(&types.GetInterviewHistoryReq{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeUnauthorized, resp.Code)
@@ -206,7 +238,7 @@ func TestGetInterviewHistoryLogic_GetInterviewHistory_ContainsCorrectData(t *tes
 	ctx := context.WithValue(context.Background(), "userId", int64(1))
 	logic := NewGetInterviewHistoryLogic(ctx, svcCtx)
 
-	resp, err := logic.GetInterviewHistory(nil)
+	resp, err := logic.GetInterviewHistory(&types.GetInterviewHistoryReq{})
 
 	assert.NoError(t, err)
 	assert.Equal(t, errors.CodeSuccess, resp.Code)
