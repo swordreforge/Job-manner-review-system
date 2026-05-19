@@ -182,6 +182,7 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 	var aiResp AIResponse
 	var streamErr error
 	chunkCount := 0
+	lastExtractedText := ""
 
 	for !done {
 		select {
@@ -191,10 +192,17 @@ func (l *InterviewChatStreamLogic) InterviewChatStream(w http.ResponseWriter, re
 			} else {
 				fullResponse.WriteString(content)
 				chunkCount++
-				// 实时发送chunk事件，实现打字机效果
-				l.sendSSEEvent(w, flusher, "chunk", map[string]interface{}{
-					"content": content,
-				})
+				// 从部分JSON中提取文本内容，实现打字机效果
+				extractedText := extractTextFromPartialJSON(fullResponse.String())
+				if extractedText != lastExtractedText {
+					newContent := extractedText[len(lastExtractedText):]
+					if newContent != "" {
+						l.sendSSEEvent(w, flusher, "chunk", map[string]interface{}{
+							"content": newContent,
+						})
+					}
+					lastExtractedText = extractedText
+				}
 			}
 		case err := <-errChan:
 			if err != nil {
@@ -490,6 +498,72 @@ func (l *InterviewChatStreamLogic) sendSSEEvent(w http.ResponseWriter, flusher h
 	fmt.Fprintf(w, "event: %s\n", eventType)
 	fmt.Fprintf(w, "data: %s\n\n", jsonData)
 	flusher.Flush()
+}
+
+// extractTextFromPartialJSON 从部分JSON字符串中提取question和feedback的文本内容
+// 使用状态机方式解析，支持未闭合的字符串
+func extractTextFromPartialJSON(partial string) string {
+	var result strings.Builder
+	inString := false
+	escaped := false
+	inTargetValue := false
+	targetKeys := map[string]bool{"question": true, "feedback": true}
+
+	for i := 0; i < len(partial); i++ {
+		ch := partial[i]
+
+		if escaped {
+			if inTargetValue {
+				result.WriteByte(ch)
+			}
+			escaped = false
+			continue
+		}
+
+		if ch == '\\' && inString {
+			escaped = true
+			continue
+		}
+
+		if ch == '"' {
+			if !inString {
+				// 字符串开始 - 检查是否是目标key的值
+				j := i - 1
+				for j >= 0 && (partial[j] == ' ' || partial[j] == '\t' || partial[j] == '\n' || partial[j] == '\r') {
+					j--
+				}
+				if j >= 0 && partial[j] == ':' {
+					// 向前查找key
+					k := j - 1
+					for k >= 0 && partial[k] == ' ' {
+						k--
+					}
+					if k >= 0 && partial[k] == '"' {
+						start := k - 1
+						for start >= 0 && partial[start] != '"' {
+							start--
+						}
+						if start >= 0 {
+							currentKey := partial[start+1 : k]
+							inTargetValue = targetKeys[currentKey]
+						}
+					}
+				}
+				inString = true
+			} else {
+				// 字符串结束
+				inString = false
+				inTargetValue = false
+			}
+			continue
+		}
+
+		if inTargetValue {
+			result.WriteByte(ch)
+		}
+	}
+
+	return result.String()
 }
 
 // generateReport 生成面试报告
