@@ -8,6 +8,7 @@ import { RiWindowsFill } from 'react-icons/ri';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
 import ScrollStack, { ScrollStackItem } from '../../components/ScrollStack';
+import FeatureIcon from '../../components/FeatureIcon';
 //123
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
     <svg
@@ -31,13 +32,13 @@ const features = [
     title: 'AI智能分析',
     desc: '基于DeepSeek大模型，提供精准的职业规划建议',
     detailDesc: '通过深度分析你的技能、经验和兴趣，AI智能分析系统能为你量身定制职业发展路径。无论是转行、晋升还是跳槽，系统都会根据最新的市场趋势和岗位需求，为你提供专业的建议和指导。',
-    icon: '🤖',
+    iconName: 'robot',
     imageUrl: 'https://blog.swordreforge.top/img/worker-show/jobs.webp',
     features: [
-      { icon: '🎯', text: '精准匹配' },
-      { icon: '📊', text: '数据分析' },
-      { icon: '🚀', text: '智能推荐' },
-      { icon: '💡', text: '个性化建议' },
+      { iconName: 'target' as const, text: '精准匹配' },
+      { iconName: 'chart' as const, text: '数据分析' },
+      { iconName: 'rocket' as const, text: '智能推荐' },
+      { iconName: 'lightbulb' as const, text: '个性化建议' },
     ],
     scenarios: ['职业迷茫期', '技能转型', '求职规划', '晋升决策'],
     stats: [
@@ -52,13 +53,13 @@ const features = [
     title: '职业图谱',
     desc: '可视化展示岗位晋升和转岗路径，了解职业发展可能性',
     detailDesc: '职业图谱以直观的树状图形式展示完整的职业发展路径。你可以清晰地看到从初级到高级的晋升阶梯，了解不同岗位之间的转换要求。系统会根据你的当前职位，推荐最合适的职业发展路径，并标注关键的能力提升节点。',
-    icon: '🗺️',
+    iconName: 'map',
     imageUrl: 'https://blog.swordreforge.top/img/worker-show/plan.webp',
     features: [
-      { icon: '🌳', text: '可视化路径' },
-      { icon: '📈', text: '晋升阶梯' },
-      { icon: '🔄', text: '转岗建议' },
-      { icon: '🎓', text: '能力提升' },
+      { iconName: 'tree' as const, text: '可视化路径' },
+      { iconName: 'trend' as const, text: '晋升阶梯' },
+      { iconName: 'sync' as const, text: '转岗建议' },
+      { iconName: 'graduation' as const, text: '能力提升' },
     ],
     scenarios: ['职业规划', '晋升准备', '转岗决策', '目标设定'],
     stats: [
@@ -73,13 +74,13 @@ const features = [
     title: '简历优化',
     desc: '智能分析简历，针对目标岗位提供优化建议',
     detailDesc: 'AI简历优化引擎会深度分析你的简历内容，针对特定的目标岗位提供个性化的优化建议。系统会指出简历中的亮点和不足，优化项目描述，突出关键技能，并根据ATS系统的要求调整格式。',
-    icon: '📝',
+    iconName: 'file',
     imageUrl: 'https://blog.swordreforge.top/img/worker-show/profile.webp',
     features: [
-      { icon: '🔍', text: '智能分析' },
-      { icon: '✨', text: '亮点突出' },
-      { icon: '🎯', text: '精准匹配' },
-      { icon: '📄', text: 'ATS优化' },
+      { iconName: 'search' as const, text: '智能分析' },
+      { iconName: 'sparkle' as const, text: '亮点突出' },
+      { iconName: 'target' as const, text: '精准匹配' },
+      { iconName: 'file' as const, text: 'ATS优化' },
     ],
     scenarios: ['求职准备', '简历升级', '投递优化', '转行求职'],
     stats: [
@@ -94,13 +95,13 @@ const features = [
     title: '模拟面试',
     desc: '大厂/国企双模式，AI实时反馈面试表现',
     detailDesc: '模拟面试系统提供大厂和国企两种不同的面试模式。大厂模式侧重技术深度和算法能力，国企模式注重综合素质和表达逻辑。AI面试官会根据你的回答实时反馈，指出优点和改进点，帮助你提升面试技巧。',
-    icon: '🎯',
+    iconName: 'target',
     imageUrl: 'https://blog.swordreforge.top/img/worker-show/start.webp',
     features: [
-      { icon: '🎭', text: '真实模拟' },
-      { icon: '🤖', text: 'AI反馈' },
-      { icon: '📊', text: '表现分析' },
-      { icon: '💪', text: '能力提升' },
+      { iconName: 'theater' as const, text: '真实模拟' },
+      { iconName: 'robot' as const, text: 'AI反馈' },
+      { iconName: 'chart' as const, text: '表现分析' },
+      { iconName: 'strength' as const, text: '能力提升' },
     ],
     scenarios: ['面试准备', '技能提升', '求职冲刺', '压力训练'],
     stats: [
@@ -979,8 +980,8 @@ export default function Landing() {
                               className="bg-white border border-gray-200 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
                           >
                             <div className="flex items-center gap-3 mb-4">
-                              <div className="text-3xl bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
-                                {item.icon}
+                              <div className="text-2xl bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-center shrink-0 text-indigo-600">
+                                <FeatureIcon name={item.iconName} size={24} />
                               </div>
                               <div>
                                 <h3 className="text-xl font-bold text-gray-900 tracking-tight">{item.title}</h3>
@@ -1033,8 +1034,8 @@ export default function Landing() {
                           >
                             <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-3 custom-scrollbar">
                               <div className="flex items-center gap-5 mb-5 shrink-0">
-                                <div className="text-4xl md:text-5xl bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-center shrink-0">
-                                  {item.icon}
+                                <div className="text-3xl md:text-4xl bg-indigo-50 p-4 rounded-2xl border border-indigo-100 flex items-center justify-center shrink-0 text-indigo-600">
+                                  <FeatureIcon name={item.iconName} size={32} />
                                 </div>
                                 <div>
                                   <h3 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 tracking-tight">{item.title}</h3>

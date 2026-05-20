@@ -1,12 +1,11 @@
-import { useState, useCallback } from 'react';
-import { Form, Input, Button, Card, Tabs, message } from 'antd';
+import { useState, useCallback, useMemo } from 'react';
+import { Form, Input, Button, Tabs, message } from 'antd';
 import { UserOutlined, LockOutlined, MailOutlined, CheckCircleFilled, HomeOutlined, BankOutlined, MoonOutlined, SunOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userApi, teacherApi } from '../../api';
 import { useAuthStore, useThemeStore } from '../../stores';
-import LaserGradient from '../../components/LaserGradient';
-import LaserRay from '../../components/LaserRay';
+import FeatureIcon from '../../components/FeatureIcon';
 import './Auth.css';
 
 interface PasswordStrengthResult {
@@ -30,6 +29,14 @@ const getPasswordStrength = (password: string): PasswordStrengthResult => {
 };
 
 export default function AuthPage() {
+  const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
+    <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 10L12 5L21 10L12 15L3 10Z" />
+      <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
+      <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
+    </svg>
+  );
+
   const [activeTab, setActiveTab] = useState('login');
   const [tabKey, setTabKey] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -637,22 +644,66 @@ export default function AuthPage() {
     },
   ];
 
+  const featurePool = useMemo(() => [
+    { icon: 'robot' as const, text: 'AI 智能解析简历' },
+    { icon: 'target' as const, text: '精准岗位匹配' },
+    { icon: 'chart' as const, text: '一键生成职业报告' },
+    { icon: 'map' as const, text: '可视化晋升路径' },
+    { icon: 'trend' as const, text: '职业成长趋势分析' },
+    { icon: 'search' as const, text: '海量岗位数据库' },
+    { icon: 'graduation' as const, text: '技能差距精准定位' },
+    { icon: 'briefcase' as const, text: '个性化职业建议' },
+    { icon: 'bolt' as const, text: '秒级智能分析' },
+  ], []);
+
+  const brandFeatures = useMemo(() => {
+    const copy = [...featurePool];
+    for (let i = copy.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j]!, copy[i]!];
+    }
+    return copy.slice(0, 3);
+  }, [featurePool]);
+
+  const brandTitle = activeTab === 'register' ? '开启你的职业规划' : activeTab === 'teacher-register' ? '教师专属平台' : '欢迎回来';
+  const brandSubtitle = activeTab === 'register' ? '免费注册，立即体验 AI 驱动的职业发展路径规划' : activeTab === 'teacher-register' ? '教师端管理，全方位助力学生成长' : '继续你的职业规划之旅，让 AI 为你保驾护航';
+
   return (
-    <div className="auth-container">
-      {/* 镭射效果背景 */}
-      <LaserGradient />
-      <LaserRay />
-      
-      <motion.div
-        initial={{ opacity: 0, scale: 0.9, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{
-          duration: 0.5,
-          ease: [0.22, 1, 0.36, 1]
-        }}
-        className="auth-card"
-      >
-        <Card className="auth-card" bordered={false}>
+    <div className="auth-root">
+      <div className="auth-brand-panel">
+        <div className="auth-blob auth-blob-1" />
+        <div className="auth-blob auth-blob-2" />
+
+        <div className="auth-brand-inner">
+          <div className="auth-brand-logo">
+            <GraduationCapIcon className="auth-brand-logo-icon" />
+            <span className="auth-brand-logo-text">Job <span>Router</span></span>
+          </div>
+
+          <div className="auth-brand-tagline">
+            <div className="auth-brand-tagline-main">{brandTitle}</div>
+            <div className="auth-brand-tagline-sub">{brandSubtitle}</div>
+          </div>
+
+          <div className="auth-brand-features">
+            {brandFeatures.map((feat, idx) => (
+              <motion.div
+                key={feat.icon}
+                className="auth-brand-feature-item"
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 + idx * 0.12, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="auth-brand-feature-icon"><FeatureIcon name={feat.icon} size={18} /></div>
+                <span className="auth-brand-feature-text">{feat.text}</span>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="auth-form-panel">
+        <div className="auth-form-inner">
           <motion.div
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
@@ -694,8 +745,8 @@ export default function AuthPage() {
             className="auth-tabs"
             items={tabItems}
           />
-        </Card>
-      </motion.div>
+        </div>
+      </div>
     </div>
   );
 }
