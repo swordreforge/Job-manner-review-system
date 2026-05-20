@@ -495,6 +495,9 @@ export default function Landing() {
           background: linear-gradient(135deg, #6366f1, #4f46e5);
           box-shadow: 0 8px 32px rgba(99,102,241,0.35);
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          font-weight: 600;
+          letter-spacing: 0.3px;
+          cursor: pointer;
         }
         .landing-cta-btn:hover {
           transform: translateY(-3px);
@@ -505,15 +508,12 @@ export default function Landing() {
           background: rgba(255,255,255,0.5);
           border: 1px solid rgba(0,0,0,0.08);
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: pointer;
         }
         .landing-btn-glass:hover {
           transform: translateY(-3px);
           background: rgba(255,255,255,0.8);
           box-shadow: 0 10px 30px rgba(0,0,0,0.08);
-        }
-        .landing-cta-btn:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 14px 44px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
       `}</style>
         <AnimatePresence>
@@ -822,24 +822,22 @@ export default function Landing() {
                         className="flex flex-row gap-4 justify-center"
                     >
                       <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                      <Button
-                          type="primary"
-                          size="large"
-                          icon={<RightOutlined />}
+                      <button
                           onClick={() => navigate('/auth')}
-                          className="landing-cta-btn h-14 px-10 text-lg rounded-full border-0 font-semibold"
+                          className="landing-cta-btn inline-flex items-center gap-2 h-12 px-10 text-base font-semibold tracking-wide rounded-full text-white border-0"
                       >
                         立即开始
-                      </Button>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
+                      </button>
                     </motion.div>
-                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                      <Button
-                          size="large"
+                    <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                      <button
                           onClick={() => navigate('/auth')}
-                          className="landing-btn-glass h-14 px-10 text-lg rounded-full text-gray-700 font-medium"
+                          className="landing-btn-glass inline-flex items-center gap-2 h-12 px-10 text-base font-semibold tracking-wide rounded-full text-gray-700"
                       >
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                         已有账号
-                      </Button>
+                      </button>
                     </motion.div>
                     </motion.div>
                   </div>
