@@ -1037,7 +1037,7 @@ export default function Landing() {
                 >
                   <motion.button
                       onClick={() => setImagePreviewOpen(false)}
-                      className="absolute -top-4 right-4 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-all"
+                      className="absolute -top-4 right-4 w-10 h-10 bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-gray-800 transition-all"
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                   >
