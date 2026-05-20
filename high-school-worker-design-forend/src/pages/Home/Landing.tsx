@@ -819,7 +819,7 @@ export default function Landing() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.6 }}
-                        className="flex flex-col sm:flex-row gap-4 justify-center"
+                        className="flex flex-row gap-4 justify-center"
                     >
                       <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                       <Button
