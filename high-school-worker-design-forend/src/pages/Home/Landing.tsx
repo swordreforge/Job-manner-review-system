@@ -824,7 +824,7 @@ export default function Landing() {
                       <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                       <button
                           onClick={() => navigate('/auth')}
-                          className="landing-cta-btn inline-flex items-center gap-2 h-12 px-10 text-base font-semibold tracking-wide rounded-full text-white border-0"
+                          className="landing-cta-btn inline-flex items-center justify-center gap-2 py-3 px-8 text-base font-semibold tracking-wide rounded-full text-white border-0 whitespace-nowrap"
                       >
                         立即开始
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" /></svg>
@@ -833,7 +833,7 @@ export default function Landing() {
                     <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                       <button
                           onClick={() => navigate('/auth')}
-                          className="landing-btn-glass inline-flex items-center gap-2 h-12 px-10 text-base font-semibold tracking-wide rounded-full text-gray-700"
+                          className="landing-btn-glass inline-flex items-center justify-center gap-2 py-3 px-8 text-base font-semibold tracking-wide rounded-full text-gray-700 whitespace-nowrap"
                       >
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" /></svg>
                         已有账号
