@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
-import LaserRay from '../../components/LaserRay';
-import LaserGradient from '../../components/LaserGradient';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
 import ScrollStack, { ScrollStackItem } from '../../components/ScrollStack';
@@ -576,9 +574,7 @@ export default function Landing() {
                 </motion.div>
 
                 <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
-                  <LaserGradient />
-                  <LaserRay />
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-purple-50 to-blue-100 -z-10" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 -z-10" />
 
                   <div className="absolute inset-0 overflow-hidden pointer-events-none">
                     {floatingIcons.map((item, idx) => {
@@ -599,11 +595,26 @@ export default function Landing() {
                   </div>
 
                   <div className="relative z-10">
+                    {/* Badge - 顶部独立一行 */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                        className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-sm font-medium text-indigo-600 mb-8 backdrop-blur-sm"
+                    >
+                      <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                      AI 驱动 · 免费使用
+                    </motion.div>
+
+                    {/* 独立行 gap */}
+                    <div className="h-8" />
+
+                    {/* Graduation Cap Icon - 下方独立一行 */}
                     <motion.div
                         initial={{ scale: 0, rotate: -180, opacity: 0 }}
                         animate={{ scale: 1, rotate: 0, opacity: 1 }}
                         transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
-                        className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-16 shadow-lg shadow-orange-500/30"
+                        className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-12 shadow-lg shadow-orange-500/30"
                     >
                       <motion.div
                           animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
@@ -615,31 +626,36 @@ export default function Landing() {
                       </motion.div>
                     </motion.div>
 
+                    {/* Title */}
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-6xl md:text-7xl font-bold mb-12"
+                        className="text-6xl md:text-7xl font-bold mb-8"
+                        style={{ letterSpacing: '-1px', lineHeight: '1.3' }}
                     >
                       你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
                     </motion.h1>
 
+                    {/* Subtitle */}
                     <motion.p
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="text-2xl text-gray-400 max-w-3xl mx-auto mb-16 leading-relaxed"
+                        className="text-xl text-gray-600 max-w-3xl mx-auto mb-12"
+                        style={{ lineHeight: '1.9' }}
                     >
                       AI驱动的职业发展解决方案，助你找到理想工作
                       <br />
                       <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
                     </motion.p>
 
+                    {/* CTA Buttons */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.6 }}
-                        className="flex flex-col sm:flex-row gap-10 justify-center"
+                        className="flex flex-col sm:flex-row gap-5 justify-center"
                     >
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                         <Button
@@ -656,7 +672,7 @@ export default function Landing() {
                         <Button
                             size="large"
                             onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="border-gray-600 text-white hover:bg-gray-800 h-16 px-12 text-xl rounded-full shadow-lg hover:shadow-gray-500/30 transition-all duration-300"
+                            className="border-gray-300 text-gray-700 hover:bg-gray-100 h-16 px-12 text-xl rounded-full shadow-md hover:shadow-gray-300/50 transition-all duration-300"
                         >
                           了解更多
                         </Button>
