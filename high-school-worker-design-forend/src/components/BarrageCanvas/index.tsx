@@ -58,8 +58,8 @@ export default function BarrageCanvas({
     const padding = 12;
     const radius = 20;
     
-    ctx.fillStyle = `${comment.color}20`;
-    ctx.strokeStyle = `${comment.color}40`;
+    ctx.fillStyle = `${comment.color}30`;
+    ctx.strokeStyle = `${comment.color}50`;
     ctx.lineWidth = 1;
     ctx.beginPath();
     ctx.roundRect(x, y, width, h, radius);
@@ -69,14 +69,14 @@ export default function BarrageCanvas({
     ctx.font = '19px serif';
     ctx.fillText(comment.avatar, x + padding, y + 26);
     
-    ctx.font = '500 14px system-ui, sans-serif';
+    ctx.font = '600 14px system-ui, sans-serif';
     ctx.fillStyle = comment.color;
     const username = `${comment.user}:`;
     const usernameWidth = ctx.measureText(username).width;
     ctx.fillText(username, x + padding + 24, y + 26);
     
     const textX = x + padding + 28 + usernameWidth;
-    ctx.fillStyle = '#d1d5db';
+    ctx.fillStyle = '#374151';
     ctx.font = '14px system-ui, sans-serif';
     ctx.fillText(comment.text, textX, y + 26);
   }, []);
