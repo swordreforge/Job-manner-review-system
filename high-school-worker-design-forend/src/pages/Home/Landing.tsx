@@ -636,7 +636,7 @@ export default function Landing() {
                         className="flex items-center gap-2.5 cursor-pointer"
                         onClick={() => navigate('/welcome')}
                     >
-                      <img src="/favicon.svg" alt="Career Router" className="w-9 h-9" />
+                      <GraduationCapIcon className="w-8 h-8 text-gray-900" />
                       <span className="text-xl font-bold text-gray-900">
                     Job <span className="text-indigo-600">Router</span>
                   </span>
@@ -713,7 +713,7 @@ export default function Landing() {
                         <div className="p-6">
                           <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-2">
-                              <img src="/favicon.svg" alt="Career Router" className="w-7 h-7" />
+                              <GraduationCapIcon className="w-6 h-6 text-gray-900" />
                               <span className="font-bold text-gray-900">Job <span className="text-indigo-600">Router</span></span>
                             </div>
                             <button onClick={() => setMobileMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">

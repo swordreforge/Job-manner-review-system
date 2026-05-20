@@ -82,7 +82,7 @@ export default function SidebarNav({ isCollapsed }: SidebarNavProps) {
         style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}
       >
         <div className="flex items-center gap-3 min-w-0">
-          <img src="/favicon.svg" alt="Career Router" className="w-8 h-8 flex-shrink-0" />
+          <img src="/favicon.svg" alt="Job Router" className="w-8 h-8 flex-shrink-0" />
           {!isCollapsed && (
             <span className="font-semibold truncate" style={{ color: 'var(--md-sys-color-on-surface)' }}>
               {role === 'teacher' ? '教师工作台' : <span>Job <span className="text-indigo-600">Router</span></span>}
