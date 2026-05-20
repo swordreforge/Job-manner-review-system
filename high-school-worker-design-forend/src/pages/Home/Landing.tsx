@@ -196,6 +196,7 @@ export default function Landing() {
   const [viewportWidth, setViewportWidth] = useState(0);
   const [dragOffset, setDragOffset] = useState(0);
   const [isDraggingGallery, setIsDraggingGallery] = useState(false);
+  const [mobileMenu, setMobileMenu] = useState(false);
 
   useEffect(() => {
     initialize();
@@ -209,7 +210,7 @@ export default function Landing() {
 
   useEffect(() => {
     if (!loading && !typingDone) {
-      const fullText = '职业规划助手';
+      const fullText = '职业未来';
       let i = 0;
       const interval = setInterval(() => {
         setTypedText(fullText.slice(0, i + 1));
@@ -490,9 +491,25 @@ export default function Landing() {
           from { transform: translate3d(0, 0, 0); }
           to { transform: translate3d(calc(-100vw - 140%), 0, 0); }
         }
-        .landing-cta-btn {
+.landing-cta-btn {
           background: linear-gradient(135deg, #6366f1, #4f46e5);
+          box-shadow: 0 8px 32px rgba(99,102,241,0.35);
           transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .landing-cta-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 14px 44px rgba(99,102,241,0.4), 0 0 0 4px rgba(99,102,241,0.1);
+        }
+        .landing-btn-glass {
+          backdrop-filter: blur(12px);
+          background: rgba(255,255,255,0.5);
+          border: 1px solid rgba(0,0,0,0.08);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .landing-btn-glass:hover {
+          transform: translateY(-3px);
+          background: rgba(255,255,255,0.8);
+          box-shadow: 0 10px 30px rgba(0,0,0,0.08);
         }
         .landing-cta-btn:hover {
           transform: translateY(-3px);
@@ -613,7 +630,7 @@ export default function Landing() {
                     transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
                     className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100"
                 >
-                  <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
+                  <div className="max-w-7xl mx-auto px-6 md:px-8 py-4 flex items-center justify-between">
                     <motion.div
                         whileHover={{ scale: 1.05 }}
                         className="flex items-center gap-3 cursor-pointer"
@@ -627,12 +644,13 @@ export default function Landing() {
                   </span>
                     </motion.div>
 
-                    <div className="flex items-center gap-4">
+                    {/* Desktop nav buttons */}
+                    <div className="hidden md:flex items-center gap-4">
                       <motion.button
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => navigate('/doc')}
-                          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 border border-gray-200 text-gray-700 transition-all duration-300"
+                          className="landing-btn-glass flex items-center gap-2 px-6 py-2.5 rounded-full text-gray-700 font-medium"
                       >
                         <svg
                             className="w-5 h-5"
@@ -647,32 +665,92 @@ export default function Landing() {
                               d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
                           />
                         </svg>
-                        <span className="font-medium">文档</span>
+                        <span>文档</span>
                       </motion.button>
                       <motion.button
-                          whileHover={{ scale: 1.05 }}
+                          whileHover={{ scale: 1.05, y: -1 }}
                           whileTap={{ scale: 0.98 }}
                           onClick={() => navigate('/auth')}
-                          className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 border-0 shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 transition-all duration-300"
+                          className="flex items-center gap-2 px-6 py-2.5 rounded-full text-white font-medium landing-cta-btn text-sm"
                       >
-                        <svg
-                            className="w-5 h-5"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                        >
-                          <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"
-                          />
+                        <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                         </svg>
-                        <span className="font-medium">登录/注册</span>
+                        <span>登录/注册</span>
                       </motion.button>
                     </div>
+
+                    {/* Mobile hamburger */}
+                    <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setMobileMenu(true)}
+                        className="md:hidden flex items-center justify-center w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+                    >
+                      <svg className="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </motion.button>
                   </div>
                 </motion.div>
+
+                {/* Mobile drawer */}
+                <AnimatePresence>
+                  {mobileMenu && (
+                    <>
+                      <motion.div
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="fixed inset-0 z-[60] bg-black/30 backdrop-blur-sm"
+                          onClick={() => setMobileMenu(false)}
+                      />
+                      <motion.div
+                          initial={{ x: '100%' }}
+                          animate={{ x: 0 }}
+                          exit={{ x: '100%' }}
+                          transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                          className="fixed top-0 right-0 bottom-0 z-[70] w-[220px] bg-white shadow-2xl"
+                      >
+                        <div className="p-6">
+                          <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-2">
+                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                <GraduationCapIcon className="w-5 h-5 text-white" />
+                              </div>
+                              <span className="font-bold text-gray-900">职业规划助手</span>
+                            </div>
+                            <button onClick={() => setMobileMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
+                              <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </div>
+                          <nav className="flex flex-col gap-2">
+                            <button
+                                onClick={() => { navigate('/doc'); setMobileMenu(false); }}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-gray-700 hover:bg-gray-50 transition-colors text-left"
+                            >
+                              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                              </svg>
+                              <span className="font-medium">帮助文档</span>
+                            </button>
+                            <button
+                                onClick={() => { navigate('/auth'); setMobileMenu(false); }}
+                                className="flex items-center gap-3 px-4 py-3 rounded-xl text-white mt-2 text-left landing-cta-btn"
+                            >
+                              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                              </svg>
+                              <span className="font-medium">登录/注册</span>
+                            </button>
+                          </nav>
+                        </div>
+                      </motion.div>
+                    </>
+                  )}
+                </AnimatePresence>
 
                 <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden" onMouseMove={handleMouseMove}>
                   {/* Particle canvas */}
@@ -709,7 +787,7 @@ export default function Landing() {
                         className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-sm font-medium text-indigo-600 mb-8 backdrop-blur-sm"
                     >
                       <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                      AI 驱动 · 免费使用
+                      AI 驱动 · 免费使用 · 极速响应
                     </motion.div>
 
                     {/* Title */}
@@ -748,26 +826,25 @@ export default function Landing() {
                         className="flex flex-col sm:flex-row gap-4 justify-center"
                     >
                       <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                        <Button
-                            type="primary"
-                            size="large"
-                            icon={<RightOutlined />}
-                            onClick={() => navigate('/auth')}
-                            className="landing-cta-btn h-14 px-10 text-lg rounded-full border-0 font-semibold"
-                            style={{ boxShadow: '0 8px 32px rgba(99,102,241,0.35)' }}
-                        >
-                          立即开始
-                        </Button>
-                      </motion.div>
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
-                        <Button
-                            size="large"
-                            onClick={() => navigate('/auth')}
-                            className="h-14 px-10 text-lg rounded-full border-gray-200 bg-white/60 text-gray-700 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
-                        >
-                          已有账号
-                        </Button>
-                      </motion.div>
+                      <Button
+                          type="primary"
+                          size="large"
+                          icon={<RightOutlined />}
+                          onClick={() => navigate('/auth')}
+                          className="landing-cta-btn h-14 px-10 text-lg rounded-full border-0 font-semibold"
+                      >
+                        立即开始
+                      </Button>
+                    </motion.div>
+                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                      <Button
+                          size="large"
+                          onClick={() => navigate('/auth')}
+                          className="landing-btn-glass h-14 px-10 text-lg rounded-full text-gray-700 font-medium"
+                      >
+                        已有账号
+                      </Button>
+                    </motion.div>
                     </motion.div>
                   </div>
                 </div>
