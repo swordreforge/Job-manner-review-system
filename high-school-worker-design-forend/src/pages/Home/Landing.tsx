@@ -899,10 +899,10 @@ export default function Landing() {
                       transition={{ duration: 0.6 }}
                       className="text-center mb-12"
                   >
-                    <h2 className="text-4xl font-bold mb-4">
-                      与市面<span className="text-orange-400">产品对比</span>
+                    <h2 className="text-4xl font-bold mb-4" style={{ color: '#0f172a' }}>
+                      与市面<span className="text-orange-500">产品对比</span>
                     </h2>
-                    <p className="text-gray-400">功能全面领先，让求职更简单</p>
+                    <p className="text-gray-600">功能全面领先，让求职更简单</p>
                   </motion.div>
 
                   <motion.div
@@ -910,16 +910,16 @@ export default function Landing() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ margin: "-50px" }}
                       transition={{ duration: 0.6 }}
-                      className="space-y-0 bg-[#11131a]/50 p-6 md:p-10 rounded-3xl border border-white/5 shadow-2xl backdrop-blur-sm"
+                      className="space-y-0 bg-white/50 p-6 md:p-10 rounded-3xl border border-gray-200 shadow-xl"
                   >
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
-                        className="grid grid-cols-4 gap-4 pb-5 border-b border-gray-700/80 text-sm md:text-base font-bold tracking-wide"
+                        className="grid grid-cols-4 gap-4 pb-5 border-b border-gray-200 text-sm md:text-base font-bold tracking-wide"
                     >
-                      <div className="text-left text-gray-400">功能对比</div>
-                      <div className="text-left text-orange-400">我们</div>
+                      <div className="text-left text-gray-500">功能对比</div>
+                      <div className="text-left text-orange-500">我们</div>
                       <div className="text-left text-gray-500">竞品A</div>
                       <div className="text-left text-gray-500">竞品B</div>
                     </motion.div>
@@ -929,10 +929,10 @@ export default function Landing() {
                             initial={{ opacity: 0, x: -20 }}
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.4, delay: idx * 0.08 }}
-                            className="grid grid-cols-4 gap-4 py-5 border-b border-gray-800/80 items-center hover:bg-white/[0.02] transition-colors rounded-lg px-2 -mx-2"
+                            className="grid grid-cols-4 gap-4 py-5 border-b border-gray-100 items-center hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2"
                         >
-                          <div className="text-left font-medium text-gray-200">{row.feature}</div>
-                          <div className="text-left">{row.us && <CheckOutlined className="text-orange-400 text-xl" />}</div>
+                          <div className="text-left font-medium text-gray-700">{row.feature}</div>
+                          <div className="text-left">{row.us && <CheckOutlined className="text-orange-500 text-xl" />}</div>
                           <div className="text-left">{row.competitionA && <CheckOutlined className="text-gray-500 text-lg" />}</div>
                           <div className="text-left">{row.competitionB && <CheckOutlined className="text-gray-500 text-lg" />}</div>
                         </motion.div>
@@ -948,17 +948,17 @@ export default function Landing() {
                       transition={{ duration: 0.6 }}
                       className="text-center mb-8"
                   >
-                    <h2 className="text-3xl font-bold mb-3">
-                      用户<span className="text-orange-400">真实评价</span>
+                    <h2 className="text-3xl font-bold mb-3" style={{ color: '#0f172a' }}>
+                      用户<span className="text-orange-500">真实评价</span>
                     </h2>
-                    <p className="text-gray-400">听听他们的使用体验</p>
+                    <p className="text-gray-600">听听他们的使用体验</p>
                   </motion.div>
 
-                  <div className="relative h-96 bg-gradient-to-r from-gray-800/30 via-gray-700/30 to-gray-800/30 rounded-xl overflow-hidden backdrop-blur-sm border border-gray-700/50">
+                  <div className="relative h-96 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
                     <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={200} spawnInterval={200} />
-                    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-400 animate-pulse"></div>
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-400 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                    <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-400 animate-pulse" style={{ animationDelay: '1s' }}></div>
+                    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
+                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
+                    <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" style={{ animationDelay: '1s' }}></div>
                   </div>
                 </div>
 
@@ -968,12 +968,13 @@ export default function Landing() {
                     viewport={{ margin: "-100px" }}
                     transition={{ duration: 0.8 }}
                     className="px-6 py-20 text-center"
+                    style={{ background: 'linear-gradient(135deg, #1e293b, #334155)' }}
                 >
                   <motion.h2
                       initial={{ opacity: 0, scale: 0.9 }}
                       whileInView={{ opacity: 1, scale: 1 }}
                       transition={{ duration: 0.6, delay: 0.2 }}
-                      className="text-3xl font-bold mb-6"
+                      className="text-3xl font-bold mb-6 text-white"
                   >
                     准备好开启你的职业之旅了吗？
                   </motion.h2>
@@ -981,7 +982,7 @@ export default function Landing() {
                       initial={{ opacity: 0 }}
                       whileInView={{ opacity: 1 }}
                       transition={{ duration: 0.6, delay: 0.4 }}
-                      className="text-gray-400 mb-8"
+                      className="text-gray-300 mb-8"
                   >
                     5分钟了解适合自己的职业方向
                   </motion.p>
@@ -1008,7 +1009,7 @@ export default function Landing() {
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     transition={{ duration: 0.6 }}
-                    className="px-6 py-8 border-t border-gray-800 text-center text-gray-500"
+                    className="px-6 py-8 border-t border-gray-200 text-center text-gray-500"
                 >
                   <p>© 2026 职业规划助手. All rights reserved.</p>
                 </motion.div>
