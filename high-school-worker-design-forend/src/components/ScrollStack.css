@@ -17,6 +17,13 @@
   min-height: 100vh;
 }
 
+@media (max-width: 768px) {
+  .scroll-stack-inner {
+    padding: 1rem 1rem 2rem;
+    min-height: auto;
+  }
+}
+
 .scroll-stack-card-wrapper {
   position: relative;
 }

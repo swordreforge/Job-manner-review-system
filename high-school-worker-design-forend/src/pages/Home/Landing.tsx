@@ -968,6 +968,55 @@ export default function Landing() {
 
                   {/* 核心改动：横向拉宽至 1400px，纵向压窄至 55vh，优化内部间距适配新比例 */}
                   <div className="w-full max-w-[1400px] mx-auto pt-10 pb-0 px-4 md:px-8">
+                    <div className="block md:hidden space-y-6">
+                      {features.map((item, idx) => (
+                          <motion.div
+                              key={idx}
+                              initial={{ opacity: 0, y: 30 }}
+                              whileInView={{ opacity: 1, y: 0 }}
+                              viewport={{ margin: "-50px" }}
+                              transition={{ duration: 0.5, delay: idx * 0.1 }}
+                              className="bg-white border border-gray-200 rounded-2xl p-5 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
+                          >
+                            <div className="flex items-center gap-3 mb-4">
+                              <div className="text-3xl bg-gray-50 p-3 rounded-xl border border-gray-100 flex items-center justify-center shrink-0">
+                                {item.icon}
+                              </div>
+                              <div>
+                                <h3 className="text-xl font-bold text-gray-900 tracking-tight">{item.title}</h3>
+                                <p className="text-gray-500 text-sm leading-snug">{item.desc}</p>
+                              </div>
+                            </div>
+
+                            <p className="text-gray-600 text-sm leading-relaxed mb-4" style={{ lineHeight: '1.8' }}>{item.detailDesc}</p>
+
+                              <div className="grid grid-cols-3 gap-2">
+                                {item.stats.map((stat, stIdx) => (
+                                    <div
+                                        key={stIdx}
+                                        className="text-center p-2 bg-gray-50 border border-gray-100 rounded-xl"
+                                    >
+                                      <div className="text-lg font-extrabold text-gray-900">{stat.value}</div>
+                                      <div className="text-xs text-gray-500">{stat.label}</div>
+                                    </div>
+                                ))}
+                              </div>
+
+                              <div className="flex flex-wrap gap-1.5 mt-4">
+                                {item.scenarios.map((scenario, sIdx) => (
+                                    <span
+                                        key={sIdx}
+                                        className="px-3 py-1 bg-gray-50 border border-gray-200 rounded-full text-xs text-gray-600"
+                                    >
+                                      {scenario}
+                                    </span>
+                                ))}
+                              </div>
+                          </motion.div>
+                      ))}
+                    </div>
+
+                    <div className="hidden md:block">
                     <ScrollStack
                         useWindowScroll={true}
                         itemDistance={100}
@@ -1040,6 +1089,7 @@ export default function Landing() {
                           </ScrollStackItem>
                       ))}
                     </ScrollStack>
+                    </div>
                   </div>
                 </div>
 
