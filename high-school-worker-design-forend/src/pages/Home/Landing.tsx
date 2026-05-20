@@ -638,7 +638,7 @@ export default function Landing() {
                     >
                       <img src="/favicon.svg" alt="Career Router" className="w-9 h-9" />
                       <span className="text-xl font-bold text-gray-900">
-                    职业<span className="text-indigo-600">Router</span>
+                    Job <span className="text-indigo-600">Router</span>
                   </span>
                     </motion.div>
 
@@ -714,7 +714,7 @@ export default function Landing() {
                           <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-2">
                               <img src="/favicon.svg" alt="Career Router" className="w-7 h-7" />
-                              <span className="font-bold text-gray-900">职业<span className="text-indigo-600">Router</span></span>
+                              <span className="font-bold text-gray-900">Job <span className="text-indigo-600">Router</span></span>
                             </div>
                             <button onClick={() => setMobileMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
                               <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1162,7 +1162,7 @@ export default function Landing() {
                     transition={{ duration: 0.6 }}
                     className="px-6 py-8 border-t border-gray-100 text-center text-gray-400"
                 >
-                  <p>© 2026 职业<span className="text-indigo-600">Router</span>. All rights reserved.</p>
+                  <p>© 2026 Job Router. All rights reserved.</p>
                 </motion.div>
               </motion.div>
           )}
