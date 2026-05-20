@@ -433,9 +433,7 @@ export default function DocPage() {
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                    <FileTextOutlined className="text-white text-xs" />
-                  </div>
+                  <img src="/favicon.svg" alt="Career Router" className="w-7 h-7" />
                   <span className="font-semibold text-gray-900">文档目录</span>
                 </div>
                 <button

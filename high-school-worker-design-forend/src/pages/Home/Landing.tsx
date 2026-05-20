@@ -633,14 +633,12 @@ export default function Landing() {
                   <div className="max-w-7xl mx-auto px-6 md:px-8 py-4 flex items-center justify-between">
                     <motion.div
                         whileHover={{ scale: 1.05 }}
-                        className="flex items-center gap-3 cursor-pointer"
+                        className="flex items-center gap-2.5 cursor-pointer"
                         onClick={() => navigate('/welcome')}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-                        <GraduationCapIcon className="w-6 h-6 text-white" />
-                      </div>
-                      <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
-                    职业规划助手
+                      <img src="/favicon.svg" alt="Career Router" className="w-9 h-9" />
+                      <span className="text-xl font-bold text-gray-900">
+                    职业<span className="text-indigo-600">Router</span>
                   </span>
                     </motion.div>
 
@@ -715,10 +713,8 @@ export default function Landing() {
                         <div className="p-6">
                           <div className="flex items-center justify-between mb-8">
                             <div className="flex items-center gap-2">
-                              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
-                                <GraduationCapIcon className="w-5 h-5 text-white" />
-                              </div>
-                              <span className="font-bold text-gray-900">职业规划助手</span>
+                              <img src="/favicon.svg" alt="Career Router" className="w-7 h-7" />
+                              <span className="font-bold text-gray-900">职业<span className="text-indigo-600">Router</span></span>
                             </div>
                             <button onClick={() => setMobileMenu(false)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors">
                               <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1166,7 +1162,7 @@ export default function Landing() {
                     transition={{ duration: 0.6 }}
                     className="px-6 py-8 border-t border-gray-100 text-center text-gray-400"
                 >
-                  <p>© 2026 职业规划助手. All rights reserved.</p>
+                  <p>© 2026 职业<span className="text-indigo-600">Router</span>. All rights reserved.</p>
                 </motion.div>
               </motion.div>
           )}
