@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
 import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
 import { RiWindowsFill } from 'react-icons/ri';
 import BarrageCanvas from '../../components/BarrageCanvas';
@@ -32,7 +32,7 @@ const features = [
     desc: '基于DeepSeek大模型，提供精准的职业规划建议',
     detailDesc: '通过深度分析你的技能、经验和兴趣，AI智能分析系统能为你量身定制职业发展路径。无论是转行、晋升还是跳槽，系统都会根据最新的市场趋势和岗位需求，为你提供专业的建议和指导。',
     icon: '🤖',
-    imageUrl: 'https://swordreforge.top/img/worker-show/jobs.webp',
+    imageUrl: 'https://blog.swordreforge.top/img/worker-show/jobs.webp',
     features: [
       { icon: '🎯', text: '精准匹配' },
       { icon: '📊', text: '数据分析' },
@@ -53,7 +53,7 @@ const features = [
     desc: '可视化展示岗位晋升和转岗路径，了解职业发展可能性',
     detailDesc: '职业图谱以直观的树状图形式展示完整的职业发展路径。你可以清晰地看到从初级到高级的晋升阶梯，了解不同岗位之间的转换要求。系统会根据你的当前职位，推荐最合适的职业发展路径，并标注关键的能力提升节点。',
     icon: '🗺️',
-    imageUrl: 'https://swordreforge.top/img/worker-show/plan.webp',
+    imageUrl: 'https://blog.swordreforge.top/img/worker-show/plan.webp',
     features: [
       { icon: '🌳', text: '可视化路径' },
       { icon: '📈', text: '晋升阶梯' },
@@ -74,7 +74,7 @@ const features = [
     desc: '智能分析简历，针对目标岗位提供优化建议',
     detailDesc: 'AI简历优化引擎会深度分析你的简历内容，针对特定的目标岗位提供个性化的优化建议。系统会指出简历中的亮点和不足，优化项目描述，突出关键技能，并根据ATS系统的要求调整格式。',
     icon: '📝',
-    imageUrl: 'https://swordreforge.top/img/worker-show/profile.webp',
+    imageUrl: 'https://blog.swordreforge.top/img/worker-show/profile.webp',
     features: [
       { icon: '🔍', text: '智能分析' },
       { icon: '✨', text: '亮点突出' },
@@ -95,7 +95,7 @@ const features = [
     desc: '大厂/国企双模式，AI实时反馈面试表现',
     detailDesc: '模拟面试系统提供大厂和国企两种不同的面试模式。大厂模式侧重技术深度和算法能力，国企模式注重综合素质和表达逻辑。AI面试官会根据你的回答实时反馈，指出优点和改进点，帮助你提升面试技巧。',
     icon: '🎯',
-    imageUrl: 'https://swordreforge.top/img/worker-show/start.webp',
+    imageUrl: 'https://blog.swordreforge.top/img/worker-show/start.webp',
     features: [
       { icon: '🎭', text: '真实模拟' },
       { icon: '🤖', text: 'AI反馈' },
@@ -186,7 +186,11 @@ export default function Landing() {
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
   const [isShaking, setIsShaking] = useState(false);
+  const [typedText, setTypedText] = useState('');
+  const [typingDone, setTypingDone] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const galleryViewportRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const dragStartXRef = useRef<number | null>(null);
   const draggedRef = useRef(false);
   const [viewportWidth, setViewportWidth] = useState(0);
@@ -202,6 +206,91 @@ export default function Landing() {
       navigate('/start', { replace: true });
     }
   }, [isAuthenticated, isAuthChecked, navigate]);
+
+  useEffect(() => {
+    if (!loading && !typingDone) {
+      const fullText = '职业规划助手';
+      let i = 0;
+      const interval = setInterval(() => {
+        setTypedText(fullText.slice(0, i + 1));
+        i++;
+        if (i >= fullText.length) {
+          clearInterval(interval);
+          setTypingDone(true);
+        }
+      }, 180);
+      return () => clearInterval(interval);
+    }
+  }, [loading, typingDone]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    let animationId = 0;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+    resize();
+    window.addEventListener('resize', resize);
+
+    const count = Math.min(80, Math.floor(window.innerWidth / 18));
+    const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = Array.from({ length: count }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      vx: (Math.random() - 0.5) * 0.6,
+      vy: (Math.random() - 0.5) * 0.6,
+      size: Math.random() * 2 + 1,
+      opacity: Math.random() * 0.5 + 0.2,
+    }));
+
+    function draw() {
+      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        if (!p) continue;
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas!.width) p.vx *= -1;
+        if (p.y < 0 || p.y > canvas!.height) p.vy *= -1;
+
+        ctx!.beginPath();
+        ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx!.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
+        ctx!.fill();
+
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          if (!p2) continue;
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < 140) {
+            ctx!.beginPath();
+            ctx!.moveTo(p.x, p.y);
+            ctx!.lineTo(p2.x, p2.y);
+            ctx!.strokeStyle = `rgba(99, 102, 241, ${0.12 * (1 - dist / 140)})`;
+            ctx!.lineWidth = 0.8;
+            ctx!.stroke();
+          }
+        }
+      }
+      animationId = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener('resize', resize);
+    };
+  }, [loading]);
 
   if (!isAuthChecked || (isAuthChecked && isAuthenticated)) {
     return (
@@ -362,26 +451,30 @@ export default function Landing() {
   return (
       <>
         <style>{`
-        @keyframes rainbow-flow {
-          0% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-          100% { background-position: 0% 50%; }
+        @keyframes morph {
+          0%, 100% { border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%; transform: translate(0, 0) rotate(0deg); }
+          25% { border-radius: 58% 42% 35% 65% / 50% 60% 40% 50%; transform: translate(20px, -30px) rotate(5deg); }
+          50% { border-radius: 50% 50% 60% 40% / 40% 50% 50% 60%; transform: translate(-15px, 20px) rotate(-3deg); }
+          75% { border-radius: 40% 60% 50% 50% / 55% 35% 65% 45%; transform: translate(25px, 10px) rotate(4deg); }
         }
-        .rainbow-text {
-          background: linear-gradient(
-            90deg,
-            #ff6b6b,
-            #feca57,
-            #48dbfb,
-            #1dd1a1,
-            #ff9ff3,
-            #ff6b6b
-          );
-          background-size: 200% 100%;
+        .text-gradient-animated {
+          background: linear-gradient(90deg, #1976d2, #6366f1, #a855f7, #06b6d4, #1976d2);
+          background-size: 200% auto;
           -webkit-background-clip: text;
           background-clip: text;
           -webkit-text-fill-color: transparent;
-          animation: rainbow-flow 3s ease infinite;
+          animation: gradient-flow 4s linear infinite;
+        }
+        @keyframes gradient-flow {
+          to { background-position: 200% center; }
+        }
+        .typing-cursor {
+          -webkit-text-fill-color: #6366f1;
+          animation: blink-cursor 0.75s step-end infinite;
+          font-weight: 300;
+        }
+        @keyframes blink-cursor {
+          50% { opacity: 0; }
         }
         @keyframes feature-dot-progress {
           from { width: 0%; }
@@ -396,6 +489,14 @@ export default function Landing() {
         @keyframes barrage-scroll {
           from { transform: translate3d(0, 0, 0); }
           to { transform: translate3d(calc(-100vw - 140%), 0, 0); }
+        }
+        .landing-cta-btn {
+          background: linear-gradient(135deg, #6366f1, #4f46e5);
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .landing-cta-btn:hover {
+          transform: translateY(-3px);
+          box-shadow: 0 14px 44px rgba(99, 102, 241, 0.4), 0 0 0 4px rgba(99, 102, 241, 0.1);
         }
       `}</style>
         <AnimatePresence>
@@ -504,13 +605,13 @@ export default function Landing() {
           {!loading && (
               <motion.div
                   className="min-h-screen"
-                  style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #e0e7ff 20%, #ede9fe 40%, #e0f2fe 60%, #f0fdf4 80%, #fefce8 100%)' }}
+                  style={{ background: '#fafbfe' }}
               >
                 <motion.div
                     initial={{ y: -100, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     transition={{ type: "spring", damping: 20, stiffness: 100, delay: 0.3 }}
-                    className="fixed top-0 left-0 right-0 z-50 bg-white/75 backdrop-blur-xl border-b border-gray-200/60 shadow-sm"
+                    className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100"
                 >
                   <div className="max-w-7xl mx-auto px-8 py-4 flex items-center justify-between">
                     <motion.div
@@ -518,10 +619,10 @@ export default function Landing() {
                         className="flex items-center gap-3 cursor-pointer"
                         onClick={() => navigate('/welcome')}
                     >
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center shadow-lg shadow-orange-500/30">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
                         <GraduationCapIcon className="w-6 h-6 text-white" />
                       </div>
-                      <span className="text-xl font-bold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent">
+                      <span className="text-xl font-bold bg-gradient-to-r from-indigo-500 to-purple-600 bg-clip-text text-transparent">
                     职业规划助手
                   </span>
                     </motion.div>
@@ -573,29 +674,34 @@ export default function Landing() {
                   </div>
                 </motion.div>
 
-                <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 -z-10" />
-
-                  <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                    {floatingIcons.map((item, idx) => {
-                      const { Icon, size, left, top, duration, delay } = item;
-                      return (
-                          <motion.div
-                              key={idx}
-                              className="absolute text-indigo-400/50"
-                              style={{ left, top }}
-                              initial={{ y: 0, rotate: 0 }}
-                              animate={{ y: [0, -40, 0], rotate: [0, 8, 0] }}
-                              transition={{ duration, delay, repeat: Infinity, ease: "easeInOut" }}
-                          >
-                            <Icon size={size} />
-                          </motion.div>
-                      );
-                    })}
+                <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden" onMouseMove={handleMouseMove}>
+                  {/* Particle canvas */}
+                  <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }} />
+                  {/* Gradient base */}
+                  <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #e0e7ff 20%, #ede9fe 40%, #e0f2fe 60%, #f0fdf4 80%, #fefce8 100%)', zIndex: 0 }} />
+                  {/* Grid mesh overlay */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)', backgroundSize: '48px 48px', zIndex: 1 }} />
+                  {/* Morphing geo blobs (jelly effect) */}
+                  <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
+                    <div style={{ position: 'absolute', width: 500, height: 500, top: -150, right: -120, background: 'linear-gradient(135deg, #6366f1, #a78bfa)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite' }} />
+                    <div style={{ position: 'absolute', width: 400, height: 400, bottom: -120, left: -100, background: 'linear-gradient(135deg, #06b6d4, #67e8f9)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-5s' }} />
+                    <div style={{ position: 'absolute', width: 300, height: 300, top: '45%', left: '55%', background: 'linear-gradient(135deg, #f59e0b, #fde68a)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-10s' }} />
+                    <div style={{ position: 'absolute', width: 200, height: 200, top: '25%', left: '10%', background: 'linear-gradient(135deg, #10b981, #6ee7b7)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-7s' }} />
                   </div>
+                  {/* Mouse-following glow */}
+                  <div
+                    className="absolute pointer-events-none"
+                    style={{
+                      width: 500, height: 500, left: mousePos.x - 250, top: mousePos.y - 250,
+                      borderRadius: '50%',
+                      background: 'radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%)',
+                      transition: 'left 0.3s ease-out, top 0.3s ease-out',
+                      zIndex: 4,
+                    }}
+                  />
 
-                  <div className="relative z-10">
-                    {/* Badge - 顶部独立一行 */}
+                  <div className="relative" style={{ zIndex: 10 }}>
+                    {/* Badge */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -606,35 +712,19 @@ export default function Landing() {
                       AI 驱动 · 免费使用
                     </motion.div>
 
-                    {/* 独立行 gap */}
-                    <div className="h-8" />
-
-                    {/* Graduation Cap Icon - 下方独立一行 */}
-                    <motion.div
-                        initial={{ scale: 0, rotate: -180, opacity: 0 }}
-                        animate={{ scale: 1, rotate: 0, opacity: 1 }}
-                        transition={{ type: "spring", damping: 15, stiffness: 200, duration: 0.8 }}
-                        className="inline-flex items-center justify-center w-36 h-36 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 mb-12 shadow-lg shadow-orange-500/30"
-                    >
-                      <motion.div
-                          animate={isShaking ? { rotate: [0, 15, -15, 10, -10, 5, -5, 0] } : { rotate: 0 }}
-                          transition={isShaking ? { duration: 0.6 } : { duration: 0 }}
-                          onClick={handleShakeClick}
-                          className="cursor-pointer"
-                      >
-                        <GraduationCapIcon className="w-20 h-20 text-white" />
-                      </motion.div>
-                    </motion.div>
-
                     {/* Title */}
                     <motion.h1
                         initial={{ opacity: 0, y: 30 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.2 }}
-                        className="text-6xl md:text-7xl font-bold mb-8"
-                        style={{ letterSpacing: '-1px', lineHeight: '1.3' }}
+                        className="text-5xl md:text-7xl font-bold mb-8"
+                        style={{ letterSpacing: '-2px', lineHeight: '1.15' }}
                     >
-                      你的私人<span className="rainbow-text">AI</span><br /><span className="rainbow-text">职业规划</span>助手
+                      用 <span className="text-gradient-animated">AI</span> 规划你的
+                      <br />
+                      <span className="text-gradient-animated inline-block min-w-[4ch]">
+                        {typedText}<span className="typing-cursor">|</span>
+                      </span>
                     </motion.h1>
 
                     {/* Subtitle */}
@@ -642,12 +732,12 @@ export default function Landing() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.4 }}
-                        className="text-xl text-gray-600 max-w-3xl mx-auto mb-12"
-                        style={{ lineHeight: '1.9' }}
+                        className="text-lg text-gray-600 max-w-[660px] mx-auto mb-12"
+                        style={{ lineHeight: '1.85' }}
                     >
-                      AI驱动的职业发展解决方案，助你找到理想工作
+                      最懂大学生的 AI 职业规划助手
                       <br />
-                      <span className="text-gray-500">从职业测试到入职offer，一站式服务</span>
+                      <span className="text-gray-500">上传简历即获专属画像，智能匹配最优岗位，一键生成职业发展报告</span>
                     </motion.p>
 
                     {/* CTA Buttons */}
@@ -655,15 +745,16 @@ export default function Landing() {
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.6, delay: 0.6 }}
-                        className="flex flex-col sm:flex-row gap-5 justify-center"
+                        className="flex flex-col sm:flex-row gap-4 justify-center"
                     >
-                      <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
+                      <motion.div whileHover={{ scale: 1.05, y: -3 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                         <Button
                             type="primary"
                             size="large"
                             icon={<RightOutlined />}
                             onClick={() => navigate('/auth')}
-                            className="landing-cta-btn bg-gradient-to-r from-cyan-500 to-blue-500 border-0 hover:from-cyan-600 hover:to-blue-600 h-16 px-12 text-xl rounded-full shadow-lg shadow-cyan-500/30 hover:shadow-cyan-500/50 transition-all duration-300"
+                            className="landing-cta-btn h-14 px-10 text-lg rounded-full border-0 font-semibold"
+                            style={{ boxShadow: '0 8px 32px rgba(99,102,241,0.35)' }}
                         >
                           立即开始
                         </Button>
@@ -671,10 +762,10 @@ export default function Landing() {
                       <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} transition={{ type: "spring", stiffness: 400 }}>
                         <Button
                             size="large"
-                            onClick={() => document.getElementById('features')?.scrollIntoView({ behavior: 'smooth' })}
-                            className="border-gray-300 text-gray-700 hover:bg-gray-100 h-16 px-12 text-xl rounded-full shadow-md hover:shadow-gray-300/50 transition-all duration-300"
+                            onClick={() => navigate('/auth')}
+                            className="h-14 px-10 text-lg rounded-full border-gray-200 bg-white/60 text-gray-700 backdrop-blur-sm hover:bg-white/80 transition-all duration-300"
                         >
-                          了解更多
+                          已有账号
                         </Button>
                       </motion.div>
                     </motion.div>
@@ -689,9 +780,9 @@ export default function Landing() {
                       className="text-center mb-12"
                   >
                     <h2 className="text-4xl font-bold mb-4" style={{ color: '#0f172a' }}>
-                      核心<span className="text-orange-500">功能</span>
+                      核心功能
                     </h2>
-                    <p className="text-gray-600">全方位助你职业成长</p>
+                    <p className="text-gray-500">全方位助你职业成长</p>
                   </motion.div>
 
                   <motion.div
@@ -818,39 +909,30 @@ export default function Landing() {
                       {features.map((item, idx) => (
                           <ScrollStackItem
                               key={idx}
-                              itemClassName="max-w-full mx-auto !bg-gradient-to-br !from-white !to-gray-50 !border !border-gray-200 !rounded-[2.5rem] !p-6 md:!p-10 !shadow-[0_8px_30px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)] !h-[55vh] min-h-[480px] w-full flex flex-col justify-start relative overflow-hidden"
+                              itemClassName="max-w-full mx-auto !bg-white !border !border-gray-200 !rounded-[2rem] !p-6 md:!p-10 !shadow-[0_2px_12px_rgba(0,0,0,0.06)] !h-[55vh] min-h-[480px] w-full flex flex-col justify-start overflow-hidden"
                           >
-                            <div
-                                className="absolute top-0 inset-x-0 h-1.5 pointer-events-none opacity-80"
-                                style={{ background: "linear-gradient(90deg, transparent, rgba(249,115,22,0.6), transparent)" }}
-                            />
-
-                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-orange-200/20 blur-3xl rounded-full pointer-events-none" />
-                            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-200/20 blur-3xl rounded-full pointer-events-none" />
-
                             <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-3 custom-scrollbar">
                               <div className="flex items-center gap-5 mb-5 shrink-0">
-                                <div className="text-4xl md:text-5xl bg-gradient-to-br from-gray-100 to-transparent p-4 rounded-3xl border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
+                                <div className="text-4xl md:text-5xl bg-gray-50 p-4 rounded-2xl border border-gray-100 flex items-center justify-center shrink-0">
                                   {item.icon}
                                 </div>
                                 <div>
-                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent tracking-tight">{item.title}</h3>
-                                  <p className="text-gray-600 text-base md:text-lg leading-snug">{item.desc}</p>
+                                  <h3 className="text-2xl md:text-3xl font-bold mb-2 text-gray-900 tracking-tight">{item.title}</h3>
+                                  <p className="text-gray-500 text-base md:text-lg leading-snug">{item.desc}</p>
                                 </div>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-5 shrink-0" />
+                              <div className="w-full h-px bg-gray-100 mb-5 shrink-0" />
 
                               <div className="mb-5 flex-grow">
                                 <p className="text-gray-600 text-base md:text-lg leading-relaxed" style={{ lineHeight: '1.8' }}>{item.detailDesc}</p>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-5 shrink-0" />
+                              <div className="w-full h-px bg-gray-100 mb-5 shrink-0" />
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
                                 <div>
-                                  <h4 className="text-sm font-semibold text-orange-400/90 mb-3 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]"></span>
+                                  <h4 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-widest">
                                     适用场景
                                   </h4>
                                   <div className="flex flex-wrap gap-2">
@@ -866,17 +948,16 @@ export default function Landing() {
                                 </div>
 
                                 <div>
-                                  <h4 className="text-sm font-semibold text-orange-400/90 mb-3 uppercase tracking-widest flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shadow-[0_0_8px_rgba(251,146,60,0.8)]"></span>
+                                  <h4 className="text-sm font-semibold text-gray-400 mb-3 uppercase tracking-widest">
                                     效果数据
                                   </h4>
                                   <div className="grid grid-cols-3 gap-3">
                                     {item.stats.map((stat, stIdx) => (
                                         <div
                                             key={stIdx}
-                                            className="text-center p-3 bg-gray-50 border border-gray-200 rounded-2xl"
+                                            className="text-center p-3 bg-gray-50 border border-gray-100 rounded-2xl"
                                         >
-                                          <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent mb-1 tracking-tight">{stat.value}</div>
+                                          <div className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-1 tracking-tight">{stat.value}</div>
                                           <div className="text-xs md:text-sm text-gray-500 font-medium">{stat.label}</div>
                                         </div>
                                     ))}
@@ -891,7 +972,7 @@ export default function Landing() {
                   </div>
                 </div>
 
-                <div className="px-6 pt-0 pb-16 max-w-5xl mx-auto relative z-10 -mt-[250px] md:-mt-[500px]">
+                <div className="px-6 pt-0 pb-16 max-w-5xl mx-auto relative z-10">
                   <motion.div
                       initial={{ opacity: 0, y: 30 }}
                       whileInView={{ opacity: 1, y: 0 }}
@@ -900,9 +981,9 @@ export default function Landing() {
                       className="text-center mb-12"
                   >
                     <h2 className="text-4xl font-bold mb-4" style={{ color: '#0f172a' }}>
-                      与市面<span className="text-orange-500">产品对比</span>
+                      与市面产品对比
                     </h2>
-                    <p className="text-gray-600">功能全面领先，让求职更简单</p>
+                    <p className="text-gray-500">功能全面领先，让求职更简单</p>
                   </motion.div>
 
                   <motion.div
@@ -910,7 +991,7 @@ export default function Landing() {
                       whileInView={{ opacity: 1, scale: 1 }}
                       viewport={{ margin: "-50px" }}
                       transition={{ duration: 0.6 }}
-                      className="space-y-0 bg-white/50 p-6 md:p-10 rounded-3xl border border-gray-200 shadow-xl"
+                      className="space-y-0 bg-white p-6 md:p-10 rounded-2xl border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.06)]"
                   >
                     <motion.div
                         initial={{ opacity: 0, y: -20 }}
@@ -919,7 +1000,7 @@ export default function Landing() {
                         className="grid grid-cols-4 gap-4 pb-5 border-b border-gray-200 text-sm md:text-base font-bold tracking-wide"
                     >
                       <div className="text-left text-gray-500">功能对比</div>
-                      <div className="text-left text-orange-500">我们</div>
+                      <div className="text-left text-indigo-600 font-semibold">我们</div>
                       <div className="text-left text-gray-500">竞品A</div>
                       <div className="text-left text-gray-500">竞品B</div>
                     </motion.div>
@@ -932,7 +1013,7 @@ export default function Landing() {
                             className="grid grid-cols-4 gap-4 py-5 border-b border-gray-100 items-center hover:bg-gray-50 transition-colors rounded-lg px-2 -mx-2"
                         >
                           <div className="text-left font-medium text-gray-700">{row.feature}</div>
-                          <div className="text-left">{row.us && <CheckOutlined className="text-orange-500 text-xl" />}</div>
+                          <div className="text-left">{row.us && <CheckOutlined className="text-indigo-600 text-xl font-bold" />}</div>
                           <div className="text-left">{row.competitionA && <CheckOutlined className="text-gray-500 text-lg" />}</div>
                           <div className="text-left">{row.competitionB && <CheckOutlined className="text-gray-500 text-lg" />}</div>
                         </motion.div>
@@ -949,17 +1030,14 @@ export default function Landing() {
                       className="text-center mb-8"
                   >
                     <h2 className="text-3xl font-bold mb-3" style={{ color: '#0f172a' }}>
-                      用户<span className="text-orange-500">真实评价</span>
+                      用户真实评价
                     </h2>
-                    <p className="text-gray-600">听听他们的使用体验</p>
+                    <p className="text-gray-500">听听他们的使用体验</p>
                   </motion.div>
 
-                  <div className="relative h-96 bg-gradient-to-r from-gray-100 via-gray-50 to-gray-100 rounded-xl overflow-hidden border border-gray-200 shadow-inner">
+                  <div className="relative h-96 bg-white rounded-2xl overflow-hidden border border-gray-200 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">
                     <BarrageCanvas comments={comments} trackCount={8} trackHeight={48} speed={200} spawnInterval={200} />
-                    <div className="absolute top-2 left-2 w-2 h-2 rounded-full bg-orange-500 animate-pulse"></div>
-                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-purple-500 animate-pulse" style={{ animationDelay: '0.5s' }}></div>
-                    <div className="absolute bottom-2 left-1/2 w-2 h-2 rounded-full bg-blue-500 animate-pulse" style={{ animationDelay: '1s' }}></div>
-                  </div>
+                    </div>
                 </div>
 
                 <motion.div
@@ -968,7 +1046,7 @@ export default function Landing() {
                     viewport={{ margin: "-100px" }}
                     transition={{ duration: 0.8 }}
                     className="px-6 py-20 text-center"
-                    style={{ background: 'linear-gradient(135deg, #1e293b, #334155)' }}
+                    style={{ background: '#0f172a' }}
                 >
                   <motion.h2
                       initial={{ opacity: 0, scale: 0.9 }}
@@ -1009,7 +1087,7 @@ export default function Landing() {
                     initial={{ opacity: 0 }}
                     whileInView={{ opacity: 1 }}
                     transition={{ duration: 0.6 }}
-                    className="px-6 py-8 border-t border-gray-200 text-center text-gray-500"
+                    className="px-6 py-8 border-t border-gray-100 text-center text-gray-400"
                 >
                   <p>© 2026 职业规划助手. All rights reserved.</p>
                 </motion.div>
