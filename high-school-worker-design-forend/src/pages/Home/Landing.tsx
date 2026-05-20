@@ -688,10 +688,10 @@ export default function Landing() {
                       transition={{ duration: 0.6 }}
                       className="text-center mb-12"
                   >
-                    <h2 className="text-4xl font-bold mb-4">
-                      核心<span className="text-orange-400">功能</span>
+                    <h2 className="text-4xl font-bold mb-4" style={{ color: '#0f172a' }}>
+                      核心<span className="text-orange-500">功能</span>
                     </h2>
-                    <p className="text-gray-400">全方位助你职业成长</p>
+                    <p className="text-gray-600">全方位助你职业成长</p>
                   </motion.div>
 
                   <motion.div
@@ -728,7 +728,7 @@ export default function Landing() {
                                   <motion.article
                                       key={item.title}
                                       style={{ width: cardWidth, minWidth: cardWidth }}
-                                      className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-xl md:rounded-2xl border border-white/15 bg-[#11131a]"
+                                      className="relative aspect-[16/9] shrink-0 overflow-hidden rounded-xl md:rounded-2xl border border-gray-200 bg-white shadow-lg"
                                       animate={{
                                         opacity: isActive ? 1 : (isMobileGallery ? 0.85 : 0.62),
                                         scale: isActive ? 1 : (isMobileGallery ? 0.96 : 0.92),
@@ -747,7 +747,7 @@ export default function Landing() {
                                           className="absolute inset-0 w-full h-full object-cover rounded-xl md:rounded-2xl"
                                           draggable={false}
                                       />
-                                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/15 to-transparent" />
+                                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                                       <div className="absolute bottom-4 left-4 right-4 text-left">
                                         <h3 className="text-2xl md:text-4xl font-semibold tracking-tight">{item.title}</h3>
                                         <p className="mt-2 text-sm md:text-base text-white/80 leading-relaxed">{item.desc}</p>
@@ -762,7 +762,7 @@ export default function Landing() {
                     </div>
 
                     <div className="mt-5 flex justify-center">
-                      <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-white/45 bg-white/15 px-6 py-2 backdrop-blur-md">
+                      <div className="inline-flex min-w-[320px] md:min-w-[44px] items-center justify-between gap-3 rounded-full border border-gray-300 bg-white/80 px-6 py-2 backdrop-blur-md shadow-sm">
                         <div className="flex items-center gap-2">
                           {features.map((_, idx) => (
                               <motion.button
@@ -770,7 +770,7 @@ export default function Landing() {
                                   type="button"
                                   onClick={() => handleFeatureDotClick(idx)}
                                   className={`h-2.5 rounded-full transition-all duration-300 ${
-                                      idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-white/30' : 'w-2.5 bg-white/60'
+                                      idx === hoveredFeatureIndex ? 'relative w-16 overflow-hidden bg-gray-300' : 'w-2.5 bg-gray-400'
                                   }`}
                                   whileHover={{ scale: 1.2 }}
                                   whileTap={{ scale: 0.9 }}
@@ -778,7 +778,7 @@ export default function Landing() {
                                 {idx === hoveredFeatureIndex ? (
                                     <span
                                         key={`${hoveredFeatureIndex}-${isFeatureAutoPlay ? 'play' : 'pause'}`}
-                                        className="feature-dot-progress absolute inset-y-0 left-0 rounded-full bg-white/95"
+                                        className="feature-dot-progress absolute inset-y-0 left-0 rounded-full bg-indigo-600"
                                         style={{
                                           animationDuration: `${FEATURE_ROTATE_INTERVAL_MS}ms`,
                                           animationPlayState: isFeatureAutoPlay ? 'running' : 'paused',
@@ -793,7 +793,7 @@ export default function Landing() {
                             aria-label={isFeatureAutoPlay ? '关闭自动轮换' : '开启自动轮换'}
                             onClick={() => setIsFeatureAutoPlay((prev) => !prev)}
                             className={`h-8 w-8 rounded-full border flex items-center justify-center transition-all ${
-                                isFeatureAutoPlay ? 'bg-white/35 border-white/90 text-white' : 'bg-white/20 border-white/60 text-white/90'
+                                isFeatureAutoPlay ? 'bg-indigo-100 border-indigo-300 text-indigo-600' : 'bg-gray-100 border-gray-300 text-gray-600'
                             }`}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
