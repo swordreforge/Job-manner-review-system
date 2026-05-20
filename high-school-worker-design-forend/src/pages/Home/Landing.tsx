@@ -818,34 +818,34 @@ export default function Landing() {
                       {features.map((item, idx) => (
                           <ScrollStackItem
                               key={idx}
-                              itemClassName="max-w-full mx-auto !bg-gradient-to-br !from-[#1a1d2c] !to-[#11131a] !border !border-white/10 !rounded-[2.5rem] !p-6 md:!p-10 !shadow-[0_20px_60px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.05)] !h-[55vh] min-h-[480px] w-full flex flex-col justify-start relative overflow-hidden"
+                              itemClassName="max-w-full mx-auto !bg-gradient-to-br !from-white !to-gray-50 !border !border-gray-200 !rounded-[2.5rem] !p-6 md:!p-10 !shadow-[0_8px_30px_rgba(0,0,0,0.08),inset_0_1px_0_rgba(255,255,255,1)] !h-[55vh] min-h-[480px] w-full flex flex-col justify-start relative overflow-hidden"
                           >
                             <div
                                 className="absolute top-0 inset-x-0 h-1.5 pointer-events-none opacity-80"
-                                style={{ background: "linear-gradient(90deg, transparent, rgba(251,146,60,0.8), transparent)" }}
+                                style={{ background: "linear-gradient(90deg, transparent, rgba(249,115,22,0.6), transparent)" }}
                             />
 
-                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-orange-500/10 blur-3xl rounded-full pointer-events-none" />
-                            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
+                            <div className="absolute -top-20 -left-20 w-64 h-64 bg-orange-200/20 blur-3xl rounded-full pointer-events-none" />
+                            <div className="absolute -bottom-20 -right-20 w-80 h-80 bg-blue-200/20 blur-3xl rounded-full pointer-events-none" />
 
                             <div className="relative z-10 flex flex-col h-full overflow-y-auto pr-3 custom-scrollbar">
                               <div className="flex items-center gap-5 mb-5 shrink-0">
-                                <div className="text-4xl md:text-5xl bg-gradient-to-br from-white/10 to-transparent p-4 rounded-3xl border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] flex items-center justify-center shrink-0">
+                                <div className="text-4xl md:text-5xl bg-gradient-to-br from-gray-100 to-transparent p-4 rounded-3xl border border-gray-200 shadow-sm flex items-center justify-center shrink-0">
                                   {item.icon}
                                 </div>
                                 <div>
-                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent tracking-tight">{item.title}</h3>
-                                  <p className="text-gray-400/90 text-base md:text-lg leading-snug">{item.desc}</p>
+                                  <h3 className="text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent tracking-tight">{item.title}</h3>
+                                  <p className="text-gray-600 text-base md:text-lg leading-snug">{item.desc}</p>
                                 </div>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-5 shrink-0" />
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-5 shrink-0" />
 
                               <div className="mb-5 flex-grow">
-                                <p className="text-gray-300 text-base md:text-lg leading-relaxed font-light">{item.detailDesc}</p>
+                                <p className="text-gray-600 text-base md:text-lg leading-relaxed" style={{ lineHeight: '1.8' }}>{item.detailDesc}</p>
                               </div>
 
-                              <div className="w-full h-px bg-gradient-to-r from-transparent via-white/15 to-transparent mb-5 shrink-0" />
+                              <div className="w-full h-px bg-gradient-to-r from-transparent via-gray-200 to-transparent mb-5 shrink-0" />
 
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 shrink-0">
                                 <div>
@@ -857,7 +857,7 @@ export default function Landing() {
                                     {item.scenarios.map((scenario, sIdx) => (
                                         <span
                                             key={sIdx}
-                                            className="px-4 py-1.5 bg-white/5 border border-white/10 rounded-full text-sm text-gray-300 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-md cursor-default"
+                                            className="px-4 py-2 bg-gray-50 border border-gray-200 rounded-full text-sm text-gray-600 cursor-default"
                                         >
                                   {scenario}
                                 </span>
@@ -874,10 +874,10 @@ export default function Landing() {
                                     {item.stats.map((stat, stIdx) => (
                                         <div
                                             key={stIdx}
-                                            className="text-center p-3 bg-white/5 border border-white/10 rounded-2xl shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] backdrop-blur-sm"
+                                            className="text-center p-3 bg-gray-50 border border-gray-200 rounded-2xl"
                                         >
                                           <div className="text-2xl md:text-3xl font-extrabold bg-gradient-to-r from-orange-400 to-pink-500 bg-clip-text text-transparent mb-1 tracking-tight">{stat.value}</div>
-                                          <div className="text-xs md:text-sm text-gray-400 font-medium">{stat.label}</div>
+                                          <div className="text-xs md:text-sm text-gray-500 font-medium">{stat.label}</div>
                                         </div>
                                     ))}
                                   </div>
