@@ -9,11 +9,10 @@ import {
   SearchOutlined,
   MenuOutlined,
   HomeOutlined,
+  CloseOutlined,
 } from '@ant-design/icons';
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
-import LaserGradient from '../../components/LaserGradient';
-import LaserRay from '../../components/LaserRay';
 import DocSearch from '../../components/DocSearch';
 import { useAuthStore } from '../../stores';
 
@@ -118,7 +117,7 @@ function DocContent({ content }: { content: string }) {
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 h-full">
-      <div className="flex-1 overflow-y-auto px-6 py-4">
+      <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
         <div className="prose prose-slate max-w-none">
           <ReactMarkdown
             components={{
@@ -178,7 +177,7 @@ export default function DocPage() {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const [searchParams, setSearchParams] = useSearchParams();
   const [searchOpen, setSearchOpen] = useState(false);
-  const [tocOpen, setTocOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const { docs, setDocs, setActiveDocId, activeDocId, docContents, setDocContent } = useDocStore();
 
   const activeTabId = searchParams.get('tab') || 'guide';
@@ -246,6 +245,7 @@ export default function DocPage() {
   const handleDocSelect = (docId: string) => {
     setSearchParams({ tab: activeTabId, doc: docId });
     setActiveDocId(docId);
+    setSidebarOpen(false);
   };
 
   const content = activeDocId ? docContents[activeDocId] : null;
@@ -275,28 +275,75 @@ export default function DocPage() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [searchOpen]);
 
-  return (
-    <div className="relative flex min-h-[calc(100vh-64px)] flex-col">
-      <LaserGradient />
-      <LaserRay />
+  const sidebarContent = (
+    <div className="p-4">
+      <div className="flex gap-2 mb-4">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+              activeTabId === tab.id
+                ? 'bg-indigo-600 text-white shadow-sm'
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {tab.title}
+          </button>
+        ))}
+      </div>
 
+      <div className="space-y-1">
+        {currentTabDocs.map((doc) => (
+          <motion.button
+            key={doc.id}
+            type="button"
+            onClick={() => handleDocSelect(doc.id)}
+            className={`w-full flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-all ${
+              activeDocId === doc.id
+                ? 'bg-indigo-50 text-indigo-700 font-medium border-l-2 border-indigo-500'
+                : 'text-slate-600 hover:bg-gray-50 hover:shadow-sm'
+            }`}
+            whileHover={{ x: 4 }}
+            transition={{ duration: 0.15 }}
+          >
+            <FileTextOutlined className={activeDocId === doc.id ? 'text-indigo-500' : 'text-slate-400'} />
+            <span className="flex-1">{doc.name}</span>
+            {activeDocId === doc.id && <RightOutlined className="text-xs text-indigo-400" />}
+          </motion.button>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="relative flex min-h-[100vh] flex-col bg-white">
+      {/* Header bar */}
       <motion.div
-        className="flex flex-col lg:flex-row items-start lg:items-center justify-between border-b border-slate-200 bg-white px-4 py-3 gap-4"
+        className="sticky top-0 z-40 flex items-center justify-between border-b border-gray-100 bg-white/80 backdrop-blur-xl px-4 md:px-6 py-3"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, type: 'spring', stiffness: 200 }}
       >
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Mobile sidebar toggle */}
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors"
+          >
+            <MenuOutlined className="text-gray-600" />
+          </button>
           <Button
             type="text"
             icon={<HomeOutlined />}
             onClick={() => navigate(isAuthenticated ? '/start' : '/welcome')}
-            className="text-gray-600 hover:text-orange-500"
+            className="text-gray-600 hover:text-indigo-600"
           />
-          <h1 className="text-lg font-semibold text-slate-800">使用文档</h1>
+          <h1 className="text-lg font-semibold text-gray-800">使用文档</h1>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {/* Desktop tabs */}
           <div className="hidden sm:flex items-center gap-1 bg-gray-100 rounded-lg p-1">
             {tabs.map((tab) => (
               <button
@@ -304,7 +351,7 @@ export default function DocPage() {
                 onClick={() => handleTabChange(tab.id)}
                 className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all ${
                   activeTabId === tab.id
-                    ? 'bg-white text-orange-600 shadow-sm'
+                    ? 'bg-white text-indigo-600 shadow-sm'
                     : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
@@ -316,77 +363,31 @@ export default function DocPage() {
           <motion.button
             type="button"
             onClick={() => setSearchOpen(true)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
           >
             <SearchOutlined />
             <span className="hidden sm:inline">搜索</span>
-            <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-slate-200 rounded text-xs font-mono">
+            <kbd className="hidden sm:inline-block px-1.5 py-0.5 bg-gray-200 rounded text-xs font-mono">
               Ctrl K
             </kbd>
           </motion.button>
-
-          {content && (
-            <motion.button
-              type="button"
-              onClick={() => setTocOpen(true)}
-              className="lg:hidden flex items-center gap-2 px-3 py-2 text-sm text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <MenuOutlined />
-              <span>目录</span>
-            </motion.button>
-          )}
         </div>
       </motion.div>
 
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
+        {/* Desktop sidebar */}
         <motion.aside
-          className="w-full lg:w-64 flex-shrink-0 overflow-y-auto border-b lg:border-b-0 lg:border-r border-slate-200 bg-slate-50 p-4"
+          className="hidden lg:block w-64 flex-shrink-0 overflow-y-auto border-r border-gray-100 bg-gray-50/50"
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div className="sm:hidden mb-4 flex gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => handleTabChange(tab.id)}
-                className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all ${
-                  activeTabId === tab.id
-                    ? 'bg-orange-500 text-white'
-                    : 'bg-white text-gray-600 border border-gray-200'
-                }`}
-              >
-                {tab.title}
-              </button>
-            ))}
-          </div>
-
-          <div className="space-y-1">
-            {currentTabDocs.map((doc) => (
-              <motion.button
-                key={doc.id}
-                type="button"
-                onClick={() => handleDocSelect(doc.id)}
-                className={`w-full flex items-center gap-2 rounded-lg p-2.5 text-left text-sm transition-all ${
-                  activeDocId === doc.id
-                    ? 'bg-orange-50 text-orange-700 font-medium border-l-2 border-orange-500'
-                    : 'text-slate-600 hover:bg-white hover:shadow-sm'
-                }`}
-                whileHover={{ x: 4 }}
-                transition={{ duration: 0.15 }}
-              >
-                <FileTextOutlined className={activeDocId === doc.id ? 'text-orange-500' : 'text-slate-400'} />
-                <span className="flex-1">{doc.name}</span>
-                {activeDocId === doc.id && <RightOutlined className="text-xs text-orange-400" />}
-              </motion.button>
-            ))}
-          </div>
+          {sidebarContent}
         </motion.aside>
 
+        {/* Main content */}
         <motion.main
           className="flex-1 overflow-y-auto bg-white"
           initial={{ opacity: 0 }}
@@ -411,54 +412,44 @@ export default function DocPage() {
         </motion.main>
       </div>
 
+      {/* Mobile sidebar drawer */}
       <AnimatePresence>
-        {tocOpen && content && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-50 lg:hidden"
-            onClick={() => setTocOpen(false)}
-          >
+        {sidebarOpen && (
+          <>
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm lg:hidden"
+              onClick={() => setSidebarOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="absolute right-0 top-0 bottom-0 w-72 bg-white shadow-xl"
-              onClick={(e) => e.stopPropagation()}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed top-0 left-0 bottom-0 z-50 w-[280px] bg-white shadow-2xl lg:hidden"
             >
-              <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-                <h3 className="font-semibold">目录</h3>
-                <button onClick={() => setTocOpen(false)} className="text-gray-500 hover:text-gray-700">
-                  ✕
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                    <FileTextOutlined className="text-white text-xs" />
+                  </div>
+                  <span className="font-semibold text-gray-900">文档目录</span>
+                </div>
+                <button
+                  onClick={() => setSidebarOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition-colors"
+                >
+                  <CloseOutlined className="text-gray-500" />
                 </button>
               </div>
-              <div className="p-4 overflow-y-auto max-h-[calc(100vh-64px)]">
-                <nav className="space-y-1">
-                  {extractHeadings(content).filter(h => h.level <= 3).map((heading, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => {
-                        const element = document.getElementById(heading.id);
-                        if (element) {
-                          element.scrollIntoView({ behavior: 'smooth' });
-                          setTocOpen(false);
-                        }
-                      }}
-                      className={`block w-full text-left text-sm py-1.5 px-2 rounded hover:bg-gray-100 ${
-                        heading.level === 1 ? 'font-medium' :
-                        heading.level === 2 ? 'pl-4 text-gray-600' :
-                        'pl-8 text-gray-500'
-                      }`}
-                    >
-                      {heading.text}
-                    </button>
-                  ))}
-                </nav>
+              <div className="overflow-y-auto max-h-[calc(100vh-56px)]">
+                {sidebarContent}
               </div>
             </motion.div>
-          </motion.div>
+          </>
         )}
       </AnimatePresence>
 
