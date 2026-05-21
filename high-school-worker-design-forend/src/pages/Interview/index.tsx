@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Button, Segmented, Input, Avatar, Tag, message, Spin, Modal, Progress, List } from 'antd';
+import { Card, Button, Segmented, Input, Avatar, Tag, message, Modal, Progress, List } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import ApiErrorState from '../../components/ApiErrorState';
 import './FloatingPolygons.css';
 
 export default function InterviewPage() {
@@ -761,12 +764,20 @@ export default function InterviewPage() {
       : '准备建议：准备自我介绍模板、结构化问题库，突出稳定性、组织纪律性、文字功底，提前了解企业最新政策动态，体现集体意识和政治觉悟';
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return '#52c41a';
-    if (score >= 80) return '#1890ff';
-    if (score >= 70) return '#faad14';
-    if (score >= 60) return '#fa8c16';
-    return '#f5222d';
+  const getScoreColor = (score: number): string => {
+    if (score >= 90) return 'var(--md-sys-color-success)';
+    if (score >= 80) return 'var(--md-sys-color-primary)';
+    if (score >= 70) return 'var(--md-sys-color-warning)';
+    if (score >= 60) return 'var(--md-sys-color-warning)';
+    return 'var(--md-sys-color-error)';
+  };
+
+  const getScoreColorHex = (score: number): string => {
+    if (score >= 90) return '#1B8C3B';
+    if (score >= 80) return '#0B57D0';
+    if (score >= 70) return '#8F5900';
+    if (score >= 60) return '#8F5900';
+    return '#BA1A1A';
   };
 
   const getScoreLabel = (score: number) => {
@@ -818,7 +829,7 @@ export default function InterviewPage() {
             className="glass-effect shadow-xl"
           >
             <div className="text-center mb-6">
-              <p className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)]">选择面试模式，开始你的模拟面试练习</p>
+              <p style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>选择面试模式，开始你的模拟面试练习</p>
             </div>
             
             <Segmented
@@ -844,21 +855,22 @@ export default function InterviewPage() {
               size="large"
             />
             
-            <Card 
-              className={mode === 'practice' ? 'glass-effect border-blue-500 dark:border-blue-400 shadow-md' : 'glass-effect border-green-500 dark:border-green-400 shadow-md'}
+            <SurfaceCard
+              variant="outlined"
+              style={mode === 'practice' ? { borderColor: 'var(--md-sys-color-primary)' } : { borderColor: 'var(--md-sys-color-success)' }}
             >
               <div className="text-center">
                                 <div className="text-4xl mb-3">{mode === 'practice' ? '🏢' : '🏛️'}</div>
                                 <div className="font-semibold text-lg mb-2">
                                   {mode === 'practice' ? '大厂技术面' : '国企综合面'}
                                 </div>
-                                <div className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)] mb-3 text-left">
+                                <div className="mb-3 text-left" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                                   {getModeDescription(mode)}
                                 </div>
-                                <div className="text-sm text-gray-700 text-left bg-blue-50 dark:bg-[var(--md-sys-color-surface-container-high)] p-3 rounded-lg dark:text-[var(--md-sys-color-on-surface-variant)]">
+                                <div className="text-sm text-left p-3 rounded-lg" style={{ color: 'var(--md-sys-color-on-surface-variant)', backgroundColor: 'var(--md-sys-color-primary-container)' }}>
                                   💡 {getModeRecommendation(mode)}
                                 </div>
-                              </div>            </Card>
+                              </div>            </SurfaceCard>
             
             <Button 
               type="primary" 
@@ -896,7 +908,7 @@ export default function InterviewPage() {
                   <Avatar size="large" icon={<RobotOutlined />} />
                   <div>
                     <div className="text-lg font-semibold">{getModeLabel(mode)} - 模拟面试</div>
-                    <div className="text-sm text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
+                    <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                       平均分: <span style={{ color: getScoreColor(averageScore), fontWeight: 'bold' }}>
                         {averageScore.toFixed(1)} ({getScoreLabel(averageScore)})
                       </span>
@@ -932,7 +944,8 @@ export default function InterviewPage() {
                       <Avatar 
                         size="small" 
                         icon={msg.role === 'user' ? <UserOutlined /> : <RobotOutlined />}
-                        className={msg.role === 'user' ? 'bg-blue-500' : 'bg-green-500'}
+                        className={msg.role === 'user' ? '' : ''}
+                        style={{ backgroundColor: msg.role === 'user' ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-success)' }}
                       />
                       <div className={`p-4 rounded-2xl interview-msg-${msg.role} ${
                         msg.role === 'user' 
@@ -966,20 +979,20 @@ export default function InterviewPage() {
                 ))}
                 {currentScore !== null && (
                   <div className="flex justify-center">
-                    <Card size="small" className="glass-effect interview-score-card">
+                    <SurfaceCard variant="elevated">
                       <div className="text-center">
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">本次回答评分</div>
+                        <div className="text-sm mb-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>本次回答评分</div>
                         <div className="text-3xl font-bold" style={{ color: getScoreColor(currentScore) }}>
                           {currentScore}
                         </div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">{getScoreLabel(currentScore)}</div>
+                        <div className="text-sm mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{getScoreLabel(currentScore)}</div>
                         {currentFeedback && (
-                          <div className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
+                          <div className="mt-2 text-sm italic" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                             💡 {currentFeedback}
                           </div>
                         )}
                       </div>
-                    </Card>
+</SurfaceCard>
                   </div>
                 )}
                 <div ref={messagesEndRef} />
@@ -996,7 +1009,7 @@ export default function InterviewPage() {
                       loading={transcribing}
                       className="flex items-center gap-2 min-w-[180px]"
                     >
-                      <span className="animate-pulse text-red-500">●</span>
+                      <span className="animate-pulse" style={{ color: 'var(--md-sys-color-error)' }}>●</span>
                       停止录音 ({formatTime(recordingTime)})
                     </Button>
                   ) : (
@@ -1011,11 +1024,11 @@ export default function InterviewPage() {
                     </Button>
                   )}
                   
-                  <div className="flex-1 text-center text-sm text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
+                  <div className="flex-1 text-center text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                     {isRecording ? (
-                      <span className="text-red-500 font-medium">正在录音...</span>
+                      <span className="font-medium" style={{ color: 'var(--md-sys-color-error)' }}>正在录音...</span>
                     ) : transcribing ? (
-                      <span className="text-blue-500 font-medium">正在识别...</span>
+                      <span className="font-medium" style={{ color: 'var(--md-sys-color-primary)' }}>正在识别...</span>
                     ) : (
                       <span>支持语音输入，点击按钮开始录音</span>
                     )}
@@ -1066,7 +1079,7 @@ export default function InterviewPage() {
         footer={null}
         width={800}
       >
-        <Spin spinning={historyLoading}>
+        {historyLoading ? <SkeletonLoader type="list" /> : (
           <List
             dataSource={historyList}
             renderItem={(item) => {
@@ -1117,12 +1130,12 @@ export default function InterviewPage() {
                             </Tag>
                           )}
                           <span className="ml-2 text-sm">
-                            平均分: <span style={{ color: isCancelled ? '#999' : getScoreColor(item.averageScore), fontWeight: 'bold' }}>
+                            平均分: <span style={{ color: isCancelled ? 'var(--md-sys-color-on-surface-variant)' : getScoreColor(item.averageScore), fontWeight: 'bold' }}>
                               {isCancelled ? '-' : item.averageScore.toFixed(1)}
                             </span>
                           </span>
                         </div>
-                        <div className="text-xs text-gray-500 dark:text-[var(--md-sys-color-on-surface-variant)]">
+                        <div className="text-xs" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                           问题数: {item.currentQuestion}/{item.totalQuestions} | 
                           时长: {Math.floor(item.durationSeconds / 60)}分钟
                         </div>
@@ -1133,7 +1146,7 @@ export default function InterviewPage() {
               );
             }}
           />
-        </Spin>
+        )}
       </Modal>
       
       {/* 面试报告弹窗 */}
@@ -1149,22 +1162,20 @@ export default function InterviewPage() {
         footer={null}
         width={900}
       >
-        <Spin spinning={reportLoading}>
-          {currentReport && (
+        {reportLoading ? <SkeletonLoader type="card" /> : (
+          currentReport && (
             <div className="space-y-6">
-              {/* 总体评分 */}
-              <Card title="总体评价" className="glass-effect interview-report-overview">
+              <SurfaceCard title="总体评价">
                 <div className="text-center">
                   <div className="text-6xl font-bold mb-2" style={{ color: getScoreColor(currentReport.overallScore) }}>
                     {currentReport.overallScore.toFixed(1)}
                   </div>
-                  <div className="text-xl text-gray-700 dark:text-[var(--md-sys-color-on-surface)] mb-4">{getScoreLabel(currentReport.overallScore)}</div>
-                  <div className="text-gray-600 dark:text-[var(--md-sys-color-on-surface-variant)]">{currentReport.summary}</div>
+                  <div className="text-xl mb-4" style={{ color: 'var(--md-sys-color-on-surface)' }}>{getScoreLabel(currentReport.overallScore)}</div>
+                  <div style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{currentReport.summary}</div>
                 </div>
-              </Card>
+              </SurfaceCard>
               
-              {/* 各项能力评分 */}
-              <Card title="能力评分" className="glass-effect">
+              <SurfaceCard title="能力评分">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="flex justify-between mb-1">
@@ -1173,7 +1184,7 @@ export default function InterviewPage() {
                     </div>
                     <Progress 
                       percent={currentReport.skillScore} 
-                      strokeColor={getScoreColor(currentReport.skillScore)}
+                      strokeColor={getScoreColorHex(currentReport.skillScore)}
                       size="small"
                     />
                   </div>
@@ -1184,7 +1195,7 @@ export default function InterviewPage() {
                     </div>
                     <Progress 
                       percent={currentReport.communicationScore} 
-                      strokeColor={getScoreColor(currentReport.communicationScore)}
+                      strokeColor={getScoreColorHex(currentReport.communicationScore)}
                       size="small"
                     />
                   </div>
@@ -1195,7 +1206,7 @@ export default function InterviewPage() {
                     </div>
                     <Progress 
                       percent={currentReport.logicScore} 
-                      strokeColor={getScoreColor(currentReport.logicScore)}
+                      strokeColor={getScoreColorHex(currentReport.logicScore)}
                       size="small"
                     />
                   </div>
@@ -1206,41 +1217,39 @@ export default function InterviewPage() {
                     </div>
                     <Progress 
                       percent={currentReport.confidenceScore} 
-                      strokeColor={getScoreColor(currentReport.confidenceScore)}
+                      strokeColor={getScoreColorHex(currentReport.confidenceScore)}
                       size="small"
                     />
                   </div>
                 </div>
-              </Card>
+              </SurfaceCard>
               
-              {/* 优势分析 */}
-              <Card title="✅ 优势分析" className="glass-effect">
+              <SurfaceCard title="✅ 优势分析">
                 <List
                   dataSource={currentReport.strengths}
-                  renderItem={(item) => (
+                  renderItem={(item: string) => (
                     <List.Item>
-                      <CheckCircleOutlined className="text-green-500 mr-2" />
+                      <CheckCircleOutlined className="mr-2" style={{ color: 'var(--md-sys-color-success)' }} />
                       {item}
                     </List.Item>
                   )}
                 />
-              </Card>
+              </SurfaceCard>
               
-              {/* 改进建议 */}
-              <Card title="💡 改进建议" className="glass-effect">
+              <SurfaceCard title="💡 改进建议">
                 <List
                   dataSource={currentReport.improvementSuggestions}
-                  renderItem={(item) => (
+                  renderItem={(item: string) => (
                     <List.Item>
-                      <span className="text-blue-500 mr-2">•</span>
+                      <span className="mr-2" style={{ color: 'var(--md-sys-color-primary)' }}>•</span>
                       {item}
                     </List.Item>
                   )}
                 />
-              </Card>
+              </SurfaceCard>
             </div>
-          )}
-        </Spin>
+          )
+        )}
       </Modal>
     </div>
   );
