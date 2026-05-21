@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, Upload, Button, message, Steps, Result, List, Tag, Progress, Empty, Modal, Drawer, Space, Popconfirm } from 'antd';
+import { Upload, Button, message, Steps, List, Tag, Modal, Drawer, Space, Popconfirm } from 'antd';
 import { UploadOutlined, FileTextOutlined, CheckCircleOutlined, ReloadOutlined, HistoryOutlined, DeleteOutlined, EyeOutlined, InboxOutlined, SafetyCertificateOutlined, RocketOutlined, BulbOutlined, ExportOutlined } from '@ant-design/icons';
 import type { UploadFile } from 'antd';
 import { studentApi } from '../../api';
 import type { Student, ResumeHistoryRecord } from '../../types';
 import { useTaskStore } from '../../stores';
+import SurfaceCard from '../../components/SurfaceCard';
+
+import PageHeader from '../../components/PageHeader';
 
 export default function ResumePage() {
   type ApiErrorLike = {
@@ -19,7 +22,6 @@ export default function ResumePage() {
     message?: string;
   };
 
-  // 文件队列状态类型
   type FileQueueItem = {
     uid: string;
     file: File;
@@ -37,25 +39,20 @@ export default function ResumePage() {
   const [profile, setProfile] = useState<Student | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 文件队列相关状态
   const [fileQueue, setFileQueue] = useState<FileQueueItem[]>([]);
   const [isUploadingQueue, setIsUploadingQueue] = useState(false);
   const [currentUploadingIndex, setCurrentUploadingIndex] = useState(-1);
   const [, setShowQueue] = useState(false);
 
-  // PDF预览相关状态
   const [previewVisible, setPreviewVisible] = useState(false);
   const [previewFileName, setPreviewFileName] = useState('');
   const [previewFileUrl, setPreviewFileUrl] = useState('');
 
-  // 历史记录相关状态
   const [historyVisible, setHistoryVisible] = useState(false);
   const [historyList, setHistoryList] = useState<ResumeHistoryRecord[]>([]);
 
-  // 任务状态管理
   const { setActiveTask, hasActiveTask } = useTaskStore();
 
-  // 监听任务状态变化，用于调试
   useEffect(() => {
     console.log('[Resume] Task state changed:', { hasActiveTask });
   }, [hasActiveTask]);
@@ -64,11 +61,9 @@ export default function ResumePage() {
   const [historyPage, setHistoryPage] = useState(1);
   const [historyPageSize] = useState(10);
 
-  // 详情抽屉状态
   const [detailVisible, setDetailVisible] = useState(false);
   const [detailRecord, setDetailRecord] = useState<ResumeHistoryRecord | null>(null);
 
-  // 加载历史记录
   const loadHistory = async (page = historyPage) => {
     setHistoryLoading(true);
     try {
@@ -93,13 +88,11 @@ export default function ResumePage() {
     }
   };
 
-  // 打开历史记录
   const handleOpenHistory = () => {
     setHistoryVisible(true);
     void loadHistory(1);
   };
 
-  // 查看详情
   const handleViewDetail = async (id: number) => {
     try {
       const response = await studentApi.getResumeHistoryDetail(id);
@@ -115,7 +108,6 @@ export default function ResumePage() {
     }
   };
 
-  // 删除历史记录
   const handleDeleteHistory = async (id: number) => {
     try {
       const response = await studentApi.deleteResumeHistory(id);
@@ -131,7 +123,6 @@ export default function ResumePage() {
     }
   };
 
-  // 格式化时间
   const formatTime = (timestamp: number) => {
     const date = new Date(timestamp * 1000);
     return date.toLocaleString('zh-CN', {
@@ -143,7 +134,6 @@ export default function ResumePage() {
     });
   };
 
-  // 文件转 base64
   const fileToBase64 = (file: File): Promise<string> => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -156,14 +146,12 @@ export default function ResumePage() {
     });
   };
 
-  // 处理文件加入队列
   const handleAddToQueue = async () => {
     if (fileList.length === 0) {
       message.warning('请先选择简历文件');
       return;
     }
 
-    // 验证所有文件
     const invalidFiles: string[] = [];
     const maxSize = 10 * 1024 * 1024;
 
@@ -186,7 +174,6 @@ export default function ResumePage() {
       return;
     }
 
-    // 创建文件队列
     const queue: FileQueueItem[] = fileList.map((fileItem) => ({
       uid: fileItem.uid,
       file: fileItem.originFileObj!,
@@ -199,7 +186,6 @@ export default function ResumePage() {
     message.success('文件已加入队列');
   };
 
-  // 处理文件上传（开始解析）
   const handleUpload = async () => {
     if (fileQueue.length === 0) {
       message.warning('请先加入文件到队列');
@@ -208,21 +194,17 @@ export default function ResumePage() {
     void handleUploadQueue();
   };
 
-  // 处理队列上传
   const handleUploadQueue = async () => {
     setIsUploadingQueue(true);
     setCurrentUploadingIndex(0);
     setActiveTask(true, '简历上传和解析中');
 
-    // 逐个处理队列中的文件
     for (let i = 0; i < fileQueue.length; i++) {
       setCurrentUploadingIndex(i);
       await processFileInQueue(i);
 
-      // 如果上一个文件失败，可以选择继续或停止
       const currentStatus = fileQueue[i]?.status;
       if (currentStatus === 'failed') {
-        // 继续处理下一个文件
         continue;
       }
     }
@@ -231,7 +213,6 @@ export default function ResumePage() {
     setCurrentUploadingIndex(-1);
     setActiveTask(false);
 
-    // 检查是否有成功解析的文件
     const firstSuccess = fileQueue.find((item) => item.status === 'success');
     if (firstSuccess?.result) {
       setProfile(firstSuccess.result);
@@ -239,20 +220,17 @@ export default function ResumePage() {
     }
   };
 
-  // 处理单个文件上传
   const processFileInQueue = async (index: number) => {
     const item = fileQueue[index];
     if (!item) return;
 
     try {
-      // 更新状态为上传中
       setFileQueue((prev) =>
         prev.map((queueItem, idx) =>
           idx === index ? { ...queueItem, status: 'uploading', progress: 0 } : queueItem
         )
       );
 
-      // 文件转 base64
       setFileQueue((prev) =>
         prev.map((queueItem, idx) =>
           idx === index ? { ...queueItem, progress: 20 } : queueItem
@@ -260,7 +238,6 @@ export default function ResumePage() {
       );
       const base64Content = await fileToBase64(item.file);
 
-      // 上传到后端
       setFileQueue((prev) =>
         prev.map((queueItem, idx) =>
           idx === index ? { ...queueItem, progress: 40 } : queueItem
@@ -272,7 +249,6 @@ export default function ResumePage() {
         fileName: item.file.name,
       });
 
-      // 处理响应
       if (response && response.code === 0) {
         const result = response.data;
         const skillsCount = result.skills?.length || 0;
@@ -280,7 +256,6 @@ export default function ResumePage() {
         const internshipCount = result.internship?.length || 0;
         const projectsCount = result.projects?.length || 0;
 
-        // 构建合并摘要消息
         const summaryParts = [];
         if (skillsCount > 0) summaryParts.push(`${skillsCount}个技能`);
         if (certsCount > 0) summaryParts.push(`${certsCount}个证书`);
@@ -299,7 +274,6 @@ export default function ResumePage() {
           )
         );
         message.success(summaryMsg);
-        // Set profile and parsed state for the first successful result
         setProfile(response.data);
         setParsed(true);
       } else {
@@ -315,7 +289,6 @@ export default function ResumePage() {
         errorMsg = apiErr.message;
       }
 
-      // 特殊处理 401 错误
       if (apiErr.response?.status === 401) {
         errorMsg = '请先登录后再上传简历';
         message.error(errorMsg);
@@ -338,12 +311,10 @@ export default function ResumePage() {
     }
   };
 
-  // 从队列中移除文件
   const removeFileFromQueue = (uid: string) => {
     setFileQueue((prev) => prev.filter((item) => item.uid !== uid));
   };
 
-  // 重置队列
   const resetQueue = () => {
     setActiveTask(false);
     setFileQueue([]);
@@ -353,7 +324,6 @@ export default function ResumePage() {
     setCurrentUploadingIndex(-1);
   };
 
-  // 重新上传
   const handleReset = () => {
     setFileList([]);
     setParsed(false);
@@ -363,7 +333,6 @@ export default function ResumePage() {
     resetQueue();
   };
 
-  // 转换学历枚举值到中文
   const getEducationText = (education?: string) => {
     const map: Record<string, string> = {
       'high_school': '高中',
@@ -374,18 +343,23 @@ export default function ResumePage() {
     return education ? (map[education] || education) : '未提取';
   };
 
+  const getProgressColor = (value: number): string => {
+    if (value >= 80) return 'var(--md-sys-color-success)';
+    if (value >= 60) return 'var(--md-sys-color-warning)';
+    return 'var(--md-sys-color-error)';
+  };
+
   return (
     <div className="resume-page min-h-screen relative z-10 p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex justify-between items-center mb-4">
-          <h1 className="text-2xl font-bold">简历解析</h1>
+        <PageHeader title="简历解析">
           <Button
             icon={<HistoryOutlined />}
             onClick={handleOpenHistory}
           >
             查看历史
           </Button>
-        </div>
+        </PageHeader>
 
         <div className="max-w-4xl mx-auto">
           <Steps
@@ -400,20 +374,7 @@ export default function ResumePage() {
 
           {!parsed ? (
             <>
-              <Card
-                title="上传简历"
-                className="resume-upload-card shadow-sm"
-                styles={{
-                  header: {
-                    backgroundColor: 'var(--md-sys-color-surface-container-low)',
-                    color: 'var(--md-sys-color-on-surface)',
-                    borderBottom: '1px solid var(--md-sys-color-outline-variant)',
-                  },
-                  body: {
-                    backgroundColor: 'var(--md-sys-color-surface-container-low)',
-                  },
-                }}
-              >
+              <SurfaceCard title="上传简历">
                 <Upload.Dragger
                   fileList={fileList}
                   onChange={({ fileList }) => setFileList(fileList)}
@@ -424,26 +385,30 @@ export default function ResumePage() {
                   className="resume-upload-dragger [&.ant-upload-wrapper_.ant-upload-drag]:border-2! [&.ant-upload-wrapper_.ant-upload-drag]:border-dashed! [&.ant-upload-wrapper_.ant-upload-drag]:border-[var(--md-sys-color-outline-variant)]! [&.ant-upload-wrapper_.ant-upload-drag]:bg-[var(--md-sys-color-surface-container)]!"
                 >
                   <p className="ant-upload-drag-icon mb-3!">
-                    <InboxOutlined className="text-5xl text-blue-500" />
+                    <InboxOutlined style={{ fontSize: '3rem', color: 'var(--md-sys-color-primary)' }} />
                   </p>
                   <p className="ant-upload-text text-base font-medium">点击上传，或将文件拖拽到此处</p>
-                  <p className="ant-upload-hint mt-2">支持 PDF、DOCX 格式，文件大小不超过 10MB，可批量上传</p>
+                  <p className="ant-upload-hint mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>支持 PDF、DOCX 格式，文件大小不超过 10MB，可批量上传</p>
                 </Upload.Dragger>
 
                 {progress > 0 && progress < 100 && (
-                  <Progress
-                    percent={progress}
-                    status="active"
-                    className="mt-4"
-                    format={() => parsing ? 'AI 解析中...' : '上传中...'}
-                  />
+                  <div className="mt-4">
+                    <div className="w-full">
+                      <div className="flex justify-between mb-1">
+                        <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>上传进度</span>
+                        <span className="md-typescale-label-medium" style={{ color: 'var(--md-sys-color-primary)' }}>{progress}%</span>
+                      </div>
+                      <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                        <div style={{ width: `${progress}%`, backgroundColor: 'var(--md-sys-color-primary)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                      </div>
+                    </div>
+                  </div>
                 )}
 
-                {/* 队列文件列表 */}
                 {fileQueue.length > 0 && (
                   <div className="mt-4">
                     <div className="flex justify-between items-center mb-3">
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
                         上传队列 ({fileQueue.filter((item) => item.status === 'success').length}/{fileQueue.length})
                       </span>
                       {!isUploadingQueue && (
@@ -458,19 +423,19 @@ export default function ResumePage() {
                       renderItem={(item, index) => (
                         <List.Item
                           key={item.uid}
-                          className="cursor-pointer hover:bg-gray-50"
+                          className="cursor-pointer"
+                          style={{ hoverBackgroundColor: 'var(--md-sys-color-surface-container-low)' }}
                           onClick={() => {
                             if (item.status === 'success' && item.result) {
-                              // 创建临时的详情记录用于显示
                               const tempDetail: ResumeHistoryRecord = {
-                                id: Date.now(), // 使用时间戳作为临时ID
+                                id: Date.now(),
                                 resumeFileName: item.file.name,
                                 createdAt: Math.floor(Date.now() / 1000),
                                 completenessScore: item.result.completeness || 0,
                                 competitivenessScore: item.result.competitiveness || 0,
                                 suggestions: item.result.suggestions || [],
                                 parsedProfile: item.result,
-                                resumeContent: '', // 临时记录，没有原始内容
+                                resumeContent: '',
                               };
                               setDetailRecord(tempDetail);
                               setDetailVisible(true);
@@ -496,14 +461,14 @@ export default function ResumePage() {
                           <List.Item.Meta
                             avatar={
                               <FileTextOutlined
-                                className={
+                                style={
                                   item.status === 'success'
-                                    ? 'text-green-500'
+                                    ? { color: 'var(--md-sys-color-success)' }
                                     : item.status === 'failed'
-                                    ? 'text-red-500'
+                                    ? { color: 'var(--md-sys-color-error)' }
                                     : item.status === 'uploading'
-                                    ? 'text-blue-500'
-                                    : 'text-gray-400'
+                                    ? { color: 'var(--md-sys-color-primary)' }
+                                    : { color: 'var(--md-sys-color-outline)' }
                                 }
                               />
                             }
@@ -535,22 +500,22 @@ export default function ResumePage() {
                             description={
                               <div className="w-full">
                                 {item.status === 'uploading' && (
-                                  <Progress
-                                    percent={item.progress}
-                                    size="small"
-                                    showInfo={false}
-                                  />
+                                  <div className="w-full">
+                                    <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '6px', overflow: 'hidden' }}>
+                                      <div style={{ width: `${item.progress}%`, backgroundColor: 'var(--md-sys-color-primary)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                                    </div>
+                                  </div>
                                 )}
                                 {item.status === 'failed' && item.error && (
-                                  <span className="text-red-500 text-xs">{item.error}</span>
+                                  <span className="text-xs" style={{ color: 'var(--md-sys-color-error)' }}>{item.error}</span>
                                 )}
                                 {item.status === 'success' && item.result && (
-                                  <span className="text-green-600 text-xs">
+                                  <span className="text-xs" style={{ color: 'var(--md-sys-color-success)' }}>
                                     完整度：{item.result.completeness || 0}分 | 竞争力：{item.result.competitiveness || 0}分
                                   </span>
                                 )}
                                 {item.status === 'success' && (
-                                  <span className="text-blue-500 text-xs ml-2">
+                                  <span className="text-xs ml-2" style={{ color: 'var(--md-sys-color-primary)' }}>
                                     点击查看详情
                                   </span>
                                 )}
@@ -564,8 +529,8 @@ export default function ResumePage() {
                 )}
 
                 {error && (
-                  <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-red-600 text-sm">{error}</p>
+                  <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: 'var(--md-sys-color-error-container)', border: '1px solid var(--md-sys-color-error-container)' }}>
+                    <p className="text-sm" style={{ color: 'var(--md-sys-color-error)' }}>{error}</p>
                   </div>
                 )}
 
@@ -580,11 +545,11 @@ export default function ResumePage() {
                     {isUploadingQueue ? '解析中...' : fileQueue.length > 0 ? '开始解析' : '加入队列'}
                   </Button>
                 </div>
-              </Card>
+              </SurfaceCard>
 
-              <Card className="mt-4" size="small">
+              <SurfaceCard variant="outlined" className="mt-4">
                 <div className="flex flex-wrap items-center gap-3 text-sm">
-                  <span className="text-gray-500">示例模板：</span>
+                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>示例模板：</span>
                   <Button
                     type="link"
                     className="px-0!"
@@ -614,274 +579,271 @@ export default function ResumePage() {
                     下载模板.docx
                   </Button>
                 </div>
-              </Card>
+              </SurfaceCard>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                <Card size="small">
+                <SurfaceCard variant="outlined">
                   <div className="flex items-start gap-3">
-                    <BulbOutlined className="text-2xl text-violet-500" />
+                    <BulbOutlined className="text-2xl" style={{ color: 'var(--md-sys-color-tertiary)' }} />
                     <div>
-                      <div className="font-medium">智能提取</div>
-                      <div className="text-sm text-gray-500">自动识别教育背景、技能与项目经历</div>
+                      <div className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>智能提取</div>
+                      <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>自动识别教育背景、技能与项目经历</div>
                     </div>
                   </div>
-                </Card>
-                <Card size="small">
+                </SurfaceCard>
+                <SurfaceCard variant="outlined">
                   <div className="flex items-start gap-3">
-                    <SafetyCertificateOutlined className="text-2xl text-emerald-500" />
+                    <SafetyCertificateOutlined className="text-2xl" style={{ color: 'var(--md-sys-color-success)' }} />
                     <div>
-                      <div className="font-medium">安全隐私</div>
-                      <div className="text-sm text-gray-500">上传链路受控，过程仅用于当前解析任务</div>
+                      <div className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>安全隐私</div>
+                      <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>上传链路受控，过程仅用于当前解析任务</div>
                     </div>
                   </div>
-                </Card>
-                <Card size="small">
+                </SurfaceCard>
+                <SurfaceCard variant="outlined">
                   <div className="flex items-start gap-3">
-                    <RocketOutlined className="text-2xl text-orange-500" />
+                    <RocketOutlined className="text-2xl" style={{ color: 'var(--md-sys-color-warning)' }} />
                     <div>
-                      <div className="font-medium">优化建议</div>
-                      <div className="text-sm text-gray-500">生成可执行的简历完善建议，提升竞争力</div>
+                      <div className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>优化建议</div>
+                      <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>生成可执行的简历完善建议，提升竞争力</div>
                     </div>
                   </div>
-                </Card>
+                </SurfaceCard>
               </div>
             </>
           ) : (
-        <Result
-                    status="success"
-                    title="简历解析完成"
-                    subTitle="AI 已完成简历分析，以下是详细信息"
-                    extra={[
-                      <Button
-                        type="primary"
-                        key="optimize"
-                        onClick={() => {
-                          const element = document.getElementById('suggestions-section');
-                          if (element) {
-                            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                          }
-                        }}
-                      >
-                        查看优化建议
-                      </Button>,
-                      <Button
-                        key="export"
-                        onClick={() => navigate('/resume/editor', { state: { profile } })}
-                      >
-                        优化并导出简历
-                      </Button>,
-                      <Button key="reset" icon={<ReloadOutlined />} onClick={handleReset}>
-                        重新上传
-                      </Button>,
-                    ]}
-                  >          <div className="text-left space-y-4 max-w-3xl mx-auto">
-            {profile ? (
-              <>
-                {/* 基础信息 */}
-                <Card title="基础信息" size="small">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <span className="text-gray-500">姓名：</span>
-                      <span className="font-medium">{profile.name || '未提取'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">学历：</span>
-                      <span className="font-medium">{getEducationText(profile.education)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">专业：</span>
-                      <span className="font-medium">{profile.major || '未提取'}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">毕业年份：</span>
-                      <span className="font-medium">{profile.graduationYear || '未提取'}</span>
-                    </div>
-                  </div>
-                </Card>
-
-                {/* 技能列表 */}
-                <Card title="技能列表" size="small">
-                  {profile.skills && profile.skills.length > 0 ? (
-                    <List
-                      dataSource={profile.skills}
-                      renderItem={(skill) => (
-                        <List.Item>
-                          <div className="flex items-center gap-4 w-full">
-                            <Tag color="blue" className="text-base px-3 py-1">
-                              {skill.name}
-                            </Tag>
-                            <div className="flex-1">
-                              <div className="flex justify-between text-sm text-gray-600 mb-1">
-                                <span>掌握程度：{skill.level}/100</span>
-                                <span>掌握年限：{skill.years} 年</span>
-                              </div>
-                              <Progress
-                                percent={skill.level}
-                                size="small"
-                                showInfo={false}
-                                strokeColor={{
-                                  '0%': '#108ee9',
-                                  '100%': '#87d068',
-                                }}
-                              />
-                            </div>
-                          </div>
-                        </List.Item>
-                      )}
-                    />
-                  ) : (
-                    <Empty description="未提取到技能信息" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  )}
-                </Card>
-
-                {/* 证书列表 */}
-                <Card title="证书列表" size="small">
-                  {profile.certificates && profile.certificates.length > 0 ? (
-                    <List
-                      dataSource={profile.certificates}
-                      renderItem={(cert) => (
-                        <List.Item>
-                          <div className="flex items-center gap-4">
-                            <Tag color="green" className="text-base px-3 py-1">
-                              {cert.name}
-                            </Tag>
-                            <div className="text-sm text-gray-600">
-                              <span>等级：{cert.level}</span>
-                              <span className="mx-2">|</span>
-                              <span>获得年份：{cert.year}</span>
-                            </div>
-                          </div>
-                        </List.Item>
-                      )}
-                    />
-                  ) : (
-                    <Empty description="未提取到证书信息" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  )}
-                </Card>
-
-                {/* 实习经历 */}
-                <Card title="实习经历" size="small">
-                  {profile.internship && profile.internship.length > 0 ? (
-                    <List
-                      dataSource={profile.internship}
-                      renderItem={(item) => (
-                        <List.Item>
-                          <div className="w-full">
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <h4 className="font-medium text-lg">{item.company}</h4>
-                                <p className="text-gray-600">{item.position}</p>
-                              </div>
-                              <Tag color="purple">{item.duration} 个月</Tag>
-                            </div>
-                            {item.description && (
-                              <p className="text-sm text-gray-600 mt-2">{item.description}</p>
-                            )}
-                          </div>
-                        </List.Item>
-                      )}
-                    />
-                  ) : (
-                    <Empty description="未提取到实习经历" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  )}
-                </Card>
-
-                {/* 项目经历 */}
-                <Card title="项目经历" size="small">
-                  {profile.projects && profile.projects.length > 0 ? (
-                    <List
-                      dataSource={profile.projects}
-                      renderItem={(project) => (
-                        <List.Item>
-                          <div className="w-full">
-                            <div className="flex justify-between items-start mb-2">
-                              <h4 className="font-medium text-lg">{project.name}</h4>
-                              <Tag color="orange">{project.role}</Tag>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-2">{project.description}</p>
-                            {project.technologies && project.technologies.length > 0 && (
-                              <div className="flex gap-2 flex-wrap">
-                                {project.technologies.map((tech, index) => (
-                                  <Tag key={index} color="cyan">
-                                    {tech}
-                                  </Tag>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        </List.Item>
-                      )}
-                    />
-                  ) : (
-                    <Empty description="未提取到项目经历" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                  )}
-                </Card>
-
-                {/* 评估结果 */}
-                <Card title="评估结果" size="small">
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">完整度</span>
-                        <span className="font-medium text-lg">{profile.completeness || 0}分</span>
+            <>
+            <div className="text-center py-8">
+              <span className="material-symbols-rounded text-5xl" style={{ color: 'var(--md-sys-color-success)' }}>check_circle</span>
+              <div className="md-typescale-headline-small mt-4" style={{ color: 'var(--md-sys-color-on-surface)' }}>简历解析完成</div>
+              <div className="md-typescale-body-medium mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>您的简历信息已成功提取</div>
+              <div className="flex justify-center gap-3 mt-6">
+                <Button
+                  type="primary"
+                  onClick={() => {
+                    const element = document.getElementById('suggestions-section');
+                    if (element) {
+                      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  }}
+                >
+                  查看优化建议
+                </Button>
+                <Button
+                  onClick={() => navigate('/resume/editor', { state: { profile } })}
+                >
+                  优化并导出简历
+                </Button>
+                <Button icon={<ReloadOutlined />} onClick={handleReset}>
+                  重新上传
+                </Button>
+              </div>
+            </div>
+            <div className="text-left space-y-4 max-w-3xl mx-auto">
+              {profile ? (
+                <>
+                  <SurfaceCard title="基础信息">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>姓名：</span>
+                        <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{profile.name || '未提取'}</span>
                       </div>
-                      <Progress
-                        percent={profile.completeness ?? 0}
-                        showInfo={false}
-                        strokeColor={(profile.completeness ?? 0) >= 80 ? '#52c41a' : (profile.completeness ?? 0) >= 60 ? '#faad14' : '#ff4d4f'}
+                      <div>
+                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学历：</span>
+                        <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{getEducationText(profile.education)}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业：</span>
+                        <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{profile.major || '未提取'}</span>
+                      </div>
+                      <div>
+                        <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>毕业年份：</span>
+                        <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{profile.graduationYear || '未提取'}</span>
+                      </div>
+                    </div>
+                  </SurfaceCard>
+
+                  <SurfaceCard title="技能列表">
+                    {profile.skills && profile.skills.length > 0 ? (
+                      <List
+                        dataSource={profile.skills}
+                        renderItem={(skill) => (
+                          <List.Item>
+                            <div className="flex items-center gap-4 w-full">
+                              <Tag color="blue" className="text-base px-3 py-1">
+                                {skill.name}
+                              </Tag>
+                              <div className="flex-1">
+                                <div className="flex justify-between text-sm mb-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                                  <span>掌握程度：{skill.level}/100</span>
+                                  <span>掌握年限：{skill.years} 年</span>
+                                </div>
+                                <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                                  <div style={{ width: `${skill.level}%`, backgroundColor: getProgressColor(skill.level), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                                </div>
+                              </div>
+                            </div>
+                          </List.Item>
+                        )}
                       />
-                    </div>
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-gray-600">竞争力</span>
-                        <span className="font-medium text-lg">{profile.competitiveness ?? 0}分</span>
+                    ) : (
+                      <div className="text-center py-8">
+                        <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                        <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>未提取到技能信息</div>
                       </div>
-                      <Progress
-                        percent={profile.competitiveness ?? 0}
-                        showInfo={false}
-                        strokeColor={(profile.competitiveness ?? 0) >= 80 ? '#52c41a' : (profile.competitiveness ?? 0) >= 60 ? '#faad14' : '#ff4d4f'}
-                      />
-                    </div>
-                  </div>
-                  {profile.resumeContent && (
-                    <div className="mt-4 pt-4 border-t">
-                      <div className="text-center">
-                        <p className="text-gray-600 mb-1">简历内容长度</p>
-                        <p className="text-2xl font-bold text-blue-600">
-                          {profile.resumeContent.length.toLocaleString()}
-                        </p>
-                        <p className="text-sm text-gray-500">字符</p>
-                      </div>
-                    </div>
-                  )}
-                </Card>
+                    )}
+                  </SurfaceCard>
 
-                {/* 优化建议 */}
-                {profile.suggestions && profile.suggestions.length > 0 && (
-                  <Card id="suggestions-section" title="优化建议" size="small">
-                    <List
-                      dataSource={profile.suggestions}
-                      renderItem={(suggestion, index) => (
-                        <List.Item>
-                          <div className="flex items-start gap-3">
-                            <Tag color="orange">{index + 1}</Tag>
-                            <span className="text-sm">{suggestion}</span>
-                          </div>
-                        </List.Item>
-                      )}
-                    />
-                  </Card>
-                )}
-              </>
-            ) : (
-              <Empty description="解析结果为空" />
-            )}
-          </div>
-        </Result>
+                  <SurfaceCard title="证书列表">
+                    {profile.certificates && profile.certificates.length > 0 ? (
+                      <List
+                        dataSource={profile.certificates}
+                        renderItem={(cert) => (
+                          <List.Item>
+                            <div className="flex items-center gap-4">
+                              <Tag color="green" className="text-base px-3 py-1">
+                                {cert.name}
+                              </Tag>
+                              <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                                <span>等级：{cert.level}</span>
+                                <span className="mx-2">|</span>
+                                <span>获得年份：{cert.year}</span>
+                              </div>
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                        <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>未提取到证书信息</div>
+                      </div>
+                    )}
+                  </SurfaceCard>
+
+                  <SurfaceCard title="实习经历">
+                    {profile.internship && profile.internship.length > 0 ? (
+                      <List
+                        dataSource={profile.internship}
+                        renderItem={(item) => (
+                          <List.Item>
+                            <div className="w-full">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <h4 className="font-medium text-lg" style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.company}</h4>
+                                  <p style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.position}</p>
+                                </div>
+                                <Tag color="purple">{item.duration} 个月</Tag>
+                              </div>
+                              {item.description && (
+                                <p className="text-sm mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.description}</p>
+                              )}
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                        <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>未提取到实习经历</div>
+                      </div>
+                    )}
+                  </SurfaceCard>
+
+                  <SurfaceCard title="项目经历">
+                    {profile.projects && profile.projects.length > 0 ? (
+                      <List
+                        dataSource={profile.projects}
+                        renderItem={(project) => (
+                          <List.Item>
+                            <div className="w-full">
+                              <div className="flex justify-between items-start mb-2">
+                                <h4 className="font-medium text-lg" style={{ color: 'var(--md-sys-color-on-surface)' }}>{project.name}</h4>
+                                <Tag color="orange">{project.role}</Tag>
+                              </div>
+                              <p className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{project.description}</p>
+                              {project.technologies && project.technologies.length > 0 && (
+                                <div className="flex gap-2 flex-wrap">
+                                  {project.technologies.map((tech, index) => (
+                                    <Tag key={index} color="cyan">
+                                      {tech}
+                                    </Tag>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    ) : (
+                      <div className="text-center py-8">
+                        <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                        <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>未提取到项目经历</div>
+                      </div>
+                    )}
+                  </SurfaceCard>
+
+                  <SurfaceCard title="评估结果">
+                    <div className="grid grid-cols-2 gap-6">
+                      <div className="w-full">
+                        <div className="flex justify-between mb-1">
+                          <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>完整度</span>
+                          <span className="md-typescale-label-medium" style={{ color: getProgressColor(profile.completeness ?? 0) }}>{profile.completeness || 0}分</span>
+                        </div>
+                        <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                          <div style={{ width: `${profile.completeness ?? 0}%`, backgroundColor: getProgressColor(profile.completeness ?? 0), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                      <div className="w-full">
+                        <div className="flex justify-between mb-1">
+                          <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>竞争力</span>
+                          <span className="md-typescale-label-medium" style={{ color: getProgressColor(profile.competitiveness ?? 0) }}>{profile.competitiveness ?? 0}分</span>
+                        </div>
+                        <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                          <div style={{ width: `${profile.competitiveness ?? 0}%`, backgroundColor: getProgressColor(profile.competitiveness ?? 0), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                    </div>
+                    {profile.resumeContent && (
+                      <div className="mt-4 pt-4" style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
+                        <div className="text-center">
+                          <p className="mb-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>简历内容长度</p>
+                          <p className="text-2xl font-bold" style={{ color: 'var(--md-sys-color-primary)' }}>
+                            {profile.resumeContent.length.toLocaleString()}
+                          </p>
+                          <p className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>字符</p>
+                        </div>
+                      </div>
+                    )}
+                  </SurfaceCard>
+
+                  {profile.suggestions && profile.suggestions.length > 0 && (
+                    <SurfaceCard id="suggestions-section" title="优化建议">
+                      <List
+                        dataSource={profile.suggestions}
+                        renderItem={(suggestion, index) => (
+                          <List.Item>
+                            <div className="flex items-start gap-3">
+                              <Tag color="orange">{index + 1}</Tag>
+                              <span className="text-sm">{suggestion}</span>
+                            </div>
+                          </List.Item>
+                        )}
+                      />
+                    </SurfaceCard>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                  <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>解析结果为空</div>
+                </div>
+              )}
+            </div>
+            </>
           )}
         </div>
 
-      {/* 历史记录弹窗 */}
       <Modal
         title={
           <Space>
@@ -950,24 +912,30 @@ export default function ResumePage() {
                 description={
                   <Space orientation="vertical" size="small">
                     <div>
-                      <span className="text-gray-500">时间：</span>
+                      <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>时间：</span>
                       {formatTime(item.createdAt)}
                     </div>
                     <div>
-                      <span className="text-gray-500">完整度：</span>
-                      <Progress
-                        percent={item.completenessScore}
-                        size="small"
-                        format={(percent) => `${percent}分`}
-                        style={{ width: 120, display: 'inline-block' }}
-                      />
-                      <span className="ml-2 text-gray-500">竞争力：</span>
-                      <Progress
-                        percent={item.competitivenessScore}
-                        size="small"
-                        format={(percent) => `${percent}分`}
-                        style={{ width: 120, display: 'inline-block' }}
-                      />
+                      <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>完整度：</span>
+                      <div className="inline-block" style={{ width: 120 }}>
+                        <div className="flex justify-between mb-1">
+                          <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}></span>
+                          <span className="md-typescale-label-medium" style={{ color: getProgressColor(item.completenessScore) }}>{item.completenessScore}分</span>
+                        </div>
+                        <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '6px', overflow: 'hidden' }}>
+                          <div style={{ width: `${item.completenessScore}%`, backgroundColor: getProgressColor(item.completenessScore), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
+                      <span className="ml-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>竞争力：</span>
+                      <div className="inline-block" style={{ width: 120 }}>
+                        <div className="flex justify-between mb-1">
+                          <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}></span>
+                          <span className="md-typescale-label-medium" style={{ color: getProgressColor(item.competitivenessScore) }}>{item.competitivenessScore}分</span>
+                        </div>
+                        <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '6px', overflow: 'hidden' }}>
+                          <div style={{ width: `${item.competitivenessScore}%`, backgroundColor: getProgressColor(item.competitivenessScore), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                        </div>
+                      </div>
                     </div>
                   </Space>
                 }
@@ -977,7 +945,6 @@ export default function ResumePage() {
         />
       </Modal>
 
-      {/* 历史详情抽屉 */}
       <Drawer
         title={
           <Space>
@@ -991,48 +958,44 @@ export default function ResumePage() {
       >
         {detailRecord && (
           <div className="space-y-4">
-            <Card title="基本信息" size="small">
+            <SurfaceCard title="基本信息">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-gray-500">文件名：</span>
-                  <span className="font-medium">{detailRecord.resumeFileName}</span>
+                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>文件名：</span>
+                  <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{detailRecord.resumeFileName}</span>
                 </div>
                 <div>
-                  <span className="text-gray-500">解析时间：</span>
-                  <span className="font-medium">{formatTime(detailRecord.createdAt)}</span>
+                  <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>解析时间：</span>
+                  <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{formatTime(detailRecord.createdAt)}</span>
                 </div>
               </div>
-            </Card>
+            </SurfaceCard>
 
-            <Card title="评估结果" size="small">
+            <SurfaceCard title="评估结果">
               <div className="grid grid-cols-2 gap-6">
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-600">完整度</span>
-                    <span className="font-medium text-lg">{detailRecord.completenessScore}分</span>
+                <div className="w-full">
+                  <div className="flex justify-between mb-1">
+                    <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>完整度</span>
+                    <span className="md-typescale-label-medium" style={{ color: getProgressColor(detailRecord.completenessScore) }}>{detailRecord.completenessScore}分</span>
                   </div>
-                  <Progress
-                    percent={detailRecord.completenessScore}
-                    showInfo={false}
-                    strokeColor={detailRecord.completenessScore >= 80 ? '#52c41a' : detailRecord.completenessScore >= 60 ? '#faad14' : '#ff4d4f'}
-                  />
+                  <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${detailRecord.completenessScore}%`, backgroundColor: getProgressColor(detailRecord.completenessScore), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                  </div>
                 </div>
-                <div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-600">竞争力</span>
-                    <span className="font-medium text-lg">{detailRecord.competitivenessScore}分</span>
+                <div className="w-full">
+                  <div className="flex justify-between mb-1">
+                    <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>竞争力</span>
+                    <span className="md-typescale-label-medium" style={{ color: getProgressColor(detailRecord.competitivenessScore) }}>{detailRecord.competitivenessScore}分</span>
                   </div>
-                  <Progress
-                    percent={detailRecord.competitivenessScore}
-                    showInfo={false}
-                    strokeColor={detailRecord.competitivenessScore >= 80 ? '#52c41a' : detailRecord.competitivenessScore >= 60 ? '#faad14' : '#ff4d4f'}
-                  />
+                  <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: `${detailRecord.competitivenessScore}%`, backgroundColor: getProgressColor(detailRecord.competitivenessScore), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                  </div>
                 </div>
               </div>
-            </Card>
+            </SurfaceCard>
 
             {detailRecord.suggestions && detailRecord.suggestions.length > 0 && (
-              <Card title="优化建议" size="small">
+              <SurfaceCard title="优化建议">
                 <List
                   dataSource={detailRecord.suggestions}
                   renderItem={(suggestion, index) => (
@@ -1044,32 +1007,32 @@ export default function ResumePage() {
                     </List.Item>
                   )}
                 />
-              </Card>
+              </SurfaceCard>
             )}
 
             {detailRecord.parsedProfile && (
-              <Card title="解析后的档案" size="small">
+              <SurfaceCard title="解析后的档案">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="text-gray-500">姓名：</span>
-                    <span className="font-medium">{detailRecord.parsedProfile.name || '未提取'}</span>
+                    <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>姓名：</span>
+                    <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{detailRecord.parsedProfile.name || '未提取'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">学历：</span>
-                    <span className="font-medium">{getEducationText(detailRecord.parsedProfile.education)}</span>
+                    <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学历：</span>
+                    <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{getEducationText(detailRecord.parsedProfile.education)}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">专业：</span>
-                    <span className="font-medium">{detailRecord.parsedProfile.major || '未提取'}</span>
+                    <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业：</span>
+                    <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{detailRecord.parsedProfile.major || '未提取'}</span>
                   </div>
                   <div>
-                    <span className="text-gray-500">毕业年份：</span>
-                    <span className="font-medium">{detailRecord.parsedProfile.graduationYear || '未提取'}</span>
+                    <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>毕业年份：</span>
+                    <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{detailRecord.parsedProfile.graduationYear || '未提取'}</span>
                   </div>
                 </div>
                 {detailRecord.parsedProfile.skills && detailRecord.parsedProfile.skills.length > 0 && (
                   <div className="mt-4">
-                    <div className="text-gray-500 mb-2">技能：</div>
+                    <div className="mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>技能：</div>
                     <Space wrap>
                       {detailRecord.parsedProfile.skills.map((skill, index) => (
                         <Tag key={index} color="blue">
@@ -1079,7 +1042,7 @@ export default function ResumePage() {
                     </Space>
                   </div>
                 )}
-              </Card>
+              </SurfaceCard>
             )}
 
             {detailRecord.parsedProfile && (
@@ -1101,7 +1064,6 @@ export default function ResumePage() {
         )}
       </Drawer>
 
-      {/* PDF预览模态框 */}
       <Modal
         title={
           <Space>
