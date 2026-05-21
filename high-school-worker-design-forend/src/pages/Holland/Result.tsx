@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import ReactECharts from 'echarts-for-react';
 import { hollandApi } from '../../api';
 import type { HollandResult } from '../../types';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
+import { getEChartsM3Theme } from '../../components/EChartsM3Theme';
 
 export default function HollandResultPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +17,9 @@ export default function HollandResultPage() {
 
   const radarOption = useMemo(() => {
     if (!result) return {};
+    const m3Theme = getEChartsM3Theme();
+    const m3Radar = m3Theme.radar as Record<string, unknown>;
+
     const typeMap: Record<string, { name: string; color: string }> = {};
     result.topTypes.forEach(t => {
       typeMap[t.type] = { name: t.name, color: t.color };
@@ -29,19 +36,17 @@ export default function HollandResultPage() {
 
     return {
       backgroundColor: 'transparent',
-      tooltip: {},
+      tooltip: m3Theme.tooltip,
       radar: {
+        ...m3Radar,
         indicator,
         shape: 'polygon' as const,
         splitNumber: 4,
         axisName: {
-          color: '#374151',
+          ...(m3Radar?.axisName as Record<string, unknown>),
           fontSize: 13,
           fontWeight: 600,
         },
-        splitLine: { lineStyle: { color: '#e5e7eb' } },
-        splitArea: { areaStyle: { color: ['#fafafa', '#f3f4f6'] } },
-        axisLine: { lineStyle: { color: '#d1d5db' } },
       },
       series: [
         {
@@ -110,9 +115,9 @@ export default function HollandResultPage() {
   if (loading) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-          <p className="text-gray-600">加载结果中...</p>
+        <div className="text-center w-full max-w-4xl px-6">
+          <SkeletonLoader type="card@3" />
+          <p className="md-typescale-body-large mt-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载结果中...</p>
         </div>
       </div>
     );
@@ -121,15 +126,23 @@ export default function HollandResultPage() {
   if (error && !result) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <div className="bg-white rounded-xl p-6 shadow-sm max-w-md text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+        <SurfaceCard variant="elevated" style={{ maxWidth: '28rem', textAlign: 'center' }}>
+          <p className="md-typescale-body-large mb-4" style={{ color: 'var(--md-sys-color-error)' }}>{error}</p>
           <button
             onClick={() => loadResult(parseInt(id!))}
-            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            className="md-typescale-label-large px-6 py-2.5 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: 'var(--md-sys-color-primary)',
+              color: 'var(--md-sys-color-on-primary)',
+              borderRadius: 'var(--md-sys-shape-corner-full)',
+              border: 'none',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
           >
             重新加载
           </button>
-        </div>
+        </SurfaceCard>
       </div>
     );
   }
@@ -143,45 +156,45 @@ export default function HollandResultPage() {
   return (
     <div className="min-h-screen relative z-10">
       <div className="p-6 max-w-4xl mx-auto">
-        {/* 职业代码 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+        <PageHeader title="测试结果" icon={<span className="material-symbols-rounded">assessment</span>} />
+
+        <SurfaceCard variant="elevated" className="mb-6">
           <div className="text-center">
-            <h1 className="text-sm text-gray-600 mb-2">您的职业兴趣代码</h1>
-            <div className="text-6xl font-bold mb-4" style={{ color: result.topTypes[0]?.color }}>
+            <h1 className="md-typescale-body-large mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>您的职业兴趣代码</h1>
+            <div className="md-typescale-display-large font-bold mb-4" style={{ color: result.topTypes[0]?.color }}>
               {result.careerCode}
             </div>
-            <p className="text-gray-700">{result.description}</p>
+            <p className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{result.description}</p>
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 雷达图 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">兴趣雷达图</h2>
+        <SurfaceCard variant="elevated" title="兴趣雷达图" className="mb-6">
           <ReactECharts option={radarOption} style={{ height: 320 }} />
-        </div>
+        </SurfaceCard>
 
-        {/* 属性卡片 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">职业类型分布</h2>
+        <SurfaceCard variant="elevated" title="职业类型分布" className="mb-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {result.topTypes.map((typeInfo) => (
               <div
                 key={typeInfo.type}
-                className="p-4 rounded-lg border-2"
-                style={{ borderColor: typeInfo.color }}
+                className="p-4"
+                style={{
+                  borderRadius: 'var(--md-sys-shape-corner-large)',
+                  border: `2px solid ${typeInfo.color}`,
+                }}
               >
                 <div className="flex items-center gap-2 mb-2">
                   <div
                     className="w-4 h-4 rounded-full"
                     style={{ backgroundColor: typeInfo.color }}
                   ></div>
-                  <span className="font-semibold" style={{ color: typeInfo.color }}>
+                  <span className="md-typescale-title-small font-semibold" style={{ color: typeInfo.color }}>
                     {typeInfo.name}
                   </span>
                 </div>
-                <div className="text-sm text-gray-600 mb-2">{typeInfo.description}</div>
+                <div className="md-typescale-body-small mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{typeInfo.description}</div>
                 <div className="flex items-center gap-2">
-                  <div className="flex-1 bg-gray-200 rounded-full h-2">
+                  <div className="flex-1 h-2 rounded-full" style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}>
                     <div
                       className="h-2 rounded-full"
                       style={{
@@ -190,27 +203,25 @@ export default function HollandResultPage() {
                       }}
                     ></div>
                   </div>
-                  <span className="text-sm font-medium text-gray-700">{typeInfo.score}</span>
+                  <span className="md-typescale-label-large font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{typeInfo.score}</span>
                 </div>
               </div>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 得分详情 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">各类型得分</h2>
+        <SurfaceCard variant="elevated" title="各类型得分" className="mb-6">
           <div className="space-y-3">
             {Object.entries(result.scores).map(([type, score]) => {
               const typeInfo = result.topTypes.find(t => t.type === type);
-              const color = typeInfo?.color || '#999';
+              const color = typeInfo?.color || 'var(--md-sys-color-on-surface-variant)';
               
               return (
                 <div key={type} className="flex items-center gap-3">
-                  <div className="w-12 font-bold text-center" style={{ color }}>
+                  <div className="w-12 md-typescale-label-large font-bold text-center" style={{ color }}>
                     {type}
                   </div>
-                  <div className="flex-1 bg-gray-200 rounded-full h-3">
+                  <div className="flex-1 h-3 rounded-full" style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}>
                     <div
                       className="h-3 rounded-full transition-all duration-300"
                       style={{
@@ -219,61 +230,101 @@ export default function HollandResultPage() {
                       }}
                     ></div>
                   </div>
-                  <div className="w-8 text-right font-medium text-gray-700">{score}</div>
+                  <div className="w-8 text-right md-typescale-label-large font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{score}</div>
                 </div>
               );
             })}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 推荐职业 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">推荐职业</h2>
+        <SurfaceCard variant="elevated" title="推荐职业" className="mb-6">
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {result.suitableJobs.map((job, index) => (
               <div
                 key={index}
-                className="p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg"
+                className="p-3"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-primary-container)',
+                  borderRadius: 'var(--md-sys-shape-corner-large)',
+                }}
               >
-                <div className="font-medium text-gray-800">{job}</div>
+                <div className="md-typescale-body-medium font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{job}</div>
               </div>
             ))}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 操作按钮 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm">
+        <SurfaceCard variant="elevated">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <button
               onClick={handleRetest}
-              className="px-6 py-3 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+              className="md-typescale-label-large px-6 py-3 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--md-sys-color-primary)',
+                color: 'var(--md-sys-color-on-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                border: 'none',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
             >
               重新测试
             </button>
             <button
               onClick={handleViewHistory}
-              className="px-6 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
+              className="md-typescale-label-large px-6 py-3 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--md-sys-color-primary)',
+                color: 'var(--md-sys-color-on-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                border: 'none',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
             >
               查看历史
             </button>
             <button
               onClick={handleGenerateReport}
-              className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors"
+              className="md-typescale-label-large px-6 py-3 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'var(--md-sys-color-success, #1B8C3B)',
+                color: 'var(--md-sys-color-on-success, #FFF)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                border: 'none',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.85'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
             >
               去生成职业规划
             </button>
             <button
               onClick={() => navigate('/start')}
-              className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors"
+              className="md-typescale-label-large px-6 py-3 transition-colors cursor-pointer"
+              style={{
+                backgroundColor: 'transparent',
+                color: 'var(--md-sys-color-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                border: '1px solid var(--md-sys-color-outline)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-high)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               返回首页
             </button>
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 错误提示 */}
         {error && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          <div
+            className="fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 md-typescale-body-medium"
+            style={{
+              backgroundColor: 'var(--md-sys-color-error)',
+              color: 'var(--md-sys-color-on-error)',
+              borderRadius: 'var(--md-sys-shape-corner-large)',
+              boxShadow: 'var(--md-sys-elevation-3)',
+            }}
+          >
             {error}
           </div>
         )}

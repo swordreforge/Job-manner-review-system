@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { hollandApi } from '../../api';
 import type { HollandAnswer, HollandTestInfo } from '../../types';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
 
 export default function HollandTestPage() {
   const navigate = useNavigate();
@@ -34,7 +37,6 @@ export default function HollandTestPage() {
   };
 
   const handleAnswer = (questionId: number, selectedType: 'R' | 'I' | 'A' | 'S' | 'E' | 'C') => {
-    // 检查是否已经回答过这个问题
     const existingIndex = answers.findIndex(a => a.questionId === questionId);
     const newAnswers = existingIndex >= 0
       ? answers.map((a, i) => i === existingIndex ? { questionId, selectedType } : a)
@@ -42,7 +44,6 @@ export default function HollandTestPage() {
     
     setAnswers(newAnswers);
 
-    // 自动跳到下一题
     if (currentQuestionIndex < (testInfo?.questions.length || 0) - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
@@ -78,8 +79,8 @@ export default function HollandTestPage() {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
         <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500 mb-4"></div>
-          <p className="text-gray-600">加载题目中...</p>
+          <SkeletonLoader type="card" />
+          <p className="md-typescale-body-large mt-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载题目中...</p>
         </div>
       </div>
     );
@@ -88,15 +89,23 @@ export default function HollandTestPage() {
   if (error && !testInfo) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <div className="bg-white rounded-xl p-6 shadow-sm max-w-md text-center">
-          <p className="text-red-600 mb-4">{error}</p>
+        <SurfaceCard variant="elevated" style={{ maxWidth: '28rem', textAlign: 'center' }}>
+          <p className="md-typescale-body-large mb-4" style={{ color: 'var(--md-sys-color-error)' }}>{error}</p>
           <button
             onClick={loadQuestions}
-            className="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+            className="md-typescale-label-large px-6 py-2.5 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: 'var(--md-sys-color-primary)',
+              color: 'var(--md-sys-color-on-primary)',
+              borderRadius: 'var(--md-sys-shape-corner-full)',
+              border: 'none',
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
           >
             重新加载
           </button>
-        </div>
+        </SurfaceCard>
       </div>
     );
   }
@@ -113,10 +122,19 @@ export default function HollandTestPage() {
   return (
     <div className="min-h-screen relative z-10">
       <div className="p-6 max-w-3xl mx-auto">
-        {/* 返回按钮 */}
+        <PageHeader title="职业兴趣测试" icon={<span className="material-symbols-rounded">psychology</span>} />
+
         <button
           onClick={() => navigate('/start')}
-          className="mb-4 px-4 py-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors flex items-center gap-2"
+          className="mb-4 px-4 py-2 md-typescale-label-medium transition-colors flex items-center gap-2 cursor-pointer"
+          style={{
+            color: 'var(--md-sys-color-on-surface-variant)',
+            borderRadius: 'var(--md-sys-shape-corner-large)',
+            background: 'none',
+            border: 'none',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-high)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
@@ -124,34 +142,31 @@ export default function HollandTestPage() {
           返回首页
         </button>
 
-        {/* 头部信息 */}
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">{testInfo.testInfo.name}</h1>
-          <p className="text-gray-600 mb-4">{testInfo.testInfo.description}</p>
+          <h1 className="md-typescale-headline-small mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>{testInfo.testInfo.name}</h1>
+          <p className="md-typescale-body-medium mb-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{testInfo.testInfo.description}</p>
           
-          {/* 进度条 */}
-          <div className="bg-white rounded-lg p-4 shadow-sm mb-4">
+          <SurfaceCard variant="elevated" className="mb-4">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
+              <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                 题目 {currentQuestionIndex + 1} / {testInfo.questions.length}
               </span>
-              <span className="text-sm font-medium text-orange-600">
+              <span className="md-typescale-label-large" style={{ color: 'var(--md-sys-color-primary)' }}>
                 {Math.round(progress)}%
               </span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full h-2 rounded-full" style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)' }}>
               <div
-                className="bg-orange-500 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${progress}%` }}
+                className="h-2 rounded-full transition-all duration-300"
+                style={{ width: `${progress}%`, backgroundColor: 'var(--md-sys-color-primary)' }}
               ></div>
             </div>
-          </div>
+          </SurfaceCard>
         </div>
 
-        {/* 题目卡片 */}
-        <div className="bg-white rounded-xl p-6 shadow-sm mb-6">
+        <SurfaceCard variant="elevated" className="mb-6">
           <div className="mb-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">
+            <h2 className="md-typescale-title-large mb-4" style={{ color: 'var(--md-sys-color-on-surface)' }}>
               {currentQuestion.question}
             </h2>
             <div className="space-y-3">
@@ -165,23 +180,40 @@ export default function HollandTestPage() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(currentQuestion.id, option.type)}
-                    className={`w-full p-4 rounded-lg border-2 transition-all ${
-                      isSelected
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-200 hover:border-orange-300 hover:bg-orange-50/50'
-                    }`}
+                    className="w-full p-4 transition-all cursor-pointer text-left"
+                    style={{
+                      borderRadius: 'var(--md-sys-shape-corner-large)',
+                      border: isSelected
+                        ? `2px solid var(--md-sys-color-primary)`
+                        : `2px solid var(--md-sys-color-outline-variant)`,
+                      backgroundColor: isSelected
+                        ? 'var(--md-sys-color-primary-container)'
+                        : 'transparent',
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-high)';
+                        e.currentTarget.style.borderColor = 'var(--md-sys-color-outline)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                        e.currentTarget.style.borderColor = 'var(--md-sys-color-outline-variant)';
+                      }
+                    }}
                   >
                     <div className="flex items-center gap-3">
                       <div
                         className="w-4 h-4 rounded-full flex-shrink-0"
                         style={{ backgroundColor: careerType?.color }}
                       ></div>
-                      <div className="flex-1 text-left">
-                        <div className="font-medium text-gray-800">{option.text}</div>
-                        <div className="text-sm text-gray-500 mt-1">{careerType?.name}</div>
+                      <div className="flex-1">
+                        <div className="md-typescale-body-large font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{option.text}</div>
+                        <div className="md-typescale-body-small mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{careerType?.name}</div>
                       </div>
                       {isSelected && (
-                        <div className="text-orange-500">
+                        <div style={{ color: 'var(--md-sys-color-primary)' }}>
                           <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20">
                             <path
                               fillRule="evenodd"
@@ -198,12 +230,19 @@ export default function HollandTestPage() {
             </div>
           </div>
 
-          {/* 导航按钮 */}
-          <div className="flex justify-between items-center pt-4 border-t">
+          <div className="flex justify-between items-center pt-4" style={{ borderTop: '1px solid var(--md-sys-color-outline-variant)' }}>
             <button
               onClick={() => goToQuestion(currentQuestionIndex - 1)}
               disabled={currentQuestionIndex === 0}
-              className="px-6 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-100"
+              className="md-typescale-label-large px-6 py-2 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{
+                color: 'var(--md-sys-color-primary)',
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                background: 'none',
+                border: '1px solid var(--md-sys-color-outline)',
+              }}
+              onMouseEnter={(e) => { if (currentQuestionIndex !== 0) e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-high)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
             >
               上一题
             </button>
@@ -211,24 +250,39 @@ export default function HollandTestPage() {
               <button
                 onClick={handleSubmit}
                 disabled={!allAnswered || submitting}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                className="md-typescale-label-large px-6 py-2.5 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-primary)',
+                  color: 'var(--md-sys-color-on-primary)',
+                  borderRadius: 'var(--md-sys-shape-corner-full)',
+                  border: 'none',
+                }}
+                onMouseEnter={(e) => { if (allAnswered && !submitting) { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
               >
                 {submitting ? '提交中...' : '提交测试'}
               </button>
             ) : (
               <button
                 onClick={() => goToQuestion(currentQuestionIndex + 1)}
-                className="px-6 py-2 bg-orange-500 text-white rounded-lg font-medium hover:bg-orange-600 transition-colors"
+                className="md-typescale-label-large px-6 py-2.5 transition-colors cursor-pointer"
+                style={{
+                  backgroundColor: 'var(--md-sys-color-primary)',
+                  color: 'var(--md-sys-color-on-primary)',
+                  borderRadius: 'var(--md-sys-shape-corner-full)',
+                  border: 'none',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary)'; e.currentTarget.style.color = 'var(--md-sys-color-on-primary)'; }}
               >
                 下一题
               </button>
             )}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 题目导航 */}
-        <div className="bg-white rounded-xl p-4 shadow-sm">
-          <h3 className="font-semibold text-gray-700 mb-3">题目导航</h3>
+        <SurfaceCard variant="elevated">
+          <h3 className="md-typescale-title-medium mb-3" style={{ color: 'var(--md-sys-color-on-surface)' }}>题目导航</h3>
           <div className="grid grid-cols-6 gap-2">
             {testInfo.questions.map((q, index) => {
               const isAnswered = answers.some(a => a.questionId === q.id);
@@ -238,24 +292,38 @@ export default function HollandTestPage() {
                 <button
                   key={q.id}
                   onClick={() => goToQuestion(index)}
-                  className={`py-2 px-3 rounded-lg text-sm font-medium transition-colors ${
-                    isCurrent
-                      ? 'bg-orange-500 text-white'
+                  className="py-2 px-3 md-typescale-label-medium font-medium transition-colors cursor-pointer"
+                  style={{
+                    borderRadius: 'var(--md-sys-shape-corner-large)',
+                    backgroundColor: isCurrent
+                      ? 'var(--md-sys-color-primary)'
                       : isAnswered
-                      ? 'bg-green-100 text-green-700'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
+                      ? 'var(--md-sys-color-success, #E8F5E9)'
+                      : 'var(--md-sys-color-surface-container-high)',
+                    color: isCurrent
+                      ? 'var(--md-sys-color-on-primary)'
+                      : isAnswered
+                      ? 'var(--md-sys-color-success)'
+                      : 'var(--md-sys-color-on-surface-variant)',
+                  }}
                 >
                   {index + 1}
                 </button>
               );
             })}
           </div>
-        </div>
+        </SurfaceCard>
 
-        {/* 错误提示 */}
         {error && (
-          <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          <div
+            className="fixed bottom-4 left-1/2 transform -translate-x-1/2 px-6 py-3 md-typescale-body-medium"
+            style={{
+              backgroundColor: 'var(--md-sys-color-error)',
+              color: 'var(--md-sys-color-on-error)',
+              borderRadius: 'var(--md-sys-shape-corner-large)',
+              boxShadow: 'var(--md-sys-elevation-3)',
+            }}
+          >
             {error}
           </div>
         )}
