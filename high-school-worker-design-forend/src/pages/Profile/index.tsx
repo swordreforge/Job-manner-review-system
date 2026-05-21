@@ -1,5 +1,8 @@
-import { Avatar, Button, message, Tag, Modal, Collapse, Input, Card } from 'antd';
+import { Avatar, Button, message, Tag, Modal, Collapse, Input } from 'antd';
 import { UserOutlined, SettingOutlined, LogoutOutlined, ExclamationCircleOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
@@ -197,6 +200,7 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
+      <PageHeader title="个人资料" description="查看和管理您的个人信息和学生资料" icon={<span className="material-symbols-rounded">person</span>} />
       {/* 用户信息卡片 - MD3 Card */}
       <div 
         className="mb-3 sm:mb-4 p-4 sm:p-5"
@@ -250,17 +254,13 @@ export default function ProfilePage() {
         </div>
 
         {/* 学校信息 */}
-        <Card 
+        <SurfaceCard 
+          variant="outlined" 
           title="学校信息" 
-          extra={
-            <Button type="link" onClick={() => setJoinSchoolModalVisible(true)}>
-              {studentSchools.length > 0 ? '再加入' : '加入学校'}
-            </Button>
-          }
-          className="mb-3"
+          action={<Button type="link" onClick={() => setJoinSchoolModalVisible(true)}>{studentSchools.length > 0 ? '再加入' : '加入学校'}</Button>}
         >
           {loadingSchools ? (
-            <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载中...</div>
+            <SkeletonLoader type="list" />
           ) : studentSchools.length > 0 ? (
             <div className="space-y-2">
               {studentSchools.map((school) => (
@@ -282,7 +282,7 @@ export default function ProfilePage() {
               点击"加入学校"按钮，使用教师提供的邀请码加入学校
             </div>
           )}
-        </Card>
+        </SurfaceCard>
 
         <Modal
           title="加入学校"
@@ -369,16 +369,16 @@ export default function ProfilePage() {
           </Button>
         </div>
         {loadingStudent ? (
-          <div className="text-center py-8" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载中...</div>
+          <div className="text-center py-8"><SkeletonLoader type="list" /></div>
         ) : studentData ? (
           <div className="space-y-0">
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>姓名</span>
-              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.name || '-'}</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>姓名</span>
+              <span className="font-medium md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.name || '-'}</span>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学历</span>
-              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学历</span>
+              <span className="font-medium md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
                 {studentData.education === 'bachelor' ? '本科' :
                  studentData.education === 'master' ? '硕士' :
                  studentData.education === 'phd' ? '博士' :
@@ -387,15 +387,15 @@ export default function ProfilePage() {
               </span>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业</span>
-              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.major || '-'}</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业</span>
+              <span className="font-medium md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.major || '-'}</span>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>毕业年份</span>
-              <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.graduationYear || '-'}</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>毕业年份</span>
+              <span className="font-medium md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{studentData.graduationYear || '-'}</span>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>技能</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>技能</span>
               <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
                 {studentData.skills && studentData.skills.length > 0 ? (
                   studentData.skills.map((skill: StudentSkill, index: number) => (
@@ -416,7 +416,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>证书</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>证书</span>
               <div className="flex flex-wrap gap-1 max-w-[60%] justify-end">
                 {studentData.certificates && studentData.certificates.length > 0 ? (
                   studentData.certificates.map((cert: StudentCert, index: number) => (
@@ -437,7 +437,7 @@ export default function ProfilePage() {
               </div>
             </div>
             <div className="flex justify-between items-center py-3 px-4 border-b" style={{ borderColor: 'var(--md-sys-color-outline-variant)' }}>
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>实习经历</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>实习经历</span>
               <Button
                 type="link"
                 size="small"
@@ -449,7 +449,7 @@ export default function ProfilePage() {
               </Button>
             </div>
             <div className="flex justify-between items-center py-3 px-4">
-              <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>项目经验</span>
+              <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>项目经验</span>
               <Button
                 type="link"
                 size="small"
@@ -463,7 +463,7 @@ export default function ProfilePage() {
           </div>
         ) : (
           <div className="text-center py-8">
-            <ExclamationCircleOutlined className="text-3xl mb-2" style={{ color: '#8F5900' }} />
+            <ExclamationCircleOutlined className="text-3xl mb-2" style={{ color: 'var(--md-sys-color-warning)' }} />
             <div className="mb-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>您还没有创建学生资料</div>
             <Button 
               type="primary"
@@ -501,7 +501,7 @@ export default function ProfilePage() {
                   </span>
                   <span 
                     className="ml-3 text-sm font-semibold"
-                    style={{ color: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : '#8F5900' }}
+                    style={{ color: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-warning)' }}
                   >
                     {completenessPercent}%
                   </span>
@@ -511,8 +511,8 @@ export default function ProfilePage() {
                 <div className="px-4 pb-4">
                   <div className="mb-4">
                     <div className="flex items-center justify-between mb-2">
-                      <span style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>当前完成进度</span>
-                      <span className="font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>当前完成进度</span>
+                      <span className="font-medium md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>
                         {completedCount}/{completenessItems.length}
                       </span>
                     </div>
@@ -524,7 +524,7 @@ export default function ProfilePage() {
                         className="h-full rounded-full transition-all duration-300"
                         style={{ 
                           width: `${completenessPercent}%`,
-                          backgroundColor: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : '#8F5900'
+                          backgroundColor: completenessPercent === 100 ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-warning)'
                         }}
                       />
                     </div>
@@ -543,13 +543,13 @@ export default function ProfilePage() {
                           }
                         }}
                       >
-                        <span style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.label}</span>
+                        <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.label}</span>
                         {item.completed ? (
                           <Tag 
                             color="success" 
                             style={{ 
-                              backgroundColor: '#D4EDDA',
-                              color: '#1B8C3B',
+                              backgroundColor: 'var(--md-sys-color-success, #E8F5E9)',
+                              color: 'var(--md-sys-color-success)',
                               border: 'none'
                             }}
                           >
@@ -558,8 +558,8 @@ export default function ProfilePage() {
                         ) : (
                           <Tag 
                             style={{ 
-                              backgroundColor: '#FFF8E1',
-                              color: '#8F5900',
+                              backgroundColor: 'var(--md-sys-color-warning, #FFF3E0)',
+                              color: 'var(--md-sys-color-warning)',
                               border: 'none'
                             }}
                           >
