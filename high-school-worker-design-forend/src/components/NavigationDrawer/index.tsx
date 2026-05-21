@@ -91,7 +91,7 @@ function NavItemList({
                   />
                 )}
                 <span
-                  className="material-symbols-outlined"
+                  className="material-symbols-rounded"
                   style={{
                     fontSize: '20px',
                     flexShrink: 0,

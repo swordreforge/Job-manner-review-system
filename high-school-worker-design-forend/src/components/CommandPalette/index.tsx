@@ -156,7 +156,7 @@ export default function CommandPalette({ open, onClose, onNavigate, navItems }: 
               }}
             >
               <span
-                className="material-symbols-outlined"
+                className="material-symbols-rounded"
                 style={{
                   fontSize: 20,
                   color: 'var(--md-sys-color-on-surface-variant)',
