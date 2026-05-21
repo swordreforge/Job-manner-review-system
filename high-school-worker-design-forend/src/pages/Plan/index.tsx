@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react';
-import { Segmented, Card, Progress, Timeline, Button, Spin, Empty, message, Dropdown, Select, Space, Modal } from 'antd';
+import { Button, message, Dropdown, Select, Space, Modal } from 'antd';
 import { ReloadOutlined, SyncOutlined, SortAscendingOutlined, SortDescendingOutlined, DeleteOutlined } from '@ant-design/icons';
 import { useUIStore } from '../../stores';
 import { studentApi, reportApi } from '../../api';
 import type { Student } from '../../types';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
 
 interface SkillItem {
   name: string;
@@ -71,11 +74,9 @@ export default function PlanPage() {
       }
     } catch (error: any) {
       console.error('获取学生数据失败:', error);
-      // 检查是否是学生资料不存在的错误
       if (error.response?.data?.msg === 'student profile not found') {
         message.warning('您还没有创建学生资料，请先完善个人信息');
       } else if (error.response?.status === 401) {
-        // 401错误由API拦截器处理，这里不重复处理
         console.log('认证失败，已跳转到登录页');
       } else {
         message.error('获取学生数据失败');
@@ -91,10 +92,9 @@ export default function PlanPage() {
       const reportsData = await reportApi.getMe();
       if (reportsData && reportsData.data && reportsData.data.list) {
         const reportList = reportsData.data.list.map((r: any) => {
-          // 处理标题格式并识别类型
           let displayTitle = r.title || `职业规划报告 #${r.id}`;
           let reportType: 'bigtech' | 'gov' | 'unknown' = 'unknown';
-          
+
           if (displayTitle.includes('- full')) {
             displayTitle = displayTitle.replace('- full', '(大厂)');
             reportType = 'bigtech';
@@ -102,7 +102,7 @@ export default function PlanPage() {
             displayTitle = displayTitle.replace('- gap', '(国企)');
             reportType = 'gov';
           }
-          
+
           return {
             id: r.id,
             title: displayTitle,
@@ -113,7 +113,6 @@ export default function PlanPage() {
           };
         });
         setReports(reportList);
-        // 自动选择最新的报告
         if (reportList.length > 0 && !selectedReportId) {
           setSelectedReportId(reportList[0].id);
         }
@@ -152,7 +151,6 @@ export default function PlanPage() {
   const getFilteredAndSortedReports = () => {
     let filtered = [...reports];
 
-    // 按类型筛选
     if (filterType !== 'all') {
       if (filterType === 'bigtech') {
         filtered = filtered.filter(report => report.type === 'bigtech');
@@ -161,7 +159,6 @@ export default function PlanPage() {
       }
     }
 
-    // 按时间排序
     filtered.sort((a, b) => {
       return sortBy === 'desc'
         ? b.createdAt - a.createdAt
@@ -218,7 +215,6 @@ export default function PlanPage() {
   };
 
   const handleDeleteReport = async (reportId: number, event: React.MouseEvent) => {
-    // 阻止事件冒泡，避免触发选中报告
     event.stopPropagation();
 
     Modal.confirm({
@@ -236,42 +232,34 @@ export default function PlanPage() {
           await reportApi.delete(reportId);
           message.success('删除成功');
 
-          // 先清空右侧显示，避免显示旧数据
           setHasReport(false);
           setSkills([]);
           setTimeline([]);
           setCompleteness(0);
           setCompetitiveness(0);
 
-          // 重新加载报告列表并获取最新的列表数据
           const updatedReports = await loadReports();
 
-          // 如果删除的是当前选中的报告，需要更新选中状态
           if (isSelectedReport) {
             const remainingReports = getFilteredAndSortedReports();
             if (remainingReports.length > 0) {
-              // 还有其他报告，自动选择第一条，并立即加载其内容
               const newSelectedId = remainingReports[0].id;
               const newSelectedReport = updatedReports.find(r => r.id === newSelectedId);
               setSelectedReportId(newSelectedId);
               if (newSelectedReport && newSelectedReport.content) {
                 loadReportContent(newSelectedReport);
               } else {
-                // 如果新报告没有内容，保持空状态
                 setHasReport(false);
               }
             } else {
-              // 没有报告了，清空选中状态
               setSelectedReportId(null);
             }
           } else {
-            // 如果删除的不是当前选中的报告，重新加载当前选中报告的内容以确保同步
             if (selectedReportId) {
               const currentReport = updatedReports.find(r => r.id === selectedReportId);
               if (currentReport && currentReport.content) {
                 loadReportContent(currentReport);
               } else {
-                // 如果找不到选中的报告或没有内容，保持空状态
                 setHasReport(false);
               }
             }
@@ -286,32 +274,58 @@ export default function PlanPage() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case '已掌握': return '#52c41a';
-      case '学习中': return '#1890ff';
-      default: return '#faad14';
+      case '已掌握': return 'var(--md-sys-color-success)';
+      case '学习中': return 'var(--md-sys-color-primary)';
+      default: return 'var(--md-sys-color-warning)';
     }
+  };
+
+  const getProgressColor = (value: number): string => {
+    if (value >= 80) return 'var(--md-sys-color-success)';
+    if (value >= 60) return 'var(--md-sys-color-warning)';
+    return 'var(--md-sys-color-error)';
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <Spin size="large" tip="加载中..." />
+      <div className="min-h-screen relative z-10 p-4">
+        <PageHeader title="报告管理" description="查看和生成您的职业规划报告" icon={<span className="material-symbols-rounded">description</span>} />
+        <SkeletonLoader type="card@3" />
       </div>
     );
   }
 
   return (
     <div className="min-h-screen relative z-10 p-4">
+      <PageHeader title="报告管理" description="查看和生成您的职业规划报告" icon={<span className="material-symbols-rounded">description</span>} />
+
       <div className="mb-4 flex items-center justify-between">
-        <Segmented
-          value={activeTrack}
-          onChange={(v) => setActiveTrack(v as 'bigtech' | 'gov')}
-          options={[
-            { label: '大厂技术岗', value: 'bigtech' },
-            { label: '国企研发岗', value: 'gov' },
-          ]}
-          className="flex-1"
-        />
+        <div className="flex gap-2">
+          <button
+            className="md-typescale-label-large px-4 py-1.5 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: activeTrack === 'bigtech' ? 'var(--md-sys-color-primary-container)' : 'transparent',
+              color: activeTrack === 'bigtech' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              border: `1px solid ${activeTrack === 'bigtech' ? 'var(--md-sys-color-outline-variant)' : 'var(--md-sys-color-outline)'}`,
+              borderRadius: 'var(--md-sys-shape-corner-full)',
+            }}
+            onClick={() => setActiveTrack('bigtech')}
+          >
+            大厂技术面
+          </button>
+          <button
+            className="md-typescale-label-large px-4 py-1.5 transition-colors cursor-pointer"
+            style={{
+              backgroundColor: activeTrack === 'gov' ? 'var(--md-sys-color-primary-container)' : 'transparent',
+              color: activeTrack === 'gov' ? 'var(--md-sys-color-on-primary-container)' : 'var(--md-sys-color-on-surface-variant)',
+              border: `1px solid ${activeTrack === 'gov' ? 'var(--md-sys-color-outline-variant)' : 'var(--md-sys-color-outline)'}`,
+              borderRadius: 'var(--md-sys-shape-corner-full)',
+            }}
+            onClick={() => setActiveTrack('gov')}
+          >
+            国企综合面
+          </button>
+        </div>
         <Button
           icon={generating ? <SyncOutlined spin /> : <ReloadOutlined />}
           onClick={handleGenerateReport}
@@ -323,26 +337,24 @@ export default function PlanPage() {
       </div>
 
       {!student && !loading && (
-        <Card>
-          <Empty
-            description="您还没有创建学生资料"
-            image={Empty.PRESENTED_IMAGE_SIMPLE}
-          >
-            <Button type="primary" onClick={() => message.info('请在个人中心完善信息')}>
+        <SurfaceCard>
+          <div className="text-center py-8">
+            <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+            <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>您还没有创建学生资料</div>
+            <Button type="primary" onClick={() => message.info('请在个人中心完善信息')} className="mt-3">
               完善个人信息
             </Button>
-          </Empty>
-        </Card>
+          </div>
+        </SurfaceCard>
       )}
 
       {student && (
         <div className="flex flex-col gap-4">
-          {/* 左侧历史记录列表面板 */}
-          <Card
+          <SurfaceCard
             className="w-full"
-            title={
-              <div className="flex items-center justify-between">
-                <span className="font-medium">历史记录 ({getFilteredAndSortedReports().length})</span>
+            title={`历史记录 (${getFilteredAndSortedReports().length})`}
+            action={
+              <Space size="small">
                 <Button
                   type="text"
                   size="small"
@@ -350,11 +362,6 @@ export default function PlanPage() {
                   onClick={loadReports}
                   loading={loadingReports}
                 />
-              </div>
-            }
-            extra={
-              <Space size="small">
-                {/* 排序下拉菜单 */}
                 <Dropdown
                   menu={{
                     items: [
@@ -381,7 +388,6 @@ export default function PlanPage() {
                   />
                 </Dropdown>
 
-                {/* 筛选下拉菜单 */}
                 <Select
                   value={filterType}
                   onChange={handleTypeChange}
@@ -399,7 +405,6 @@ export default function PlanPage() {
             <div className="space-y-2">
               {getFilteredAndSortedReports().length > 0 ? (
                 getFilteredAndSortedReports().map((report) => {
-                  // 解析content获取预览信息
                   let previewCompleteness = 0;
                   let previewCompetitiveness = 0;
                   try {
@@ -415,37 +420,52 @@ export default function PlanPage() {
                   return (
                     <div
                       key={report.id}
-                      className={`p-3 cursor-pointer rounded hover:bg-gray-100 transition-colors ${
-                        selectedReportId === report.id
-                          ? ' border-2 border-gray-200'
-                          : 'border border-gray-200' 
-                      }`}
+                      className="p-3 cursor-pointer rounded transition-colors"
+                      style={{
+                        backgroundColor: 'var(--md-sys-color-surface-container-low)',
+                        border: selectedReportId === report.id
+                          ? '2px solid var(--md-sys-color-primary)'
+                          : '1px solid var(--md-sys-color-outline-variant)',
+                      }}
                       onClick={() => handleSelectReport(report.id)}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-low)';
+                      }}
                     >
                       <div className="flex justify-between items-start">
-                        <div className="font-medium flex-1 text-sm">{report.title}</div>
+                        <div className="md-typescale-body-medium flex-1" style={{ color: 'var(--md-sys-color-on-surface)' }}>{report.title}</div>
                         <Space size="small">
-                          <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-600">
+                          <span
+                            className="md-typescale-label-small px-2 py-1 rounded"
+                            style={{
+                              backgroundColor: 'var(--md-sys-color-primary-container)',
+                              color: 'var(--md-sys-color-on-primary-container)',
+                            }}
+                          >
                             {report.status}
                           </span>
-                          <Button
-                            type="text"
-                            size="small"
-                            icon={<DeleteOutlined />}
+                          <button
+                            className="cursor-pointer transition-colors"
+                            style={{ color: 'var(--md-sys-color-on-surface-variant)', border: 'none', background: 'none', padding: '4px' }}
                             onClick={(e) => handleDeleteReport(report.id, e)}
-                            className="text-gray-400 hover:text-red-500"
-                          />
+                            onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--md-sys-color-error)'; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--md-sys-color-on-surface-variant)'; }}
+                          >
+                            <DeleteOutlined />
+                          </button>
                         </Space>
                       </div>
-                      <div className="text-gray-500 text-xs mt-1">
+                      <div className="md-typescale-body-small mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                         {new Date(report.createdAt * 1000).toLocaleString('zh-CN')}
                       </div>
-                      {/* 关键指标预览 */}
-                      <div className="flex gap-2 mt-2 text-xs">
-                        <span className="text-green-600">
+                      <div className="flex gap-2 mt-2">
+                        <span className="md-typescale-label-small" style={{ color: 'var(--md-sys-color-success)' }}>
                           完整度: {Math.round(previewCompleteness)}%
                         </span>
-                        <span className="text-blue-600">
+                        <span className="md-typescale-label-small" style={{ color: 'var(--md-sys-color-primary)' }}>
                           竞争力: {Math.round(previewCompetitiveness)}%
                         </span>
                       </div>
@@ -453,94 +473,111 @@ export default function PlanPage() {
                   );
                 })
               ) : (
-                <Empty
-                  description={
-                    filterType === 'all'
-                      ? '暂无历史记录'
-                      : `暂无${filterType === 'bigtech' ? '大厂' : '国企'}的报告`
-                  }
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                />
+                <div className="text-center py-8">
+                  <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                  <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                    {filterType === 'all' ? '暂无历史记录' : `暂无${filterType === 'bigtech' ? '大厂' : '国企'}的报告`}
+                  </div>
+                </div>
               )}
             </div>
-          </Card>
+          </SurfaceCard>
 
-          {/* 右侧详情展示 */}
-          <Card className="w-full" title={reports.find(r => r.id === selectedReportId)?.title || '职业规划详情'}>
+          <SurfaceCard className="w-full" title={reports.find(r => r.id === selectedReportId)?.title || '职业规划详情'}>
             {generating && (
               <div className="py-8 flex flex-col items-center">
-                <Spin size="large" tip="生成中..." />
-                <p className="mt-4 text-gray-500">正在根据您的资料生成职业规划...</p>
+                <SkeletonLoader type="card@3" />
+                <p className="mt-4 md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>正在根据您的资料生成职业规划...</p>
               </div>
             )}
 
             {!generating && hasReport && (
               <>
-                <Card title="整体评估" className="mb-4">
+                <SurfaceCard title="整体评估" className="mb-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="text-gray-600 text-sm mb-1">资料完整度</div>
-                      <Progress percent={Math.round(completeness)} strokeColor="#52c41a" />
+                    <div className="w-full">
+                      <div className="flex justify-between mb-1">
+                        <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>资料完整度</span>
+                        <span className="md-typescale-label-medium" style={{ color: getProgressColor(Math.round(completeness)) }}>{Math.round(completeness)}%</span>
+                      </div>
+                      <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.round(completeness)}%`, backgroundColor: getProgressColor(Math.round(completeness)), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                      </div>
                     </div>
-                    <div>
-                      <div className="text-gray-600 text-sm mb-1">竞争力指数</div>
-                      <Progress percent={Math.round(competitiveness)} strokeColor="#1890ff" />
+                    <div className="w-full">
+                      <div className="flex justify-between mb-1">
+                        <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>竞争力指数</span>
+                        <span className="md-typescale-label-medium" style={{ color: getProgressColor(Math.round(competitiveness)) }}>{Math.round(competitiveness)}%</span>
+                      </div>
+                      <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                        <div style={{ width: `${Math.round(competitiveness)}%`, backgroundColor: getProgressColor(Math.round(competitiveness)), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                      </div>
                     </div>
                   </div>
-                </Card>
+                </SurfaceCard>
 
-                <Card title="技能掌握进度" className="mb-4">
+                <SurfaceCard title="技能掌握进度" className="mb-4">
                   <div className="space-y-4">
                     {skills.length > 0 ? (
                       skills.map((skill, index) => (
-                        <div key={index}>
+                        <div key={index} className="w-full">
                           <div className="flex justify-between mb-1">
-                            <span className="font-medium">{skill.name}</span>
-                            <span style={{ color: getStatusColor(skill.status) }}>{skill.status}</span>
+                            <span className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{skill.name}</span>
+                            <span className="md-typescale-label-medium" style={{ color: getStatusColor(skill.status) }}>{skill.status}</span>
                           </div>
-                          <Progress percent={skill.level} strokeColor={getStatusColor(skill.status)} />
+                          <div style={{ backgroundColor: 'var(--md-sys-color-surface-container-high)', borderRadius: 'var(--md-sys-shape-corner-full)', height: '8px', overflow: 'hidden' }}>
+                            <div style={{ width: `${skill.level}%`, backgroundColor: getStatusColor(skill.status), borderRadius: 'var(--md-sys-shape-corner-full)', height: '100%', transition: 'width 0.3s ease' }} />
+                          </div>
                         </div>
                       ))
                     ) : (
-                      <Empty description="暂无技能数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                      <div className="text-center py-8">
+                        <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                        <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>暂无技能数据</div>
+                      </div>
                     )}
                   </div>
-                </Card>
+                </SurfaceCard>
 
-                <Card title="学习时间轴">
+                <SurfaceCard title="学习时间轴">
                   {timeline.length > 0 ? (
-                    <Timeline
-                      items={timeline.map(item => ({
-                        color: 'blue',
-                        content: (
-                          <div>
-                            <div className="font-medium">{item.title}</div>
-                            <div className="text-gray-500 text-sm">{item.desc}</div>
-                            <div className="text-gray-400 text-xs">{item.date}</div>
+                    <div className="space-y-4">
+                      {timeline.map((item, idx) => (
+                        <div key={idx} className="flex gap-3">
+                          <div className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--md-sys-color-primary)' }} />
+                            {idx < timeline.length - 1 && <div className="w-px flex-1" style={{ backgroundColor: 'var(--md-sys-color-outline-variant)' }} />}
                           </div>
-                        ),
-                      }))}
-                    />
+                          <div className="flex-1 pb-4">
+                            <div className="md-typescale-title-small" style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.title}</div>
+                            <div className="md-typescale-body-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.desc}</div>
+                            <div className="md-typescale-label-small" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.date}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   ) : (
-                    <Empty description="暂无时间轴数据" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                    <div className="text-center py-8">
+                      <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                      <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>暂无时间轴数据</div>
+                    </div>
                   )}
-                </Card>
+                </SurfaceCard>
               </>
             )}
 
             {!generating && !hasReport && (
-              <Card>
-                <Empty
-                  description="暂无职业规划数据"
-                  image={Empty.PRESENTED_IMAGE_SIMPLE}
-                >
-                  <Button type="primary" onClick={handleGenerateReport}>
+              <SurfaceCard>
+                <div className="text-center py-8">
+                  <span className="material-symbols-rounded text-4xl" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>inbox</span>
+                  <div className="md-typescale-body-large mt-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>暂无职业规划数据</div>
+                  <Button type="primary" onClick={handleGenerateReport} className="mt-3">
                     生成职业规划
                   </Button>
-                </Empty>
-              </Card>
+                </div>
+              </SurfaceCard>
             )}
-          </Card>
+          </SurfaceCard>
         </div>
       )}
     </div>
