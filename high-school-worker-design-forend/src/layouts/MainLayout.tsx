@@ -1,57 +1,26 @@
-import { Outlet, useLocation } from 'react-router-dom';
-import { TabBar } from 'antd-mobile';
-import { HomeOutlined, FileTextOutlined, UserOutlined, BulbOutlined, BankOutlined, ExclamationCircleOutlined, BookOutlined, QuestionCircleOutlined, CompassOutlined, ReadOutlined, MoonOutlined, SunOutlined, MessageOutlined } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { Modal } from 'antd';
-import { useTaskStore, useThemeStore, useAuthStore } from '../stores';
-import { useState, useEffect } from 'react';
-import SidebarNav from '../components/SidebarNav';
-
-interface DocLink {
-  title: string;
-  icon: React.ReactNode;
-  path: string;
-}
-
-const docLinks: DocLink[] = [
-  { title: '使用指南', icon: <BookOutlined />, path: '/doc?tab=guide&doc=welcome' },
-  { title: '常见问题', icon: <QuestionCircleOutlined />, path: '/doc?tab=faq&doc=faq' },
-  { title: '职业探索', icon: <CompassOutlined />, path: '/holland' },
-  { title: '面试技巧', icon: <ReadOutlined />, path: '/interview' },
-];
+import { ExclamationCircleOutlined } from '@ant-design/icons';
+import { useTaskStore, useAuthStore } from '../stores';
+import { useState, useEffect, useMemo } from 'react';
+import TopAppBar from '../components/TopAppBar';
+import NavigationDrawer from '../components/NavigationDrawer';
+import CommandPalette, { type FlatNavItem } from '../components/CommandPalette';
+import { useNavItems } from '../hooks/useNavItems';
 
 const DESKTOP_BREAKPOINT = 1024;
-
-const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
-  <svg
-    className={className}
-    viewBox="0 0 24 24"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3 10L12 5L21 10L12 15L3 10Z" />
-    <path d="M5 12V18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18V12" />
-    <path d="M5 18C5 19.1046 8.13401 20 12 20C15.866 20 19 19.1046 19 18" />
-  </svg>
-);
 
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
   const { hasActiveTask, taskDescription, setActiveTask } = useTaskStore();
-  const { theme, toggleTheme } = useThemeStore();
+  const { role } = useAuthStore();
   const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
-
-  const isStudentPage = location.pathname.startsWith('/student');
-  const isTeacherPage = location.pathname.startsWith('/teacher');
-  const shouldFixTabBar = !isStudentPage && !isTeacherPage && !isDesktop;
+  const isMobile = !isDesktop;
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [commandOpen, setCommandOpen] = useState(false);
 
   useEffect(() => {
     const checkDesktop = () => {
@@ -62,77 +31,52 @@ export default function MainLayout() {
     return () => window.removeEventListener('resize', checkDesktop);
   }, []);
 
-  const { role } = useAuthStore();
-  
-  const studentTabs = [
-    { key: 'home', title: '首页', icon: <HomeOutlined />, path: '/' },
-    { key: 'plan', title: '规划', icon: <BulbOutlined />, path: '/plan' },
-    { key: 'resume', title: '简历', icon: <FileTextOutlined />, path: '/resume' },
-    { key: 'messages', title: '消息', icon: <MessageOutlined />, path: '/messages' },
-    { key: 'jobs', title: '岗位', icon: <BankOutlined />, path: '/jobs' },
-    { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/profile' },
-  ];
-
-  const teacherTabs = [
-    { key: 'dashboard', title: '工作台', icon: <HomeOutlined />, path: '/teacher/index' },
-    { key: 'students', title: '学生', icon: <UserOutlined />, path: '/teacher/students' },
-    { key: 'invite', title: '邀请码', icon: <FileTextOutlined />, path: '/teacher/invite-codes' },
-    { key: 'alerts', title: '预警', icon: <ExclamationCircleOutlined />, path: '/teacher/alerts' },
-    { key: 'messages', title: '消息', icon: <MessageOutlined />, path: '/teacher/messages' },
-    { key: 'profile', title: '我的', icon: <UserOutlined />, path: '/teacher/profile' },
-  ];
-
-  const tabs = role === 'teacher' ? teacherTabs : studentTabs;
-
-  const getActiveTab = () => {
-    const pathname = location.pathname;
-    
-    // Teacher routes
-    if (pathname === '/teacher/index') return 'dashboard';
-    if (pathname.startsWith('/teacher/students')) return 'students';
-    if (pathname.startsWith('/teacher/invite')) return 'invite';
-    if (pathname.startsWith('/teacher/alerts')) return 'alerts';
-    if (pathname.startsWith('/teacher/messages')) return 'messages';
-    if (pathname.startsWith('/teacher/profile')) return 'profile';
-    
-    // Student routes
-    if (pathname === '/start') return 'home';
-    
-    const exactMatch = tabs.find(tab => tab.path === pathname);
-    if (exactMatch) return exactMatch.key;
-    
-    if (pathname.startsWith('/holland')) return 'home';
-    if (pathname.startsWith('/plan')) return 'plan';
-    if (pathname.startsWith('/resume')) return 'resume';
-    if (pathname.startsWith('/messages')) return 'messages';
-    if (pathname.startsWith('/jobs')) return 'jobs';
-    if (pathname.startsWith('/student')) return 'profile';
-    if (pathname.startsWith('/settings')) return 'profile';
-    if (pathname.startsWith('/profile')) return 'profile';
-    
-    return role === 'teacher' ? 'dashboard' : 'home';
-  };
-
-  const activeTab = getActiveTab();
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (isMobile) setDrawerOpen(false);
+    else setDrawerOpen(true);
+  }, [isMobile]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    console.log('[MainLayout] Task state:', { hasActiveTask, taskDescription });
-  }, [hasActiveTask, taskDescription]);
-
-  const handleTabChange = (key: string) => {
-    const tab = tabs.find(t => t.key === key);
-    if (tab) {
-      let targetPath = tab.path;
-      if (tab.key === 'home') targetPath = '/start';
-      if (tab.key === 'dashboard') targetPath = '/teacher/index';
-
-      if (hasActiveTask) {
-        setPendingNavigation(targetPath);
-        setIsModalVisible(true);
-      } else {
-        navigate(targetPath);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCommandOpen(true);
       }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  const navRole = role === 'teacher' ? 'teacher' : 'student';
+  const { navGroups } = useNavItems(navRole);
+
+  const flatNavItemsWithGroups: FlatNavItem[] = useMemo(() =>
+    navGroups.flatMap(group =>
+      group.items.map(item => ({ ...item, group: group.title }))
+    ), [navGroups]);
+
+  const activePath = location.pathname;
+
+  const handleNavClick = (path: string) => {
+    if (hasActiveTask) {
+      setPendingNavigation(path);
+      setIsModalVisible(true);
+    } else {
+      navigate(path);
     }
+    if (isMobile) setDrawerOpen(false);
+  };
+
+  const handleNavigate = (path: string) => {
+    if (hasActiveTask) {
+      setPendingNavigation(path);
+      setIsModalVisible(true);
+    } else {
+      navigate(path);
+    }
+    setCommandOpen(false);
   };
 
   const handleConfirmNavigation = () => {
@@ -149,132 +93,32 @@ export default function MainLayout() {
     setPendingNavigation(null);
   };
 
-  const handleToggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
-  };
-
-  const sidebarWidth = isSidebarCollapsed ? 64 : 220;
-
   return (
     <div className="min-h-screen" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
-      <SidebarNav 
-        isCollapsed={isSidebarCollapsed} 
-        onToggleCollapse={handleToggleSidebar} 
+      <TopAppBar
+        onMenuClick={() => setDrawerOpen(true)}
+        onCommandOpen={() => setCommandOpen(true)}
+        isMobile={isMobile}
       />
-
-      <div 
-        className="transition-all duration-300"
-        style={isDesktop ? { marginLeft: `${sidebarWidth}px` } : undefined}
-      >
-        {isDesktop && (
-          <div 
-            className="flex items-center justify-between px-4 md:px-6 sticky top-0 z-20"
-            style={{ 
-              backgroundColor: 'var(--md-sys-color-surface-container)',
-              borderBottom: '1px solid var(--md-sys-color-outline-variant)',
-              height: '56px'
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <div 
-                className="flex items-center justify-center rounded-full"
-                style={{ 
-                  background: 'linear-gradient(135deg, #0B57D0, #1E88E5)',
-                  width: '36px',
-                  height: '36px',
-                  boxShadow: 'var(--md-sys-elevation-1)'
-                }}
-              >
-                <GraduationCapIcon className="w-5 h-5 text-white" />
-              </div>
-              <span 
-                className="font-medium text-base hidden sm:block"
-                style={{ color: 'var(--md-sys-color-on-surface)' }}
-              >
-                职业规划助手
-              </span>
-            </div>
-            <div className="flex items-center gap-1 md:gap-2 overflow-x-auto">
-              {docLinks.map((link) => (
-                <button
-                  key={link.path}
-                  onClick={() => navigate(link.path)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all whitespace-nowrap"
-                  style={{
-                    backgroundColor: location.pathname + location.search === link.path ||
-                    (location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?'))
-                      ? 'var(--md-sys-color-primary-container)'
-                      : 'transparent',
-                    color: location.pathname + location.search === link.path ||
-                    (location.pathname.startsWith(link.path.split('?')[0]) && link.path.includes('?'))
-                      ? 'var(--md-sys-color-on-primary-container)'
-                      : 'var(--md-sys-color-on-surface-variant)',
-                  }}
-                >
-                  <span className="text-base">{link.icon}</span>
-                  <span>{link.title}</span>
-                </button>
-              ))}
-              <button
-                onClick={toggleTheme}
-                className="flex items-center justify-center w-9 h-9 rounded-full text-sm transition-all"
-                style={{
-                  backgroundColor: 'var(--md-sys-color-surface-container-high)',
-                  color: 'var(--md-sys-color-on-surface-variant)',
-                }}
-                title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-              >
-                {theme === 'dark' ? <SunOutlined className="text-base" /> : <MoonOutlined className="text-base" />}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className={`${shouldFixTabBar ? 'pb-[60px]' : ''}`}>
-          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-4 md:py-6">
-            <Outlet />
-          </div>
+      <NavigationDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        onCommandOpen={() => setCommandOpen(true)}
+        isMobile={isMobile}
+        activePath={activePath}
+        onNavClick={handleNavClick}
+      />
+      <main style={{ marginLeft: isMobile ? 0 : 320 }}>
+        <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-4 md:py-6">
+          <Outlet />
         </div>
-      </div>
-
-      {!isDesktop && (
-        <button
-          onClick={toggleTheme}
-          className="fixed right-3 z-30 flex items-center justify-center w-10 h-10 rounded-full shadow-lg transition-all active:scale-90 lg:hidden"
-          style={{
-            backgroundColor: 'var(--md-sys-color-surface-container-high)',
-            color: 'var(--md-sys-color-on-surface-variant)',
-            top: '12px',
-          }}
-          title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}
-        >
-          {theme === 'dark' ? <SunOutlined className="text-lg" /> : <MoonOutlined className="text-lg" />}
-        </button>
-      )}
-
-      {!isDesktop && (
-        <TabBar
-          activeKey={activeTab}
-          onChange={handleTabChange}
-          className="fixed bottom-0 left-0 right-0 z-20"
-          style={{ 
-            backgroundColor: 'var(--md-sys-color-surface-container)',
-            borderTop: '1px solid var(--md-sys-color-outline-variant)'
-          }}
-        >
-          {tabs.map((tab) => (
-            <TabBar.Item 
-              key={tab.key} 
-              title={tab.title} 
-              icon={tab.icon}
-              style={{
-                color: activeTab === tab.key ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)'
-              }}
-            />
-          ))}
-        </TabBar>
-      )}
-
+      </main>
+      <CommandPalette
+        open={commandOpen}
+        onClose={() => setCommandOpen(false)}
+        onNavigate={handleNavigate}
+        navItems={flatNavItemsWithGroups}
+      />
       <Modal
         title={
           <div className="flex items-center gap-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>

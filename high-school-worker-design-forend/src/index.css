@@ -1049,3 +1049,104 @@ body {
 .landing-cta-btn {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* ── Navigation Drawer (Ant Design Drawer) ────────── */
+
+.ant-drawer-content {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.ant-drawer-header {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border-bottom-color: var(--md-sys-color-outline-variant) !important;
+}
+
+.ant-drawer-body {
+  background-color: var(--md-sys-color-surface-container) !important;
+  padding: 0 !important;
+}
+
+.ant-drawer-mask {
+  background-color: rgba(0, 0, 0, 0.4) !important;
+}
+
+[data-theme="dark"] .ant-drawer-mask {
+  background-color: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* ── Command Palette Modal ───────────────────────── */
+
+.command-palette-modal .ant-modal-content {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border-radius: var(--md-sys-shape-corner-extra-large) !important;
+  border: 1px solid var(--md-sys-color-outline-variant) !important;
+  box-shadow: var(--md-sys-elevation-3) !important;
+}
+
+.command-palette-modal .ant-modal-header {
+  background-color: var(--md-sys-color-surface-container) !important;
+  border-radius: var(--md-sys-shape-corner-extra-large) var(--md-sys-shape-corner-extra-large) 0 0 !important;
+}
+
+.command-palette-modal .ant-modal-body {
+  background-color: var(--md-sys-color-surface-container) !important;
+  padding: 0 !important;
+}
+
+.command-palette-modal .ant-modal-footer {
+  display: none !important;
+}
+
+/* ── Nav List Items (MD3 nav mode) ───────────────── */
+
+.nav-item-button {
+  border-radius: var(--md-sys-shape-corner-small) !important;
+  transition: all 0.15s ease !important;
+}
+
+.nav-item-button:hover {
+  background-color: var(--md-sys-color-surface-container-high) !important;
+}
+
+.nav-item-button.active {
+  background-color: var(--md-sys-color-secondary-container) !important;
+  color: var(--md-sys-color-on-secondary-container) !important;
+}
+
+/* ── Quick Action Chips ──────────────────────────── */
+
+.quick-action-chip.ant-tag {
+  border-radius: var(--md-sys-shape-corner-small) !important;
+  border: 1px solid var(--md-sys-color-outline) !important;
+  background-color: var(--md-sys-color-primary-container) !important;
+  color: var(--md-sys-color-on-primary-container) !important;
+  cursor: pointer;
+  transition: all 0.15s ease !important;
+}
+
+.quick-action-chip.ant-tag:hover {
+  background-color: var(--md-sys-color-surface-container-high) !important;
+  border-color: var(--md-sys-color-primary) !important;
+}
+
+/* ── Role Chip ───────────────────────────────────── */
+
+.role-chip.ant-tag {
+  border-radius: var(--md-sys-shape-corner-full) !important;
+  border: none !important;
+  font-weight: 500;
+}
+
+/* ── TopAppBar kbd hint ──────────────────────────── */
+
+.kbd-hint {
+  font-size: 0.65rem;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background-color: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  font-family: var(--font-sans);
+}
