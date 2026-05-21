@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, Button, Segmented, Input, Avatar, Tag, message, Modal, Progress, List } from 'antd';
 import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
@@ -6,7 +6,6 @@ import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
 import SurfaceCard from '../../components/SurfaceCard';
 import SkeletonLoader from '../../components/SkeletonLoader';
-import ApiErrorState from '../../components/ApiErrorState';
 import './FloatingPolygons.css';
 
 export default function InterviewPage() {
@@ -139,7 +138,7 @@ export default function InterviewPage() {
       
       message.info('开始录音...');
       
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('录音启动失败:', error);
       if (error.name === 'NotAllowedError') {
         message.error('无法访问麦克风，请允许麦克风权限');

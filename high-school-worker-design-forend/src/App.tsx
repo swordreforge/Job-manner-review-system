@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Suspense, lazy } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ConfigProvider, theme as antdTheme, type ThemeConfig } from 'antd';
@@ -230,19 +230,11 @@ export default function App() {
   const { initialize, isAuthenticated, isAuthChecked, user } = useAuthStore();
   const { theme } = useThemeStore();
   const isDark = theme === 'dark';
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const showOnboarding = isAuthChecked && isAuthenticated && !!user?.firstLogin && user?.role !== 'teacher';
 
   useEffect(() => {
     initialize();
   }, [initialize]);
-
-  useEffect(() => {
-    console.log('[App] check onboarding:', { isAuthChecked, isAuthenticated, firstLogin: user?.firstLogin, role: user?.role });
-    if (isAuthChecked && isAuthenticated && user?.firstLogin && user?.role !== 'teacher') {
-      console.log('[App] show onboarding!');
-      setShowOnboarding(true);
-    }
-  }, [isAuthChecked, isAuthenticated, user]);
 
   useEffect(() => {
     const stored = localStorage.getItem('theme');
@@ -258,7 +250,7 @@ export default function App() {
       <GlobalBackground />
       <OnboardingWizardModal
         open={showOnboarding}
-        onComplete={() => setShowOnboarding(false)}
+        onComplete={() => { initialize(); }}
       />
       <ConfigProvider locale={zhCN} theme={createAntdThemeConfig(isDark)}>
         <Suspense fallback={<RouteLoadingFallback />}>

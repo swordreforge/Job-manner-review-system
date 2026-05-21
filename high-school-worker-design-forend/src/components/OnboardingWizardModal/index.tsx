@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button, message, Steps, Drawer, Modal } from 'antd';
 import { FileTextOutlined, BulbOutlined, AimOutlined, BankOutlined, MessageOutlined, MenuOutlined, LeftOutlined, RocketOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
@@ -59,13 +59,7 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
   const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(0);
   const [folded, setFolded] = useState(true);
-  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
-
-  useEffect(() => {
-    if (open && folded) {
-      setShowWelcomeModal(true);
-    }
-  }, [open]);
+  const showWelcomeModal = open && folded;
 
   const handleComplete = async () => {
     try {
@@ -91,7 +85,6 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
   };
 
   const handleOpenGuide = () => {
-    setShowWelcomeModal(false);
     setFolded(false);
   };
 
@@ -101,7 +94,7 @@ export default function OnboardingWizardModal({ open, onComplete }: OnboardingWi
     <>
       <Modal
         open={showWelcomeModal}
-        onCancel={() => setShowWelcomeModal(false)}
+        onCancel={() => setFolded(false)}
         footer={null}
         closable={false}
         maskClosable={false}

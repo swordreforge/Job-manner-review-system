@@ -15,16 +15,17 @@ export default function TeacherAlerts() {
 
   useEffect(() => {
     fetchAlerts();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, filters]);
 
   const fetchAlerts = async () => {
     setLoading(true);
     try {
       const res = await teacherApi.listAlerts({ page, pageSize, ...filters });
-      const getData = (r: any) => r.data ?? r;
+      const getData = (r: Record<string, unknown>) => r.data ?? r;
       setAlerts(getData(res).list || []);
       setTotal(getData(res).total || 0);
-    } catch (error) {
+    } catch {
       message.error('获取预警列表失败');
     } finally {
       setLoading(false);
@@ -36,7 +37,7 @@ export default function TeacherAlerts() {
       await teacherApi.resolveAlert(id);
       message.success('已标记为已解决');
       fetchAlerts();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -46,7 +47,7 @@ export default function TeacherAlerts() {
       await teacherApi.ignoreAlert(id);
       message.success('已忽略');
       fetchAlerts();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -56,7 +57,7 @@ export default function TeacherAlerts() {
       await teacherApi.unresolveAlert(id);
       message.success('已撤销，现在为待处理状态');
       fetchAlerts();
-    } catch (error) {
+    } catch {
       message.error('操作失败');
     }
   };
@@ -109,7 +110,7 @@ export default function TeacherAlerts() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: TeacherAlert) => (
+      render: (_: unknown, record: TeacherAlert) => (
         <Space>
           {record.status === 'pending' && (
             <>
@@ -141,16 +142,19 @@ export default function TeacherAlerts() {
           loading={loading}
           onClick={async () => {
             try {
-              const studentsRes = await teacherApi.listStudents({ page: 1, pageSize: 100 });
-              const list = (studentsRes as any).data?.list || (studentsRes as any).list || [];
-              for (const student of list) {
-                try {
-                  await teacherApi.checkAlert(student.id);
-                } catch (e) {}
+const studentsRes = await teacherApi.listStudents({ page: 1, pageSize: 100 });
+               const studentsData = (studentsRes as Record<string, unknown>).data ?? studentsRes;
+               const list = (studentsData as { list?: { id: number }[] }).list || [];
+               for (const student of list) {
+                 try {
+                   await teacherApi.checkAlert(student.id);
+                 } catch {
+                   // intentionally empty
+                 }
               }
               message.success('预警检查完成');
               fetchAlerts();
-            } catch (error) {
+            } catch {
               message.error('检查失败');
             }
           }}

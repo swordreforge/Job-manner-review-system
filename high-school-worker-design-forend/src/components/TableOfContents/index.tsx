@@ -1,11 +1,6 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useEffect, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-
-interface Heading {
-  id: string;
-  text: string;
-  level: number;
-}
 
 interface TableOfContentsProps {
   content: string;
@@ -16,15 +11,12 @@ interface TableOfContentsProps {
 
 export default function TableOfContents({ content, onHeadingClick, onClose, isMobile = false }: TableOfContentsProps) {
   const [activeId, setActiveId] = useState<string>('');
-  const [headings, setHeadings] = useState<Heading[]>([]);
 
-  // 解析 Markdown 内容，提取标题
-  useEffect(() => {
+  const headings = useMemo(() => {
     const headingRegex = /^(#{1,6})\s+(.+)$/gm;
     const matches = Array.from(content.matchAll(headingRegex));
-    const extractedHeadings = matches.map((match) => {
+    return matches.map((match) => {
       const text = match[2].trim();
-      // 使用与 MarkdownHeading 相同的 ID 生成逻辑
       const id = text
         .toLowerCase()
         .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
@@ -35,7 +27,6 @@ export default function TableOfContents({ content, onHeadingClick, onClose, isMo
         level: match[1].length,
       };
     });
-    setHeadings(extractedHeadings);
   }, [content]);
 
   // 监听滚动，高亮当前章节

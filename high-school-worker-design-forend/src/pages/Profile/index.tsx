@@ -331,8 +331,8 @@ export default function ProfilePage() {
                   } else {
                     message.error(result.msg);
                   }
-                } catch (error) {
-                  message.error('加入学校失败');
+} catch {
+                   message.error('加入学校失败');
                 } finally {
                   setJoinSchoolLoading(false);
                 }

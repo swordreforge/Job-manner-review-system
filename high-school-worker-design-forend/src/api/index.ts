@@ -164,7 +164,7 @@ export const reportApi = {
     },
     fetchWithAuth: async (
       data: { studentId: number; track?: string; targetJobId?: number },
-      onEvent: (event: { type: string; data: any }) => void,
+      onEvent: (event: { type: string; data: unknown }) => void,
       onError: (error: Error) => void
     ) => {
       const token = localStorage.getItem('token');
@@ -298,7 +298,7 @@ export const interviewApi = {
   start: (data: { mode: 'practice' | 'assessment'; studentId?: number }) =>
     api.post<{ code: number; msg: string; data: import('../types').InterviewSession }>('/interview/start', data),
   
-  chatStream: async (data: { sessionId: number; message: string }, onEvent: (event: { type: string; data: any }) => void, onError: (error: Error) => void) => {
+  chatStream: async (data: { sessionId: number; message: string }, onEvent: (event: { type: string; data: unknown }) => void, onError: (error: Error) => void) => {
     const token = localStorage.getItem('token');
     
     try {

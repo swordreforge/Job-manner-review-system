@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SearchOutlined, CloseOutlined, FileTextOutlined } from '@ant-design/icons';
 import MiniSearch from 'minisearch';
@@ -9,7 +9,7 @@ interface SearchResult {
   title: string;
   score: number;
   text?: string;
-  match?: Record<string, any>;
+  match?: Record<string, unknown>;
   terms?: string[];
 }
 
@@ -30,12 +30,22 @@ const DOCUMENTS = [
 
 export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const searchIndexRef = useRef<MiniSearch | null>(null);
+  const [searchIndex, setSearchIndex] = useState<MiniSearch | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLUListElement>(null);
+
+  const updateSearchQuery = useCallback((query: string) => {
+    setSearchQuery(query);
+    setSelectedIndex(0);
+  }, []);
+
+  const handleResultClick = useCallback((result: SearchResult) => {
+    const docId = result.id;
+    onClose();
+    window.dispatchEvent(new CustomEvent('openDoc', { detail: { docId } }));
+  }, [onClose]);
 
   // 初始化搜索索引
   useEffect(() => {
@@ -60,7 +70,7 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
 
       const validDocuments = documents.filter((doc): doc is NonNullable<typeof doc> => doc !== null);
 
-      searchIndexRef.current = new MiniSearch({
+      const index = new MiniSearch({
         fields: ['title', 'text'],
         storeFields: ['title', 'text'],
         searchOptions: {
@@ -70,29 +80,21 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
         },
       });
 
-      searchIndexRef.current.addAll(validDocuments);
+      index.addAll(validDocuments);
+      setSearchIndex(index);
       setIsLoading(false);
     }
 
-    if (isOpen && !searchIndexRef.current) {
+    if (isOpen && !searchIndex) {
       initSearchIndex();
     }
-  }, [isOpen]);
+  }, [isOpen, searchIndex]);
 
-  // 执行搜索
-  useEffect(() => {
-    if (!searchIndexRef.current || !searchQuery.trim()) {
-      setSearchResults([]);
-      setSelectedIndex(0);
-      return;
-    }
-
-    const results = searchIndexRef.current.search(searchQuery) as unknown as SearchResult[];
-
-    // 限制结果数量为 10
-    setSearchResults(results.slice(0, 10));
-    setSelectedIndex(0);
-  }, [searchQuery]);
+  // Compute search results directly from query + search index
+  const searchResults = useMemo(() => {
+    if (!searchIndex || !searchQuery.trim()) return [];
+    return (searchIndex.search(searchQuery) as unknown as SearchResult[]).slice(0, 10);
+  }, [searchIndex, searchQuery]);
 
   // 键盘事件处理
   useEffect(() => {
@@ -122,7 +124,7 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, searchResults, selectedIndex, onClose]);
+  }, [isOpen, searchResults, selectedIndex, onClose, handleResultClick]);
 
   // 自动滚动到选中的结果
   useEffect(() => {
@@ -140,13 +142,6 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
       inputRef.current?.focus();
     }
   }, [isOpen]);
-
-  function handleResultClick(result: SearchResult) {
-    const docId = result.id;
-    onClose();
-    // 触发打开文档的事件
-    window.dispatchEvent(new CustomEvent('openDoc', { detail: { docId } }));
-  }
 
   function escapeHtml(text: string): string {
     const div = document.createElement('div');
@@ -208,13 +203,13 @@ export default function DocSearch({ isOpen, onClose }: DocSearchProps) {
                 ref={inputRef}
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => updateSearchQuery(e.target.value)}
                 placeholder="搜索文档..."
                 className="flex-1 text-base outline-none bg-transparent text-slate-800 placeholder:text-slate-400"
               />
               {searchQuery && (
                 <button
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => updateSearchQuery('')}
                   className="p-1 hover:bg-slate-100 rounded-lg transition-colors"
                 >
                   <CloseOutlined className="text-slate-400 hover:text-slate-600" />

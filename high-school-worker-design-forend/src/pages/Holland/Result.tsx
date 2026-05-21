@@ -61,6 +61,7 @@ export default function HollandResultPage() {
                     { offset: 0, color: areaColor + '40' },
                     { offset: 1, color: areaColor + '15' },
                   ],
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 } as any,
               },
               itemStyle: { color: areaColor },

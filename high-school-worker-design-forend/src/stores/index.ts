@@ -58,7 +58,7 @@ export const useAuthStore = create<AuthState>((set) => ({
             role: (res.data.role as 'student' | 'teacher' | 'admin') || 'student' 
           });
         }
-      } catch (e) {
+      } catch {
         localStorage.removeItem('token');
         set({ token: null, user: null, isAuthenticated: false, role: 'student' });
       }

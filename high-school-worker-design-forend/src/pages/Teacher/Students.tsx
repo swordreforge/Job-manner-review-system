@@ -20,6 +20,7 @@ export default function TeacherStudents() {
 
   useEffect(() => {
     fetchStudents();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize, filters]);
 
   const fetchStudents = async () => {
@@ -27,10 +28,10 @@ export default function TeacherStudents() {
     try {
       const res = await teacherApi.listStudents({ page, pageSize, ...filters });
       // 支持两种响应格式: {total, list} 或 {code, msg, data: {total, list}}
-      const data = (res as any).data ?? res;
+      const data = (res as Record<string, unknown>).data ?? res;
       setStudents(data.list || []);
       setTotal(data.total || 0);
-    } catch (error) {
+    } catch {
       message.error('获取学生列表失败');
     } finally {
       setLoading(false);
@@ -44,7 +45,7 @@ export default function TeacherStudents() {
     try {
       const res = await teacherApi.getStudentTasks(student.id);
       setStudentTasks(res.data?.tasks || []);
-    } catch (error) {
+    } catch {
       message.error('获取学生任务失败');
     } finally {
       setTasksLoading(false);
@@ -81,7 +82,7 @@ export default function TeacherStudents() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: TeacherStudent) => (
+      render: (_: unknown, record: TeacherStudent) => (
         <Button type="link" icon={<EyeOutlined />} onClick={() => handleViewDetail(record)}>
           查看详情
         </Button>

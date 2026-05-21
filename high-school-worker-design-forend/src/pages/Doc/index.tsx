@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import ReactMarkdown from 'react-markdown';
@@ -183,20 +183,21 @@ export default function DocPage() {
   const activeTabId = searchParams.get('tab') || 'guide';
   const activeDocParam = searchParams.get('doc');
 
-  const flattenDocs = useCallback((items: DocConfig[]): DocConfig[] => {
-    const result: DocConfig[] = [];
-    for (const item of items) {
-      if (item.type === 'file' && item.path) {
-        result.push(item);
+  const allDocs = useMemo(() => {
+    const flatten = (items: DocConfig[]): DocConfig[] => {
+      const result: DocConfig[] = [];
+      for (const item of items) {
+        if (item.type === 'file' && item.path) {
+          result.push(item);
+        }
+        if (item.children) {
+          result.push(...flatten(item.children));
+        }
       }
-      if (item.children) {
-        result.push(...flattenDocs(item.children));
-      }
-    }
-    return result;
-  }, []);
-
-  const allDocs = useMemo(() => flattenDocs(docs), [docs, flattenDocs]);
+      return result;
+    };
+    return flatten(docs);
+  }, [docs]);
 
   const currentTab = tabs.find(t => t.id === activeTabId) || tabs[0];
   const currentTabDocs = allDocs.filter(d => currentTab.docIds.includes(d.id));
@@ -221,7 +222,7 @@ export default function DocPage() {
     } else if (!activeDocId && currentTabDocs.length > 0) {
       setActiveDocId(currentTabDocs[0].id);
     }
-  }, [activeDocParam, allDocs.length, currentTabDocs.length, activeDocId, setActiveDocId]);
+  }, [activeDocParam, allDocs, currentTabDocs, activeDocId, setActiveDocId]);
 
   useEffect(() => {
     if (!activeDocId) return;

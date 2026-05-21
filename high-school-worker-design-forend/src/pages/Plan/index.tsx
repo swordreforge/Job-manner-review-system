@@ -54,6 +54,7 @@ export default function PlanPage() {
     if (student) {
       loadReports();
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [student]);
 
   useEffect(() => {
@@ -63,7 +64,7 @@ export default function PlanPage() {
         loadReportContent(selectedReport);
       }
     }
-  }, [selectedReportId]);
+  }, [selectedReportId, reports]);
 
   const fetchStudentData = async () => {
     try {
@@ -72,9 +73,10 @@ export default function PlanPage() {
       if (studentData && studentData.data) {
         setStudent(studentData.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('获取学生数据失败:', error);
-      if (error.response?.data?.msg === 'student profile not found') {
+      const err = error as { response?: { data?: { msg?: string }; status?: number } };
+      if (err.response?.data?.msg === 'student profile not found') {
         message.warning('您还没有创建学生资料，请先完善个人信息');
       } else if (error.response?.status === 401) {
         console.log('认证失败，已跳转到登录页');
@@ -91,7 +93,7 @@ export default function PlanPage() {
       setLoadingReports(true);
       const reportsData = await reportApi.getMe();
       if (reportsData && reportsData.data && reportsData.data.list) {
-        const reportList = reportsData.data.list.map((r: any) => {
+        const reportList = reportsData.data.list.map((r: Record<string, unknown>) => {
           let displayTitle = r.title || `职业规划报告 #${r.id}`;
           let reportType: 'bigtech' | 'gov' | 'unknown' = 'unknown';
 

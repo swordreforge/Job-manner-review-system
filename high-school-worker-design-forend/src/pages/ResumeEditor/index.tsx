@@ -19,8 +19,8 @@ type EditorState = 'loading' | 'editing' | 'polishing' | 'ready';
 export default function ResumeEditorPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const profile = (location.state as any)?.profile as Student | null;
-  const historyId = (location.state as any)?.historyId as number | undefined;
+  const profile = (location.state as Record<string, unknown> | null)?.profile as Student | null;
+  const historyId = (location.state as Record<string, unknown> | null)?.historyId as number | undefined;
   const [editorState, setEditorState] = useState<EditorState>(profile || historyId ? 'editing' : 'loading');
   const [polishLoading, setPolishLoading] = useState(false);
 
@@ -78,7 +78,7 @@ export default function ResumeEditorPage() {
     } finally {
       setPolishLoading(false);
     }
-  }, [editor, profile, navigate]);
+  }, [editor, profile, navigate, historyId]);
 
   const handleExportPDF = useCallback(() => {
     if (!editor) return;

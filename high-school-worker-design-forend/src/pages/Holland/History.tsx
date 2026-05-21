@@ -14,6 +14,7 @@ export default function HollandHistoryPage() {
 
   useEffect(() => {
     loadHistory();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const loadHistory = async () => {

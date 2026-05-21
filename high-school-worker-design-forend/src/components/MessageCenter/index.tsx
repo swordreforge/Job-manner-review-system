@@ -14,7 +14,7 @@ type RecipientOption = {
   username?: string;
 };
 
-function unwrap<T>(response: any): T {
+function unwrap<T>(response: unknown): T {
   return response?.data ?? response;
 }
 
@@ -42,7 +42,7 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
         : await studentMessageApi.listMessages({ page: 1, pageSize: 100 });
       const data = unwrap<{ total: number; list: InboxMessage[] }>(response);
       setInboxMessages(data.list || []);
-    } catch (error) {
+    } catch {
       message.error('加载站内信失败');
     } finally {
       setInboxLoading(false);
@@ -61,7 +61,7 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
         const data = unwrap<{ list: TeacherInfo[] }>(response);
         setRecipientOptions((data.list || []).map((item) => ({ id: item.userId, name: item.name })));
       }
-    } catch (error) {
+    } catch {
       message.error(isTeacher ? '加载学生列表失败' : '加载教师列表失败');
     } finally {
       setRecipientLoading(false);
@@ -79,7 +79,7 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
       try {
         await studentMessageApi.markAsRead(item.id);
         await loadInbox();
-      } catch (error) {
+      } catch {
         message.error('标记已读失败');
       }
     }
@@ -105,7 +105,7 @@ export default function MessageCenter({ role }: { role: MessageCenterRole }) {
       setComposeOpen(false);
       composeForm.resetFields();
       await loadInbox();
-    } catch (error) {
+    } catch (error: unknown) {
       if (error instanceof Error) {
         message.error(error.message);
       }

@@ -18,6 +18,7 @@ export default function TeacherInviteCodes() {
 
   useEffect(() => {
     fetchCodes();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, pageSize]);
 
   const fetchCodes = async () => {
@@ -26,7 +27,7 @@ export default function TeacherInviteCodes() {
       const res = await teacherApi.listInviteCodes({ page, pageSize });
       setCodes(res.data?.list || []);
       setTotal(res.data?.total || 0);
-    } catch (error) {
+    } catch {
       message.error('获取邀请码列表失败');
     } finally {
       setLoading(false);
@@ -42,8 +43,8 @@ export default function TeacherInviteCodes() {
       setCreateModalVisible(false);
       form.resetFields();
       fetchCodes();
-    } catch (error: any) {
-      message.error(error?.response?.data?.msg || '生成失败');
+    } catch (error: unknown) {
+      message.error(error instanceof Error ? error.message : '生成失败');
     } finally {
       setCreateLoading(false);
     }
@@ -54,7 +55,7 @@ export default function TeacherInviteCodes() {
       await teacherApi.revokeInviteCode(id);
       message.success('撤销成功');
       fetchCodes();
-    } catch (error) {
+    } catch {
       message.error('撤销失败');
     }
   };
@@ -64,7 +65,7 @@ export default function TeacherInviteCodes() {
       await teacherApi.deleteInviteCode(id);
       message.success('删除成功');
       fetchCodes();
-    } catch (error) {
+    } catch {
       message.error('删除失败');
     }
   };
@@ -115,7 +116,7 @@ export default function TeacherInviteCodes() {
     {
       title: '操作',
       key: 'action',
-      render: (_: any, record: TeacherInviteCode) => (
+      render: (_: unknown, record: TeacherInviteCode) => (
         <Space>
           <Button type="link" size="small" icon={<CopyOutlined />} onClick={() => handleCopy(record.code)}>
             复制

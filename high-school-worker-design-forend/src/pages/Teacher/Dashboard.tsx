@@ -37,7 +37,7 @@ export default function TeacherDashboard() {
       ]);
 
       // 支持两种响应格式
-      const getData = (res: any) => res.data ?? res;
+      const getData = (res: Record<string, unknown>) => res.data ?? res;
       const studentList = getData(studentsRes).list || [];
       const alertList = getData(alertsRes).list || [];
 

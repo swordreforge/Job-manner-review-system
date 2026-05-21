@@ -34,7 +34,7 @@ export default function JobsPage() {
   const [transferPaths, setTransferPaths] = useState<TransferPath[]>([]);
   const [pathsLoading, setPathsLoading] = useState(false);
   const [relatedJobs, setRelatedJobs] = useState<Job[]>([]);
-  const [relatedLoading, setRelatedLoading] = useState(false);
+  const [_relatedLoading, setRelatedLoading] = useState(false); // eslint-disable-line @typescript-eslint/no-unused-vars
   const [activeTab, setActiveTab] = useState('graph');
   const [showFilters, setShowFilters] = useState(false);
 
@@ -618,7 +618,7 @@ const loadFilterOptions = async () => {
     };
   };
 
-  const getScoreColor = (score: number) => {
+  const getScoreColor = (score: number) => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (score >= 0.8) return 'var(--md-sys-color-success, #1B8C3B)';
     if (score >= 0.6) return 'var(--md-sys-color-warning, #8F5900)';
     return 'var(--md-sys-color-error, #BA1A1A)';

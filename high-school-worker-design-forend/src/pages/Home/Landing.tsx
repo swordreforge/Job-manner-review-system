@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from 'antd';
-import { RightOutlined, CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
+import { CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
@@ -114,6 +114,7 @@ const features = [
   },
 ];
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const floatingIcons = [
   { Icon: FaFolder, size: 28, left: '5%', top: '15%', duration: 6, delay: 0 },
   { Icon: FaCog, size: 32, left: '85%', top: '25%', duration: 8, delay: 1 },
@@ -294,6 +295,66 @@ export default function Landing() {
     };
   }, [loading]);
 
+  useEffect(() => {
+    if (!isFeatureAutoPlay) return;
+
+    const autoPlayTimer = window.setTimeout(() => {
+      setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
+    }, FEATURE_ROTATE_INTERVAL_MS);
+
+    return () => {
+      window.clearTimeout(autoPlayTimer);
+    };
+  }, [isFeatureAutoPlay, hoveredFeatureIndex]);
+
+  useEffect(() => {
+    const viewport = galleryViewportRef.current;
+    if (!viewport) return;
+
+    const updateViewportWidth = () => {
+      setViewportWidth(viewport.clientWidth);
+    };
+
+    updateViewportWidth();
+    const observer = new ResizeObserver(updateViewportWidth);
+    observer.observe(viewport);
+
+    return () => observer.disconnect();
+  }, [loading]);
+
+  useEffect(() => {
+    const DISPLAY_DURATION = 800;
+    let startTime: number | null = null;
+    let animationId: number | null = null;
+
+    const updateProgress = (timestamp: number) => {
+      if (!startTime) {
+        startTime = timestamp;
+        animationId = requestAnimationFrame(updateProgress);
+        return;
+      }
+
+      const elapsed = timestamp - startTime;
+      const progress = Math.min(1, elapsed / DISPLAY_DURATION);
+      const currentPercent = progress * 100;
+
+      if (currentPercent >= 99.8) {
+        setPercent(100);
+        setTimeout(() => setLoading(false), 100);
+        return;
+      }
+
+      setPercent(Math.floor(currentPercent));
+      animationId = requestAnimationFrame(updateProgress);
+    };
+
+    animationId = requestAnimationFrame(updateProgress);
+
+    return () => {
+      if (animationId) cancelAnimationFrame(animationId);
+    };
+  }, []);
+
   if (!isAuthChecked || (isAuthChecked && isAuthenticated)) {
     return (
         <div className="min-h-screen flex items-center justify-center">
@@ -302,7 +363,7 @@ export default function Landing() {
     );
   }
 
-  const handleShakeClick = () => {
+  const handleShakeClick = () => { // eslint-disable-line @typescript-eslint/no-unused-vars
     if (isShaking) return;
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 600);
@@ -333,33 +394,6 @@ export default function Landing() {
   const cardWidth = resolvedViewportWidth * (isMobileGallery ? 0.88 : 0.72);
   const trackBaseOffset = (resolvedViewportWidth - cardWidth) / 2;
   const trackX = trackBaseOffset - hoveredFeatureIndex * (cardWidth + cardGap) + dragOffset;
-
-  useEffect(() => {
-    if (!isFeatureAutoPlay) return;
-
-    const autoPlayTimer = window.setTimeout(() => {
-      setHoveredFeatureIndex((prev) => (prev + 1) % features.length);
-    }, FEATURE_ROTATE_INTERVAL_MS);
-
-    return () => {
-      window.clearTimeout(autoPlayTimer);
-    };
-  }, [isFeatureAutoPlay, hoveredFeatureIndex]);
-
-  useEffect(() => {
-    const viewport = galleryViewportRef.current;
-    if (!viewport) return;
-
-    const updateViewportWidth = () => {
-      setViewportWidth(viewport.clientWidth);
-    };
-
-    updateViewportWidth();
-    const observer = new ResizeObserver(updateViewportWidth);
-    observer.observe(viewport);
-
-    return () => observer.disconnect();
-  }, [loading]);
 
   const finalizeGalleryDrag = () => {
     if (!isDraggingGallery) return;
@@ -416,39 +450,6 @@ export default function Landing() {
       showNextFeature();
     }
   };
-
-  useEffect(() => {
-    const DISPLAY_DURATION = 800;
-    let startTime: number | null = null;
-    let animationId: number | null = null;
-
-    const updateProgress = (timestamp: number) => {
-      if (!startTime) {
-        startTime = timestamp;
-        animationId = requestAnimationFrame(updateProgress);
-        return;
-      }
-
-      const elapsed = timestamp - startTime;
-      const progress = Math.min(1, elapsed / DISPLAY_DURATION);
-      const currentPercent = progress * 100;
-
-      if (currentPercent >= 99.8) {
-        setPercent(100);
-        setTimeout(() => setLoading(false), 100);
-        return;
-      }
-
-      setPercent(Math.floor(currentPercent));
-      animationId = requestAnimationFrame(updateProgress);
-    };
-
-    animationId = requestAnimationFrame(updateProgress);
-
-    return () => {
-      if (animationId) cancelAnimationFrame(animationId);
-    };
-  }, []);
 
   return (
       <>
