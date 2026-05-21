@@ -1,9 +1,12 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-  import { Spin, Empty, Button, message, Tabs, Tag, List, Descriptions, Input, Slider, Pagination, Card, Row, Col } from 'antd';
+  import { Button, message, Tabs, Tag, List, Input, Slider, Pagination, Card, Row, Col } from 'antd';
   import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
   import ReactECharts from 'echarts-for-react';
   import { jobApi, jobPathApi } from '../../api';
   import type { Job, PromotionPath, TransferPath } from '../../types';
+import SurfaceCard from '../../components/SurfaceCard';
+import SkeletonLoader from '../../components/SkeletonLoader';
+import { getEChartsM3Theme, getM3ChartColor } from '../../components/EChartsM3Theme';
 
 type GraphLink = {
   source: number;
@@ -55,6 +58,22 @@ export default function JobsPage() {
   const districtPageSize = 20;
 
   const popularJobs = ['科研人员', '硬件测试', '前端开发'];
+
+  const tagColorMap: Record<string, { bg: string; on: string }> = {
+    blue: { bg: 'var(--md-sys-color-primary-container)', on: 'var(--md-sys-color-on-primary-container)' },
+    green: { bg: 'var(--md-sys-color-success, #E8F5E9)', on: 'var(--md-sys-color-on-surface)' },
+    cyan: { bg: 'var(--md-sys-color-tertiary-container)', on: 'var(--md-sys-color-on-tertiary-container)' },
+    orange: { bg: 'var(--md-sys-color-warning, #FFF3E0)', on: 'var(--md-sys-color-on-surface)' },
+    purple: { bg: 'var(--md-sys-color-secondary-container)', on: 'var(--md-sys-color-on-secondary-container)' },
+    red: { bg: 'var(--md-sys-color-error-container)', on: 'var(--md-sys-color-on-error-container)' },
+    default: { bg: 'var(--md-sys-color-surface-container-high)', on: 'var(--md-sys-color-on-surface-variant)' },
+  };
+
+  const getScoreTagStyle = (score: number): { backgroundColor: string; color: string; border: string; borderRadius: string } => {
+    if (score >= 0.8) return { backgroundColor: 'var(--md-sys-color-success, #E8F5E9)', color: 'var(--md-sys-color-on-surface)', border: 'none', borderRadius: 'var(--md-sys-shape-corner-small)' };
+    if (score >= 0.6) return { backgroundColor: 'var(--md-sys-color-warning, #FFF3E0)', color: 'var(--md-sys-color-on-surface)', border: 'none', borderRadius: 'var(--md-sys-shape-corner-small)' };
+    return { backgroundColor: 'var(--md-sys-color-error-container)', color: 'var(--md-sys-color-on-error-container)', border: 'none', borderRadius: 'var(--md-sys-shape-corner-small)' };
+  };
 
   const loadJobs = useCallback(async (page: number, size: number) => {
     try {
@@ -414,11 +433,12 @@ const loadFilterOptions = async () => {
   const getGraphOption = () => {
     if (!selectedJob) return {};
 
+    const m3Theme = getEChartsM3Theme();
     const chartTextColor = typeof window !== 'undefined'
       ? (getComputedStyle(document.documentElement)
           .getPropertyValue('--md-sys-color-on-surface')
-          .trim() || '#111111')
-      : '#111111';
+          .trim() || '#1B1B1F')
+      : '#1B1B1F';
 
     const nodeMap = new Map<number, Record<string, unknown>>();
     const links: GraphLink[] = [];
@@ -428,7 +448,7 @@ const loadFilterOptions = async () => {
       name: selectedJob.name,
       category: 0,
       symbolSize: 60,
-      itemStyle: { color: '#1890ff' },
+      itemStyle: { color: getM3ChartColor(0) },
     });
 
     if (promotionPath?.nextJobs) {
@@ -453,7 +473,7 @@ const loadFilterOptions = async () => {
             name: labelText,
             category: 1,
             symbolSize: 55,
-            itemStyle: { color: '#52c41a' },
+            itemStyle: { color: getM3ChartColor(3) },
           });
         }
 
@@ -462,7 +482,7 @@ const loadFilterOptions = async () => {
           target: nextJob.id,
           name: '晋升',
           lineStyle: {
-            color: '#52c41a',
+            color: getM3ChartColor(3),
             width: 5,
             curveness: 0,
             type: 'solid',
@@ -490,7 +510,7 @@ const loadFilterOptions = async () => {
           name: `${transferPath.toJob.name}\n${tsScore}%`,
           category: 1,
           symbolSize: 50,
-          itemStyle: { color: '#faad14' },
+          itemStyle: { color: getM3ChartColor(4) },
         });
       }
 
@@ -499,7 +519,7 @@ const loadFilterOptions = async () => {
         target: transferPath.toJob.id,
         name: '换岗',
         lineStyle: {
-          color: '#faad14',
+          color: getM3ChartColor(4),
           width: 5,
           curveness: 0,
           type: 'solid',
@@ -523,6 +543,7 @@ const loadFilterOptions = async () => {
     })).filter(link => link.source !== undefined && link.target !== undefined);
 
     return {
+      ...m3Theme,
       title: {
         text: `${selectedJob.name} - 岗位发展路径`,
         left: 'center',
@@ -598,9 +619,9 @@ const loadFilterOptions = async () => {
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 0.8) return '#52c41a';
-    if (score >= 0.6) return '#faad14';
-    return '#ff4d4f';
+    if (score >= 0.8) return 'var(--md-sys-color-success, #1B8C3B)';
+    if (score >= 0.6) return 'var(--md-sys-color-warning, #8F5900)';
+    return 'var(--md-sys-color-error, #BA1A1A)';
   };
 
   return (
@@ -954,11 +975,11 @@ const loadFilterOptions = async () => {
           </div>
 
           {loading ? (
-            <div className="py-12 flex justify-center">
-              <Spin size="large" />
-            </div>
+            <SkeletonLoader type="card@3" />
           ) : jobs.length === 0 ? (
-            <Empty description="暂无匹配的岗位，请调整筛选条件" />
+            <div className="flex flex-col items-center justify-center py-12" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+              <p className="text-base">暂无匹配的岗位，请调整筛选条件</p>
+            </div>
           ) : (
             <Row gutter={[16, 16]}>
               {jobs.map((job) => (
@@ -1136,55 +1157,59 @@ const loadFilterOptions = async () => {
         {selectedJob && (
           <div className="space-y-4">
             {/* 岗位详情 */}
-            <div 
-              className="p-4 sm:p-5"
-              style={{ 
-                backgroundColor: 'var(--md-sys-color-surface-container-low)',
-                borderRadius: 'var(--md-sys-shape-corner-large)',
-                border: '1px solid var(--md-sys-color-outline-variant)'
-              }}
-            >
-              <div 
-                className="text-lg font-medium mb-4"
-                style={{ color: 'var(--md-sys-color-on-surface)' }}
-              >
-                岗位详情
-              </div>
-              <Descriptions column={2} size="small" bordered>
-                <Descriptions.Item label="岗位名称">{selectedJob.name}</Descriptions.Item>
-                <Descriptions.Item label="行业">{selectedJob.industry || '-'}</Descriptions.Item>
-                <Descriptions.Item label="公司">{selectedJob.company || '-'}</Descriptions.Item>
-                <Descriptions.Item label="公司规模">{selectedJob.companyScale || '-'}</Descriptions.Item>
-                <Descriptions.Item label="融资状态">{selectedJob.companyFundingStatus || '-'}</Descriptions.Item>
-                <Descriptions.Item label="地点">{selectedJob.location || '-'}</Descriptions.Item>
-                <Descriptions.Item label="薪资范围" span={2}>{selectedJob.salaryRange || '-'}</Descriptions.Item>
-                <Descriptions.Item label="岗位编码" span={2}>{selectedJob.jobCode || '-'}</Descriptions.Item>
-                <Descriptions.Item label="岗位分类">{selectedJob.category || '-'}</Descriptions.Item>
-                <Descriptions.Item label="更新日期">{selectedJob.updateDate || '-'}</Descriptions.Item>
-                <Descriptions.Item label="公司简介" span={2}>
-                  <div className="max-h-32 overflow-y-auto text-sm">
-                    {selectedJob.companyDescription || '-'}
+            <SurfaceCard title="岗位详情" variant="elevated">
+              {[
+                  { label: '岗位名称', value: selectedJob.name },
+                  { label: '行业', value: selectedJob.industry },
+                  { label: '公司', value: selectedJob.company },
+                  { label: '公司规模', value: selectedJob.companyScale },
+                  { label: '融资状态', value: selectedJob.companyFundingStatus },
+                  { label: '地点', value: selectedJob.location },
+                  { label: '薪资范围', value: selectedJob.salaryRange },
+                  { label: '岗位编码', value: selectedJob.jobCode },
+                  { label: '岗位分类', value: selectedJob.category },
+                  { label: '更新日期', value: selectedJob.updateDate },
+                ].map(({ label, value }) => (
+                  <div key={label} className="flex justify-between items-center py-3 px-4" style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}>
+                    <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{label}</span>
+                    <span className="md-typescale-body-medium font-medium" style={{ color: 'var(--md-sys-color-on-surface)' }}>{value || '-'}</span>
                   </div>
-                </Descriptions.Item>
-                <Descriptions.Item label="详细职责" span={2}>
-                  <div className="max-h-48 overflow-y-auto text-sm whitespace-pre-wrap">
-                    {selectedJob.jobDetail || selectedJob.description || '-'}
+                ))}
+                {selectedJob.companyDescription && (
+                  <div className="py-3 px-4" style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}>
+                    <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>公司简介</span>
+                    <div className="mt-1 max-h-32 overflow-y-auto text-sm" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      {selectedJob.companyDescription}
+                    </div>
                   </div>
-                </Descriptions.Item>
+                )}
+                {(selectedJob.jobDetail || selectedJob.description) && (
+                  <div className="py-3 px-4" style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}>
+                    <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>详细职责</span>
+                    <div className="mt-1 max-h-48 overflow-y-auto text-sm whitespace-pre-wrap" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      {selectedJob.jobDetail || selectedJob.description}
+                    </div>
+                  </div>
+                )}
                 {selectedJob.sourceUrl && (
-                  <Descriptions.Item label="来源链接" span={2}>
-                    <a href={selectedJob.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">
+                  <div className="flex justify-between items-center py-3 px-4" style={{ borderBottom: '1px solid var(--md-sys-color-outline-variant)' }}>
+                    <span className="md-typescale-body-medium" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>来源链接</span>
+                    <a href={selectedJob.sourceUrl} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--md-sys-color-primary)' }} className="hover:underline">
                       查看原始职位信息
                     </a>
-                  </Descriptions.Item>
+                  </div>
                 )}
-              </Descriptions>
               {selectedJob.skills && selectedJob.skills.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-gray-600 text-sm mb-2">专业技能：</div>
+                <div className="mt-4 px-4">
+                  <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>专业技能：</div>
                   <div className="flex flex-wrap gap-2">
                     {selectedJob.skills.map((skill, index) => (
-                      <Tag key={index} color="blue">
+                      <Tag key={index} style={{
+                        backgroundColor: tagColorMap.blue.bg,
+                        color: tagColorMap.blue.on,
+                        border: 'none',
+                        borderRadius: 'var(--md-sys-shape-corner-small)',
+                      }}>
                         {skill}
                       </Tag>
                     ))}
@@ -1192,18 +1217,23 @@ const loadFilterOptions = async () => {
                 </div>
               )}
               {selectedJob.certificates && selectedJob.certificates.length > 0 && (
-                <div className="mt-4">
-                  <div className="text-gray-600 text-sm mb-2">证书要求：</div>
+                <div className="mt-4 px-4 pb-2">
+                  <div className="text-sm mb-2" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>证书要求：</div>
                   <div className="flex flex-wrap gap-2">
                     {selectedJob.certificates.map((cert, index) => (
-                      <Tag key={index} color="green">
+                      <Tag key={index} style={{
+                        backgroundColor: tagColorMap.green.bg,
+                        color: tagColorMap.green.on,
+                        border: 'none',
+                        borderRadius: 'var(--md-sys-shape-corner-small)',
+                      }}>
                         {cert}
                       </Tag>
                     ))}
                   </div>
                 </div>
               )}
-            </div>
+            </SurfaceCard>
 
             {/* 路径图谱 */}
             <div 
@@ -1248,9 +1278,7 @@ const loadFilterOptions = async () => {
                     children: (
                       <div className="flex w-full flex-1 items-center justify-center min-h-[520px]">
                         {pathsLoading ? (
-                          <div className="py-8 flex justify-center items-center w-full">
-                            <Spin size="large" />
-                          </div>
+                          <SkeletonLoader type="card" />
                         ) : promotionPath || transferPaths.length > 0 ? (
                           <div className="flex h-full min-h-[520px] w-full items-center justify-center rounded-lg">
                             <ReactECharts
@@ -1261,8 +1289,8 @@ const loadFilterOptions = async () => {
                             />
                           </div>
                         ) : (
-                          <div className="flex w-full min-h-[520px] items-center justify-center">
-                            <Empty description="暂无发展路径数据" />
+                          <div className="flex w-full min-h-[520px] items-center justify-center" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            <p>暂无发展路径数据</p>
                           </div>
                         )}
                       </div>
@@ -1274,9 +1302,7 @@ const loadFilterOptions = async () => {
                     children: (
                       <div className="min-h-150">
                         {pathsLoading ? (
-                          <div className="py-8 flex justify-center">
-                            <Spin size="large" />
-                          </div>
+                          <SkeletonLoader type="list" />
                         ) : promotionPath?.nextJobs && promotionPath.nextJobs.length > 0 ? (
                           <List
                               dataSource={promotionPath.nextJobs}
@@ -1288,25 +1314,30 @@ const loadFilterOptions = async () => {
                                       <div>
                                         {nextJob.requiredSkills && nextJob.requiredSkills.length > 0 && (
                                           <div className="mt-2">
-                                            <div className="text-gray-600 text-sm">所需技能：</div>
+                                            <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>所需技能：</div>
                                             <div className="flex flex-wrap gap-1 mt-1">
                                               {nextJob.requiredSkills.map((skill, idx) => (
-                                                <Tag key={idx}>{skill}</Tag>
+                                                <Tag key={idx} style={{
+                                                  backgroundColor: tagColorMap.default.bg,
+                                                  color: tagColorMap.default.on,
+                                                  border: 'none',
+                                                  borderRadius: 'var(--md-sys-shape-corner-small)',
+                                                }}>{skill}</Tag>
                                               ))}
                                             </div>
                                           </div>
                                         )}
                                         {nextJob.learningPath && (
                                           <div className="mt-2">
-                                            <div className="text-gray-600 text-sm">推荐理由：</div>
-                                            <div className="mt-1 text-sm text-gray-500">
+                                            <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>推荐理由：</div>
+                                            <div className="mt-1 text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                                               {nextJob.learningPath}
                                             </div>
                                           </div>
                                         )}
                                         {nextJob.matchScore && nextJob.matchScore > 0 && (
                                           <div className="mt-2">
-                                            <Tag color="blue">匹配度: {nextJob.matchScore > 1 ? Math.round(nextJob.matchScore) : Math.round(nextJob.matchScore * 100)}%</Tag>
+                                            <Tag style={{ ...tagColorMap.blue, border: 'none', borderRadius: 'var(--md-sys-shape-corner-small)' }}>匹配度: {nextJob.matchScore > 1 ? Math.round(nextJob.matchScore) : Math.round(nextJob.matchScore * 100)}%</Tag>
                                           </div>
                                         )}
                                       </div>
@@ -1316,8 +1347,8 @@ const loadFilterOptions = async () => {
                               )}
                             />
                           ) : (
-                            <div className="min-h-150 flex items-center justify-center">
-                              <Empty description="暂无晋升路径" />
+                            <div className="min-h-150 flex items-center justify-center" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                              <p>暂无晋升路径</p>
                             </div>
                           )}
                         </div>
@@ -1329,9 +1360,7 @@ const loadFilterOptions = async () => {
                     children: (
                       <div className="min-h-150">
                         {pathsLoading ? (
-                          <div className="py-8 flex justify-center">
-                            <Spin size="large" />
-                          </div>
+                          <SkeletonLoader type="list" />
                         ) : transferPaths.length > 0 ? (
                           <List
                             dataSource={transferPaths.filter(tp => tp.toJob.id !== selectedJob.id)}
@@ -1341,7 +1370,7 @@ const loadFilterOptions = async () => {
                                   title={
                                     <div className="flex items-center gap-2">
                                       <span>{transferPath.toJob.name}</span>
-                                      <Tag color={getScoreColor(transferPath.matchScore)}>
+                                      <Tag style={getScoreTagStyle(transferPath.matchScore)}>
                                         匹配度: {transferPath.matchScore > 1 ? Math.round(transferPath.matchScore) : Math.round(transferPath.matchScore * 100)}%
                                       </Tag>
                                     </div>
@@ -1350,23 +1379,28 @@ const loadFilterOptions = async () => {
                                     <div>
                                       {transferPath.transferSkills && transferPath.transferSkills.length > 0 && (
                                         <div className="mt-2">
-                                          <div className="text-gray-600 text-sm">可迁移技能：</div>
-                                          <div className="flex flex-wrap gap-1 mt-1">
-                                            {transferPath.transferSkills.map((skill, idx) => (
-                                              <Tag key={idx}>{skill}</Tag>
+<div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>可迁移技能：</div>
+                                            <div className="flex flex-wrap gap-1 mt-1">
+                                              {transferPath.transferSkills.map((skill, idx) => (
+                                                <Tag key={idx} style={{
+                                                  backgroundColor: tagColorMap.default.bg,
+                                                  color: tagColorMap.default.on,
+                                                  border: 'none',
+                                                  borderRadius: 'var(--md-sys-shape-corner-small)',
+                                                }}>{skill}</Tag>
                                             ))}
                                           </div>
                                         </div>
                                       )}
                                       {transferPath.learningPath && transferPath.learningPath.length > 0 && (
                                         <div className="mt-2">
-                                          <div className="text-gray-600 text-sm">学习路径：</div>
+                                          <div className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>学习路径：</div>
                                           <div className="mt-1">
                                             {String(transferPath.learningPath)
                                               .split(/[\n；;]/)
                                               .filter((step) => step.trim().length > 0)
                                               .map((step: string, idx: number) => (
-                                                <div key={idx} className="text-sm text-gray-500">
+                                                <div key={idx} className="text-sm" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
                                                   {idx + 1}. {step.trim()}
                                                 </div>
                                               ))}
@@ -1380,8 +1414,8 @@ const loadFilterOptions = async () => {
                             )}
                           />
                         ) : (
-                          <div className="min-h-150 flex items-center justify-center">
-                            <Empty description="暂无换岗路径" />
+                          <div className="min-h-150 flex items-center justify-center" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                            <p>暂无换岗路径</p>
                           </div>
                         )}
                       </div>
