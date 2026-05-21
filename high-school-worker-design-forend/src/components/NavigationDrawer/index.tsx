@@ -313,6 +313,7 @@ export default function NavigationDrawer(props: NavigationDrawerProps) {
         }}
         style={{
           backgroundColor: 'var(--md-sys-color-surface-container)',
+          boxShadow: 'var(--md-sys-elevation-2)',
         }}
       >
         <DrawerContent {...props} />
@@ -333,6 +334,7 @@ export default function NavigationDrawer(props: NavigationDrawerProps) {
         zIndex: 40,
         backgroundColor: 'var(--md-sys-color-surface-container)',
         borderRight: '1px solid var(--md-sys-color-outline-variant)',
+        boxShadow: 'var(--md-sys-elevation-2)',
       }}
     >
       <DrawerContent {...props} />
