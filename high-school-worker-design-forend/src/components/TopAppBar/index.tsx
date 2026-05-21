@@ -1,12 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, Tag, Tooltip, Modal, message } from 'antd';
-import {
-  MenuOutlined,
-  SearchOutlined,
-  MoonOutlined,
-  SunOutlined,
-  LogoutOutlined,
-} from '@ant-design/icons';
+import { LogoutOutlined } from '@ant-design/icons';
 import { useAuthStore, useThemeStore } from '../../stores';
 
 interface TopAppBarProps {
@@ -52,7 +46,7 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopA
         {isMobile && (
           <Button
             type="text"
-            icon={<MenuOutlined />}
+            icon={<span className="material-symbols-outlined" style={{ fontSize: 20 }}>menu</span>}
             onClick={onMenuClick}
             className="flex items-center justify-center w-9 h-9 rounded-full"
             style={{
@@ -97,7 +91,7 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopA
             border: '1px solid var(--md-sys-color-outline-variant)',
           }}
         >
-          <SearchOutlined />
+          <span className="material-symbols-outlined" style={{ fontSize: 18 }}>search</span>
           <span>快速导航</span>
           {!isMobile && (
             <kbd
@@ -116,7 +110,7 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopA
         <Tooltip title={theme === 'dark' ? '切换到浅色模式' : '切换到深色模式'}>
           <Button
             type="text"
-            icon={theme === 'dark' ? <SunOutlined /> : <MoonOutlined />}
+            icon={<span className="material-symbols-outlined" style={{ fontSize: 20 }}>{theme === 'dark' ? 'light_mode' : 'dark_mode'}</span>}
             onClick={toggleTheme}
             className="flex items-center justify-center w-9 h-9 rounded-full"
             style={{
@@ -128,7 +122,7 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopA
         <Tooltip title="退出登录">
           <Button
             type="text"
-            icon={<LogoutOutlined />}
+            icon={<span className="material-symbols-outlined" style={{ fontSize: 20 }}>logout</span>}
             onClick={handleLogout}
             className="flex items-center justify-center w-9 h-9 rounded-full"
             style={{

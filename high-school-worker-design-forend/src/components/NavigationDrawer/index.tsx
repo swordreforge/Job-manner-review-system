@@ -91,8 +91,9 @@ function NavItemList({
                   />
                 )}
                 <span
+                  className="material-symbols-outlined"
                   style={{
-                    fontSize: '18px',
+                    fontSize: '20px',
                     flexShrink: 0,
                     color: active
                       ? 'var(--md-sys-color-on-secondary-container)'
