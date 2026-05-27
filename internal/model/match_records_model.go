@@ -37,7 +37,7 @@ func (m *customMatchRecordsModel) withSession(session sqlx.Session) MatchRecords
 }
 
 func (m *customMatchRecordsModel) FindByStudentId(ctx context.Context, studentId int64, limit int) ([]*MatchRecords, error) {
-	query := fmt.Sprintf("select %s from %s where `student_id` = ? order by `overall_score` desc limit ?", matchRecordsRows, m.table)
+	query := fmt.Sprintf("select %s from %s where `student_id` = ? order by `match_score` desc limit ?", matchRecordsRows, m.table)
 	var resp []*MatchRecords
 	err := m.conn.QueryRowsCtx(ctx, &resp, query, studentId, limit)
 	if err != nil {

@@ -1196,7 +1196,7 @@ type DeleteAssistantConversationReq struct {
 }
 
 type GetAssistantMessagesReq struct {
-	ConversationId int64 `form:"conversationId"`
+	ConversationId int64 `path:"id"`
 }
 
 type AssistantConversation struct {
