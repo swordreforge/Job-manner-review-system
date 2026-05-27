@@ -82,6 +82,6 @@ logs/
 # Data files
 *.xls
 *.csv
-
+*.py
 # Cargo lock (generated)
 high-school-worker-design-forend/src-tauri/Cargo.lock
