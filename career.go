@@ -620,6 +620,34 @@ func autoMigrate(dataSource string) error {
 				KEY idx_group (group_id, created_at)
 			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='聊天消息表'`,
 		},
+		{
+			name: "assistant_conversations",
+			createSQL: `CREATE TABLE IF NOT EXISTS assistant_conversations (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				user_id BIGINT(20) NOT NULL,
+				title VARCHAR(255) NOT NULL DEFAULT '新对话',
+				track VARCHAR(20) NOT NULL DEFAULT 'bigtech',
+				created_at BIGINT(20) NOT NULL,
+				updated_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_user (user_id),
+				KEY idx_user_updated (user_id, updated_at)
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
+		{
+			name: "assistant_messages",
+			createSQL: `CREATE TABLE IF NOT EXISTS assistant_messages (
+				id BIGINT(20) NOT NULL AUTO_INCREMENT,
+				conversation_id BIGINT(20) NOT NULL,
+				role VARCHAR(20) NOT NULL,
+				content TEXT NOT NULL,
+				created_at BIGINT(20) NOT NULL,
+				PRIMARY KEY (id),
+				KEY idx_conversation (conversation_id),
+				KEY idx_conversation_created (conversation_id, created_at),
+				CONSTRAINT fk_assistant_msg_conversation FOREIGN KEY (conversation_id) REFERENCES assistant_conversations (id) ON DELETE CASCADE
+			) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+		},
 	}
 
 	for _, table := range tables {
