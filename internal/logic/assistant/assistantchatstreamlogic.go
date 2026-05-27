@@ -273,8 +273,9 @@ func (l *AssistantChatStreamLogic) generateTitle(conversationId int64, firstMess
 		title = "新对话"
 	}
 
-	if len(title) > 20 {
-		title = title[:20]
+	runes := []rune(title)
+	if len(runes) > 20 {
+		title = string(runes[:20])
 	}
 
 	err := l.svcCtx.AssistantConversationsModel.UpdateTitle(ctx, conversationId, title)
