@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	ai "career-api/internal/handler/ai"
 	chat "career-api/internal/handler/chat"
 	graph "career-api/internal/handler/graph"
 	interview "career-api/internal/handler/interview"
@@ -632,5 +633,42 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 			},
 		},
 		rest.WithPrefix("/api/v1"),
+	)
+
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/ai/conversations",
+				Handler: ai.CreateAIConversationHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/ai/conversations",
+				Handler: ai.ListAIConversationsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPut,
+				Path:    "/ai/conversations/:id",
+				Handler: ai.RenameAIConversationHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/ai/conversations/:id",
+				Handler: ai.DeleteAIConversationHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/ai/conversations/:id/messages",
+				Handler: ai.ListAIMessagesHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/ai/conversations/:id/messages",
+				Handler: ai.SendAIMessageHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+		rest.WithTimeout(120000*time.Millisecond),
 	)
 }

@@ -24,6 +24,7 @@ type AIProvider interface {
 	GeneratePromotionTargets(ctx context.Context, jobInfo, studentProfile string) (string, error)
 	GenerateTransferTargets(ctx context.Context, jobInfo, studentProfile string) (string, error)
 	PolishResume(ctx context.Context, profileJSON, suggestions string) (string, error)
+	ChatStream(ctx context.Context, messages []ChatMessage) (<-chan string, <-chan error)
 }
 
 type ReportGenerationRequest struct {
@@ -580,4 +581,100 @@ func (p *OpenAIProvider) PolishResume(ctx context.Context, profileJSON, suggesti
 	}
 
 	return content, nil
+}
+
+func (p *OpenAIProvider) ChatStream(ctx context.Context, messages []ChatMessage) (<-chan string, <-chan error) {
+	contentChan := make(chan string, 100)
+	errChan := make(chan error, 1)
+
+	go func() {
+		defer close(contentChan)
+		defer close(errChan)
+
+		apiReq := OpenAIRequest{
+			Model:       p.model,
+			Messages:    messages,
+			MaxTokens:   4000,
+			Temperature: 0.7,
+			Stream:      true,
+		}
+
+		body, err := json.Marshal(apiReq)
+		if err != nil {
+			errChan <- fmt.Errorf("marshal request failed: %v", err)
+			return
+		}
+
+		c := &http.Client{Timeout: p.timeout}
+		httpReq, err := http.NewRequestWithContext(ctx, "POST", p.baseURL+"/chat/completions", bytes.NewReader(body))
+		if err != nil {
+			errChan <- fmt.Errorf("create request failed: %v", err)
+			return
+		}
+
+		httpReq.Header.Set("Content-Type", "application/json")
+		httpReq.Header.Set("Authorization", "Bearer "+p.apiKey)
+		httpReq.Header.Set("Accept", "text/event-stream")
+
+		resp, err := c.Do(httpReq)
+		if err != nil {
+			errChan <- fmt.Errorf("http request failed: %v", err)
+			return
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			respBody, _ := io.ReadAll(resp.Body)
+			errChan <- fmt.Errorf("AI API error: status=%d, body=%s", resp.StatusCode, string(respBody))
+			return
+		}
+
+		reader := bufio.NewReader(resp.Body)
+		for {
+			line, err := reader.ReadString('\n')
+			if err != nil {
+				if err != io.EOF {
+					errChan <- fmt.Errorf("read stream failed: %v", err)
+				}
+				break
+			}
+
+			line = strings.TrimSpace(line)
+			if line == "" || line == "data: [DONE]" {
+				continue
+			}
+
+			if !strings.HasPrefix(line, "data: ") {
+				continue
+			}
+
+			data := strings.TrimPrefix(line, "data: ")
+			var streamResp struct {
+				Choices []StreamChoice `json:"choices"`
+				Error   *AIError       `json:"error,omitempty"`
+			}
+
+			if err := json.Unmarshal([]byte(data), &streamResp); err != nil {
+				logx.Errorf("unmarshal stream data failed: %v", err)
+				continue
+			}
+
+			if streamResp.Error != nil {
+				errChan <- fmt.Errorf("AI API error: %s", streamResp.Error.Message)
+				return
+			}
+
+			if len(streamResp.Choices) > 0 {
+				content := streamResp.Choices[0].Delta.Content
+				if content != "" {
+					contentChan <- content
+				}
+				if streamResp.Choices[0].FinishReason != nil {
+					break
+				}
+			}
+		}
+	}()
+
+	return contentChan, errChan
 }

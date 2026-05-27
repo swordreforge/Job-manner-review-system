@@ -1179,3 +1179,44 @@ type ResumePolishResp struct {
 	HtmlContent string `json:"htmlContent,optional"`
 	PlainText   string `json:"plainText,optional"`
 }
+
+type CreateAIConversationReq struct {
+	Name     string `json:"name,optional"`
+	ChatType string `json:"chatType,optional"`
+	Mode     string `json:"mode,optional"`
+}
+
+type AIConversation struct {
+	Id                  int64  `json:"id"`
+	SchoolId            int64  `json:"schoolId"`
+	Name                string `json:"name"`
+	ChatType            string `json:"chatType"`
+	InterviewSessionId  int64  `json:"interviewSessionId,omitempty"`
+	CreatedBy           int64  `json:"createdBy"`
+	CreatedAt           int64  `json:"createdAt"`
+	UpdatedAt           int64  `json:"updatedAt"`
+	LastMessage         string `json:"lastMessage,omitempty"`
+}
+
+type SendAIMessageReq struct {
+	Content string `json:"content" validate:"required,min=1"`
+}
+
+type AIMessage struct {
+	Id         int64  `json:"id"`
+	GroupId    int64  `json:"groupId"`
+	SenderId   int64  `json:"senderId"`
+	SenderType string `json:"senderType"`
+	SenderName string `json:"senderName"`
+	Content    string `json:"content"`
+	CreatedAt  int64  `json:"createdAt"`
+}
+
+type RenameAIConversationReq struct {
+	Name string `json:"name" validate:"required,min=1,max=100"`
+}
+
+type CreateInterviewReviewReq struct {
+	InterviewSessionId int64  `json:"interviewSessionId" validate:"required,gt=0"`
+	Name                string `json:"name,optional"`
+}

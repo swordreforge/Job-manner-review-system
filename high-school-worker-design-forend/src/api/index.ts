@@ -507,4 +507,87 @@ export const studentMessageApi = {
     api.get<{ code: number; msg: string; data: { list: import('../types').TeacherInfo[] } }>('/students/teachers'),
 };
 
+export const aiApi = {
+  createConversation: (data: { name?: string; chatType?: 'ai_assistant' | 'interview_review'; mode?: 'practice' | 'assessment' }) =>
+    api.post<{ code: number; msg: string; data: import('../types').AIConversation }>('/ai/conversations', data),
+
+  listConversations: () =>
+    api.get<{ code: number; msg: string; data: import('../types').AIConversation[] }>('/ai/conversations'),
+
+  renameConversation: (id: number, data: { name: string }) =>
+    api.put<{ code: number; msg: string; data: import('../types').AIConversation }>(`/ai/conversations/${id}`, data),
+
+  deleteConversation: (id: number) =>
+    api.delete<{ code: number; msg: string }>(`/ai/conversations/${id}`),
+
+  getMessages: (id: number) =>
+    api.get<{ code: number; msg: string; data: import('../types').AIMessage[] }>(`/ai/conversations/${id}/messages`),
+
+  sendMessageStream: async (
+    id: number,
+    content: string,
+    onEvent: (event: { type: string; data: unknown }) => void,
+    onError: (error: Error) => void
+  ) => {
+    const token = localStorage.getItem('token');
+    try {
+      const response = await fetch(`${BASE_URL}/ai/conversations/${id}/messages`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'text/event-stream',
+        },
+        body: JSON.stringify({ content }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new Error('Response body is null');
+      }
+
+      let buffer = '';
+      let currentEventType = '';
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmedLine = line.trim();
+          if (trimmedLine === '') continue;
+
+          if (trimmedLine.startsWith('event: ')) {
+            currentEventType = trimmedLine.substring(7);
+            continue;
+          }
+
+          if (trimmedLine.startsWith('data: ')) {
+            const data = trimmedLine.substring(6);
+            try {
+              const parsedData = JSON.parse(data);
+              onEvent({ type: currentEventType || 'data', data: parsedData });
+              currentEventType = '';
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      onError(error as Error);
+    }
+  },
+};
+
 export default api;

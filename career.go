@@ -580,8 +580,9 @@ func autoMigrate(dataSource string) error {
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
 				name VARCHAR(100) DEFAULT NULL COMMENT '群组名称',
-				chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一)',
+				chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一), ai_assistant(AI助手), interview_review(面试回顾)',
 				created_by BIGINT(20) NOT NULL COMMENT '创建者ID',
+				interview_session_id BIGINT(20) DEFAULT NULL COMMENT '关联的面试记录ID',
 				created_at BIGINT(20) NOT NULL,
 				updated_at BIGINT(20) NOT NULL,
 				PRIMARY KEY (id),
@@ -611,7 +612,7 @@ func autoMigrate(dataSource string) error {
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				group_id BIGINT(20) NOT NULL COMMENT '群组ID',
 				sender_id BIGINT(20) NOT NULL COMMENT '发送者ID',
-				sender_type VARCHAR(20) NOT NULL COMMENT '发送者类型: teacher, student',
+				sender_type VARCHAR(20) NOT NULL COMMENT '发送者类型: teacher, student, assistant',
 				sender_name VARCHAR(100) DEFAULT NULL COMMENT '发送者名称',
 				content TEXT NOT NULL COMMENT '消息内容',
 				created_at BIGINT(20) NOT NULL,
@@ -653,6 +654,17 @@ func autoMigrate(dataSource string) error {
 	}
 
 	logx.Infof("Database migration completed")
+
+	// 迁移：为 chat_groups 添加 interview_session_id 列（如果不存在）
+	var colExists int
+	row := db.QueryRow("SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'chat_groups' AND COLUMN_NAME = 'interview_session_id'")
+	if err := row.Scan(&colExists); err == nil && colExists == 0 {
+		if _, err := db.Exec("ALTER TABLE chat_groups ADD COLUMN interview_session_id BIGINT(20) DEFAULT NULL COMMENT '关联的面试记录ID'"); err != nil {
+			fmt.Printf("[DB-SYNC] 添加 interview_session_id 列失败: %v\n", err)
+		} else {
+			fmt.Println("[DB-SYNC] 已为 chat_groups 添加 interview_session_id 列")
+		}
+	}
 
 	// Seed initial data using existing seedData function
 	if err := seedData(dataSource); err != nil {
