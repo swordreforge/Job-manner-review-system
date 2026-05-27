@@ -14,8 +14,8 @@ import (
 var (
 	assistantConversationsFieldNames          = builder.RawFieldNames(&AssistantConversations{})
 	assistantConversationsRows                = strings.Join(assistantConversationsFieldNames, ",")
-	assistantConversationsRowsExpectAutoSet   = strings.Join(stringx.Remove(assistantConversationsFieldNames, "`id`", "`created_at`", "`updated_at`"), ",")
-	assistantConversationsRowsWithPlaceHolder = strings.Join(stringx.Remove(assistantConversationsFieldNames, "`id`", "`created_at`", "`updated_at`"), "=?,") + "=?"
+	assistantConversationsRowsExpectAutoSet   = strings.Join(stringx.Remove(assistantConversationsFieldNames, "`id`"), ",")
+	assistantConversationsRowsWithPlaceHolder = strings.Join(stringx.Remove(assistantConversationsFieldNames, "`id`"), "=?,") + "=?"
 )
 
 type (
@@ -70,7 +70,7 @@ func (m *defaultAssistantConversationsModel) FindOne(ctx context.Context, id int
 
 func (m *defaultAssistantConversationsModel) Update(ctx context.Context, data *AssistantConversations) error {
 	query := fmt.Sprintf("update %s set %s where `id` = ?", m.table, assistantConversationsRowsWithPlaceHolder)
-	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Title, data.Track, data.UpdatedAt, data.Id)
+	_, err := m.conn.ExecCtx(ctx, query, data.UserId, data.Title, data.Track, data.CreatedAt, data.UpdatedAt, data.Id)
 	return err
 }
 
