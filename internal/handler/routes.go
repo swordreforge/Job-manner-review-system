@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	assistant "career-api/internal/handler/assistant"
 	chat "career-api/internal/handler/chat"
 	graph "career-api/internal/handler/graph"
 	interview "career-api/internal/handler/interview"
@@ -631,7 +632,39 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: student.ReadMessageHandler(serverCtx),
 			},
 		},
-		rest.WithPrefix("/api/v1"),
+rest.WithPrefix("/api/v1"),
 	)
 
-	}
+	server.AddRoutes(
+		[]rest.Route{
+			{
+				Method:  http.MethodPost,
+				Path:    "/assistant/conversations",
+				Handler: assistant.CreateConversationHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/assistant/conversations",
+				Handler: assistant.ListConversationsHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodDelete,
+				Path:    "/assistant/conversations/:id",
+				Handler: assistant.DeleteConversationHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodGet,
+				Path:    "/assistant/conversations/:id/messages",
+				Handler: assistant.GetMessagesHandler(serverCtx),
+			},
+			{
+				Method:  http.MethodPost,
+				Path:    "/assistant/conversations/:id/chat",
+				Handler: assistant.AssistantChatStreamHandler(serverCtx),
+			},
+		},
+		rest.WithPrefix("/api/v1"),
+		rest.WithTimeout(120000*time.Millisecond),
+	)
+
+}
