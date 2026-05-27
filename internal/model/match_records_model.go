@@ -17,6 +17,7 @@ type (
 	MatchRecordsModel interface {
 		matchRecordsModel
 		withSession(session sqlx.Session) MatchRecordsModel
+		FindByStudentId(ctx context.Context, studentId int64, limit int) ([]*MatchRecords, error)
 	}
 
 	customMatchRecordsModel struct {
@@ -33,6 +34,16 @@ func NewMatchRecordsModel(conn sqlx.SqlConn) MatchRecordsModel {
 
 func (m *customMatchRecordsModel) withSession(session sqlx.Session) MatchRecordsModel {
 	return NewMatchRecordsModel(sqlx.NewSqlConnFromSession(session))
+}
+
+func (m *customMatchRecordsModel) FindByStudentId(ctx context.Context, studentId int64, limit int) ([]*MatchRecords, error) {
+	query := fmt.Sprintf("select %s from %s where `student_id` = ? order by `overall_score` desc limit ?", matchRecordsRows, m.table)
+	var resp []*MatchRecords
+	err := m.conn.QueryRowsCtx(ctx, &resp, query, studentId, limit)
+	if err != nil {
+		return nil, err
+	}
+	return resp, nil
 }
 
 // Insert 插入匹配记录，自动设置时间戳
