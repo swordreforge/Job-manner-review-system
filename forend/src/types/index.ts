@@ -434,29 +434,3 @@ export interface ResumeExportOptions {
   template: 'classic';
 }
 
-export interface AIConversation {
-  id: number;
-  schoolId: number;
-  name: string;
-  chatType: 'ai_assistant' | 'interview_review';
-  interviewSessionId?: number;
-  interviewMode?: 'practice' | 'assessment';
-  interviewStatus?: 'running' | 'completed' | 'cancelled';
-  interviewAverageScore?: number;
-  createdBy: number;
-  createdAt: number;
-  updatedAt: number;
-  lastMessage?: string;
-}
-
-export interface AIMessage {
-  id: number;
-  groupId: number;
-  senderId: number;
-  senderType: 'student' | 'teacher' | 'assistant';
-  senderName: string;
-  content: string;
-  createdAt: number;
-  score?: number;
-  feedback?: string;
-}

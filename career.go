@@ -580,7 +580,7 @@ func autoMigrate(dataSource string) error {
 				id BIGINT(20) NOT NULL AUTO_INCREMENT,
 				school_id BIGINT(20) NOT NULL COMMENT '学校ID',
 				name VARCHAR(100) DEFAULT NULL COMMENT '群组名称',
-				chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一), ai_assistant(AI助手), interview_review(面试回顾)',
+				chat_type VARCHAR(20) NOT NULL DEFAULT 'direct' COMMENT '群组类型: direct(一对一), interview_review(面试回顾)',
 				created_by BIGINT(20) NOT NULL COMMENT '创建者ID',
 				interview_session_id BIGINT(20) DEFAULT NULL COMMENT '关联的面试记录ID',
 				created_at BIGINT(20) NOT NULL,

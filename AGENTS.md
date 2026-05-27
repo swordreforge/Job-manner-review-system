@@ -1,78 +1,110 @@
-# AGENTS.md — Career Planning System
+# AGENTS.md
 
-## Architecture: 4 Services in One Monorepo
+## Project Overview
 
-| Service | Language | Port | Directory |
-|---|---|---|---|
-| Backend API | Go (go-zero) | 8088 | `.` (root) |
-| Frontend | React 19 / Vite 8 | 5173 | `high-school-worker-design-forend/` |
-| Voice (Whisper/Xunfei) | Rust (Axum) | 8000 | `whisper-20250625/` |
-| Teacher API(actually admin-api) | Rust (Actix-web) | 8081 | `teacher-app/` |
+Career guidance platform for high school students — Go API backend, React+Tauri frontend, Rust teacher-side API, and Rust voice service (iFlytek ASR).
 
-The **root directory IS the Go backend**. Do not run frontend/rust commands from root.
+## Commands
 
-## Key Commands by Service
+### Go backend (root)
+```bash
+go run career.go -f etc/career-api.yaml          # Run API server (port 8088)
+go run career.go -f etc/career-api.yaml --skip-all # Run skipping DB init prompts
+go test ./internal/...                            # Run all Go tests
+go test ./internal/model/...                      # Run model tests only
+```
 
-**Backend (Go):**
+### Frontend (forend/)
+```bash
+npm run dev          # Dev server on :5173 (proxies /api/v1 → :8088)
+npm run build        # tsc + vite build (uses VITE_MODE env)
+npm run build:staging # Build with staging env
+npm run lint         # ESLint
+npx playwright test  # E2E tests (needs dev server running)
+```
 
-- Run: `go run career.go -f etc/career-api.yaml`
-- Run (skip DB prompts): `go run career.go -f etc/career-api.yaml -skip-all`
-- Build: `go build -o career-api .`
-- Test a package: `go test ./internal/...`
-- Test single: `go test ./internal/pkg/jwt_test.go`
-- AI connection test: `go run cmd/test-ai/main.go`
-- Config: `etc/career-api.yaml`
-- Entrypoint: `career.go`
+### Tauri desktop/mobile (forend/)
+```bash
+npm run tauri dev     # Desktop dev
+npm run tauri build   # Desktop build
+```
 
-**Frontend (React/Vite):**
-- Run: `npm run dev` (inside `high-school-worker-design-forend/`)
-- Build: `npm run build` (runs `tsc -b && vite build`)
-- Staging build: `npm run build:staging`
-- Lint: `npm run lint` (ESLint from `high-school-worker-design-forend/`)
-- E2E: `npx playwright test`
-- Path alias: `@/` → `./src/` (configured in vite.config.ts + tsconfig.json)
-- Tauri desktop: `npm run tauri` + binary in `src-tauri/`
+See `build-apk.sh` for the full Android APK build flow (needs Android NDK, multi-arch Rust cross-compile, Gradle).
 
-**Voice Service (Rust):**
-- Run: `python3 web_app.py` (from `whisper-20250625/`)
-- Rust server binary: `cargo run` (via `src/main.rs`)
+### Teacher admin API (admin-app/)
+```bash
+cargo run            # Dev server on :8081
+cargo test           # Run tests
+cargo clippy         # Lint
+cargo fmt            # Format
+```
 
-**Teacher API (Rust/Actix):**
-- Run: `cargo run --release -- --port 8081` (from `teacher-app/`)
-- Or: `./target/release/teacher-api --port 8081`
+### Voice service (voice/)
+```bash
+cargo run            # Starts iFlytek ASR WebSocket server (:8000)
+```
 
-**All services:** `./start-all-services.sh` (logs go to `logs/`)
+## Architecture
 
-## Database
+```
+career.go              → Go main (go-zero framework), auto-migrates DB on startup
+  internal/
+    config/            → Config struct (YAML + env override)
+    handler/           → HTTP handlers (goctl-generated routes.go)
+    logic/             → Business logic per domain
+    model/             → DB models (MySQL)
+    middleware/        → Auth JWT middleware
+    svc/               → ServiceContext (DB, Redis, config)
+    pkg/               → Shared utilities (JWT, password, file parsing)
+  api/                 → .api definition files (goctl)
+  etc/career-api.yaml  → Config (env:// refs for secrets)
+  cmd/                 → Standalone tools (init-db, import-jobs, test-*)
 
-- **MySQL** on `localhost:3306` (Docker maps `3307:3306`)
-- Credentials: `root:123456zj@tcp(localhost:3306)/career_db`
-- **Schema is defined inline** in `career.go` → `autoMigrate()` function creates all 20+ tables programmatically. No migration files exist. To change schema, edit career.go.
-- On startup: auto-creates DB, runs migration, seeds test data (user `testuser`/`123456`, test school, 10 sample jobs)
-- Docker compose starts MySQL with health check before API container
+forend/               → React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand + Ant Design
+  src/
+    api/               → Axios client + typed API modules
+    pages/             → Auth, Home, Jobs, Holland, Interview, Profile, Resume, AIAssistant, Teacher, Messages, Plan, Doc, Settings, ResumeEditor
+    stores/            → Zustand stores (auth)
+    components/        → Shared UI components (shadcn/ui)
+  src-tauri/           → Tauri v2 desktop/mobile wrapper
 
-## API Structure
+admin-app/            → Rust Actix-web teacher admin API (port 8081), shares same MySQL DB
 
-- go-zero API definitions in `api/*.api` (documentation/spec)
-- Handlers in `internal/handler/`, logic in `internal/logic/`
-- All endpoints under `/api/v1/` prefix
-- JWT auth (Bearer token), configured in `etc/career-api.yaml`
-- Key modules: jobs, students, match, reports, holland test, interview, chat, teachers
+voice/                 → Rust Axum server for iFlytek speech-to-text WebSocket proxy (port 8000)
+```
+
+## Key Conventions
+
+- Go module is `career-api` (not the directory name)
+- All API routes are under `/api/v1` prefix
+- Config values with `env://` prefix are read from env vars (.env file via godotenv)
+- Required env vars: `MYSQL_DATASOURCE`, `JWT_SECRET`, `AI_API_KEY`; optional: `AI_PROVIDER`, `AI_MODEL`, `AI_BASE_URL`, `REDIS_PASSWORD`
+- Student-facing auth uses JWT; teacher auth in admin-app uses separate JWT
+- Database tables are auto-created/migrated on startup from inline SQL in `career.go` — schema changes go there
+- Column additions use `migrateColumns()` for backward compatibility
+- Static avatar files served from `./img/` via `http://host:8088/img/:file`
 
 ## Frontend Conventions
 
-- **Ant Design v6** with custom Material 3-style theme (defined in `App.tsx`)
-- **Tailwind CSS v4** via `@tailwindcss/vite` plugin (not PostCSS v3 approach)
-- State: **zustand** stores in `src/stores/`
-- Routing: **react-router-dom v7** with `BrowserRouter`
-- API client: axios wrapper in `src/api/index.ts`, base URL from `VITE_API_BASE_URL` env var (defaults to `/api/v1`)
-- Framermotion + Lenis for animations
+- Path alias: `@` → `./src` (configured in vite.config.ts and tsconfig)
+- API base URL is `/api/v1` (proxied in dev, same-origin in prod via nginx)
+- SSE streaming used for: interview chat, report generation, AI conversations
+- Three env modes: `.env.development`, `.env.staging`, `.env.production`
+- Voice API URL differs per environment (`localhost:8000` dev, `voice.swordreforge.top` prod)
 
-## Developer Notes
+## Running Tests
 
-- DeepSeek AI API key in `etc/career-api.yaml` (live key — do not commit)
-- Prometheus metrics on port 9091
-- Redis used for caching (localhost:6379)
-- Docs at `docs/` — but consult config + code as executable truth
-- `elysia-doc/` is a separate Vitepress docs site, not part of the main app
-- `cmd/` contains utility binaries: `import-jobs`, `init-db`, `test-ai`, `test-interview`, `test-stream`
+- **Go**: `go test ./internal/...` — uses go-sqlmock for model tests, no live DB needed
+- **Frontend E2E**: `npx playwright test` inside `forend/` — requires running dev server
+- **Admin-app**: `cargo test` inside `admin-app/` — uses serial_test, needs `.env.test` for integration
+
+## Gotchas
+
+- The `forend/` directory name is intentionally misspelled (not "frontend")
+- `admin-app/` has its own `.git` repo — it's a separate Git project with its own worktrees
+- `go.sum` is in root; `forend/` has its own `package-lock.json` and `yarn.lock` (prefer npm)
+- `voice/` also has its own `.github/` CI workflows (Python publish + Rust test)
+- Routes in `internal/handler/routes.go` are auto-generated by goctl — manual edits will be overwritten; edit `.api` files in `api/` and regenerate
+- Config YAML uses `env://VAR_NAME` syntax for secret injection; the Go code reads these from environment variables
+- `interviewhandler.go.disabled` is intentionally disabled — interview logic lives in `handler/interview/` subdirectory
+- `etc/career-api.yaml.backup*` files are old config snapshots, not used at runtime
