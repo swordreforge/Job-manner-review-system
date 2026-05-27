@@ -27,7 +27,9 @@ type ServiceContext struct {
 	HollandTestResultsModel model.HollandTestResultsModel
 	InterviewSessionsModel  model.InterviewSessionsModel
 	InterviewMessagesModel  model.InterviewMessagesModel
-	InterviewReportsModel   model.InterviewReportsModel
+	InterviewReportsModel      model.InterviewReportsModel
+	AssistantConversationsModel model.AssistantConversationsModel
+	AssistantMessagesModel       model.AssistantMessagesModel
 }
 
 func NewServiceContext(c *config.Config) *ServiceContext {
@@ -58,6 +60,8 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		HollandTestResultsModel: model.NewHollandTestResultsModel(mysqlConn),
 		InterviewSessionsModel:  model.NewInterviewSessionsModel(mysqlConn),
 		InterviewMessagesModel:  model.NewInterviewMessagesModel(mysqlConn),
-		InterviewReportsModel:   model.NewInterviewReportsModel(mysqlConn),
+		InterviewReportsModel:      model.NewInterviewReportsModel(mysqlConn),
+		AssistantConversationsModel: model.NewAssistantConversationsModel(mysqlConn),
+		AssistantMessagesModel:       model.NewAssistantMessagesModel(mysqlConn),
 	}
 }

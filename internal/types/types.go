@@ -1180,4 +1180,78 @@ type ResumePolishResp struct {
 	PlainText   string `json:"plainText,optional"`
 }
 
+// Assistant types
+
+type CreateAssistantConversationReq struct {
+	Track string `json:"track" validate:"required,oneof=bigtech gov"`
+}
+
+type ListConversationsReq struct {
+	Page     int `form:"page,default=1"`
+	PageSize int `form:"pageSize,default=20"`
+}
+
+type DeleteAssistantConversationReq struct {
+	Id int64 `path:"id"`
+}
+
+type GetAssistantMessagesReq struct {
+	ConversationId int64 `form:"conversationId"`
+}
+
+type AssistantConversation struct {
+	Id        int64  `json:"id"`
+	UserId    int64  `json:"userId"`
+	Title     string `json:"title"`
+	Track     string `json:"track"`
+	CreatedAt int64  `json:"createdAt"`
+	UpdatedAt int64  `json:"updatedAt"`
+}
+
+type CreateAssistantConversationResp struct {
+	Code int                      `json:"code"`
+	Msg  string                   `json:"msg"`
+	Data *AssistantConversation   `json:"data,optional"`
+}
+
+type ListAssistantConversationsResp struct {
+	Code int                       `json:"code"`
+	Msg  string                    `json:"msg"`
+	Data *AssistantConversationList `json:"data,optional"`
+}
+
+type AssistantConversationList struct {
+	Total int64                    `json:"total"`
+	List  []*AssistantConversation `json:"list"`
+}
+
+type DeleteAssistantConversationResp struct {
+	Code int    `json:"code"`
+	Msg  string `json:"msg"`
+}
+
+type AssistantMessage struct {
+	Id             int64  `json:"id"`
+	ConversationId int64  `json:"conversationId"`
+	Role           string `json:"role"`
+	Content        string `json:"content"`
+	CreatedAt      int64  `json:"createdAt"`
+}
+
+type GetAssistantMessagesResp struct {
+	Code int                   `json:"code"`
+	Msg  string                `json:"msg"`
+	Data *AssistantMessageList `json:"data,optional"`
+}
+
+type AssistantMessageList struct {
+	Total int64               `json:"total"`
+	List  []*AssistantMessage `json:"list"`
+}
+
+type AssistantChatStreamReq struct {
+	ConversationId int64  `json:"conversationId" validate:"required,gt=0"`
+	Message        string `json:"message" validate:"required,min=1,max=4000"`
+}
+
 
