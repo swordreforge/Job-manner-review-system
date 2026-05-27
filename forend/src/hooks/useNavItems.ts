@@ -21,6 +21,7 @@ const studentNavGroups: NavGroup[] = [
       { key: 'home', title: '首页', description: '回到工作台首页', icon: 'home', path: '/start', matchPaths: ['/start', '/'] },
       { key: 'jobs', title: '岗位搜索', description: '浏览岗位数据库，查看发展路径', icon: 'work', path: '/jobs', matchPaths: ['/jobs'] },
       { key: 'messages', title: '消息中心', description: '查看与教师的沟通消息', icon: 'chat_bubble', path: '/messages', matchPaths: ['/messages'] },
+      { key: '/assistant', title: '职业助手', description: 'AI 职业规划助手', icon: 'smart_toy', path: '/assistant' },
     ],
   },
   {

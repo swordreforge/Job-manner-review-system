@@ -434,3 +434,29 @@ export interface ResumeExportOptions {
   template: 'classic';
 }
 
+export interface AssistantConversation {
+  id: number
+  userId: number
+  title: string
+  track: 'bigtech' | 'gov'
+  createdAt: number
+  updatedAt: number
+}
+
+export interface AssistantMessage {
+  id: number
+  conversationId: number
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  createdAt: number
+}
+
+export interface CreateAssistantConversationReq {
+  track: 'bigtech' | 'gov'
+}
+
+export interface AssistantChatStreamReq {
+  conversationId: number
+  message: string
+}
+

@@ -32,6 +32,7 @@ const TeacherAlerts = lazy(() => import('./pages/Teacher/Alerts'));
 const TeacherProfilePage = lazy(() => import('./pages/Teacher/Profile'));
 const TeacherMessagesPage = lazy(() => import('./pages/Teacher/Messages'));
 const StudentMessagesPage = lazy(() => import('./pages/Messages'));
+const AssistantPage = lazy(() => import('./pages/Assistant'));
 
 type ThemePalette = {
   primary: string;
@@ -321,6 +322,14 @@ export default function App() {
                 element={
                   <ProtectedRoute>
                     <StudentMessagesPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="assistant"
+                element={
+                  <ProtectedRoute>
+                    <AssistantPage />
                   </ProtectedRoute>
                 }
               />

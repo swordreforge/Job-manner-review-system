@@ -493,6 +493,82 @@ resolveAlert: (id: number) =>
     api.delete<{ code: number; msg: string }>(`/teachers/messages/${id}`),
 };
 
+export const assistantApi = {
+  createConversation: async (data: import('../types').CreateAssistantConversationReq): Promise<import('../types').ApiResponse<import('../types').AssistantConversation>> => {
+    return api.post('/assistant/conversations', data)
+  },
+
+  listConversations: async (page = 1, pageSize = 20): Promise<import('../types').ApiResponse<{ total: number; list: import('../types').AssistantConversation[] }>> => {
+    return api.get('/assistant/conversations', { params: { page, pageSize } })
+  },
+
+  deleteConversation: async (id: number): Promise<import('../types').ApiResponse<null>> => {
+    return api.delete(`/assistant/conversations/${id}`)
+  },
+
+  getMessages: async (conversationId: number): Promise<import('../types').ApiResponse<{ total: number; list: import('../types').AssistantMessage[] }>> => {
+    return api.get(`/assistant/conversations/${conversationId}/messages`)
+  },
+
+  chatStream: async (
+    data: import('../types').AssistantChatStreamReq,
+    onEvent: (event: { type: string; data: any }) => void,
+    onError: (error: Error) => void
+  ): Promise<void> => {
+    const token = localStorage.getItem('token')
+    const response = await fetch(`${BASE_URL}/assistant/conversations/${data.conversationId}/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'text/event-stream',
+      },
+      body: JSON.stringify({ conversationId: data.conversationId, message: data.message }),
+    })
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+
+    const reader = response.body?.getReader()
+    if (!reader) {
+      throw new Error('No reader available')
+    }
+
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let currentEventType = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      buffer += decoder.decode(value, { stream: true })
+      const lines = buffer.split('\n')
+      buffer = lines.pop() || ''
+
+      for (const line of lines) {
+        const trimmedLine = line.trim()
+        if (trimmedLine === '') continue
+        if (trimmedLine.startsWith('event: ')) {
+          currentEventType = trimmedLine.substring(7)
+          continue
+        }
+        if (trimmedLine.startsWith('data: ')) {
+          const eventData = trimmedLine.substring(6)
+          try {
+            const parsedData = JSON.parse(eventData)
+            onEvent({ type: currentEventType || 'data', data: parsedData })
+            currentEventType = ''
+          } catch {
+            // skip invalid JSON
+          }
+        }
+      }
+    }
+  },
+}
+
 export const studentMessageApi = {
   listMessages: (params?: { page?: number; pageSize?: number }) =>
     api.get<{ code: number; msg: string; data: import('../types').PageResponse<import('../types').InboxMessage> }>('/students/messages', { params }),
