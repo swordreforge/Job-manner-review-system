@@ -15,6 +15,15 @@ const QUICK_QUESTIONS = [
   { label: '帮我分析职业发展方向', track: 'bigtech' as const },
 ];
 
+const SUGGESTED_QUESTIONS = [
+  '如何写一份好简历？',
+  '面试自我介绍怎么说？',
+  '有哪些常见的面试问题？',
+  '如何选择第一份工作？',
+  '大厂和小公司怎么选？',
+  '谈薪资有什么技巧？',
+];
+
 export default function AssistantPage() {
   const { track } = useUIStore();
   const [conversations, setConversations] = useState<AssistantConversation[]>([]);
@@ -208,13 +217,29 @@ export default function AssistantPage() {
   const getTrackColor = (t: 'bigtech' | 'gov') => t === 'bigtech' ? 'blue' : 'green';
 
   return (
-    <div style={{ display: 'flex', height: 'calc(100vh - 64px)', overflow: 'hidden', position: 'relative' }}>
+    <div className="assistant-root" style={{ display: 'flex', height: 'calc(100vh - 56px)', overflow: 'hidden', position: 'relative' }}>
       <style>{`
+        .assistant-root {
+          margin: -16px;
+          width: calc(100% + 32px);
+        }
+        @media (min-width: 768px) {
+          .assistant-root {
+            margin: -24px;
+            width: calc(100% + 48px);
+          }
+        }
+        @media (min-width: 1024px) {
+          .assistant-root {
+            margin: -24px -32px;
+            width: calc(100% + 64px);
+          }
+        }
         @media (max-width: 767px) {
           .assistant-sidebar {
             position: fixed;
             left: 0;
-            top: 64px;
+            top: 56px;
             bottom: 0;
             z-index: 100;
             transform: translateX(-100%);
@@ -421,7 +446,7 @@ export default function AssistantPage() {
             flex: 1, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', padding: 24,
           }}>
-            <div style={{ textAlign: 'center', maxWidth: 480 }}>
+            <div style={{ textAlign: 'center', maxWidth: 560 }}>
               <span className="material-symbols-rounded" style={{ fontSize: 64, color: 'var(--md-sys-color-primary)' }}>
                 smart_toy
               </span>
@@ -510,7 +535,7 @@ export default function AssistantPage() {
                     <div
                       className={msg.role === 'user' ? 'assistant-msg-user' : 'assistant-msg-assistant'}
                       style={{
-                        maxWidth: '70%',
+                        maxWidth: '80%',
                         padding: '10px 14px',
                         fontSize: 14,
                         lineHeight: 1.6,
@@ -550,7 +575,7 @@ export default function AssistantPage() {
                   <div
                     className="assistant-msg-assistant"
                     style={{
-                      maxWidth: '70%',
+                      maxWidth: '80%',
                       padding: '10px 14px',
                       fontSize: 14,
                       lineHeight: 1.6,
@@ -593,27 +618,61 @@ export default function AssistantPage() {
               borderTop: '1px solid var(--md-sys-color-outline-variant)',
               backgroundColor: 'var(--md-sys-color-surface)',
             }}>
-              <div style={{ display: 'flex', gap: 8, maxWidth: 800, margin: '0 auto' }}>
-                <Input.TextArea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder="输入你的问题..."
-                  autoSize={{ minRows: 1, maxRows: 4 }}
-                  disabled={streaming}
-                  style={{ flex: 1, resize: 'none' }}
-                />
-                <Button
-                  type="primary"
-                  icon={<SendOutlined />}
-                  onClick={() => handleSend()}
-                  loading={streaming}
-                  disabled={!input.trim() || streaming}
-                  style={{ alignSelf: 'flex-end' }}
-                >
-                  发送
-                </Button>
-              </div>
+<div style={{ display: 'flex', gap: 8, maxWidth: 960, margin: '0 auto' }}>
+                  <Input.TextArea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="输入你的问题..."
+                    autoSize={{ minRows: 1, maxRows: 4 }}
+                    disabled={streaming}
+                    style={{ flex: 1, resize: 'none' }}
+                  />
+                  <Button
+                    type="primary"
+                    icon={<SendOutlined />}
+                    onClick={() => handleSend()}
+                    loading={streaming}
+                    disabled={!input.trim() || streaming}
+                    style={{ alignSelf: 'flex-end' }}
+                  >
+                    发送
+                  </Button>
+                </div>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, maxWidth: 960, margin: '8px auto 0' }}>
+                  {SUGGESTED_QUESTIONS.map((q) => (
+                    <button
+                      key={q}
+                      onClick={() => { if (!streaming) handleSend(q); }}
+                      disabled={streaming}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: 16,
+                        border: '1px solid var(--md-sys-color-outline)',
+                        backgroundColor: streaming ? 'var(--md-sys-color-surface-container-high)' : 'var(--md-sys-color-surface-container-low)',
+                        color: 'var(--md-sys-color-on-surface-variant)',
+                        fontSize: 13,
+                        cursor: streaming ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.15s',
+                        whiteSpace: 'nowrap',
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!streaming) {
+                          e.currentTarget.style.backgroundColor = 'var(--md-sys-color-primary-container)';
+                          e.currentTarget.style.color = 'var(--md-sys-color-on-primary-container)';
+                          e.currentTarget.style.borderColor = 'var(--md-sys-color-primary)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-low)';
+                        e.currentTarget.style.color = 'var(--md-sys-color-on-surface-variant)';
+                        e.currentTarget.style.borderColor = 'var(--md-sys-color-outline)';
+                      }}
+                    >
+                      {q}
+                    </button>
+                  ))}
+                </div>
             </div>
           </>
         )}
