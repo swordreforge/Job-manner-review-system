@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Card, Button, Segmented, Input, Avatar, Tag, message, Modal, Progress, List } from 'antd';
-import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { SendOutlined, RobotOutlined, UserOutlined, HistoryOutlined, FileTextOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
 import SurfaceCard from '../../components/SurfaceCard';
@@ -35,7 +34,6 @@ export default function InterviewPage() {
   const audioChunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const navigate = useNavigate();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -795,7 +793,7 @@ export default function InterviewPage() {
         okText: '确认返回',
         okButtonProps: { danger: true },
         cancelText: '继续面试',
-        onOk: () => {
+        onOk: async () => {
           if (session) {
             interviewApi.end(session.id, 'cancelled').catch(console.error);
           }
@@ -811,18 +809,13 @@ export default function InterviewPage() {
   };
 
   return (
-    <div className="min-h-screen p-4">
+    <div className="py-4">
       {!started ? (
-        <div className="max-w-4xl mx-auto mt-10 relative z-10">
+        <div className="max-w-4xl mx-auto relative z-10">
           <Card 
             title={
-              <div className="flex items-center gap-4">
-                <Button 
-                  icon={<ArrowLeftOutlined />} 
-                  onClick={() => navigate('/start')}
-                  type="text"
-                />
-                <span className="text-2xl font-bold text-center flex-1">面试模拟系统</span>
+              <div className="flex items-center justify-center">
+                <span className="text-2xl font-bold">面试模拟系统</span>
               </div>
             } 
             className="glass-effect shadow-xl"
@@ -899,11 +892,6 @@ export default function InterviewPage() {
             title={
               <div className="flex justify-between items-center">
                 <div className="flex items-center gap-4">
-                  <Button 
-                    icon={<ArrowLeftOutlined />} 
-                    onClick={handleBack}
-                    type="text"
-                  />
                   <Avatar size="large" icon={<RobotOutlined />} />
                   <div>
                     <div className="text-lg font-semibold">{getModeLabel(mode)} - 模拟面试</div>
@@ -930,7 +918,7 @@ export default function InterviewPage() {
             }
             className="glass-effect shadow-xl"
           >
-            <div className="flex flex-col" style={{ height: 'calc(100vh - 280px)' }}>
+            <div className="flex flex-col" style={{ height: 'calc(100vh - 220px)' }}>
               <div className="flex-1 overflow-auto mb-4 space-y-4 p-2">
                 {messages.map((msg, idx) => (
                   <div 

@@ -334,6 +334,14 @@ export default function App() {
                 }
               />
               <Route
+                path="interview"
+                element={
+                  <ProtectedRoute>
+                    <InterviewPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="teacher/index"
                 element={
                   <ProtectedRoute>
@@ -411,14 +419,6 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <HollandHistoryPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/interview"
-              element={
-                <ProtectedRoute>
-                  <InterviewPage />
                 </ProtectedRoute>
               }
             />
