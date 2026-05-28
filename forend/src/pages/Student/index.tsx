@@ -342,7 +342,7 @@ export default function StudentPage() {
 
   return (
       <div className="min-h-screen relative z-10 p-4">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <div className="mb-4">
             <Button
                 type="text"

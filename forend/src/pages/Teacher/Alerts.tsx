@@ -133,7 +133,7 @@ export default function TeacherAlerts() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">预警管理</h1>
         <Button 

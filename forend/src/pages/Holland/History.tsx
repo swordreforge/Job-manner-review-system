@@ -57,7 +57,7 @@ export default function HollandHistoryPage() {
   if (loading && history.length === 0) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <div className="text-center w-full max-w-4xl px-6">
+        <div className="text-center w-full max-w-5xl px-6">
           <SkeletonLoader type="list" />
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function HollandHistoryPage() {
 
   return (
     <div className="min-h-screen relative z-10">
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto">
         <PageHeader title="测试历史" description="查看您的职业兴趣测试记录" icon={<span className="material-symbols-rounded">history</span>} />
 
         {error && (

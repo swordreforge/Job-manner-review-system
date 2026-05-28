@@ -1,5 +1,9 @@
 import MessageCenter from '../../components/MessageCenter';
 
 export default function TeacherMessagesPage() {
-  return <MessageCenter role="teacher" />;
+  return (
+    <div className="max-w-5xl mx-auto">
+      <MessageCenter role="teacher" />
+    </div>
+  );
 }

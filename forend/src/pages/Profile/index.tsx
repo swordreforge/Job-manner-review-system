@@ -201,6 +201,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <PageHeader title="个人资料" description="查看和管理您的个人信息和学生资料" icon={<span className="material-symbols-rounded">person</span>} />
+      <div className="max-w-5xl mx-auto">
       {/* 用户信息卡片 - MD3 Card */}
       <div 
         className="mb-3 sm:mb-4 p-4 sm:p-5"
@@ -863,6 +864,7 @@ export default function ProfilePage() {
         </div>
       </Modal>
 
+      </div>
     </div>
   );
 }

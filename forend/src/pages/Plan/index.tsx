@@ -300,6 +300,7 @@ export default function PlanPage() {
   return (
     <div className="min-h-screen relative z-10 p-4">
       <PageHeader title="报告管理" description="查看和生成您的职业规划报告" icon={<span className="material-symbols-rounded">description</span>} />
+      <div className="max-w-5xl mx-auto">
 
       <div className="mb-4 flex items-center justify-between">
         <div className="flex gap-2">
@@ -582,6 +583,7 @@ export default function PlanPage() {
           </SurfaceCard>
         </div>
       )}
+      </div>
     </div>
   );
 }

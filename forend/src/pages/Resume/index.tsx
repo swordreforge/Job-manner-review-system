@@ -361,7 +361,7 @@ export default function ResumePage() {
           </Button>
         </PageHeader>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="mx-auto">
           <Steps
             current={parsed ? 2 : parsing ? 1 : 0}
             className="mb-6"
@@ -639,7 +639,7 @@ export default function ResumePage() {
                 </Button>
               </div>
             </div>
-            <div className="text-left space-y-4 max-w-3xl mx-auto">
+            <div className="text-left space-y-4 mx-auto">
               {profile ? (
                 <>
                   <SurfaceCard title="基础信息">

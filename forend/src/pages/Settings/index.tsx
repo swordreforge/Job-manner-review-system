@@ -627,8 +627,9 @@ export default function SettingsPage() {
 
   return (
     <div className="settings-page min-h-screen relative z-10 p-4">
-      <div
-        className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 backdrop-blur border-b border-gray-100 flex items-center gap-2"
+      <div className="max-w-5xl mx-auto">
+        <div
+          className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 backdrop-blur border-b border-gray-100 flex items-center gap-2"
         style={{
           backgroundColor: 'color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent)',
           borderBottomColor: 'var(--md-sys-color-outline-variant)',
@@ -774,6 +775,7 @@ export default function SettingsPage() {
           </div>
         )}
       </Modal>
+      </div>
     </div>
   );
 }

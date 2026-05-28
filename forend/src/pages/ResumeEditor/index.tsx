@@ -93,7 +93,7 @@ export default function ResumeEditorPage() {
 
   return (
     <div className="min-h-screen bg-[var(--md-sys-color-surface-container)] p-4 md:p-6">
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-5xl mx-auto">
         <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
           <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/resume')}>
             返回

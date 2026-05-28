@@ -174,7 +174,7 @@ export default function TeacherDashboard() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">教师工作台</h1>
 
       <Row gutter={[16, 16]} className="mb-6">

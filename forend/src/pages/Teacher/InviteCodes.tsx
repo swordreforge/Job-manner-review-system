@@ -135,7 +135,7 @@ export default function TeacherInviteCodes() {
   ];
 
   return (
-    <div className="p-6">
+    <div className="p-6 max-w-5xl mx-auto">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">邀请码管理</h1>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>

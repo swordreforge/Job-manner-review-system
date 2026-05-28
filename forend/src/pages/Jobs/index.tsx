@@ -626,7 +626,7 @@ const loadFilterOptions = async () => {
 
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4 md:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
-      <div className="w-full space-y-4">
+      <div className="max-w-5xl mx-auto w-full space-y-4">
         <div 
           className="p-4 sm:p-5"
           style={{ 

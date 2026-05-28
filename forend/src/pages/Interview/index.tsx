@@ -811,7 +811,7 @@ export default function InterviewPage() {
   return (
     <div className="py-4">
       {!started ? (
-        <div className="max-w-4xl mx-auto relative z-10">
+        <div className="max-w-5xl mx-auto relative z-10">
           <Card 
             title={
               <div className="flex items-center justify-center">
@@ -887,7 +887,7 @@ export default function InterviewPage() {
           </Card>
         </div>
       ) : (
-        <div className="max-w-6xl mx-auto relative z-10">
+        <div className="max-w-5xl mx-auto relative z-10">
           <Card 
             title={
               <div className="flex justify-between items-center">

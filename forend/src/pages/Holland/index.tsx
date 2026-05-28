@@ -121,7 +121,7 @@ export default function HollandTestPage() {
 
   return (
     <div className="min-h-screen relative z-10">
-      <div className="p-6 max-w-3xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto">
         <PageHeader title="职业兴趣测试" icon={<span className="material-symbols-rounded">psychology</span>} />
 
         <button

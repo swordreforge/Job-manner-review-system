@@ -115,7 +115,7 @@ export default function HollandResultPage() {
   if (loading) {
     return (
       <div className="min-h-screen relative z-10 flex items-center justify-center">
-        <div className="text-center w-full max-w-4xl px-6">
+        <div className="text-center w-full max-w-5xl px-6">
           <SkeletonLoader type="card@3" />
           <p className="md-typescale-body-large mt-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载结果中...</p>
         </div>
@@ -155,7 +155,7 @@ export default function HollandResultPage() {
 
   return (
     <div className="min-h-screen relative z-10">
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="p-6 max-w-5xl mx-auto">
         <PageHeader title="测试结果" icon={<span className="material-symbols-rounded">assessment</span>} />
 
         <SurfaceCard variant="elevated" className="mb-6">
