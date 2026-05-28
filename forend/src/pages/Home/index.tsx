@@ -264,12 +264,6 @@ export default function HomePage() {
 
   return (
     <div className="relative z-10 min-h-screen overflow-hidden pb-20">
-      <div className="absolute inset-0 -z-10"
-        style={{
-          background: 'linear-gradient(180deg, var(--md-sys-color-surface-container) 0%, var(--md-sys-color-surface) 100%)'
-        }}
-      />
-
       <div className="mx-auto max-w-5xl space-y-4 px-4 py-4 sm:space-y-5 sm:py-5 md:px-5 md:py-6 lg:space-y-6 lg:py-8">
         {/* Welcome Card - MD3 Filled Card */}
         <section
