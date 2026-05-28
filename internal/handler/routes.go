@@ -382,6 +382,12 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: user.CompleteOnboardingHandler(serverCtx),
 			},
 			{
+				// Get user progress
+				Method:  http.MethodGet,
+				Path:    "/user/progress",
+				Handler: user.GetUserProgressHandler(serverCtx),
+			},
+			{
 				// User login
 				Method:  http.MethodPost,
 				Path:    "/user/login",

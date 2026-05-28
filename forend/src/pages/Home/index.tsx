@@ -1,15 +1,7 @@
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-type QuickFeature = {
-  key: string;
-  step: string;
-  title: string;
-  desc: string;
-  path: string;
-  icon: string;
-  containerColor: string;
-  onContainerColor: string;
-};
+import { userApi } from '../../api';
+import type { UserProgressItem, UserProgressResp } from '../../types';
 
 type Recommendation = {
   key: string;
@@ -69,96 +61,179 @@ function InsightIconCluster({ className = '' }: { className?: string }) {
   );
 }
 
-function StepRail({ steps }: { steps: string[] }) {
+function ProgressCard({ progress, onNavigate }: { progress: UserProgressResp; onNavigate: (path: string) => void }) {
+  const isAllComplete = progress.overallProgress >= 100;
+  const [collapsed, setCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (isAllComplete) {
+      const timer = setTimeout(() => setCollapsed(true), 600);
+      return () => clearTimeout(timer);
+    }
+    setCollapsed(false);
+  }, [isAllComplete]);
+
+  const percentage = Math.round(progress.overallProgress);
+
+  const containerStyle = {
+    backgroundColor: isAllComplete
+      ? 'var(--md-sys-color-primary-container)'
+      : 'var(--md-sys-color-surface-container-low)',
+    border: `1px solid ${isAllComplete ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-outline-variant)'}`,
+    borderRadius: 'var(--md-sys-shape-corner-large)',
+    overflow: 'hidden',
+    maxHeight: collapsed ? '56px' : '800px',
+    transition: 'max-height 0.4s ease, background-color 0.3s ease, border-color 0.3s ease',
+  };
+
+  const stepColors: Record<string, { bg: string; fg: string }> = {
+    holland_test: { bg: 'var(--md-sys-color-primary-container)', fg: 'var(--md-sys-color-on-primary-container)' },
+    student_profile: { bg: 'var(--md-sys-color-secondary-container)', fg: 'var(--md-sys-color-on-secondary-container)' },
+    resume_upload: { bg: 'var(--md-sys-color-tertiary-container)', fg: 'var(--md-sys-color-on-tertiary-container)' },
+    career_report: { bg: 'var(--md-sys-color-error-container)', fg: 'var(--md-sys-color-on-error-container)' },
+    interview_simulation: { bg: 'var(--md-sys-color-surface-container-high)', fg: 'var(--md-sys-color-on-surface)' },
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-y-3 sm:grid-cols-2 sm:gap-y-4 md:grid-cols-4 md:gap-x-3 md:gap-y-0">
-      {steps.map((title, idx) => (
-        <div key={title} className="relative md:pr-2">
-          {idx < steps.length - 1 && (
-            <div
-              className="absolute left-4 top-8 h-7 w-px sm:hidden"
-              style={{
-                background: `linear-gradient(to bottom, var(--md-sys-color-primary-container), transparent)`
-              }}
-            />
-          )}
-          {idx < steps.length - 1 && (
-            <div
-              className="absolute left-10 right-1 top-4 hidden h-px md:block"
-              style={{
-                background: `linear-gradient(to right, var(--md-sys-color-primary-container), transparent)`
-              }}
-            />
-          )}
-          <div className="relative z-10 flex items-center gap-3 md:flex-col md:items-start md:gap-2">
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold shadow-[0_2px_8px_rgba(30,64,175,0.12)]"
-              style={{
-                backgroundColor: 'var(--md-sys-color-primary-container)',
-                border: '1px solid var(--md-sys-color-outline)',
-                color: 'var(--md-sys-color-primary)',
-              }}
-            >
-              {idx + 1}
-            </div>
-            <span
-              className="pt-1 text-sm font-medium leading-5 md:max-w-[88px] md:pt-0"
-              style={{ color: 'var(--md-sys-color-on-surface)' }}
-            >
-              {title}
-            </span>
+    <section style={containerStyle}>
+      <button
+        onClick={() => setCollapsed(prev => !prev)}
+        className="flex w-full items-center gap-4 p-5 sm:p-5 md:p-6"
+        style={{ cursor: 'pointer', textAlign: 'left', border: 'none', background: 'none' }}
+      >
+        <div className="flex items-center gap-3">
+          <span className="material-symbols-rounded text-2xl" style={{ color: isAllComplete ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface)' }}>
+            {isAllComplete ? 'check_circle' : 'flag'}
+          </span>
+          <div className="min-w-0">
+            <h2 className="md-typescale-title-large" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+              {isAllComplete ? '全部完成！继续探索更多功能' : '测评完成度'}
+            </h2>
           </div>
         </div>
-      ))}
-    </div>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <div
+            className="h-2.5 flex-1 overflow-hidden"
+            style={{ borderRadius: 'var(--md-sys-shape-corner-full)', backgroundColor: 'var(--md-sys-color-surface-container-highest)' }}
+          >
+            <div
+              className="h-full transition-all duration-500"
+              style={{
+                width: `${percentage}%`,
+                borderRadius: 'var(--md-sys-shape-corner-full)',
+                backgroundColor: isAllComplete ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-secondary)',
+              }}
+            />
+          </div>
+          <span
+            className="flex-shrink-0 text-sm font-semibold"
+            style={{ color: isAllComplete ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)' }}
+          >
+            {percentage}%
+          </span>
+        </div>
+        <span
+          className="material-symbols-rounded text-xl flex-shrink-0 transition-transform duration-200"
+          style={{
+            color: 'var(--md-sys-color-on-surface-variant)',
+            transform: collapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+          }}
+        >
+          expand_more
+        </span>
+      </button>
+
+      <div style={{
+        maxHeight: collapsed ? '0' : '2000px',
+        opacity: collapsed ? 0 : 1,
+        overflow: 'hidden',
+        transition: 'max-height 0.4s ease, opacity 0.3s ease',
+      }}>
+        <div className="px-5 pb-5 sm:px-5 sm:pb-5 md:px-6 md:pb-6">
+          <div className="flex flex-col gap-2">
+            {progress.items.map((item) => {
+              const colors = stepColors[item.key] || stepColors.interview_simulation;
+              return (
+                <button
+                  key={item.key}
+                  onClick={() => onNavigate(item.path)}
+                  className="group flex items-center gap-4 rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-0.5"
+                  style={{
+                    backgroundColor: item.completed ? colors.bg : 'var(--md-sys-color-surface)',
+                    borderColor: item.completed ? 'transparent' : 'var(--md-sys-color-outline-variant)',
+                    boxShadow: 'var(--md-sys-elevation-0)',
+                  }}
+                >
+                  <span
+                    className="material-symbols-rounded text-xl flex-shrink-0"
+                    style={{ color: item.completed ? 'var(--md-sys-color-primary)' : 'var(--md-sys-color-on-surface-variant)' }}
+                  >
+                    {item.completed ? 'check_circle' : 'radio_button_unchecked'}
+                  </span>
+                  <div
+                    className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg"
+                    style={{ backgroundColor: 'var(--md-sys-color-surface-container)' }}
+                  >
+                    <span className="material-symbols-rounded text-lg" style={{ color: colors.fg }}>{item.icon}</span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="md-typescale-title-medium text-sm" style={{ color: 'var(--md-sys-color-on-surface)' }}>
+                      {item.title}
+                    </div>
+                    <div className="md-typescale-body-small mt-0.5" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>
+                      {item.description}
+                    </div>
+                  </div>
+                  {!item.completed && (
+                    <span
+                      className="material-symbols-rounded text-lg flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+                      style={{ color: 'var(--md-sys-color-primary)' }}
+                    >
+                      arrow_forward
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
 export default function HomePage() {
   const navigate = useNavigate();
+  const [progress, setProgress] = useState<UserProgressResp | null>(null);
 
-  const features: QuickFeature[] = [
-    {
-      key: 'think',
-      step: '01',
-      title: '职业测评',
-      desc: '了解自己的职业兴趣和能力倾向',
-      path: '/holland',
-      icon: 'psychology',
-      containerColor: 'var(--md-sys-color-primary-container)',
-      onContainerColor: 'var(--md-sys-color-on-primary-container)',
-    },
-    {
-      key: 'prepare',
-      step: '02',
-      title: '完善画像',
-      desc: '上传简历或填写信息，构建你的职业画像',
-      path: '/resume',
-      icon: 'person_edit',
-      containerColor: 'var(--md-sys-color-secondary-container)',
-      onContainerColor: 'var(--md-sys-color-on-secondary-container)',
-    },
-    {
-      key: 'plan',
-      step: '03',
-      title: '职业规划',
-      desc: 'AI 生成专属职业规划报告',
-      path: '/plan',
-      icon: 'map',
-      containerColor: 'var(--md-sys-color-tertiary-container)',
-      onContainerColor: 'var(--md-sys-color-on-tertiary-container)',
-    },
-    {
-      key: 'practice',
-      step: '04',
-      title: '模拟面试',
-      desc: '与 AI 进行真实场景模拟面试',
-      path: '/interview',
-      icon: 'record_voice_over',
-      containerColor: 'var(--md-sys-color-error-container)',
-      onContainerColor: 'var(--md-sys-color-on-error-container)',
-    },
-  ];
+  const loadProgress = useCallback(async () => {
+    try {
+      const res = await userApi.getProgress();
+      if (res.code === 0) {
+        setProgress(res);
+      }
+    } catch {
+      const fallback: UserProgressResp = {
+        code: 0,
+        msg: 'fallback',
+        totalItems: 5,
+        completedItems: 0,
+        overallProgress: 0,
+        items: [
+          { key: 'holland_test', title: '霍兰德职业倾向测试', description: '完成职业兴趣测试，了解你的职业倾向', path: '/holland', icon: 'psychology', completed: false },
+          { key: 'student_profile', title: '完善个人资料', description: '创建并完善你的学生资料档案', path: '/profile', icon: 'person_edit', completed: false },
+          { key: 'resume_upload', title: '简历上传与解析', description: '上传简历，AI 智能解析构建职业画像', path: '/resume', icon: 'description', completed: false },
+          { key: 'career_report', title: '职业规划报告', description: '生成专属职业规划与发展报告', path: '/plan', icon: 'map', completed: false },
+          { key: 'interview_simulation', title: '模拟面试', description: 'AI 模拟面试，提升求职面试技巧', path: '/interview', icon: 'record_voice_over', completed: false },
+        ],
+      };
+      setProgress(fallback);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadProgress();
+  }, [loadProgress]);
 
   const recommendations: Recommendation[] = [
     {
@@ -212,46 +287,8 @@ export default function HomePage() {
           </p>
         </section>
 
-        {/* Quick Start - MD3 Outlined Card */}
-        <section
-          className="rounded-2xl p-5 sm:p-5 md:p-6"
-          style={{
-            backgroundColor: 'var(--md-sys-color-surface-container-low)',
-            border: '1px solid var(--md-sys-color-outline-variant)',
-            borderRadius: 'var(--md-sys-shape-corner-large)'
-          }}
-        >
-          <h2 className="md-typescale-title-large mb-4" style={{ color: 'var(--md-sys-color-on-surface)' }}>快速开始</h2>
-          <StepRail steps={features.map((item) => item.step)} />
-
-          <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {features.map((item) => (
-              <button
-                key={item.key}
-                type="button"
-                onClick={() => navigate(item.path)}
-                className="group rounded-xl border p-4 text-left transition-all duration-200 hover:-translate-y-1"
-                style={{
-                  backgroundColor: item.containerColor,
-                  borderColor: 'var(--md-sys-color-outline-variant)',
-                  boxShadow: 'var(--md-sys-elevation-1)'
-                }}
-              >
-                <div
-                  className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-lg shadow-sm"
-                  style={{ backgroundColor: 'var(--md-sys-color-surface-container)' }}
-                >
-                  <span className="material-symbols-rounded text-lg" style={{ color: item.onContainerColor }}>{item.icon}</span>
-                </div>
-                <div className="md-typescale-title-large" style={{ color: 'var(--md-sys-color-on-surface)' }}>{item.title}</div>
-                <div className="md-typescale-body-small mt-1" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>{item.desc}</div>
-                <div className="mt-3 inline-flex items-center text-sm font-medium" style={{ color: 'var(--md-sys-color-primary)' }}>
-                  进入功能 <span className="material-symbols-rounded ml-1.5 text-base transition-transform duration-200 group-hover:translate-x-1">arrow_forward</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
+        {/* Progress Todo Card */}
+        {progress && <ProgressCard progress={progress} onNavigate={(path) => navigate(path)} />}
 
         {/* Career Test CTA - MD3 Filled Card with Primary Container */}
         <section

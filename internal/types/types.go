@@ -714,6 +714,24 @@ type UserResp struct {
 	Data *UserInfo `json:"data,optional"`
 }
 
+type UserProgressItem struct {
+	Key         string `json:"key"`
+	Title       string `json:"title"`
+	Description string `json:"description"`
+	Path        string `json:"path"`
+	Icon        string `json:"icon"`
+	Completed   bool   `json:"completed"`
+}
+
+type UserProgressResp struct {
+	Code            int                `json:"code"`
+	Msg             string             `json:"msg"`
+	TotalItems      int                `json:"totalItems"`
+	CompletedItems  int                `json:"completedItems"`
+	OverallProgress float64            `json:"overallProgress"`
+	Items           []UserProgressItem  `json:"items"`
+}
+
 type ResumeHistoryListReq struct {
 	Page     int `form:"page" default:"1"`
 	PageSize int `form:"pageSize" default:"10"`

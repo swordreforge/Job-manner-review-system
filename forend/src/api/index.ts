@@ -77,7 +77,7 @@ export const userApi = {
   updateInfo: (data: { username?: string; phone?: string }) =>
     api.put<{ code: number; msg: string; data: import('../types').User }>('/user/info', data),
 
-uploadAvatar: (data: { fileContent: string; fileName: string }) =>
+  uploadAvatar: (data: { fileContent: string; fileName: string }) =>
     api.post<{ code: number; msg: string; url: string }>('/user/avatar', data),
 
   resetAvatar: () =>
@@ -91,6 +91,9 @@ uploadAvatar: (data: { fileContent: string; fileName: string }) =>
 
   deleteAccount: (data: { password: string }) =>
     api.delete<{ code: number; msg: string }>('/user/account', { data }),
+
+  getProgress: () =>
+    api.get<import('../types').UserProgressResp>('/user/progress'),
 };
 
 export const studentApi = {

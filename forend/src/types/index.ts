@@ -71,6 +71,24 @@ export interface User {
   createdAt: number;
 }
 
+export interface UserProgressItem {
+  key: string;
+  title: string;
+  description: string;
+  path: string;
+  icon: string;
+  completed: boolean;
+}
+
+export interface UserProgressResp {
+  code: number;
+  msg: string;
+  totalItems: number;
+  completedItems: number;
+  overallProgress: number;
+  items: UserProgressItem[];
+}
+
 export interface LoginResponse {
   token: string;
   expires: number;
