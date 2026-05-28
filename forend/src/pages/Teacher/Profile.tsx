@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
 import { userApi, teacherApi } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 interface TeacherSchool {
   id: number;
@@ -73,8 +74,7 @@ export default function TeacherProfilePage() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">个人中心</h1>
-
+      <PageHeader title="个人资料" icon={<span className="material-symbols-rounded">account_circle</span>} />
       <Card className="mb-6">
         <div className="flex items-start gap-6">
           <Avatar

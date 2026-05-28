@@ -2,10 +2,11 @@ import { useState, useEffect, useRef, useCallback } from 'react';
   import { Button, message, Tabs, Tag, List, Input, Slider, Pagination, Card, Row, Col } from 'antd';
   import { ReloadOutlined, ApartmentOutlined, RiseOutlined, BulbOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, BankOutlined, DollarOutlined, TeamOutlined } from '@ant-design/icons';
   import ReactECharts from 'echarts-for-react';
-  import { jobApi, jobPathApi } from '../../api';
-  import type { Job, PromotionPath, TransferPath } from '../../types';
+import { jobApi, jobPathApi } from '../../api';
+import type { Job, PromotionPath, TransferPath } from '../../types';
 import SurfaceCard from '../../components/SurfaceCard';
 import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
 import { getEChartsM3Theme, getM3ChartColor } from '../../components/EChartsM3Theme';
 
 type GraphLink = {
@@ -627,6 +628,7 @@ const loadFilterOptions = async () => {
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4 md:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <div className="max-w-5xl mx-auto w-full space-y-4">
+        <PageHeader title="岗位画像" description="探索职业方向，了解岗位要求" icon={<span className="material-symbols-rounded">work</span>} />
         <div 
           className="p-4 sm:p-5"
           style={{ 

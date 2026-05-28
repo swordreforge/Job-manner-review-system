@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Modal, Form, InputNumber, Select, message } from 'antd';
 import { PlusOutlined, CopyOutlined } from '@ant-design/icons';
 import { teacherApi, type TeacherInviteCode } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 const { Option } = Select;
 
@@ -136,12 +137,11 @@ export default function TeacherInviteCodes() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">邀请码管理</h1>
+      <PageHeader title="邀请码管理" icon={<span className="material-symbols-rounded">vpn_key</span>}>
         <Button type="primary" icon={<PlusOutlined />} onClick={() => setCreateModalVisible(true)}>
           生成邀请码
         </Button>
-      </div>
+      </PageHeader>
 
       <Table 
         dataSource={codes}

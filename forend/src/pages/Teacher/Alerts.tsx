@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Card, Select, message } from 'antd';
 import { SearchOutlined, CheckCircleOutlined, CloseCircleOutlined, UndoOutlined } from '@ant-design/icons';
 import { teacherApi, type TeacherAlert } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 const { Option } = Select;
 
@@ -134,8 +135,7 @@ export default function TeacherAlerts() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">预警管理</h1>
+      <PageHeader title="预警中心" icon={<span className="material-symbols-rounded">notification_important</span>}>
         <Button 
           type="primary" 
           icon={<SearchOutlined />}
@@ -143,25 +143,25 @@ export default function TeacherAlerts() {
           onClick={async () => {
             try {
 const studentsRes = await teacherApi.listStudents({ page: 1, pageSize: 100 });
-               const studentsData = (studentsRes as Record<string, unknown>).data ?? studentsRes;
-               const list = (studentsData as { list?: { id: number }[] }).list || [];
-               for (const student of list) {
-                 try {
-                   await teacherApi.checkAlert(student.id);
-                 } catch {
-                   // intentionally empty
-                 }
-              }
-              message.success('预警检查完成');
-              fetchAlerts();
-            } catch {
-              message.error('检查失败');
-            }
-          }}
+              const studentsData = (studentsRes as Record<string, unknown>).data ?? studentsRes;
+              const list = (studentsData as { list?: { id: number }[] }).list || [];
+              for (const student of list) {
+                try {
+                  await teacherApi.checkAlert(student.id);
+                } catch {
+                  // intentionally empty
+                }
+             }
+             message.success('预警检查完成');
+             fetchAlerts();
+           } catch {
+             message.error('检查失败');
+           }
+         }}
         >
           检查所有学生
         </Button>
-      </div>
+      </PageHeader>
 
       <Card className="mb-4">
         <Space wrap>

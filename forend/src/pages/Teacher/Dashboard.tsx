@@ -3,6 +3,7 @@ import { Card, Row, Col, Statistic, Table, Tag, Spin, Progress } from 'antd';
 import { WarningOutlined, CheckCircleOutlined, TeamOutlined, FileTextOutlined } from '@ant-design/icons';
 import ReactECharts from 'echarts-for-react';
 import { teacherApi, type TeacherStudent, type TeacherAlert } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 interface DashboardStats {
   totalStudents: number;
@@ -175,7 +176,7 @@ export default function TeacherDashboard() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">教师工作台</h1>
+      <PageHeader title="管理面板" icon={<span className="material-symbols-rounded">dashboard</span>} />
 
       <Row gutter={[16, 16]} className="mb-6">
         <Col xs={24} sm={12} lg={6}>

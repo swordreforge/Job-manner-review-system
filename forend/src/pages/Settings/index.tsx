@@ -1,9 +1,10 @@
 import { Card, Tabs, Form, Input, Button, message, Modal, Avatar, Upload } from 'antd';
-import { UserOutlined, LockOutlined, DeleteOutlined, UploadOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { UserOutlined, LockOutlined, DeleteOutlined, UploadOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { useAuthStore } from '../../stores';
 import { userApi } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 const AVATAR_STAGE_WIDTH = 360;
 const AVATAR_STAGE_HEIGHT = 320;
@@ -628,17 +629,8 @@ export default function SettingsPage() {
   return (
     <div className="settings-page min-h-screen relative z-10 p-4">
       <div className="max-w-5xl mx-auto">
-        <div
-          className="sticky top-0 z-30 mb-4 -mx-4 px-4 py-2 backdrop-blur border-b border-gray-100 flex items-center gap-2"
-        style={{
-          backgroundColor: 'color-mix(in srgb, var(--md-sys-color-surface-container) 90%, transparent)',
-          borderBottomColor: 'var(--md-sys-color-outline-variant)',
-        }}
-      >
-        <Button onClick={() => navigate(user?.role === 'teacher' ? '/teacher/profile' : '/profile')} icon={<ArrowLeftOutlined />}>返回{user?.role === 'teacher' ? '工作台' : '个人中心'}</Button>
-        <h1 className="text-xl font-bold" style={{ color: 'var(--md-sys-color-on-surface)' }}>设置</h1>
-      </div>
-      <Tabs className="settings-tabs" items={userInfoItems} defaultActiveKey="user-info" />
+        <PageHeader title="设置" description="管理您的账号和安全设置" icon={<span className="material-symbols-rounded">settings</span>} />
+        <Tabs className="settings-tabs" items={userInfoItems} defaultActiveKey="user-info" />
 
       <Modal
         title="确认注销账号"

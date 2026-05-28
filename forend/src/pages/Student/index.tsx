@@ -1,9 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Spin, Collapse } from 'antd';
-import { PlusOutlined, MinusCircleOutlined, SaveOutlined, ArrowLeftOutlined } from '@ant-design/icons';
+import { PlusOutlined, MinusCircleOutlined, SaveOutlined } from '@ant-design/icons';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { studentApi } from '../../api';
 import type { Student } from '../../types';
+import PageHeader from '../../components/PageHeader';
 
 const { TextArea } = Input;
 
@@ -343,15 +344,7 @@ export default function StudentPage() {
   return (
       <div className="min-h-screen relative z-10 p-4">
         <div className="max-w-5xl mx-auto">
-          <div className="mb-4">
-            <Button
-                type="text"
-                icon={<ArrowLeftOutlined />}
-                onClick={() => navigate('/profile')}
-            >
-              返回个人中心
-            </Button>
-          </div>
+          <PageHeader title="编辑资料" description="编辑学生个人资料" icon={<span className="material-symbols-rounded">edit</span>} />
 
         <Card title={studentData ? '编辑学生资料' : '创建学生资料'}>
           <Form

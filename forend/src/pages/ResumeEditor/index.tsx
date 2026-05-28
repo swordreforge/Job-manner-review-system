@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button, message, Spin, Card, Space } from 'antd';
-import { ArrowLeftOutlined, RobotOutlined, FilePdfOutlined, FileWordOutlined, BoldOutlined, ItalicOutlined, UnderlineOutlined, HighlightOutlined, AlignLeftOutlined, AlignCenterOutlined, UnorderedListOutlined } from '@ant-design/icons';
+import { RobotOutlined, FilePdfOutlined, FileWordOutlined, BoldOutlined, ItalicOutlined, UnderlineOutlined, HighlightOutlined, AlignLeftOutlined, AlignCenterOutlined, UnorderedListOutlined } from '@ant-design/icons';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Highlight from '@tiptap/extension-highlight';
@@ -11,6 +11,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import { studentApi } from '../../api';
 import { exportResumeToPDF, exportResumeToDOCX } from '../../utils/exportResume';
 import type { Student } from '../../types';
+import PageHeader from '../../components/PageHeader';
 import '../../styles/resume-print.css';
 import '../../styles/tiptap-editor.css';
 
@@ -94,11 +95,7 @@ export default function ResumeEditorPage() {
   return (
     <div className="min-h-screen bg-[var(--md-sys-color-surface-container)] p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
-        <div className="flex flex-wrap justify-between items-center mb-4 gap-2">
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/resume')}>
-            返回
-          </Button>
-          <h1 className="text-xl font-bold">简历优化编辑器</h1>
+        <PageHeader title="简历优化编辑器" icon={<span className="material-symbols-rounded">edit_document</span>}>
           <Space>
             <Button
               type="primary"
@@ -109,7 +106,7 @@ export default function ResumeEditorPage() {
               {polishLoading ? 'AI润色中...' : editorState === 'ready' ? '重新润色' : 'AI润色简历'}
             </Button>
           </Space>
-        </div>
+        </PageHeader>
 
         <Card
           styles={{

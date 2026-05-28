@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Table, Tag, Button, Space, Progress, Input, Select, Card, Drawer, message, Spin, Descriptions } from 'antd';
 import { SearchOutlined, EyeOutlined, ReloadOutlined } from '@ant-design/icons';
 import { teacherApi, type TeacherStudent, type TeacherTaskProgress } from '../../api';
+import PageHeader from '../../components/PageHeader';
 
 const { Option } = Select;
 
@@ -92,7 +93,7 @@ export default function TeacherStudents() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">学生管理</h1>
+      <PageHeader title="学生管理" icon={<span className="material-symbols-rounded">groups</span>} />
 
       <Card className="mb-4">
         <Space wrap>

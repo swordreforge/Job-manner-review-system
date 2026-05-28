@@ -5,6 +5,7 @@ import { interviewApi } from '../../api';
 import type { InterviewSession, InterviewMessage, InterviewHistoryItem, InterviewReport } from '../../types';
 import SurfaceCard from '../../components/SurfaceCard';
 import SkeletonLoader from '../../components/SkeletonLoader';
+import PageHeader from '../../components/PageHeader';
 import './FloatingPolygons.css';
 
 export default function InterviewPage() {
@@ -812,17 +813,15 @@ export default function InterviewPage() {
     <div className="py-4">
       {!started ? (
         <div className="max-w-5xl mx-auto relative z-10">
-          <Card 
+          <PageHeader title="面试模拟系统" description="选择面试模式，开始你的模拟面试练习" icon={<span className="material-symbols-rounded">co_present</span>} />
+          <Card
             title={
               <div className="flex items-center justify-center">
-                <span className="text-2xl font-bold">面试模拟系统</span>
+                <span className="text-2xl font-bold">选择面试模式</span>
               </div>
             } 
             className="glass-effect shadow-xl"
           >
-            <div className="text-center mb-6">
-              <p style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>选择面试模式，开始你的模拟面试练习</p>
-            </div>
             
             <Segmented
               value={mode}

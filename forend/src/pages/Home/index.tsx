@@ -286,7 +286,7 @@ export default function HomePage() {
 
         {/* Career Test CTA - MD3 Filled Card with Primary Container */}
         <section
-          className="mx-auto w-full rounded-2xl p-5 sm:p-5 md:w-[92%] md:p-6 lg:p-7"
+          className="w-full rounded-2xl p-5 sm:p-5 md:p-6 lg:p-7"
           style={{
             background: 'linear-gradient(135deg, var(--md-sys-color-primary-container) 0%, var(--md-sys-color-surface-container-high) 100%)',
             boxShadow: 'var(--md-sys-elevation-2)'
