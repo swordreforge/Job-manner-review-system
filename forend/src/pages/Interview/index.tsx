@@ -688,7 +688,7 @@ export default function InterviewPage() {
     try {
       const response = await interviewApi.getHistory();
       if (response.code === 0 && response.data) {
-        setHistoryList(response.data.list);
+        setHistoryList(response.data.list ?? []);
       }
     } catch (error) {
       message.error('获取历史记录失败');
@@ -1067,7 +1067,7 @@ export default function InterviewPage() {
       >
         {historyLoading ? <SkeletonLoader type="list" /> : (
           <List
-            dataSource={historyList}
+            dataSource={historyList ?? []}
             renderItem={(item) => {
               const isCancelled = item.averageScore === 0;
               return (
@@ -1144,7 +1144,15 @@ export default function InterviewPage() {
           </div>
         }
         open={reportVisible}
-        onCancel={() => setReportVisible(false)}
+        onCancel={() => {
+          setReportVisible(false);
+          setSession(null);
+          setMessages([]);
+          setCurrentScore(null);
+          setCurrentFeedback('');
+          setAverageScore(0);
+          setStarted(false);
+        }}
         footer={null}
         width={900}
       >
@@ -1212,7 +1220,7 @@ export default function InterviewPage() {
               
               <SurfaceCard title="✅ 优势分析">
                 <List
-                  dataSource={currentReport.strengths}
+                  dataSource={currentReport.strengths ?? []}
                   renderItem={(item: string) => (
                     <List.Item>
                       <CheckCircleOutlined className="mr-2" style={{ color: 'var(--md-sys-color-success)' }} />
@@ -1224,7 +1232,7 @@ export default function InterviewPage() {
               
               <SurfaceCard title="💡 改进建议">
                 <List
-                  dataSource={currentReport.improvementSuggestions}
+                  dataSource={currentReport.improvementSuggestions ?? []}
                   renderItem={(item: string) => (
                     <List.Item>
                       <span className="mr-2" style={{ color: 'var(--md-sys-color-primary)' }}>•</span>
