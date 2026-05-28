@@ -1,7 +1,7 @@
 import { Drawer, Tag, Button } from 'antd';
 import { useAuthStore } from '../../stores';
 import { useNavItems } from '../../hooks/useNavItems';
-import type { NavItem } from '../../hooks/useNavItems';
+import type { NavItem, NavGroup } from '../../hooks/useNavItems';
 
 interface NavigationDrawerProps {
   open: boolean;
@@ -335,6 +335,7 @@ export default function NavigationDrawer(props: NavigationDrawerProps) {
         backgroundColor: 'var(--md-sys-color-surface-container)',
         borderRight: '1px solid var(--md-sys-color-outline-variant)',
         boxShadow: 'var(--md-sys-elevation-2)',
+        transition: 'transform 0.2s ease',
       }}
     >
       <DrawerContent {...props} />

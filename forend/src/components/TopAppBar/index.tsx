@@ -7,9 +7,12 @@ interface TopAppBarProps {
   onMenuClick: () => void;
   onCommandOpen: () => void;
   isMobile: boolean;
+  onToggleSidebar?: () => void;
+  showSidebarToggle?: boolean;
+  sidebarOpen?: boolean;
 }
 
-export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopAppBarProps) {
+export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile, onToggleSidebar, showSidebarToggle, sidebarOpen }: TopAppBarProps) {
   const navigate = useNavigate();
   const { role, logout } = useAuthStore();
   const { theme, toggleTheme } = useThemeStore();
@@ -54,6 +57,20 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile }: TopA
             }}
             aria-label="打开导航菜单"
           />
+        )}
+        {showSidebarToggle && (
+          <Tooltip title={sidebarOpen ? '收起侧边栏 (Ctrl+B)' : '展开侧边栏 (Ctrl+B)'}>
+            <Button
+              type="text"
+              icon={<span className="material-symbols-rounded" style={{ fontSize: 20 }}>{sidebarOpen ? 'sidebar_left' : 'sidebar_left'}</span>}
+              onClick={onToggleSidebar}
+              className="flex items-center justify-center w-9 h-9 rounded-full"
+              style={{
+                color: 'var(--md-sys-color-on-surface-variant)',
+              }}
+              aria-label={sidebarOpen ? '收起侧边栏' : '展开侧边栏'}
+            />
+          </Tooltip>
         )}
         <div className="flex items-center gap-2">
           <img src="/favicon.svg" alt="Logo" className="w-8 h-8" />

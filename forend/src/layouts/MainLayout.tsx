@@ -44,10 +44,16 @@ export default function MainLayout() {
         e.preventDefault();
         setCommandOpen(true);
       }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'b') {
+        e.preventDefault();
+        if (isDesktop) {
+          setDrawerOpen(prev => !prev);
+        }
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [isDesktop]);
 
   const navRole = role === 'teacher' ? 'teacher' : 'student';
   const { navGroups } = useNavItems(navRole);
@@ -99,6 +105,9 @@ export default function MainLayout() {
         onMenuClick={() => setDrawerOpen(true)}
         onCommandOpen={() => setCommandOpen(true)}
         isMobile={isMobile}
+        onToggleSidebar={() => setDrawerOpen(prev => !prev)}
+        showSidebarToggle={isDesktop}
+        sidebarOpen={drawerOpen}
       />
       <NavigationDrawer
         open={drawerOpen}
@@ -108,7 +117,7 @@ export default function MainLayout() {
         activePath={activePath}
         onNavClick={handleNavClick}
       />
-      <main style={{ marginLeft: isMobile ? 0 : 320 }}>
+      <main style={{ marginLeft: isMobile ? 0 : (drawerOpen ? 320 : 0), transition: 'margin-left 0.2s ease' }}>
         <div className="mx-auto w-full max-w-[1400px] px-4 md:px-6 lg:px-8 py-4 md:py-6">
           <Outlet />
         </div>
