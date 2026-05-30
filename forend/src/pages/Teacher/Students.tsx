@@ -29,9 +29,9 @@ export default function TeacherStudents() {
     try {
       const res = await teacherApi.listStudents({ page, pageSize, ...filters });
       // 支持两种响应格式: {total, list} 或 {code, msg, data: {total, list}}
-      const data = (res as Record<string, unknown>).data ?? res;
-      setStudents(data.list || []);
-      setTotal(data.total || 0);
+      const data = ((res as Record<string, unknown>).data ?? res) as Record<string, unknown>;
+      setStudents((data.list || []) as TeacherStudent[]);
+      setTotal((data.total || 0) as number);
     } catch {
       message.error('获取学生列表失败');
     } finally {

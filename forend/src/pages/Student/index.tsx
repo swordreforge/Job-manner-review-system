@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Card, Form, Input, Select, Button, message, Rate, Space, Row, Col, Spin, Collapse } from 'antd';
 import { PlusOutlined, MinusCircleOutlined, SaveOutlined } from '@ant-design/icons';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { studentApi } from '../../api';
 import type { Student } from '../../types';
 import PageHeader from '../../components/PageHeader';
@@ -104,7 +104,6 @@ const normalizeCertificateItems = (items: unknown): CertificateFormItem[] => {
 };
 
 export default function StudentPage() {
-  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);

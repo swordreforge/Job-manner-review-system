@@ -77,7 +77,7 @@ export default function HollandTestPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen relative z-10 flex items-center justify-center">
+      <div className="relative z-10 flex items-center justify-center">
         <div className="text-center">
           <SkeletonLoader type="card" />
           <p className="md-typescale-body-large mt-4" style={{ color: 'var(--md-sys-color-on-surface-variant)' }}>加载题目中...</p>
@@ -88,7 +88,7 @@ export default function HollandTestPage() {
 
   if (error && !testInfo) {
     return (
-      <div className="min-h-screen relative z-10 flex items-center justify-center">
+      <div className="relative z-10 flex items-center justify-center">
         <SurfaceCard variant="elevated" style={{ maxWidth: '28rem', textAlign: 'center' }}>
           <p className="md-typescale-body-large mb-4" style={{ color: 'var(--md-sys-color-error)' }}>{error}</p>
           <button
@@ -120,27 +120,9 @@ export default function HollandTestPage() {
   const allAnswered = answers.length === testInfo.questions.length;
 
   return (
-    <div className="min-h-screen relative z-10">
+    <div className="relative z-10">
       <div className="p-6 max-w-5xl mx-auto">
         <PageHeader title="职业兴趣测试" icon={<span className="material-symbols-rounded">psychology</span>} />
-
-        <button
-          onClick={() => navigate('/start')}
-          className="mb-4 px-4 py-2 md-typescale-label-medium transition-colors flex items-center gap-2 cursor-pointer"
-          style={{
-            color: 'var(--md-sys-color-on-surface-variant)',
-            borderRadius: 'var(--md-sys-shape-corner-large)',
-            background: 'none',
-            border: 'none',
-          }}
-          onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-high)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
-        >
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-          </svg>
-          返回首页
-        </button>
 
         <div className="mb-6">
           <h1 className="md-typescale-headline-small mb-2" style={{ color: 'var(--md-sys-color-on-surface)' }}>{testInfo.testInfo.name}</h1>

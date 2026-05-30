@@ -7,8 +7,6 @@ export function getEChartsM3Theme(): Record<string, unknown> {
   };
 
   const primary = getColor('--md-sys-color-primary', '#0B57D0');
-  const onPrimaryContainer = getColor('--md-sys-color-on-primary-container', '#001B3D'); // eslint-disable-line @typescript-eslint/no-unused-vars
-  const primaryContainer = getColor('--md-sys-color-primary-container', '#D3E4FF'); // eslint-disable-line @typescript-eslint/no-unused-vars
   const secondary = getColor('--md-sys-color-secondary', '#555F71');
   const secondaryContainer = getColor('--md-sys-color-secondary-container', '#D9E3F8');
   const tertiary = getColor('--md-sys-color-tertiary', '#705575');
@@ -22,7 +20,6 @@ export function getEChartsM3Theme(): Record<string, unknown> {
   const outlineVariant = getColor('--md-sys-color-outline-variant', '#C4C6D0');
   const surface = getColor('--md-sys-color-surface', '#FDFCFF');
   const surfaceContainer = getColor('--md-sys-color-surface-container', '#F0EDF2');
-  const surfaceContainerHigh = getColor('--md-sys-color-surface-container-high', '#EBE7ED'); // eslint-disable-line @typescript-eslint/no-unused-vars
 
   return {
     color: [primary, secondary, tertiary, success, warning, error, secondaryContainer, tertiaryContainer],

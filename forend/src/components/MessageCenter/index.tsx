@@ -15,7 +15,10 @@ type RecipientOption = {
 };
 
 function unwrap<T>(response: unknown): T {
-  return response?.data ?? response;
+  if (response && typeof response === 'object' && 'data' in response) {
+    return (response as { data: T }).data;
+  }
+  return response as T;
 }
 
 function formatTime(ts?: number) {

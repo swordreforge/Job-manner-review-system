@@ -67,7 +67,7 @@ function fillParams(pattern: string, params: Record<string, string>): string {
 export function useBreadcrumbs(overrideTitle?: string): BreadcrumbItem[] {
   const location = useLocation();
 
-  return useMemo(() => {
+  return useMemo((): BreadcrumbItem[] => {
     const matched = matchRoute(location.pathname);
     if (!matched) return [];
 
@@ -76,7 +76,7 @@ export function useBreadcrumbs(overrideTitle?: string): BreadcrumbItem[] {
     let currentPattern: string | undefined = pattern;
 
     while (currentPattern !== undefined) {
-      const config = routeMap[currentPattern];
+      const config: RouteConfig | undefined = routeMap[currentPattern];
       if (!config) break;
       const actualPath = fillParams(currentPattern, params);
       items.unshift({ title: config.title, path: actualPath });

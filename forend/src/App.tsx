@@ -342,6 +342,30 @@ export default function App() {
                 }
               />
               <Route
+                path="holland"
+                element={
+                  <ProtectedRoute>
+                    <HollandTestPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="holland/result/:id"
+                element={
+                  <ProtectedRoute>
+                    <HollandResultPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="holland/history"
+                element={
+                  <ProtectedRoute>
+                    <HollandHistoryPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
                 path="teacher/index"
                 element={
                   <ProtectedRoute>
@@ -398,30 +422,6 @@ export default function App() {
                 }
               />
             </Route>
-            <Route
-              path="/holland"
-              element={
-                <ProtectedRoute>
-                  <HollandTestPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/holland/result/:id"
-              element={
-                <ProtectedRoute>
-                  <HollandResultPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/holland/history"
-              element={
-                <ProtectedRoute>
-                  <HollandHistoryPage />
-                </ProtectedRoute>
-              }
-            />
             <Route path="/doc" element={<DocPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

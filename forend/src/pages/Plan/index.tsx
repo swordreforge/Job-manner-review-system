@@ -78,7 +78,7 @@ export default function PlanPage() {
       const err = error as { response?: { data?: { msg?: string }; status?: number } };
       if (err.response?.data?.msg === 'student profile not found') {
         message.warning('您还没有创建学生资料，请先完善个人信息');
-      } else if (error.response?.status === 401) {
+      } else if (err.response?.status === 401) {
         console.log('认证失败，已跳转到登录页');
       } else {
         message.error('获取学生数据失败');
@@ -93,24 +93,24 @@ export default function PlanPage() {
       setLoadingReports(true);
       const reportsData = await reportApi.getMe();
       if (reportsData && reportsData.data && reportsData.data.list) {
-        const reportList = reportsData.data.list.map((r: Record<string, unknown>) => {
-          let displayTitle = r.title || `职业规划报告 #${r.id}`;
+        const reportList = (reportsData.data.list as unknown as Record<string, unknown>[]).map((r) => {
+          let displayTitle = (r.title as string) || `职业规划报告 #${r.id}`;
           let reportType: 'bigtech' | 'gov' | 'unknown' = 'unknown';
 
-          if (displayTitle.includes('- full')) {
-            displayTitle = displayTitle.replace('- full', '(大厂)');
+          if ((displayTitle as string).includes('- full')) {
+            displayTitle = (displayTitle as string).replace('- full', '(大厂)');
             reportType = 'bigtech';
-          } else if (displayTitle.includes('- gap')) {
-            displayTitle = displayTitle.replace('- gap', '(国企)');
+          } else if ((displayTitle as string).includes('- gap')) {
+            displayTitle = (displayTitle as string).replace('- gap', '(国企)');
             reportType = 'gov';
           }
 
           return {
-            id: r.id,
-            title: displayTitle,
-            status: r.status,
-            createdAt: r.createdAt,
-            content: r.content,
+            id: r.id as number,
+            title: displayTitle as string,
+            status: r.status as string,
+            createdAt: r.createdAt as number,
+            content: r.content as string | undefined,
             type: reportType,
           };
         });
@@ -193,12 +193,13 @@ export default function PlanPage() {
           track: trackValue,
         },
         (event) => {
-          const data = event.data;
+          const data = event.data as Record<string, unknown>;
           if (event.type === 'report' || data.type === 'report') {
-            setSkills(data.content?.skills || []);
-            setTimeline(data.content?.timeline || []);
-            setCompleteness(data.content?.completeness || 0);
-            setCompetitiveness(data.content?.competitiveness || 0);
+            const content = data.content as Record<string, unknown> | undefined;
+            setSkills((content?.skills as SkillItem[]) || []);
+            setTimeline((content?.timeline as TimelineItem[]) || []);
+            setCompleteness((content?.completeness as number) || 0);
+            setCompetitiveness((content?.competitiveness as number) || 0);
             setHasReport(true);
           }
         },

@@ -39,8 +39,10 @@ export default function TeacherDashboard() {
 
       // 支持两种响应格式
       const getData = (res: Record<string, unknown>) => res.data ?? res;
-      const studentList = getData(studentsRes).list || [];
-      const alertList = getData(alertsRes).list || [];
+      const studentData = getData(studentsRes) as Record<string, unknown>;
+      const alertData = getData(alertsRes) as Record<string, unknown>;
+      const studentList = (studentData.list || []) as TeacherStudent[];
+      const alertList = (alertData.list || []) as TeacherAlert[];
 
       const totalRate = studentList.reduce((sum: number, s: TeacherStudent) => sum + (s.taskCompletionRate || 0), 0);
       const avgRate = studentList.length > 0 ? totalRate / studentList.length : 0;
@@ -70,9 +72,9 @@ export default function TeacherDashboard() {
       });
 
       setStats({
-        totalStudents: getData(studentsRes).total || 0,
-        activeStudents: studentList.filter((s: TeacherStudent) => s.lastActivityAt && Date.now() - s.lastActivityAt * 1000 < 7 * 24 * 60 * 60 * 1000).length,
-        pendingAlerts: getData(alertsRes).total || 0,
+totalStudents: (studentData.total || 0) as number,
+      activeStudents: studentList.filter((s: TeacherStudent) => s.lastActivityAt && Date.now() - s.lastActivityAt * 1000 < 7 * 24 * 60 * 60 * 1000).length,
+      pendingAlerts: (alertData.total || 0) as number,
         avgCompletionRate: Math.round(avgRate),
       });
 

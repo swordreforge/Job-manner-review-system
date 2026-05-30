@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userApi } from '../../api';
-import type { UserProgressItem, UserProgressResp } from '../../types';
+import type { UserProgressResp } from '../../types';
 
 type Recommendation = {
   key: string;

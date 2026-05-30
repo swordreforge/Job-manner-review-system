@@ -619,12 +619,6 @@ const loadFilterOptions = async () => {
     };
   };
 
-  const getScoreColor = (score: number) => { // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (score >= 0.8) return 'var(--md-sys-color-success, #1B8C3B)';
-    if (score >= 0.6) return 'var(--md-sys-color-warning, #8F5900)';
-    return 'var(--md-sys-color-error, #BA1A1A)';
-  };
-
   return (
     <div className="min-h-screen relative z-10 p-3 sm:p-4 md:p-6" style={{ backgroundColor: 'var(--md-sys-color-surface)' }}>
       <div className="max-w-5xl mx-auto w-full space-y-4">

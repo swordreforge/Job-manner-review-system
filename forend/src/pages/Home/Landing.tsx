@@ -3,13 +3,10 @@ import { Button } from 'antd';
 import { CheckOutlined, PauseOutlined, CaretRightOutlined } from '@ant-design/icons';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { FaFolder, FaCog, FaFileAlt, FaLaptopCode, FaChartLine, FaUserGraduate } from 'react-icons/fa';
-import { RiWindowsFill } from 'react-icons/ri';
 import BarrageCanvas from '../../components/BarrageCanvas';
 import { useAuthStore } from '../../stores';
 import ScrollStack, { ScrollStackItem } from '../../components/ScrollStack';
 import FeatureIcon from '../../components/FeatureIcon';
-//123
 const GraduationCapIcon = ({ className = "" }: { className?: string }) => (
     <svg
         className={className}
@@ -114,17 +111,6 @@ const features = [
   },
 ];
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const floatingIcons = [
-  { Icon: FaFolder, size: 28, left: '5%', top: '15%', duration: 6, delay: 0 },
-  { Icon: FaCog, size: 32, left: '85%', top: '25%', duration: 8, delay: 1 },
-  { Icon: FaFileAlt, size: 24, left: '15%', top: '70%', duration: 5, delay: 0.5 },
-  { Icon: FaLaptopCode, size: 36, left: '75%', top: '80%', duration: 9, delay: 1.5 },
-  { Icon: FaChartLine, size: 30, left: '45%', top: '10%', duration: 7, delay: 2.5 },
-  { Icon: FaUserGraduate, size: 26, left: '92%', top: '60%', duration: 5.5, delay: 3.5 },
-  { Icon: RiWindowsFill, size: 34, left: '8%', top: '45%', duration: 8, delay: 2 },
-];
-
 const compareData = [
   { feature: 'AI职业规划', us: true, competitionA: false, competitionB: false },
   { feature: '岗位图谱可视化', us: true, competitionA: true, competitionB: false },
@@ -187,7 +173,6 @@ export default function Landing() {
   const [previewImageUrl, setPreviewImageUrl] = useState('');
   const [loading, setLoading] = useState(true);
   const [percent, setPercent] = useState(0);
-  const [isShaking, setIsShaking] = useState(false);
   const [typedText, setTypedText] = useState('');
   const [typingDone, setTypingDone] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -362,12 +347,6 @@ export default function Landing() {
         </div>
     );
   }
-
-  const handleShakeClick = () => { // eslint-disable-line @typescript-eslint/no-unused-vars
-    if (isShaking) return;
-    setIsShaking(true);
-    setTimeout(() => setIsShaking(false), 600);
-  };
 
   const showPrevFeature = () => {
     setHoveredFeatureIndex((prev) => (prev - 1 + features.length) % features.length);

@@ -25,13 +25,14 @@ const studentNavGroups: NavGroup[] = [
       { key: '/assistant', title: '职业助手', description: 'AI 职业规划助手', icon: 'smart_toy', path: '/assistant' },
     ],
   },
-  {
-    title: '职业发展',
-    items: [
-      { key: 'plan', title: '职业规划', description: '生成专属成长路线与技能分析', icon: 'lightbulb', path: '/plan', matchPaths: ['/plan', '/holland'] },
-      { key: 'resume', title: '简历优化', description: '智能诊断并优化你的简历', icon: 'description', path: '/resume', matchPaths: ['/resume'] },
-    ],
-  },
+{
+     title: '职业发展',
+     items: [
+       { key: 'holland', title: '职业测试', description: '霍兰德职业兴趣测试', icon: 'psychology', path: '/holland', matchPaths: ['/holland', '/holland/result', '/holland/history'] },
+       { key: 'plan', title: '职业规划', description: '生成专属成长路线与技能分析', icon: 'lightbulb', path: '/plan', matchPaths: ['/plan'] },
+       { key: 'resume', title: '简历优化', description: '智能诊断并优化你的简历', icon: 'description', path: '/resume', matchPaths: ['/resume', '/resume/editor'] },
+     ],
+   },
   {
     title: '个人中心',
     items: [

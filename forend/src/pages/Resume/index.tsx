@@ -424,7 +424,8 @@ export default function ResumePage() {
                         <List.Item
                           key={item.uid}
                           className="cursor-pointer"
-                          style={{ hoverBackgroundColor: 'var(--md-sys-color-surface-container-low)' }}
+                          style={{ backgroundColor: 'var(--md-sys-color-surface-container-low)' }}
+                           onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--md-sys-color-surface-container-low)'; }}
                           onClick={() => {
                             if (item.status === 'success' && item.result) {
                               const tempDetail: ResumeHistoryRecord = {

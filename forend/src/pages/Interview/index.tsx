@@ -139,9 +139,10 @@ export default function InterviewPage() {
       
     } catch (error: unknown) {
       console.error('录音启动失败:', error);
-      if (error.name === 'NotAllowedError') {
+      const err = error as { name?: string };
+      if (err.name === 'NotAllowedError') {
         message.error('无法访问麦克风，请允许麦克风权限');
-      } else if (error.name === 'NotFoundError') {
+      } else if (err.name === 'NotFoundError') {
         message.error('未检测到麦克风设备');
       } else {
         message.error('录音启动失败，请重试');
@@ -540,39 +541,36 @@ export default function InterviewPage() {
         { sessionId: session.id, message: input },
         (event) => {
           console.log('收到SSE事件:', event);
+          const d = event.data as Record<string, unknown>;
           
-          // 处理流式chunk事件 - 打字机效果
-          if (event.type === 'chunk' && event.data.content) {
+          if (event.type === 'chunk' && d.content) {
             setMessages(prev => {
               const lastMessage = prev[prev.length - 1];
               if (lastMessage && lastMessage.role === 'assistant') {
-                // 更新最后一条AI消息，追加新内容
                 return [...prev.slice(0, -1), {
                   ...lastMessage,
-                  content: lastMessage.content + event.data.content,
+                  content: lastMessage.content + (d.content as string),
                 }];
               } else {
-                // 添加新的AI消息
                 return [...prev, {
                   id: Date.now(),
                   sessionId: session.id,
                   role: 'assistant',
-                  content: event.data.content,
+                  content: d.content as string,
                   createdAt: Date.now() / 1000,
                 }];
               }
             });
           }
           
-          // 处理完整问题事件 - 替换流式文本
-          if (event.type === 'question' && event.data.content) {
+          if (event.type === 'question' && d.content) {
             setMessages(prev => {
               const lastMessage = prev[prev.length - 1];
               const newAiMessage: InterviewMessage = {
                 id: lastMessage?.id || Date.now(),
                 sessionId: session.id,
                 role: 'assistant',
-                content: event.data.content,
+                content: d.content as string,
                 createdAt: Date.now() / 1000,
               };
               
@@ -584,21 +582,21 @@ export default function InterviewPage() {
             });
           }
           
-          if (event.type === 'score' && event.data.value !== undefined) {
-            setCurrentScore(event.data.value);
+          if (event.type === 'score' && d.value !== undefined) {
+            setCurrentScore(d.value as number);
           }
           
-          if (event.type === 'feedback' && event.data.content) {
-            setCurrentFeedback(event.data.content);
+          if (event.type === 'feedback' && d.content) {
+            setCurrentFeedback(d.content as string);
           }
           
-          if (event.type === 'session_update' && event.data.averageScore !== undefined) {
-            setAverageScore(event.data.averageScore);
+          if (event.type === 'session_update' && d.averageScore !== undefined) {
+            setAverageScore(d.averageScore as number);
           }
           
           if (event.type === 'done') {
             setIsStreaming(false);
-            if (event.data.message === '面试结束') {
+            if (d.message === '面试结束') {
               message.success('面试已完成，可以查看报告');
               setSession(prev => prev ? { ...prev, status: 'completed' } : null);
               handleShowReport(session.id);
@@ -784,29 +782,6 @@ export default function InterviewPage() {
     if (score >= 70) return '中等';
     if (score >= 60) return '及格';
     return '需要改进';
-  };
-
-  const handleBack = () => {
-    if (started) {
-      Modal.confirm({
-        title: '确认返回？',
-        content: '返回后将结束当前面试',
-        okText: '确认返回',
-        okButtonProps: { danger: true },
-        cancelText: '继续面试',
-        onOk: async () => {
-          if (session) {
-            interviewApi.end(session.id, 'cancelled').catch(console.error);
-          }
-          setSession(null);
-          setMessages([]);
-          setCurrentScore(null);
-          setCurrentFeedback('');
-          setAverageScore(0);
-          setStarted(false);
-        },
-      });
-    }
   };
 
   return (

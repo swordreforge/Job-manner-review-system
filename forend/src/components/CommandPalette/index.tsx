@@ -74,7 +74,7 @@ export default function CommandPalette({ open, onClose, onNavigate, navItems }: 
       closable={false}
       afterOpenChange={handleAfterOpenChange}
       styles={{
-        content: {
+        body: {
           ...modalStyle,
           padding: 0,
           overflow: 'hidden',
@@ -93,7 +93,7 @@ export default function CommandPalette({ open, onClose, onNavigate, navItems }: 
           placeholder="输入功能名称、分组或描述关键词..."
           prefix={<SearchOutlined style={{ color: 'var(--md-sys-color-on-surface-variant)' }} />}
           size="large"
-          variant="bordered"
+          variant="outlined"
           style={inputStyle}
           styles={{
             input: {

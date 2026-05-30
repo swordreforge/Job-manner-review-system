@@ -516,7 +516,7 @@ export const assistantApi = {
   chatStream: async (
     data: import('../types').AssistantChatStreamReq,
     onEvent: (event: { type: string; data: any }) => void,
-    onError: (error: Error) => void
+    _onError: (error: Error) => void
   ): Promise<void> => {
     const token = localStorage.getItem('token')
     const response = await fetch(`${BASE_URL}/assistant/conversations/${data.conversationId}/chat`, {

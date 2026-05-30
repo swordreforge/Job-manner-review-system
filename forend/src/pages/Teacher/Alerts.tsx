@@ -24,8 +24,9 @@ export default function TeacherAlerts() {
     try {
       const res = await teacherApi.listAlerts({ page, pageSize, ...filters });
       const getData = (r: Record<string, unknown>) => r.data ?? r;
-      setAlerts(getData(res).list || []);
-      setTotal(getData(res).total || 0);
+      const unwrapped = getData(res) as Record<string, unknown>;
+      setAlerts((unwrapped.list || []) as TeacherAlert[]);
+      setTotal((unwrapped.total || 0) as number);
     } catch {
       message.error('获取预警列表失败');
     } finally {

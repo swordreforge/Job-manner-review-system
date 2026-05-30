@@ -65,7 +65,7 @@ export default function HollandHistoryPage() {
   }
 
   return (
-    <div className="min-h-screen relative z-10">
+    <div className="relative z-10">
       <div className="p-6 max-w-5xl mx-auto">
         <PageHeader title="测试历史" description="查看您的职业兴趣测试记录" icon={<span className="material-symbols-rounded">history</span>} />
 
