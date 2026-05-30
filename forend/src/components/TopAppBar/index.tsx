@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button, Tag, Tooltip, Modal, message } from 'antd';
 import { LogoutOutlined } from '@ant-design/icons';
 import { useAuthStore, useThemeStore } from '../../stores';
+import GraduationCapLogo from '../GraduationCapLogo';
 
 interface TopAppBarProps {
   onMenuClick: () => void;
@@ -73,7 +74,7 @@ export default function TopAppBar({ onMenuClick, onCommandOpen, isMobile, onTogg
           </Tooltip>
         )}
         <div className="flex items-center gap-2">
-          <img src="/favicon.svg" alt="Logo" className="w-8 h-8" />
+          <GraduationCapLogo className="w-8 h-8" />
           <span
             className="font-medium text-base hidden sm:block"
             style={{ color: 'var(--md-sys-color-on-surface)' }}

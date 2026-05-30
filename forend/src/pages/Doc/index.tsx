@@ -14,6 +14,7 @@ import {
 import { Button } from 'antd';
 import { motion, AnimatePresence } from 'framer-motion';
 import DocSearch from '../../components/DocSearch';
+import GraduationCapLogo from '../../components/GraduationCapLogo';
 import { useAuthStore } from '../../stores';
 
 type DocConfig = {
@@ -434,7 +435,7 @@ export default function DocPage() {
             >
               <div className="flex items-center justify-between p-4 border-b border-gray-100">
                 <div className="flex items-center gap-2">
-                  <img src="/favicon.svg" alt="Career Router" className="w-7 h-7" />
+                  <GraduationCapLogo className="w-7 h-7" />
                   <span className="font-semibold text-gray-900">文档目录</span>
                 </div>
                 <button
