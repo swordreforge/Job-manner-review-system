@@ -89,10 +89,17 @@ export default function BarrageCanvas({
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     
+    let cssWidth = 0;
+    let cssHeight = 0;
+
     const updateSize = () => {
       const rect = container.getBoundingClientRect();
-      canvas.width = rect.width;
-      canvas.height = rect.height;
+      cssWidth = rect.width;
+      cssHeight = rect.height;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(cssWidth * dpr);
+      canvas.height = Math.round(cssHeight * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     updateSize();
     window.addEventListener('resize', updateSize);
@@ -162,16 +169,21 @@ export default function BarrageCanvas({
       }
     };
     
-    initBarrages(canvas.width);
+    initBarrages(cssWidth);
     
     const animate = (timestamp: number) => {
-      const containerWidth = canvas.width;
+      if (document.hidden) {
+        animationRef.current = requestAnimationFrame(animate);
+        return;
+      }
+
+      const containerWidth = cssWidth;
       
       const deltaTime = lastFrameRef.current ? (timestamp - lastFrameRef.current) / 1000 : 1 / 60;
       lastFrameRef.current = timestamp;
       const clampedDelta = Math.min(deltaTime, 1 / 30);
       
-      ctx.clearRect(0, 0, containerWidth, canvas.height);
+      ctx.clearRect(0, 0, containerWidth, cssHeight);
       
       for (let i = activeRef.current.length - 1; i >= 0; i--) {
         const item = activeRef.current[i];
@@ -212,7 +224,7 @@ export default function BarrageCanvas({
   }, [comments, speed, spawnInterval, trackCount, trackHeight, drawBarrage]);
 
   return (
-    <div ref={containerRef} className="absolute inset-0">
+    <div ref={containerRef} className="absolute inset-0" style={{ transform: 'translateZ(0)' }}>
       <canvas ref={canvasRef} className="w-full h-full" />
     </div>
   );

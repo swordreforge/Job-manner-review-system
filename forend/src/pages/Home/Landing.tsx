@@ -221,58 +221,120 @@ export default function Landing() {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     let animationId = 0;
+    let lowPerf = false;
+
+    const dpr = window.devicePixelRatio || 1;
+    const cellSize = 140;
 
     const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
     resize();
     window.addEventListener('resize', resize);
 
-    const count = Math.min(80, Math.floor(window.innerWidth / 18));
+    const count = Math.min(60, Math.floor(window.innerWidth / 18));
     const particles: { x: number; y: number; vx: number; vy: number; size: number; opacity: number }[] = Array.from({ length: count }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
+      x: window.innerWidth * Math.random(),
+      y: window.innerHeight * Math.random(),
       vx: (Math.random() - 0.5) * 0.6,
       vy: (Math.random() - 0.5) * 0.6,
       size: Math.random() * 2 + 1,
       opacity: Math.random() * 0.5 + 0.2,
     }));
 
-    function draw() {
-      ctx!.clearRect(0, 0, canvas!.width, canvas!.height);
-      for (let i = 0; i < particles.length; i++) {
-        const p = particles[i];
-        if (!p) continue;
-        p.x += p.vx;
-        p.y += p.vy;
-        if (p.x < 0 || p.x > canvas!.width) p.vx *= -1;
-        if (p.y < 0 || p.y > canvas!.height) p.vy *= -1;
+    let frameCount = 0;
+    let lastFpsCheck = 0;
 
-        ctx!.beginPath();
-        ctx!.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-        ctx!.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
-        ctx!.fill();
+    function draw(timestamp: number) {
+      if (document.hidden) {
+        animationId = requestAnimationFrame(draw);
+        return;
+      }
 
-        for (let j = i + 1; j < particles.length; j++) {
-          const p2 = particles[j];
-          if (!p2) continue;
-          const dx = p.x - p2.x;
-          const dy = p.y - p2.y;
-          const dist = Math.sqrt(dx * dx + dy * dy);
-          if (dist < 140) {
-            ctx!.beginPath();
-            ctx!.moveTo(p.x, p.y);
-            ctx!.lineTo(p2.x, p2.y);
-            ctx!.strokeStyle = `rgba(99, 102, 241, ${0.12 * (1 - dist / 140)})`;
-            ctx!.lineWidth = 0.8;
-            ctx!.stroke();
+      frameCount++;
+      if (timestamp - lastFpsCheck >= 1000) {
+        const fps = (frameCount * 1000) / (timestamp - lastFpsCheck);
+        if (fps < 30) lowPerf = true;
+        frameCount = 0;
+        lastFpsCheck = timestamp;
+      }
+
+      const c = ctx!;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      c.clearRect(0, 0, w, h);
+
+      if (lowPerf) {
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+          c.beginPath();
+          c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          c.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
+          c.fill();
+        }
+      } else {
+        const cols = Math.ceil(w / cellSize) + 1;
+        const grid = new Map<number, number[]>();
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          p.x += p.vx;
+          p.y += p.vy;
+          if (p.x < 0 || p.x > w) p.vx *= -1;
+          if (p.y < 0 || p.y > h) p.vy *= -1;
+
+          const cx = Math.floor(p.x / cellSize);
+          const cy = Math.floor(p.y / cellSize);
+          const key = cx + cy * cols;
+          if (!grid.has(key)) grid.set(key, []);
+          grid.get(key)!.push(i);
+
+          c.beginPath();
+          c.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+          c.fillStyle = `rgba(99, 102, 241, ${p.opacity})`;
+          c.fill();
+        }
+
+        for (let i = 0; i < particles.length; i++) {
+          const p = particles[i];
+          const cx = Math.floor(p.x / cellSize);
+          const cy = Math.floor(p.y / cellSize);
+          for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+              const cellKey = cx + dx + (cy + dy) * cols;
+              const cell = grid.get(cellKey);
+              if (!cell) continue;
+              for (const j of cell) {
+                if (j <= i) continue;
+                const p2 = particles[j];
+                const distX = p.x - p2.x;
+                const distY = p.y - p2.y;
+                const dist = Math.sqrt(distX * distX + distY * distY);
+                if (dist < cellSize) {
+                  c.beginPath();
+                  c.moveTo(p.x, p.y);
+                  c.lineTo(p2.x, p2.y);
+                  c.strokeStyle = `rgba(99, 102, 241, ${0.12 * (1 - dist / cellSize)})`;
+                  c.lineWidth = 0.8;
+                  c.stroke();
+                }
+              }
+            }
           }
         }
       }
+
       animationId = requestAnimationFrame(draw);
     }
-    draw();
+    animationId = requestAnimationFrame(draw);
 
     return () => {
       cancelAnimationFrame(animationId);
@@ -731,17 +793,17 @@ export default function Landing() {
 
                 <div className="relative min-h-screen flex flex-col items-center justify-center px-8 text-center overflow-hidden" onMouseMove={handleMouseMove}>
                   {/* Particle canvas */}
-                  <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 3 }} />
+                  <canvas ref={canvasRef} className="absolute inset-0 pointer-events-none" style={{ zIndex: 3, transform: 'translateZ(0)' }} />
                   {/* Gradient base */}
                   <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #eef2ff 0%, #e0e7ff 20%, #ede9fe 40%, #e0f2fe 60%, #f0fdf4 80%, #fefce8 100%)', zIndex: 0 }} />
                   {/* Grid mesh overlay */}
                   <div className="absolute inset-0 pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(99,102,241,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.03) 1px, transparent 1px)', backgroundSize: '48px 48px', zIndex: 1 }} />
                   {/* Morphing geo blobs (jelly effect) */}
                   <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 2 }}>
-                    <div style={{ position: 'absolute', width: 500, height: 500, top: -150, right: -120, background: 'linear-gradient(135deg, #6366f1, #a78bfa)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite' }} />
-                    <div style={{ position: 'absolute', width: 400, height: 400, bottom: -120, left: -100, background: 'linear-gradient(135deg, #06b6d4, #67e8f9)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-5s' }} />
-                    <div style={{ position: 'absolute', width: 300, height: 300, top: '45%', left: '55%', background: 'linear-gradient(135deg, #f59e0b, #fde68a)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-10s' }} />
-                    <div style={{ position: 'absolute', width: 200, height: 200, top: '25%', left: '10%', background: 'linear-gradient(135deg, #10b981, #6ee7b7)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-7s' }} />
+                    <div style={{ position: 'absolute', width: 500, height: 500, top: -150, right: -120, background: 'linear-gradient(135deg, #6366f1, #a78bfa)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', transform: 'translateZ(0)' }} />
+                    <div style={{ position: 'absolute', width: 400, height: 400, bottom: -120, left: -100, background: 'linear-gradient(135deg, #06b6d4, #67e8f9)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-5s', transform: 'translateZ(0)' }} />
+                    <div style={{ position: 'absolute', width: 300, height: 300, top: '45%', left: '55%', background: 'linear-gradient(135deg, #f59e0b, #fde68a)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-10s', transform: 'translateZ(0)' }} />
+                    <div style={{ position: 'absolute', width: 200, height: 200, top: '25%', left: '10%', background: 'linear-gradient(135deg, #10b981, #6ee7b7)', borderRadius: '30% 70% 70% 30% / 30% 30% 70% 70%', filter: 'blur(60px)', opacity: 0.4, animation: 'morph 15s ease-in-out infinite', animationDelay: '-7s', transform: 'translateZ(0)' }} />
                   </div>
                   {/* Mouse-following glow */}
                   <div
